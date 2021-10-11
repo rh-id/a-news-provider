@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/text_name"
+        android:layout_width="wrap_content"
+        android:maxWidth="240dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/text_margin"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="News 1" />
+
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/input_text_name"
+        android:layout_width="wrap_content"
+        android:minWidth="240dp"
+        android:maxWidth="240dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/text_margin"
+        android:minHeight="48dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="News 1" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/button_rename"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/rename"
+        android:textSize="11sp"
+        app:layout_constraintStart_toStartOf="@id/input_text_name"
+        app:layout_constraintTop_toBottomOf="@id/input_text_name" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/button_delete"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_marginLeft="10dp"
+        android:backgroundTint="@color/red"
+        android:text="@string/delete"
+        android:textSize="11sp"
+        app:layout_constraintStart_toEndOf="@id/button_rename"
+        app:layout_constraintTop_toBottomOf="@id/input_text_name" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/button_cancel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_marginLeft="10dp"
+        android:text="@string/cancel"
+        android:textSize="11sp"
+        app:layout_constraintStart_toEndOf="@id/button_delete"
+        app:layout_constraintTop_toBottomOf="@id/input_text_name" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/text_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/text_margin"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="10000" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

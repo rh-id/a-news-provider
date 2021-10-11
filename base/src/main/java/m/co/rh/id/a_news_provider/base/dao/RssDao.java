@@ -1,0 +1,117 @@
+package m.co.rh.id.a_news_provider.base.dao;
+
+import androidx.room.Dao;
+import androidx.room.Delete;
+import androidx.room.Insert;
+import androidx.room.Query;
+import androidx.room.Transaction;
+import androidx.room.Update;
+
+import java.util.Date;
+import java.util.List;
+
+import m.co.rh.id.a_news_provider.base.entity.RssChannel;
+import m.co.rh.id.a_news_provider.base.entity.RssItem;
+
+@Dao
+public abstract class RssDao {
+
+    @Query("SELECT * FROM rss_channel")
+    public abstract List<RssChannel> loadAllRssChannel();
+
+    @Query("SELECT * FROM rss_channel WHERE id = :id")
+    public abstract RssChannel findRssChannelById(long id);
+
+    @Query("SELECT * FROM rss_channel WHERE url = :url")
+    public abstract RssChannel findRssChannelByUrl(String url);
+
+    @Query("SELECT * FROM rss_item WHERE channel_id = :channelId")
+    public abstract List<RssItem> findRssItemsByChannelId(long channelId);
+
+    @Query("SELECT * FROM rss_item WHERE channel_id = :channelId ORDER BY is_read ASC,updated_date_time DESC LIMIT :limit")
+    public abstract List<RssItem> findRssItemsByChannelIdWithLimit(long channelId, int limit);
+
+    @Query("SELECT * FROM rss_item ORDER BY is_read ASC,updated_date_time DESC LIMIT :limit")
+    public abstract List<RssItem> loadRssItemsWithLimit(int limit);
+
+    @Query("SELECT COUNT(id) FROM rss_item")
+    public abstract int countRssItems();
+
+    @Query("SELECT COUNT(id) FROM rss_item WHERE is_read = 0 AND channel_id = :channelId")
+    public abstract int countUnReadRssItems(long channelId);
+
+    @Transaction
+    public void insertRssChannel(RssChannel rssChannel, RssItem... rssItems) {
+        if (rssChannel.createdDateTime == null) {
+            Date date = new Date();
+            rssChannel.createdDateTime = date;
+            rssChannel.updatedDateTime = date;
+        }
+        long channelId = insert(rssChannel);
+        rssChannel.id = channelId;
+        if (rssItems != null && rssItems.length > 0) {
+            for (RssItem rssItem : rssItems) {
+                rssItem.channelId = channelId;
+            }
+            insertRssItem(rssItems);
+        }
+    }
+
+    @Transaction
+    public void insertRssItem(RssItem... rssItems) {
+        for (RssItem rssItem : rssItems) {
+            if (rssItem.createdDateTime == null) {
+                Date date = new Date();
+                rssItem.createdDateTime = date;
+                rssItem.updatedDateTime = date;
+            }
+            long id = insert(rssItem);
+            rssItem.id = id;
+        }
+    }
+
+    @Transaction
+    public void updateRssItem(RssItem rssItem) {
+        rssItem.updatedDateTime = new Date();
+        update(rssItem);
+    }
+
+    @Transaction
+    public void updateRssChannel(RssChannel rssChannel, RssItem... rssItems) {
+        rssChannel.updatedDateTime = new Date();
+        update(rssChannel);
+        if (rssItems != null) {
+            // delete previous items
+            deleteRssItemsByChannelId(rssChannel.id);
+            for (RssItem rssItem : rssItems) {
+                rssItem.channelId = rssChannel.id;
+            }
+            insertRssItem(rssItems);
+        }
+    }
+
+    @Insert
+    protected abstract long insert(RssChannel rssChannel);
+
+    @Insert
+    protected abstract long insert(RssItem rssItem);
+
+    @Update
+    public abstract void update(RssChannel rssChannel);
+
+    @Update
+    protected abstract void update(RssItem rssItem);
+
+    @Delete
+    protected abstract void delete(RssChannel rssChannel);
+
+    @Query("DELETE FROM rss_item WHERE channel_id = :rssChannelId")
+    public abstract void deleteRssItemsByChannelId(long rssChannelId);
+
+    @Transaction
+    public void deleteRssChannel(RssChannel rssChannel) {
+        delete(rssChannel);
+        deleteRssItemsByChannelId(rssChannel.id);
+    }
+
+}

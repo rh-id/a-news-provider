@@ -1,0 +1,3 @@
+rootProject.name = "a-news-provider"
+include ':app'
+include ':base'
