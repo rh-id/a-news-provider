@@ -1,7 +1,7 @@
 # a-news-provider
 
 A simple RSS feed android application.
-This project is intended for demo app for a-navigator and a-provider library usage.
+This project is intended for demo app for [a-navigator](https://github.com/rh-id/a-navigator) and [a-provider](https://github.com/rh-id/a-provider) library usage.
 The app still works as production even though it is demo app.
 
 ## Project Structure
