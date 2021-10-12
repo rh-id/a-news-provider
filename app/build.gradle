@@ -51,11 +51,8 @@ dependencies {
     implementation 'com.google.android.material:material:1.4.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.1'
     implementation 'androidx.drawerlayout:drawerlayout:1.1.1'
-    implementation 'com.github.rh-id:a-navigator:v0.0.7'
-    implementation 'com.github.rh-id:a-provider:v0.0.4'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'androidx.recyclerview:recyclerview:1.2.1'
-    implementation 'com.android.volley:volley:1.2.1'
 
     implementation 'io.reactivex.rxjava3:rxandroid:3.0.0'
     // Because RxAndroid releases are few and far between, it is recommended you also
