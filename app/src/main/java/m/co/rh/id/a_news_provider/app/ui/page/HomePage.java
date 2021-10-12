@@ -1,6 +1,7 @@
 package m.co.rh.id.a_news_provider.app.ui.page;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Color;
 import android.view.View;
 import android.view.ViewGroup;
@@ -183,6 +184,11 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
         // Handle shortcut
         String intentAction = activity.getIntent().getAction();
         if (Shortcuts.NEW_RSS_CHANNEL_ACTION.equals(intentAction)) {
+            fab.performClick();
+        } else if (Intent.ACTION_SEND.equals(intentAction)) {
+            String sharedText = activity.getIntent()
+                    .getStringExtra(Intent.EXTRA_TEXT);
+            mNewRssChannelSV.setFeedUrl(sharedText);
             fab.performClick();
         }
         return view;

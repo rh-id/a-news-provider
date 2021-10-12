@@ -92,4 +92,8 @@ public class NewRssChannelSV extends StatefulView<Activity> {
             mRxDisposer = null;
         }
     }
+
+    public void setFeedUrl(String url) {
+        mFeedUrl = url;
+    }
 }
