@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_add_black"
+        android:shortcutDisabledMessage="@string/new_feed"
+        android:shortcutId="new_rss_channel"
+        android:shortcutLongLabel="@string/new_feed"
+        android:shortcutShortLabel="@string/new_feed">
+        <intent
+            android:action="m.co.rh.id.a_news_provider.shortcut.new_rss_channel"
+            android:targetClass="m.co.rh.id.a_news_provider.app.MainActivity"
+            android:targetPackage="m.co.rh.id.a_news_provider" />
+        <categories android:name="android.shortcut.conversation" />
+        <capability-binding android:key="actions.intent.CREATE_MESSAGE" />
+    </shortcut>
+    <!-- Specify more shortcuts here. -->
+</shortcuts>

@@ -18,6 +18,7 @@ import com.google.android.material.snackbar.Snackbar;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.constants.Routes;
+import m.co.rh.id.a_news_provider.app.constants.Shortcuts;
 import m.co.rh.id.a_news_provider.app.provider.command.SyncRssCmd;
 import m.co.rh.id.a_news_provider.app.provider.notifier.DeviceStatusNotifier;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
@@ -39,7 +40,7 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
     private transient INavigator mNavigator;
     private AppBarSV mAppBarSV;
     private boolean mIsDrawerOpen;
-    private boolean mIsDialogShow;
+    private boolean mIsNewRssChannelDialogShow;
     private RssItemListSV mRssItemListSV;
     private NewRssChannelSV mNewRssChannelSV;
     private RssChannelListSV mRssChannelListSV;
@@ -162,12 +163,12 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
 
         ViewGroup containerListNews = view.findViewById(R.id.container_list_news);
         containerListNews.addView(mRssItemListSV.buildView(activity, container));
-        if (mIsDialogShow) {
-            createAndShowDialog(activity, container);
+        if (mIsNewRssChannelDialogShow) {
+            showNewRssChannelDialog(activity, container);
         }
 
         FloatingActionButton fab = view.findViewById(R.id.fab);
-        fab.setOnClickListener(view1 -> createAndShowDialog(activity, container));
+        fab.setOnClickListener(view1 -> showNewRssChannelDialog(activity, container));
 
         SwipeRefreshLayout swipeRefreshLayout = view.findViewById(R.id.container_swipe_refresh);
         swipeRefreshLayout.setOnRefreshListener(() -> mRssItemListSV.refresh());
@@ -177,6 +178,12 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribe(rssItems -> swipeRefreshLayout.setRefreshing(false))
             );
+        }
+
+        // Handle shortcut
+        String intentAction = activity.getIntent().getAction();
+        if (Shortcuts.NEW_RSS_CHANNEL_ACTION.equals(intentAction)) {
+            fab.performClick();
         }
         return view;
     }
@@ -188,7 +195,7 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
         mRxDisposer = provider.get(RxDisposer.class);
     }
 
-    private void createAndShowDialog(Activity activity, ViewGroup container) {
+    private void showNewRssChannelDialog(Activity activity, ViewGroup container) {
         View dialogView = mNewRssChannelSV.buildView(activity, container);
         MaterialAlertDialogBuilder alertBuilder = new MaterialAlertDialogBuilder(activity);
         alertBuilder.setView(dialogView);
@@ -196,18 +203,18 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
             //leave blank
         });
         alertBuilder.setNegativeButton(android.R.string.cancel, (dialogInterface, i) -> {
-            mIsDialogShow = false;
+            mIsNewRssChannelDialogShow = false;
             mNewRssChannelSV.clearText(dialogView);
         });
         AlertDialog alertDialog = alertBuilder.create();
         alertDialog.show();
-        mIsDialogShow = true;
+        mIsNewRssChannelDialogShow = true;
         Button positiveButton = alertDialog.getButton(AlertDialog.BUTTON_POSITIVE);
         positiveButton.setOnClickListener(v -> {
             if (mNewRssChannelSV.isValid()) {
                 mNewRssChannelSV.addNewFeed();
                 alertDialog.dismiss();
-                mIsDialogShow = false;
+                mIsNewRssChannelDialogShow = false;
             }
         });
     }
