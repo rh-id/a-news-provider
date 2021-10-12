@@ -19,7 +19,6 @@
     <string name="feeds">Feeds</string>
     <string name="rename">Rename</string>
     <string name="delete">Delete</string>
-    <string name="cancel">Cancel</string>
     <string name="name_is_required">Name is required</string>
     <string name="invalid_name">Invalid name</string>
     <string name="record_not_found">Record not found</string>
@@ -39,5 +38,8 @@
     <string name="notification_rss_sync_title">%s updated !</string>
     <string name="notification_rss_sync_content">%d Unread item(s)</string>
     <string name="notification_rss_sync_content_summary">There are %d update(s)</string>
-    <string name="ok">Ok</string>
+    <string name="follow_system">Follow System</string>
+    <string name="light_mode">Light Mode</string>
+    <string name="dark_mode">Dark Mode</string>
+    <string name="theme_setting">Theme Setting</string>
 </resources>

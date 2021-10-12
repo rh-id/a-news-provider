@@ -3,6 +3,7 @@ package m.co.rh.id.a_news_provider.app.provider;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.work.Constraints;
 import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.NetworkType;
@@ -32,6 +33,9 @@ public class AppSharedPreferences {
     private int mPeriodicSyncRssHour;
     private String mPeriodicSyncRssHourKey;
 
+    private int mSelectedTheme;
+    private String mSelectedThemeKey;
+
     public AppSharedPreferences(Provider provider, Context context) {
         mExecutorService = provider.lazyGet(ExecutorService.class);
         mWorkManager = provider.lazyGet(WorkManager.class);
@@ -47,6 +51,8 @@ public class AppSharedPreferences {
                 + ".enablePeriodicSync";
         mPeriodicSyncRssHourKey = SHARED_PREFERENCES_NAME
                 + ".periodicSyncRssHour";
+        mSelectedThemeKey = SHARED_PREFERENCES_NAME
+                + ".selectedTheme";
 
         boolean periodicSyncInit = mSharedPreferences.getBoolean(mPeriodicSyncInitKey, false);
         periodicSyncInit(periodicSyncInit);
@@ -59,6 +65,10 @@ public class AppSharedPreferences {
             initPeriodicSync();
             periodicSyncInit(true);
         }
+        int selectedTheme = mSharedPreferences.getInt(
+                mSelectedThemeKey,
+                AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+        setSelectedTheme(selectedTheme);
     }
 
     private void initPeriodicSync() {
@@ -109,7 +119,7 @@ public class AppSharedPreferences {
     }
 
     private void periodicSyncInit(boolean b) {
-        this.mPeriodicSyncInit = b;
+        mPeriodicSyncInit = b;
         mExecutorService.get().execute(() ->
                 mSharedPreferences.edit().putBoolean(mPeriodicSyncInitKey, b)
                         .commit());
@@ -118,5 +128,21 @@ public class AppSharedPreferences {
     public void setEnablePeriodicSync(boolean checked) {
         enablePeriodicSync(checked);
         initPeriodicSync();
+    }
+
+    private void selectedTheme(int setting) {
+        mSelectedTheme = setting;
+        mExecutorService.get().execute(() ->
+                mSharedPreferences.edit().putInt(mSelectedThemeKey, setting)
+                        .commit());
+    }
+
+    public void setSelectedTheme(int setting) {
+        selectedTheme(setting);
+        AppCompatDelegate.setDefaultNightMode(setting);
+    }
+
+    public int getSelectedTheme() {
+        return mSelectedTheme;
     }
 }

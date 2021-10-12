@@ -8,9 +8,9 @@
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/text_name"
         android:layout_width="wrap_content"
-        android:maxWidth="240dp"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/text_margin"
+        android:maxWidth="240dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -19,10 +19,10 @@
     <com.google.android.material.textfield.TextInputEditText
         android:id="@+id/input_text_name"
         android:layout_width="wrap_content"
-        android:minWidth="240dp"
-        android:maxWidth="240dp"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/text_margin"
+        android:maxWidth="240dp"
+        android:minWidth="240dp"
         android:minHeight="48dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -43,9 +43,9 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="10dp"
         android:layout_marginLeft="10dp"
-        android:backgroundTint="@color/red"
         android:text="@string/delete"
         android:textSize="11sp"
+        app:backgroundTint="@color/red"
         app:layout_constraintStart_toEndOf="@id/button_rename"
         app:layout_constraintTop_toBottomOf="@id/input_text_name" />
 
@@ -55,7 +55,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="10dp"
         android:layout_marginLeft="10dp"
-        android:text="@string/cancel"
+        android:text="@android:string/cancel"
         android:textSize="11sp"
         app:layout_constraintStart_toEndOf="@id/button_delete"
         app:layout_constraintTop_toBottomOf="@id/input_text_name" />

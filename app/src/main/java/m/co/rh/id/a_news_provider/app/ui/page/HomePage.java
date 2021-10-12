@@ -135,25 +135,25 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
         mRxDisposer.add("rssChangeNotifier.newRssModel",
                 rssChangeNotifier.liveNewRssModel()
                         .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(rssModelOptional -> {
-                            if (rssModelOptional.isPresent()) {
-                                Toast.makeText(activity.getApplicationContext(),
-                                        activity.getString(R.string.feed_added, rssModelOptional.get()
-                                                .getRssChannel().feedName),
-                                        Toast.LENGTH_SHORT).show();
-                            }
-                        })
+                        .subscribe(rssModelOptional ->
+                                rssModelOptional
+                                        .ifPresent(rssModel ->
+                                                Toast.makeText(activity.getApplicationContext(),
+                                                        activity.getString(R.string.feed_added, rssModel
+                                                                .getRssChannel().feedName),
+                                                        Toast.LENGTH_SHORT).show()))
         );
         DeviceStatusNotifier deviceStatusNotifier = provider.get(DeviceStatusNotifier.class);
-        deviceStatusNotifier.onlineStatus().subscribe(isOnline -> {
-            if (!isOnline) {
-                Snackbar.make(container,
-                        R.string.device_status_offline,
-                        Snackbar.LENGTH_SHORT)
-                        .setBackgroundTint(Color.RED)
-                        .show();
-            }
-        });
+        mRxDisposer.add("deviceStatusNotifier.onlineStatus",
+                deviceStatusNotifier.onlineStatus().subscribe(isOnline -> {
+                    if (!isOnline) {
+                        Snackbar.make(container,
+                                R.string.device_status_offline,
+                                Snackbar.LENGTH_SHORT)
+                                .setBackgroundTint(Color.RED)
+                                .show();
+                    }
+                }));
         ViewGroup containerChannelList = view.findViewById(R.id.container_list_channel);
         containerChannelList.addView(mRssChannelListSV.buildView(activity, containerChannelList));
 
@@ -195,7 +195,7 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
         alertBuilder.setPositiveButton(R.string.add, (dialogInterface, i) -> {
             //leave blank
         });
-        alertBuilder.setNegativeButton(R.string.cancel, (dialogInterface, i) -> {
+        alertBuilder.setNegativeButton(android.R.string.cancel, (dialogInterface, i) -> {
             mIsDialogShow = false;
             mNewRssChannelSV.clearText(dialogView);
         });
