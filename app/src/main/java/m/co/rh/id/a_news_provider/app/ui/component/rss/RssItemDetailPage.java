@@ -3,10 +3,12 @@ package m.co.rh.id.a_news_provider.app.ui.component.rss;
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
+import android.text.method.LinkMovementMethod;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.WebView;
 import android.widget.TextView;
+
+import androidx.core.text.HtmlCompat;
 
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
@@ -44,8 +46,9 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(mRssItem.link));
             activity.startActivity(browserIntent);
         });
-        WebView webView = view.findViewById(R.id.webView);
-        webView.loadData(mRssItem.description, null, null);
+        TextView textView = view.findViewById(R.id.text_content);
+        textView.setText(HtmlCompat.fromHtml(mRssItem.description, HtmlCompat.FROM_HTML_MODE_LEGACY));
+        textView.setMovementMethod(LinkMovementMethod.getInstance());
         return view;
     }
 
