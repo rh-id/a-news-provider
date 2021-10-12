@@ -2,6 +2,7 @@ package m.co.rh.id.a_news_provider.app.provider;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Handler;
 
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.work.Constraints;
@@ -21,6 +22,7 @@ import m.co.rh.id.aprovider.ProviderValue;
 public class AppSharedPreferences {
     private static final String SHARED_PREFERENCES_NAME = "RssSharedPreferences";
     private ProviderValue<ExecutorService> mExecutorService;
+    private ProviderValue<Handler> mHandler;
     private ProviderValue<WorkManager> mWorkManager;
     private SharedPreferences mSharedPreferences;
 
@@ -38,6 +40,7 @@ public class AppSharedPreferences {
 
     public AppSharedPreferences(Provider provider, Context context) {
         mExecutorService = provider.lazyGet(ExecutorService.class);
+        mHandler = provider.lazyGet(Handler.class);
         mWorkManager = provider.lazyGet(WorkManager.class);
         mSharedPreferences = context.getSharedPreferences(
                 SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE);
@@ -139,7 +142,8 @@ public class AppSharedPreferences {
 
     public void setSelectedTheme(int setting) {
         selectedTheme(setting);
-        AppCompatDelegate.setDefaultNightMode(setting);
+        mHandler.get().post(() ->
+                AppCompatDelegate.setDefaultNightMode(setting));
     }
 
     public int getSelectedTheme() {
