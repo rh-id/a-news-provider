@@ -1,0 +1,7 @@
+A simple and easy to use RSS aggregator that deliver news to your smartphone
+<ul>
+  <li>Easily add new feed using shortcut</li>
+  <li>Support background sync</li>
+  <li>Simple interface to add and read your news</li>
+  <li>Support dark mode and light mode</li>
+</ul>
