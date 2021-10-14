@@ -42,4 +42,5 @@
     <string name="light_mode">Light Mode</string>
     <string name="dark_mode">Dark Mode</string>
     <string name="theme_setting">Theme Setting</string>
+    <string name="url">Url</string>
 </resources>

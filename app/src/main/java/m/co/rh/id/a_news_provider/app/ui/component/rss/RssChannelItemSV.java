@@ -10,6 +10,8 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+
 import java.util.Map;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
@@ -55,6 +57,7 @@ public class RssChannelItemSV extends StatefulView<Activity> {
         Button buttonRename = view.findViewById(R.id.button_rename);
         Button buttonDelete = view.findViewById(R.id.button_delete);
         Button buttonCancel = view.findViewById(R.id.button_cancel);
+        Button buttonLink = view.findViewById(R.id.button_link);
 
         Provider provider = BaseApplication.of(activity).getProvider();
         prepareDisposer(provider);
@@ -108,6 +111,13 @@ public class RssChannelItemSV extends StatefulView<Activity> {
         });
         buttonCancel.setOnClickListener(view13 ->
                 mEditModeSubject.onNext(!mEditModeSubject.getValue()));
+        buttonLink.setOnClickListener(v -> {
+            MaterialAlertDialogBuilder materialAlertDialogBuilder = new MaterialAlertDialogBuilder(activity);
+            materialAlertDialogBuilder.setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss());
+            materialAlertDialogBuilder.setTitle(activity.getString(R.string.url).toUpperCase());
+            materialAlertDialogBuilder.setMessage(mRssChannelCountSubject.getValue().getKey().url);
+            materialAlertDialogBuilder.create().show();
+        });
         mRxDisposer.add("renameRssFeedCmd.getNameValidation",
                 renameRssFeedCmd.liveNameValidation()
                         .observeOn(AndroidSchedulers.mainThread())
@@ -134,16 +144,20 @@ public class RssChannelItemSV extends StatefulView<Activity> {
         mRxDisposer.add("mEditModeSubject", mEditModeSubject.subscribe(editMode -> {
                     if (editMode) {
                         textName.setVisibility(View.GONE);
+                        textCount.setVisibility(View.GONE);
                         editName.setVisibility(View.VISIBLE);
                         buttonRename.setVisibility(View.VISIBLE);
                         buttonDelete.setVisibility(View.VISIBLE);
                         buttonCancel.setVisibility(View.VISIBLE);
+                        buttonLink.setVisibility(View.VISIBLE);
                     } else {
                         textName.setVisibility(View.VISIBLE);
+                        textCount.setVisibility(View.VISIBLE);
                         editName.setVisibility(View.GONE);
                         buttonRename.setVisibility(View.GONE);
                         buttonDelete.setVisibility(View.GONE);
                         buttonCancel.setVisibility(View.GONE);
+                        buttonLink.setVisibility(View.GONE);
                     }
                 })
         );
@@ -160,10 +174,9 @@ public class RssChannelItemSV extends StatefulView<Activity> {
                     }
                     textCount.setText(rssChannelCountEntry.getValue().toString());
 
-                    Map.Entry<RssChannel, Integer> entry = rssChannelCountEntry;
                     int selectedColor = UiUtils.getColorFromAttribute(activity, R.attr.colorOnPrimary);
-                    if (entry != null && rssChannelOptional.isPresent()) {
-                        if (rssChannelOptional.get().id.equals(entry.getKey().id)) {
+                    if (rssChannelOptional.isPresent()) {
+                        if (rssChannelOptional.get().id.equals(rssChannelCountEntry.getKey().id)) {
                             selectedColor = activity.getResources().getColor(R.color.daynight_gray_300_gray_600);
                         }
                     }

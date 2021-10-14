@@ -21,8 +21,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/text_margin"
-        android:maxWidth="240dp"
-        android:minWidth="240dp"
+        android:maxWidth="200dp"
+        android:minWidth="200dp"
         android:minHeight="48dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -59,6 +59,16 @@
         android:textSize="11sp"
         app:layout_constraintStart_toEndOf="@id/button_delete"
         app:layout_constraintTop_toBottomOf="@id/input_text_name" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/button_link"
+        style="@style/Theme.Anewsprovider.BorderlessMenuButton"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_margin="@dimen/text_margin"
+        app:icon="@drawable/ic_link_black"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/text_count"
