@@ -14,7 +14,7 @@
     <string name="url_is_required">URL is required</string>
     <string name="unable_to_parse">Unable to parse %s</string>
     <string name="feed_added">Feed added %s</string>
-    <string name="feed_add_error">Feed add error : %s</string>
+    <string name="error_feed_add">Feed add error</string>
     <string name="error_parse_data_from">Error parsing data from %s</string>
     <string name="feeds">Feeds</string>
     <string name="rename">Rename</string>
@@ -24,9 +24,9 @@
     <string name="record_not_found">Record not found</string>
     <string name="rename_feed_to">Rename feed to %s</string>
     <string name="feed_sync_success">Feed sync success</string>
-    <string name="feed_sync_failed">Feed sync failed: %s</string>
-    <string name="rss_read_error">Failed to read : %s, caused by %s</string>
-    <string name="rss_channel_update_error">Failed updating channel : %s, caused by %s</string>
+    <string name="error_feed_sync_failed">Feed sync failed</string>
+    <string name="error_rss_read">Failed to read : %s</string>
+    <string name="error_rss_channel_update">Failed updating channel : %s</string>
     <string name="feed_new_pending_online">Feed will be added once device online</string>
     <string name="feed_sync_pending_online">Feed will be sync once device online</string>
     <string name="device_status_offline">You are offline</string>

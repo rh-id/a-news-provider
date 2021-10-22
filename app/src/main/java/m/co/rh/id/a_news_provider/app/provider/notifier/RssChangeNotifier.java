@@ -2,8 +2,6 @@ package m.co.rh.id.a_news_provider.app.provider.notifier;
 
 
 import android.content.Context;
-import android.os.Handler;
-import android.widget.Toast;
 
 import java.util.HashMap;
 import java.util.List;
@@ -20,6 +18,7 @@ import m.co.rh.id.a_news_provider.app.model.RssModel;
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
+import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderValue;
 
@@ -27,9 +26,10 @@ import m.co.rh.id.aprovider.ProviderValue;
  * A hub to handle RSS selection, updates, deletion, and changes and to notify accordingly
  */
 public class RssChangeNotifier {
+    private static final String TAG = RssChangeNotifier.class.getName();
     private final Context mAppContext;
+    private final ProviderValue<ILogger> mLogger;
     private final ProviderValue<ExecutorService> mExecutorService;
-    private final ProviderValue<Handler> mHandler;
     private final ProviderValue<RssDao> mRssDao;
     private final PublishSubject<Optional<RssModel>> mAddedRssModelPublishSubject;
     private final PublishSubject<Optional<RssChannel>> mUpdatedRssChannelPublishSubject;
@@ -40,8 +40,8 @@ public class RssChangeNotifier {
 
     public RssChangeNotifier(Provider provider, Context context) {
         mAppContext = context.getApplicationContext();
+        mLogger = provider.lazyGet(ILogger.class);
         mExecutorService = provider.lazyGet(ExecutorService.class);
-        mHandler = provider.lazyGet(Handler.class);
         mRssDao = provider.lazyGet(RssDao.class);
         mAddedRssModelPublishSubject = PublishSubject.create();
         mUpdatedRssChannelPublishSubject = PublishSubject.create();
@@ -77,18 +77,15 @@ public class RssChangeNotifier {
     public void liveNewRssModel(RssModel rssModel) {
         mAddedRssModelPublishSubject.onNext(Optional.ofNullable(rssModel));
         if (!mAddedRssModelPublishSubject.hasObservers()) {
-            mHandler.get().post(() -> Toast.makeText(mAppContext,
-                    mAppContext.getString(R.string.feed_added, rssModel
-                            .getRssChannel().feedName),
-                    Toast.LENGTH_LONG).show());
+            mLogger.get().i(TAG, mAppContext.getString(R.string.feed_added, rssModel
+                    .getRssChannel().feedName));
         }
         refreshRssChannelCount();
     }
 
     public void newRssModelError(Throwable throwable) {
-        mHandler.get().post(() -> Toast.makeText(mAppContext,
-                mAppContext.getString(R.string.feed_add_error, throwable.getMessage()),
-                Toast.LENGTH_LONG).show());
+        mLogger.get().e(TAG, mAppContext.getString(R.string.error_feed_add),
+                throwable);
         mAddedRssModelPublishSubject.onErrorReturnItem(Optional.empty());
     }
 
@@ -100,10 +97,9 @@ public class RssChangeNotifier {
                 mReadRssItemPublishSubject.onNext(rssItem);
                 refreshRssChannelCount();
             } catch (Throwable throwable) {
-                mHandler.get().post(() -> Toast.makeText(mAppContext,
-                        mAppContext.getString(R.string.rss_read_error, rssItem.title,
-                                throwable.getMessage()),
-                        Toast.LENGTH_LONG).show());
+                mLogger.get().e(TAG,
+                        mAppContext.getString(R.string.error_rss_read, rssItem.title
+                        ), throwable);
             }
         });
     }
@@ -139,11 +135,8 @@ public class RssChangeNotifier {
                     }
                 }
             } catch (Throwable throwable) {
-                mHandler.get().post(() -> Toast.makeText(mAppContext,
-                        mAppContext.getString(R.string.rss_channel_update_error,
-                                rssChannel.feedName,
-                                throwable.getMessage()),
-                        Toast.LENGTH_LONG).show());
+                mLogger.get().e(TAG, mAppContext.getString(R.string.error_rss_channel_update,
+                        rssChannel.feedName), throwable);
             }
         });
     }

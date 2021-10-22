@@ -98,10 +98,8 @@ public class RssRequest extends Request<RssModel> {
             }
             return Response.success(rssModel, HttpHeaderParser.parseCacheHeaders(response));
         } catch (XmlPullParserException e) {
-            Log.e(TAG, "URL: " + getUrl() + " response:" + new String(response.data), e);
             return Response.error(new ParseError(e));
         } catch (Throwable throwable) {
-            Log.e(TAG, "URL: " + getUrl() + " response:" + new String(response.data), throwable);
             return Response.error(new VolleyError(throwable));
         }
     }

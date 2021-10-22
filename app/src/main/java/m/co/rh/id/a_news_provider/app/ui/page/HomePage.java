@@ -30,6 +30,7 @@ import m.co.rh.id.a_news_provider.app.ui.component.rss.RssChannelListSV;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.RssItemListSV;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
+import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.component.INavigator;
 import m.co.rh.id.anavigator.component.NavOnBackPressed;
@@ -37,6 +38,7 @@ import m.co.rh.id.anavigator.component.RequireNavigator;
 import m.co.rh.id.aprovider.Provider;
 
 public class HomePage extends StatefulView<Activity> implements RequireNavigator, NavOnBackPressed {
+    private static final String TAG = HomePage.class.getName();
 
     private transient INavigator mNavigator;
     private AppBarSV mAppBarSV;
@@ -72,6 +74,7 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
         View view = activity.getLayoutInflater().inflate(R.layout.page_home, container, false);
         Provider provider = BaseApplication.of(activity).getProvider();
         prepareDisposer(provider);
+        ILogger logger = provider.get(ILogger.class);
         SyncRssCmd syncRssCmd = provider.get(SyncRssCmd.class);
         View menuSettings = view.findViewById(R.id.menu_settings);
         menuSettings.setOnClickListener(view12 -> mNavigator.push(Routes.SETTINGS_PAGE));
@@ -114,9 +117,11 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
                                                 , Toast.LENGTH_LONG).show();
                                     }
                                 },
-                                throwable -> Toast.makeText(activity,
-                                        activity.getString(R.string.feed_sync_failed, throwable.getMessage())
-                                        , Toast.LENGTH_LONG).show())
+                                throwable ->
+                                        logger.e(TAG,
+                                                activity.getString(R.string.error_feed_sync_failed),
+                                                throwable)
+                        )
         );
         RssChangeNotifier rssChangeNotifier = provider.get(RssChangeNotifier.class);
         if (mSelectedRssChannel != null) {
@@ -140,11 +145,13 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
                         .subscribe(rssModelOptional ->
                                 rssModelOptional
                                         .ifPresent(rssModel ->
-                                                Toast.makeText(activity.getApplicationContext(),
-                                                        activity.getString(R.string.feed_added, rssModel
-                                                                .getRssChannel().feedName),
-                                                        Toast.LENGTH_SHORT).show()))
-        );
+                                                logger.i(TAG,
+                                                        activity.getString(
+                                                                R.string.feed_added,
+                                                                rssModel
+                                                                        .getRssChannel()
+                                                                        .feedName)))
+                        ));
         DeviceStatusNotifier deviceStatusNotifier = provider.get(DeviceStatusNotifier.class);
         mRxDisposer.add("deviceStatusNotifier.onlineStatus",
                 deviceStatusNotifier.onlineStatus().subscribe(isOnline -> {
@@ -252,7 +259,10 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
                 navigator.finishActivity(null);
             } else {
                 mLastBackPressMilis = currentMilis;
-                Toast.makeText(activity, R.string.toast_back_press_exit, Toast.LENGTH_SHORT).show();
+                BaseApplication.of(activity)
+                        .getProvider()
+                        .get(ILogger.class)
+                        .i(TAG, activity.getString(R.string.toast_back_press_exit));
             }
         }
     }
