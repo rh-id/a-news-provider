@@ -20,9 +20,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/text_margin"
+            android:background="?android:selectableItemBackground"
             android:button="@null"
-            android:drawableEnd="@android:drawable/btn_radio"
-            android:drawableRight="@android:drawable/btn_radio"
+            android:drawableEnd="?android:attr/listChoiceIndicatorSingle"
+            android:drawableRight="?android:attr/listChoiceIndicatorSingle"
             android:text="@string/follow_system" />
 
         <com.google.android.material.radiobutton.MaterialRadioButton
@@ -30,9 +31,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/text_margin"
+            android:background="?android:selectableItemBackground"
             android:button="@null"
-            android:drawableEnd="@android:drawable/btn_radio"
-            android:drawableRight="@android:drawable/btn_radio"
+            android:drawableEnd="?android:attr/listChoiceIndicatorSingle"
+            android:drawableRight="?android:attr/listChoiceIndicatorSingle"
             android:text="@string/light_mode" />
 
         <com.google.android.material.radiobutton.MaterialRadioButton
@@ -40,9 +42,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/text_margin"
+            android:background="?android:selectableItemBackground"
             android:button="@null"
-            android:drawableEnd="@android:drawable/btn_radio"
-            android:drawableRight="@android:drawable/btn_radio"
+            android:drawableEnd="?android:attr/listChoiceIndicatorSingle"
+            android:drawableRight="?android:attr/listChoiceIndicatorSingle"
             android:text="@string/dark_mode" />
     </RadioGroup>
 </androidx.appcompat.widget.LinearLayoutCompat>
