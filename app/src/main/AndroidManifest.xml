@@ -36,6 +36,15 @@
         </activity>
 
         <receiver android:name=".app.receiver.NotificationDeleteReceiver" />
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="m.co.rh.id.a_news_provider.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/filepaths" />
+        </provider>
     </application>
 
 </manifest>

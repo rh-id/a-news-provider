@@ -11,6 +11,7 @@ import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
 import m.co.rh.id.a_news_provider.app.ui.component.StatefulViewArrayAdapter;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.LicensesMenuSV;
+import m.co.rh.id.a_news_provider.app.ui.component.settings.LogMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.RssSyncMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.ThemeMenuSV;
 import m.co.rh.id.anavigator.StatefulView;
@@ -35,6 +36,8 @@ public class SettingsPage extends StatefulView<Activity> implements RequireNavig
             mStatefulViews.add(rssSyncMenuSV);
             ThemeMenuSV themeMenuSV = new ThemeMenuSV();
             mStatefulViews.add(themeMenuSV);
+            LogMenuSV logMenuSV = new LogMenuSV(navigator);
+            mStatefulViews.add(logMenuSV);
             LicensesMenuSV licensesMenuSV = new LicensesMenuSV(navigator);
             mStatefulViews.add(licensesMenuSV);
         } else {

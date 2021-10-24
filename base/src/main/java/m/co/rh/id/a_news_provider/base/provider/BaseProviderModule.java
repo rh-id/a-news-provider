@@ -4,7 +4,6 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,13 +40,14 @@ public class BaseProviderModule implements ProviderModule {
             return threadPoolExecutor;
         });
         providerRegistry.register(Handler.class, new Handler(Looper.getMainLooper()));
+        providerRegistry.register(FileProvider.class, new FileProvider(context));
         providerRegistry.registerAsync(ILogger.class, () -> {
             ILogger defaultLogger = new AndroidLogger(ILogger.ERROR);
             List<ILogger> loggerList = new ArrayList<>();
             loggerList.add(defaultLogger);
             try {
                 ILogger fileLogger = new FileLogger(ILogger.VERBOSE,
-                        new File(context.getCacheDir(), "alogger/app.log"));
+                        provider.get(FileProvider.class).getLogFile());
                 loggerList.add(fileLogger);
             } catch (IOException e) {
                 defaultLogger.e(TAG, "Error creating file logger", e);
