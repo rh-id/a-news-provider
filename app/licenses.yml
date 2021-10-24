@@ -332,6 +332,12 @@
   license: MIT License
   licenseUrl: https://api.github.com/licenses/mit
   url: https://github.com/rh-id/a-provider
+- artifact: com.github.rh-id:a-logger:+
+  name: a-logger
+  copyrightHolder: Ruby Hartono
+  license: MIT License
+  licenseUrl: https://api.github.com/licenses/mit
+  url: https://github.com/rh-id/a-logger
 - artifact: com.google.android.material:material:+
   name: material
   copyrightHolder: The Android Open Source Project
