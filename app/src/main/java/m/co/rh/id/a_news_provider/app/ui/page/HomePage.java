@@ -48,6 +48,7 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
     private NewRssChannelSV mNewRssChannelSV;
     private RssChannelListSV mRssChannelListSV;
     private RssChannel mSelectedRssChannel;
+    private boolean mLastOnlineStatus;
     private transient long mLastBackPressMilis;
     private transient RxDisposer mRxDisposer;
 
@@ -156,12 +157,17 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
         mRxDisposer.add("deviceStatusNotifier.onlineStatus",
                 deviceStatusNotifier.onlineStatus().subscribe(isOnline -> {
                     if (!isOnline) {
-                        Snackbar.make(container,
-                                R.string.device_status_offline,
-                                Snackbar.LENGTH_SHORT)
-                                .setBackgroundTint(Color.RED)
-                                .show();
+                        // only show when there are changes on online status
+                        if (mLastOnlineStatus != isOnline) {
+                            Snackbar.make(container,
+                                    R.string.device_status_offline,
+                                    Snackbar.LENGTH_SHORT)
+                                    .setBackgroundTint(Color.RED)
+                                    .setTextColor(Color.WHITE)
+                                    .show();
+                        }
                     }
+                    mLastOnlineStatus = isOnline;
                 }));
         ViewGroup containerChannelList = view.findViewById(R.id.container_list_channel);
         containerChannelList.addView(mRssChannelListSV.buildView(activity, containerChannelList));

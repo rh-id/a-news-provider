@@ -28,11 +28,12 @@ public class AppProviderModule implements ProviderModule {
         providerRegistry.registerModule(new DatabaseProviderModule());
         providerRegistry.registerModule(new NetworkProviderModule());
 
-        // special case, must be registered in sync due to lifecycle event
-        DeviceStatusNotifier deviceStatusNotifier = new DeviceStatusNotifier(provider, context);
-        BaseApplication.of(context).registerActivityLifecycleCallbacks(deviceStatusNotifier);
-        providerRegistry.register(DeviceStatusNotifier.class,
-                deviceStatusNotifier);
+        providerRegistry.registerAsync(DeviceStatusNotifier.class,
+                () -> {
+                    DeviceStatusNotifier deviceStatusNotifier = new DeviceStatusNotifier(provider, context);
+                    BaseApplication.of(context).registerActivityLifecycleCallbacks(deviceStatusNotifier);
+                    return deviceStatusNotifier;
+                });
         providerRegistry.registerLazy(AppNotificationHandler.class, () -> new AppNotificationHandler(provider, context));
         providerRegistry.registerFactory(RxDisposer.class, () -> new RxDisposer());
         providerRegistry.registerAsync(WorkManager.class, () -> WorkManager.getInstance(context));
