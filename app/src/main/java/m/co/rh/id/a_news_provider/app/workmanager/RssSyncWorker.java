@@ -1,7 +1,6 @@
 package m.co.rh.id.a_news_provider.app.workmanager;
 
 import android.content.Context;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.work.Data;
@@ -15,12 +14,14 @@ import com.android.volley.toolbox.RequestFuture;
 import java.util.ArrayList;
 import java.util.List;
 
+import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.model.RssModel;
 import m.co.rh.id.a_news_provider.app.network.RssRequest;
 import m.co.rh.id.a_news_provider.app.network.RssRequestFactory;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
+import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.aprovider.Provider;
 
 public class RssSyncWorker extends Worker {
@@ -52,7 +53,10 @@ public class RssSyncWorker extends Worker {
             try {
                 rssModels.add(requestFuture.get());
             } catch (Throwable throwable) {
-                Log.e(TAG, "Failed to sync some RSS", throwable);
+                provider.get(ILogger.class)
+                        .e(TAG, getApplicationContext()
+                                        .getString(R.string.error_failed_to_sync_some_rss),
+                                throwable);
             }
         }
 

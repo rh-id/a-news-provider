@@ -46,4 +46,5 @@
     <string name="log_file">Log File</string>
     <string name="share_log_file">Share log file</string>
     <string name="error_sharing_log_file">Error sharing log file</string>
+    <string name="error_failed_to_sync_some_rss">Failed to sync some RSS</string>
 </resources>
