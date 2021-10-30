@@ -22,13 +22,11 @@ jobs:
       run: ./gradlew assembleDebug
     - name: Build Release APK
       run: ./gradlew assembleRelease
-    - name: Releasing Debug APK
-      uses: rh-id/gh-action-android-release@debug-apk
-      env:
-       GITHUB_TOKEN: ${{ secrets.ACTION_RELEASE_TOKEN }}
-       APP_FOLDER: app
-    - name: Releasing Release APK
-      uses: rh-id/gh-action-android-release@release-apk
-      env:
-       GITHUB_TOKEN: ${{ secrets.ACTION_RELEASE_TOKEN }}
-       APP_FOLDER: app
+    - name: Create Github Release
+      uses: softprops/action-gh-release@v1
+      with:
+        draft: false
+        prerelease: false
+        files: |
+            ./app/build/outputs/apk/debug/app-debug.apk
+            ./app/build/outputs/apk/release/app-release.apk
