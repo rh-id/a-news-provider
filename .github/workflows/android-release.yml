@@ -25,7 +25,7 @@ jobs:
     - name: Releasing Debug APK
       uses: rh-id/gh-action-android-release@debug-apk
       env:
-       GITHUB_TOKEN: ${{ secrets.TOKEN }}
+       GITHUB_TOKEN: ${{ secrets.ACTION_RELEASE_TOKEN }}
        APP_FOLDER: app
     - name: Releasing Release APK
       uses: rh-id/gh-action-android-release@release-apk
