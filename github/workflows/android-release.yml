@@ -1,0 +1,34 @@
+name: Android Release APKs
+
+on:
+ push:
+  tags:
+   - v*
+   
+jobs:
+  release-apk:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: set up JDK
+      uses: actions/setup-java@v1
+      with:
+        java-version: 11
+    - name: Make Gradle executable
+      run: chmod +x ./gradlew
+    - name: Build with Gradle
+      run: ./gradlew build
+    - name: Build Debug APK
+      run: ./gradlew assembleDebug
+    - name: Build Release APK
+      run: ./gradlew assembleRelease
+    - name: Releasing Debug APK
+      uses: rh-id/gh-action-android-release@debug-apk
+      env:
+       GITHUB_TOKEN: ${{ secrets.TOKEN }}
+       APP_FOLDER: app
+    - name: Releasing Release APK
+      uses: rh-id/gh-action-android-release@release-apk
+      env:
+       GITHUB_TOKEN: ${{ secrets.TOKEN }}
+       APP_FOLDER: app
