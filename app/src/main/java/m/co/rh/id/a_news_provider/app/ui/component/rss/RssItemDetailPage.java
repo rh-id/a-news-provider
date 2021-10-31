@@ -10,17 +10,28 @@ import android.widget.TextView;
 
 import androidx.core.text.HtmlCompat;
 
+import java.util.concurrent.ExecutorService;
+
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import m.co.rh.id.a_news_provider.R;
+import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
+import m.co.rh.id.a_news_provider.base.BaseApplication;
+import m.co.rh.id.a_news_provider.base.dao.RssDao;
+import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.component.INavigator;
 import m.co.rh.id.anavigator.component.RequireNavigator;
+import m.co.rh.id.aprovider.Provider;
 
 public class RssItemDetailPage extends StatefulView<Activity> implements RequireNavigator {
-
     private AppBarSV mAppBarSV;
     private RssItem mRssItem;
+    private RssChannel mRssChannel;
+    private transient RxDisposer mRxDisposer;
 
     public RssItemDetailPage(RssItem rssItem) {
         mRssItem = rssItem;
@@ -38,6 +49,8 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
     @Override
     protected View createView(Activity activity, ViewGroup container) {
         View view = activity.getLayoutInflater().inflate(R.layout.page_rss_item_detail, container, false);
+        Provider provider = BaseApplication.of(activity).getProvider();
+        prepareDisposer(provider);
         ViewGroup containerAppBar = view.findViewById(R.id.container_app_bar);
         containerAppBar.addView(mAppBarSV.buildView(activity, container));
         TextView titleText = view.findViewById(R.id.text_title);
@@ -49,7 +62,29 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         TextView textView = view.findViewById(R.id.text_content);
         textView.setText(HtmlCompat.fromHtml(mRssItem.description, HtmlCompat.FROM_HTML_MODE_LEGACY));
         textView.setMovementMethod(LinkMovementMethod.getInstance());
+        if (mRssChannel == null) {
+            RssDao rssDao = provider.get(RssDao.class);
+            mRxDisposer.add("getRssChannel",
+                    Single.fromCallable(() ->
+                            rssDao.findRssChannelById(mRssItem.channelId))
+                            .subscribeOn(Schedulers.from(provider.get(ExecutorService.class)))
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe((rssChannel, throwable) -> {
+                                mRssChannel = rssChannel;
+                                if (mRssChannel != null) {
+                                    mAppBarSV.setTitle(mRssChannel.feedName);
+                                }
+                            })
+            );
+        }
         return view;
+    }
+
+    private void prepareDisposer(Provider provider) {
+        if (mRxDisposer != null) {
+            mRxDisposer.dispose();
+        }
+        mRxDisposer = provider.get(RxDisposer.class);
     }
 
     @Override
