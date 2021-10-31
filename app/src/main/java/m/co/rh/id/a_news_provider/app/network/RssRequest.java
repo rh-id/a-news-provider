@@ -1,7 +1,6 @@
 package m.co.rh.id.a_news_provider.app.network;
 
 import android.content.Context;
-import android.util.Log;
 
 import androidx.annotation.Nullable;
 
@@ -18,7 +17,9 @@ import org.xmlpull.v1.XmlPullParserFactory;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import m.co.rh.id.a_news_provider.R;
@@ -26,12 +27,14 @@ import m.co.rh.id.a_news_provider.app.model.RssModel;
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
+import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderValue;
 
 public class RssRequest extends Request<RssModel> {
     private static final String TAG = RssRequest.class.getName();
     private final Context mAppContext;
+    private final ProviderValue<ILogger> mLogger;
     private final ProviderValue<RssDao> mRssDao;
     private final Response.Listener<RssModel> mListener;
 
@@ -39,6 +42,7 @@ public class RssRequest extends Request<RssModel> {
         super(method, url, errorListener);
         mListener = listener;
         mAppContext = context.getApplicationContext();
+        mLogger = provider.lazyGet(ILogger.class);
         mRssDao = provider.lazyGet(RssDao.class);
     }
 
@@ -64,7 +68,7 @@ public class RssRequest extends Request<RssModel> {
                     skip(xpp);
                 }
             }
-            Log.d(TAG, "Parsed RssModel: " + rssModel);
+            mLogger.get().d(TAG, "Parsed RssModel: " + rssModel);
             if (rssModel == null) {
                 throw new XmlPullParserException(mAppContext.getString
                         (R.string.unable_to_parse, getUrl())
@@ -144,11 +148,27 @@ public class RssRequest extends Request<RssModel> {
                 rssItem.description = readDescription(xpp);
             } else if (name.equals("link")) {
                 rssItem.link = readLink(xpp);
+            } else if (name.equals("pubDate")) {
+                rssItem.pubDate = readPubDate(xpp);
             } else {
                 skip(xpp);
             }
         }
         return rssItem;
+    }
+
+    private Date readPubDate(XmlPullParser xpp) throws IOException, XmlPullParserException {
+        xpp.require(XmlPullParser.START_TAG, null, "pubDate");
+        String dateText = readText(xpp);
+        Date pubDate = null;
+        try {
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
+            pubDate = simpleDateFormat.parse(dateText);
+        } catch (Throwable throwable) {
+            mLogger.get().d(TAG, "Failed to parse date: " + dateText, throwable);
+        }
+        xpp.require(XmlPullParser.END_TAG, null, "pubDate");
+        return pubDate;
     }
 
     private String readTitle(XmlPullParser xpp) throws IOException, XmlPullParserException {

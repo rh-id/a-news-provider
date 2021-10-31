@@ -19,16 +19,16 @@ import m.co.rh.id.aprovider.Provider;
 
 public class RssItemSV extends StatefulView<Activity> implements RequireNavigator {
 
-    private transient BehaviorSubject<RssItem> mRssItemSubject;
+    private RssItem mRssItem;
+    private transient BehaviorSubject<RssItem> mRssItemBehaviorSubject;
     private transient RxDisposer mRxDisposer;
     private transient INavigator mNavigator;
 
-    public RssItemSV() {
-        mRssItemSubject = BehaviorSubject.createDefault(new RssItem());
-    }
-
     public void setRssItem(RssItem rssItem) {
-        mRssItemSubject.onNext(rssItem);
+        mRssItem = rssItem;
+        if (mRssItemBehaviorSubject != null) {
+            mRssItemBehaviorSubject.onNext(rssItem);
+        }
     }
 
 
@@ -40,6 +40,14 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
     @Override
     protected View createView(Activity activity, ViewGroup container) {
         View view = activity.getLayoutInflater().inflate(R.layout.list_item_rss_item, container, false);
+        if (mRssItem == null) {
+            mRssItem = new RssItem();
+            if (mRssItemBehaviorSubject == null) {
+                mRssItemBehaviorSubject = BehaviorSubject.createDefault(mRssItem);
+            } else {
+                mRssItemBehaviorSubject.onNext(mRssItem);
+            }
+        }
         TextView textDate = view.findViewById(R.id.text_date);
         TextView textTitle = view.findViewById(R.id.text_title);
         Provider provider = BaseApplication.of(activity).getProvider();
@@ -48,17 +56,18 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
         view.setOnClickListener(view1 -> {
             if (mNavigator != null) {
                 mNavigator.push((args, activity1) -> new RssItemDetailPage((RssItem) args),
-                        mRssItemSubject.getValue(), null);
+                        mRssItem, null);
             }
-            RssItem rssItem = mRssItemSubject.getValue();
-            if (!rssItem.isRead) {
-                rssChangeNotifier.readRssItem(rssItem);
-                mRssItemSubject.onNext(rssItem);
+            if (!mRssItem.isRead) {
+                rssChangeNotifier.readRssItem(mRssItem);
+                mRssItemBehaviorSubject.onNext(mRssItem);
             }
         });
         mRxDisposer.add("mRssItemSubject",
-                mRssItemSubject.subscribe(rssItem -> {
-                    if (rssItem.createdDateTime != null) {
+                mRssItemBehaviorSubject.subscribe(rssItem -> {
+                    if (rssItem.pubDate != null) {
+                        textDate.setText(rssItem.pubDate.toString());
+                    } else if (rssItem.createdDateTime != null) {
                         textDate.setText(rssItem.createdDateTime.toString());
                     }
                     if (rssItem.title != null) {
@@ -86,9 +95,9 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
     @Override
     public void dispose(Activity activity) {
         super.dispose(activity);
-        if (mRssItemSubject != null) {
-            mRssItemSubject.onComplete();
-            mRssItemSubject = null;
+        if (mRssItemBehaviorSubject != null) {
+            mRssItemBehaviorSubject.onComplete();
+            mRssItemBehaviorSubject = null;
         }
         if (mRxDisposer != null) {
             mRxDisposer.dispose();

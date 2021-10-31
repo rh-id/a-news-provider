@@ -30,6 +30,13 @@ public class RssItem implements Serializable {
     @ColumnInfo(name = "description")
     public String description;
 
+    /**
+     * Publication date
+     */
+    @TypeConverters({Converter.class})
+    @ColumnInfo(name = "pub_date")
+    public Date pubDate;
+
     @ColumnInfo(name = "is_read")
     public boolean isRead;
 
@@ -49,6 +56,7 @@ public class RssItem implements Serializable {
                 ", title='" + title + '\'' +
                 ", link='" + link + '\'' +
                 ", description='" + description + '\'' +
+                ", pubDate=" + pubDate +
                 ", isRead=" + isRead +
                 ", createdDateTime=" + createdDateTime +
                 ", updatedDateTime=" + updatedDateTime +
