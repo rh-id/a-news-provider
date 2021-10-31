@@ -16,7 +16,7 @@ import m.co.rh.id.a_news_provider.base.entity.RssItem;
 @Dao
 public abstract class RssDao {
 
-    @Query("SELECT * FROM rss_channel")
+    @Query("SELECT * FROM rss_channel ORDER BY feed_name")
     public abstract List<RssChannel> loadAllRssChannel();
 
     @Query("SELECT * FROM rss_channel WHERE id = :id")
@@ -65,8 +65,7 @@ public abstract class RssDao {
                 rssItem.createdDateTime = date;
                 rssItem.updatedDateTime = date;
             }
-            long id = insert(rssItem);
-            rssItem.id = id;
+            rssItem.id = insert(rssItem);
         }
     }
 

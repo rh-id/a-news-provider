@@ -58,8 +58,20 @@ public class RssChangeNotifier {
                 Map<RssChannel, Integer> mapResult = new HashMap<>();
                 List<RssChannel> rssChannelList = mRssDao.get().loadAllRssChannel();
                 if (rssChannelList != null && !rssChannelList.isEmpty()) {
+                    Optional<RssChannel> selectedRssChannel = mSelectedRssChannelBehaviourSubject.getValue();
+                    boolean selectedRssStillExist = false;
                     for (RssChannel rssChannel : rssChannelList) {
                         mapResult.put(rssChannel, mRssDao.get().countUnReadRssItems(rssChannel.id));
+                        if (!selectedRssStillExist) {
+                            if (selectedRssChannel != null && selectedRssChannel.isPresent()) {
+                                if (rssChannel.id.equals(selectedRssChannel.get().id)) {
+                                    selectedRssStillExist = true;
+                                }
+                            }
+                        }
+                    }
+                    if (!selectedRssStillExist) {
+                        mSelectedRssChannelBehaviourSubject.onNext(Optional.empty());
                     }
                 }
                 mRssChannelUnReadCountMapBehaviourSubject.onNext(mapResult);
@@ -72,6 +84,7 @@ public class RssChangeNotifier {
     // notify that these RSS have been synced
     public void liveSyncedRssModel(List<RssModel> rssModels) {
         mSyncedRssModelPublishSubject.onNext(rssModels);
+        refreshRssChannelCount();
     }
 
     public void liveNewRssModel(RssModel rssModel) {
@@ -111,11 +124,6 @@ public class RssChangeNotifier {
     public void deleteRssChannel(RssChannel rssChannel) {
         mExecutorService.get().execute(() -> {
             mRssDao.get().deleteRssChannel(rssChannel);
-            int totalRssItems = mRssDao.get().countRssItems();
-            if (totalRssItems == 0 ||
-                    mSelectedRssChannelBehaviourSubject.getValue().get().id.equals(rssChannel.id)) {
-                mSelectedRssChannelBehaviourSubject.onNext(Optional.empty());
-            }
             refreshRssChannelCount();
         });
     }
@@ -129,7 +137,7 @@ public class RssChangeNotifier {
 
                 // if selected channel updated, re-push the selected rss channel to update
                 Optional<RssChannel> selectedChannel = mSelectedRssChannelBehaviourSubject.getValue();
-                if (selectedChannel.isPresent()) {
+                if (selectedChannel != null && selectedChannel.isPresent()) {
                     if (selectedChannel.get().id.equals(rssChannel.id)) {
                         selectRssChannel(rssChannel);
                     }
