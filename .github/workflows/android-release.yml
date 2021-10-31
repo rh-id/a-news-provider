@@ -18,10 +18,6 @@ jobs:
       run: chmod +x ./gradlew
     - name: Build with Gradle
       run: ./gradlew build
-    - name: Build Debug APK
-      run: ./gradlew assembleDebug
-    - name: Build Release APK
-      run: ./gradlew assembleRelease
     - name: Create Github Release
       uses: softprops/action-gh-release@v1
       with:
