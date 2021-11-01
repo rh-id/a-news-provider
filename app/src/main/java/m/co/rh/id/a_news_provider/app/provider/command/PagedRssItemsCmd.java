@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Supplier;
 
 import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
@@ -102,15 +103,33 @@ public class PagedRssItemsCmd {
 
     @NonNull
     private ArrayList<RssItem> loadRssItems() {
-        List<RssItem> rssItemList;
+        Supplier<List<RssItem>> listSupplier;
+        Integer filterType = getFilterTypeValue();
         if (!mSelectedRssChannel.isPresent()) {
-            rssItemList = mRssDao.get()
+            listSupplier = () -> mRssDao.get()
                     .loadRssItemsWithLimit(mLimit);
+            if (filterType != null) {
+                switch (filterType) {
+                    case FILTER_BY_UNREAD:
+                        listSupplier = () -> mRssDao.get()
+                                .findRssItemsByIsReadWithLimit(0, mLimit);
+                        break;
+                }
+            }
         } else {
-            rssItemList = mRssDao.get()
+            listSupplier = () -> mRssDao.get()
                     .findRssItemsByChannelIdWithLimit(mSelectedRssChannel.get().id, mLimit);
+            if (filterType != null) {
+                switch (filterType) {
+                    case FILTER_BY_UNREAD:
+                        listSupplier = () -> mRssDao.get()
+                                .findRssItemsByChannelIdAndIsReadWithLimit(
+                                        mSelectedRssChannel.get().id, 0, mLimit);
+                        break;
+                }
+            }
         }
-        filter(rssItemList);
+        List<RssItem> rssItemList = listSupplier.get();
         ArrayList<RssItem> rssItemArrayList = new ArrayList<>();
         if (rssItemList != null && !rssItemList.isEmpty()) {
             rssItemArrayList.addAll(rssItemList);
@@ -140,17 +159,12 @@ public class PagedRssItemsCmd {
         return Flowable.fromObservable(mFilterTypeSubject, BackpressureStrategy.BUFFER);
     }
 
-    private void filter(List<RssItem> rssItemList) {
-        Optional<Integer> filterType = mFilterTypeSubject.getValue();
-        if (filterType != null) {
-            filterType.ifPresent(integer -> {
-                switch (integer) {
-                    case FILTER_BY_UNREAD:
-                        rssItemList.removeIf(rssItem -> rssItem.isRead);
-                        break;
-                }
-            });
+    private Integer getFilterTypeValue() {
+        Optional<Integer> filterTypeOpt = mFilterTypeSubject.getValue();
+        if (filterTypeOpt == null) {
+            return null;
         }
+        return filterTypeOpt.orElse(null);
     }
 
     private void resetPage() {
