@@ -80,6 +80,13 @@ public class RssRequest extends Request<RssModel> {
             if (rssChannel == null) {
                 rssDao.insertRssChannel(rssModel.getRssChannel(), rssModel.getRssItems().toArray(new RssItem[0]));
             } else {
+                // map some field from db
+                RssChannel responseRssChannel = rssModel.getRssChannel();
+                responseRssChannel.id = rssChannel.id;
+                responseRssChannel.feedName = rssChannel.feedName;
+                responseRssChannel.createdDateTime = rssChannel.createdDateTime;
+                responseRssChannel.updatedDateTime = rssChannel.updatedDateTime;
+
                 ArrayList<RssItem> rssItemsFromModel = rssModel.getRssItems();
                 List<RssItem> rssItemList = rssDao.findRssItemsByChannelId(rssChannel.id);
                 // if the link is the same, import the previous isRead
@@ -97,8 +104,8 @@ public class RssRequest extends Request<RssModel> {
                         }
                     }
                 }
-                rssModel = new RssModel(rssChannel, rssItemsFromModel);
-                rssDao.updateRssChannel(rssChannel, rssModel.getRssItems().toArray(new RssItem[0]));
+                rssModel = new RssModel(responseRssChannel, rssItemsFromModel);
+                rssDao.updateRssChannel(responseRssChannel, rssModel.getRssItems().toArray(new RssItem[0]));
             }
             return Response.success(rssModel, HttpHeaderParser.parseCacheHeaders(response));
         } catch (XmlPullParserException e) {
@@ -125,6 +132,8 @@ public class RssRequest extends Request<RssModel> {
                 rssChannel.description = readDescription(xpp);
             } else if (name.equals("link")) {
                 rssChannel.link = readLink(xpp);
+            } else if (name.equals("image")) {
+                readImage(rssChannel, xpp);
             } else if (name.equals("item")) {
                 rssItemList.add(readItem(xpp));
             } else {
@@ -132,6 +141,21 @@ public class RssRequest extends Request<RssModel> {
             }
         }
         return new RssModel(rssChannel, rssItemList);
+    }
+
+    private void readImage(RssChannel rssChannel, XmlPullParser xpp) throws IOException, XmlPullParserException {
+        xpp.require(XmlPullParser.START_TAG, null, "image");
+        while (xpp.next() != XmlPullParser.END_TAG) {
+            if (xpp.getEventType() != XmlPullParser.START_TAG) {
+                continue;
+            }
+            String name = xpp.getName();
+            if (name.equals("url")) {
+                rssChannel.imageUrl = readText(xpp);
+            } else {
+                skip(xpp);
+            }
+        }
     }
 
     private RssItem readItem(XmlPullParser xpp) throws IOException, XmlPullParserException {

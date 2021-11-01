@@ -10,9 +10,13 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.toolbox.ImageLoader;
+import com.android.volley.toolbox.NetworkImageView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.BackpressureStrategy;
@@ -32,12 +36,8 @@ public class RssChannelItemSV extends StatefulView<Activity> {
 
     private transient BehaviorSubject<Map.Entry<RssChannel, Integer>> mRssChannelCountSubject;
     private transient BehaviorSubject<Boolean> mEditModeSubject;
+    private transient BehaviorSubject<Optional<String>> mImageUrlSubject;
     private transient RxDisposer mRxDisposer;
-
-    public RssChannelItemSV() {
-        mRssChannelCountSubject = BehaviorSubject.create();
-        mEditModeSubject = BehaviorSubject.createDefault(false);
-    }
 
     public void setRssChannelCount(Map.Entry<RssChannel, Integer> rssChannelCount) {
         if (mRssChannelCountSubject == null) {
@@ -45,12 +45,25 @@ public class RssChannelItemSV extends StatefulView<Activity> {
         } else {
             mRssChannelCountSubject.onNext(rssChannelCount);
         }
+        if (mEditModeSubject != null) {
+            mEditModeSubject.onNext(false);
+        }
     }
 
 
     @Override
     protected View createView(Activity activity, ViewGroup container) {
+        if (mRssChannelCountSubject == null) {
+            mRssChannelCountSubject = BehaviorSubject.create();
+        }
+        if (mEditModeSubject == null) {
+            mEditModeSubject = BehaviorSubject.createDefault(false);
+        }
+        if (mImageUrlSubject == null) {
+            mImageUrlSubject = BehaviorSubject.createDefault(Optional.empty());
+        }
         View view = activity.getLayoutInflater().inflate(R.layout.list_item_rss_channel, container, false);
+        NetworkImageView networkImageViewIcon = view.findViewById(R.id.network_image_view_icon);
         TextView textName = view.findViewById(R.id.text_name);
         TextView textCount = view.findViewById(R.id.text_count);
         EditText editName = view.findViewById(R.id.input_text_name);
@@ -143,6 +156,7 @@ public class RssChannelItemSV extends StatefulView<Activity> {
         );
         mRxDisposer.add("mEditModeSubject", mEditModeSubject.subscribe(editMode -> {
                     if (editMode) {
+                        networkImageViewIcon.setVisibility(View.GONE);
                         textName.setVisibility(View.GONE);
                         textCount.setVisibility(View.GONE);
                         editName.setVisibility(View.VISIBLE);
@@ -151,6 +165,7 @@ public class RssChannelItemSV extends StatefulView<Activity> {
                         buttonCancel.setVisibility(View.VISIBLE);
                         buttonLink.setVisibility(View.VISIBLE);
                     } else {
+                        networkImageViewIcon.setVisibility(View.VISIBLE);
                         textName.setVisibility(View.VISIBLE);
                         textCount.setVisibility(View.VISIBLE);
                         editName.setVisibility(View.GONE);
@@ -172,6 +187,13 @@ public class RssChannelItemSV extends StatefulView<Activity> {
                         textName.setText(rssChannel.feedName);
                         editName.setText(rssChannel.feedName);
                     }
+                    if (rssChannel.imageUrl != null) {
+                        mImageUrlSubject.onNext(Optional.of(rssChannel.imageUrl));
+                        networkImageViewIcon.setVisibility(View.VISIBLE);
+                    } else {
+                        mImageUrlSubject.onNext(Optional.empty());
+                        networkImageViewIcon.setVisibility(View.GONE);
+                    }
                     textCount.setText(rssChannelCountEntry.getValue().toString());
 
                     int selectedColor = UiUtils.getColorFromAttribute(activity, R.attr.colorOnPrimary);
@@ -185,6 +207,12 @@ public class RssChannelItemSV extends StatefulView<Activity> {
                 }).subscribe(aBoolean -> {
                 })
         );
+        mRxDisposer.add("setImageUrl",
+                mImageUrlSubject.debounce(100, TimeUnit.MILLISECONDS)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(imageUrlOpt -> imageUrlOpt.ifPresent(s ->
+                                networkImageViewIcon.setImageUrl(s,
+                                        provider.get(ImageLoader.class)))));
         return view;
     }
 

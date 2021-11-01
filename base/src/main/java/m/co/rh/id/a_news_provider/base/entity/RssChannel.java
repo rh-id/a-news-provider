@@ -33,6 +33,9 @@ public class RssChannel implements Serializable {
     @ColumnInfo(name = "description")
     public String description;
 
+    @ColumnInfo(name = "image_url")
+    public String imageUrl;
+
     @TypeConverters({Converter.class})
     @ColumnInfo(name = "created_date_time")
     public Date createdDateTime;
@@ -47,8 +50,10 @@ public class RssChannel implements Serializable {
                 "id=" + id +
                 ", feedName='" + feedName + '\'' +
                 ", title='" + title + '\'' +
+                ", url='" + url + '\'' +
                 ", link='" + link + '\'' +
                 ", description='" + description + '\'' +
+                ", imageUrl='" + imageUrl + '\'' +
                 ", createdDateTime=" + createdDateTime +
                 ", updatedDateTime=" + updatedDateTime +
                 '}';
