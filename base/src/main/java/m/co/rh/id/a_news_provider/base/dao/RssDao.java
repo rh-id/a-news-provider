@@ -28,10 +28,10 @@ public abstract class RssDao {
     @Query("SELECT * FROM rss_item WHERE channel_id = :channelId")
     public abstract List<RssItem> findRssItemsByChannelId(long channelId);
 
-    @Query("SELECT * FROM rss_item WHERE channel_id = :channelId ORDER BY is_read ASC,updated_date_time DESC LIMIT :limit")
+    @Query("SELECT * FROM rss_item WHERE channel_id = :channelId ORDER BY created_date_time DESC LIMIT :limit")
     public abstract List<RssItem> findRssItemsByChannelIdWithLimit(long channelId, int limit);
 
-    @Query("SELECT * FROM rss_item ORDER BY is_read ASC,updated_date_time DESC LIMIT :limit")
+    @Query("SELECT * FROM rss_item ORDER BY created_date_time DESC LIMIT :limit")
     public abstract List<RssItem> loadRssItemsWithLimit(int limit);
 
     @Query("SELECT COUNT(id) FROM rss_item")

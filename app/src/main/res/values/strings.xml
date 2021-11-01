@@ -48,4 +48,10 @@
     <string name="error_sharing_log_file">Error sharing log file</string>
     <string name="error_failed_to_sync_some_rss">Failed to sync some RSS</string>
     <string name="version">Version:</string>
+    <string name="filter_by">Filter by:</string>
+
+    <string-array name="array_filter_by">
+        <item>None</item>
+        <item>Unread</item>
+    </string-array>
 </resources>

@@ -3,12 +3,14 @@ package m.co.rh.id.a_news_provider.app.ui.component.rss;
 import android.app.Activity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
@@ -24,7 +26,6 @@ import m.co.rh.id.aprovider.Provider;
 public class RssItemListSV extends StatefulView<Activity> {
 
     private transient PagedRssItemsCmd mPagedRssItemsCmd;
-    private Serializable mPagedRssItemsProperties;
     private transient RxDisposer mRxDisposer;
 
     public void refresh() {
@@ -50,11 +51,25 @@ public class RssItemListSV extends StatefulView<Activity> {
         Provider provider = BaseApplication.of(activity).getProvider();
         prepareDisposer(provider);
         mPagedRssItemsCmd = provider.get(PagedRssItemsCmd.class);
-        if (mPagedRssItemsProperties != null) {
-            mPagedRssItemsCmd.restoreProperties(mPagedRssItemsProperties);
-        }
         mPagedRssItemsCmd.load();
-        mPagedRssItemsProperties = mPagedRssItemsCmd.getProperties();
+        Spinner spinnerFilterBy = view.findViewById(R.id.spinner_filter_by);
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(activity,
+                R.array.array_filter_by, android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerFilterBy.setAdapter(adapter);
+        mPagedRssItemsCmd.getFilterType()
+                .ifPresent(spinnerFilterBy::setSelection);
+        spinnerFilterBy.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                mPagedRssItemsCmd.setFilterType(position);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                mPagedRssItemsCmd.setFilterType(null);
+            }
+        });
         mRxDisposer.add("mPagedRssItemsCmd.getRssItems",
                 mPagedRssItemsCmd.getRssItems()
                         .observeOn(AndroidSchedulers.mainThread())
@@ -62,11 +77,8 @@ public class RssItemListSV extends StatefulView<Activity> {
                                         rssItemRecyclerViewAdapter.setItems(mPagedRssItemsCmd),
                                 throwable ->
                                         Toast.makeText(activity, activity.getString(R.string.error_message, throwable.getMessage()),
-                                                Toast.LENGTH_LONG).show(),
-                                () -> {
-                                    // save state
-                                    mPagedRssItemsProperties = mPagedRssItemsCmd.getProperties();
-                                })
+                                                Toast.LENGTH_LONG).show()
+                        )
         );
         return view;
     }
@@ -82,7 +94,6 @@ public class RssItemListSV extends StatefulView<Activity> {
     public void dispose(Activity activity) {
         super.dispose(activity);
         mPagedRssItemsCmd = null;
-        mPagedRssItemsProperties = null;
         if (mRxDisposer != null) {
             mRxDisposer.dispose();
             mRxDisposer = null;

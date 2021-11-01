@@ -2,9 +2,7 @@ package m.co.rh.id.a_news_provider.app.provider.command;
 
 import androidx.annotation.NonNull;
 
-import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -21,18 +19,23 @@ import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderValue;
 
 public class PagedRssItemsCmd {
+    public static final int FILTER_BY_NONE = 0;
+    public static final int FILTER_BY_UNREAD = 1;
+
     private final ProviderValue<ExecutorService> mExecutorService;
     private final ProviderValue<RssDao> mRssDao;
     private final BehaviorSubject<ArrayList<RssItem>> mRssItemsSubject;
     private Optional<RssChannel> mSelectedRssChannel;
     private final Flowable<ArrayList<RssItem>> mRssItems;
     private int mLimit;
+    private BehaviorSubject<Optional<Integer>> mFilterTypeSubject;
 
     public PagedRssItemsCmd(Provider provider) {
         mExecutorService = provider.lazyGet(ExecutorService.class);
         mRssDao = provider.lazyGet(RssDao.class);
         mRssItemsSubject = BehaviorSubject.createDefault(new ArrayList<>());
         mSelectedRssChannel = Optional.empty();
+        mFilterTypeSubject = BehaviorSubject.createDefault(Optional.of(FILTER_BY_UNREAD));
         RssChangeNotifier rssChangeNotifier = provider.get(RssChangeNotifier.class);
         mRssItems =
                 Flowable.combineLatest(
@@ -70,17 +73,6 @@ public class PagedRssItemsCmd {
         resetPage();
     }
 
-    public Serializable getProperties() {
-        HashMap<String, Object> properties = new HashMap<>();
-        properties.put("limit", mLimit);
-        return properties;
-    }
-
-    public void restoreProperties(Serializable serializable) {
-        HashMap<String, Object> properties = (HashMap<String, Object>) serializable;
-        mLimit = (int) properties.get("limit");
-    }
-
     public Flowable<ArrayList<RssItem>> getRssItems() {
         return mRssItems;
     }
@@ -110,7 +102,7 @@ public class PagedRssItemsCmd {
 
     @NonNull
     private ArrayList<RssItem> loadRssItems() {
-        List<RssItem> rssItemList = null;
+        List<RssItem> rssItemList;
         if (!mSelectedRssChannel.isPresent()) {
             rssItemList = mRssDao.get()
                     .loadRssItemsWithLimit(mLimit);
@@ -118,6 +110,7 @@ public class PagedRssItemsCmd {
             rssItemList = mRssDao.get()
                     .findRssItemsByChannelIdWithLimit(mSelectedRssChannel.get().id, mLimit);
         }
+        filter(rssItemList);
         ArrayList<RssItem> rssItemArrayList = new ArrayList<>();
         if (rssItemList != null && !rssItemList.isEmpty()) {
             rssItemArrayList.addAll(rssItemList);
@@ -128,6 +121,36 @@ public class PagedRssItemsCmd {
     public void reload() {
         resetPage();
         load();
+    }
+
+    public void setFilterType(Integer filterType) {
+        if (filterType == null) {
+            mFilterTypeSubject.onNext(Optional.of(FILTER_BY_NONE));
+        } else {
+            mFilterTypeSubject.onNext(Optional.of(filterType));
+        }
+        load();
+    }
+
+    public Optional<Integer> getFilterType() {
+        return mFilterTypeSubject.getValue();
+    }
+
+    public Flowable<Optional<Integer>> getFilterTypeFlow() {
+        return Flowable.fromObservable(mFilterTypeSubject, BackpressureStrategy.BUFFER);
+    }
+
+    private void filter(List<RssItem> rssItemList) {
+        Optional<Integer> filterType = mFilterTypeSubject.getValue();
+        if (filterType != null) {
+            filterType.ifPresent(integer -> {
+                switch (integer) {
+                    case FILTER_BY_UNREAD:
+                        rssItemList.removeIf(rssItem -> rssItem.isRead);
+                        break;
+                }
+            });
+        }
     }
 
     private void resetPage() {
