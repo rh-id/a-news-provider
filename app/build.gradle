@@ -3,10 +3,28 @@ plugins {
     id "com.cookpad.android.plugin.license-tools" version "1.2.6"
 }
 
+def keyStoreFile = File.createTempFile("key", null);
+keyStoreFile.deleteOnExit()
+
+if (System.getenv("SIGNING_KEY") != null) {
+    println 'key exist'
+    keyStoreFile.bytes = Base64.decoder.decode(System.getenv("SIGNING_KEY"))
+} else {
+    println 'key NOT exist'
+}
+
 android {
     compileSdkVersion 30
     buildToolsVersion "30.0.3"
 
+    signingConfigs {
+        release {
+            storeFile keyStoreFile
+            storePassword System.getenv("KEY_STORE_PASSWORD")
+            keyAlias System.getenv("ALIAS")
+            keyPassword System.getenv("KEY_PASSWORD")
+        }
+    }
     defaultConfig {
         applicationId "m.co.rh.id.a_news_provider"
         minSdkVersion 16
@@ -29,6 +47,9 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (System.getenv("SIGNING_KEY") != null) {
+                signingConfig signingConfigs.release
+            }
         }
     }
     compileOptions {
