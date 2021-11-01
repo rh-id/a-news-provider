@@ -4,6 +4,7 @@ package m.co.rh.id.a_news_provider.app.provider.notifier;
 import android.content.Context;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -55,7 +56,7 @@ public class RssChangeNotifier {
     private void refreshRssChannelCount() {
         mExecutorService.get().execute(() -> {
             try {
-                Map<RssChannel, Integer> mapResult = new HashMap<>();
+                Map<RssChannel, Integer> mapResult = new LinkedHashMap<>();
                 List<RssChannel> rssChannelList = mRssDao.get().loadAllRssChannel();
                 if (rssChannelList != null && !rssChannelList.isEmpty()) {
                     Optional<RssChannel> selectedRssChannel = mSelectedRssChannelBehaviourSubject.getValue();
