@@ -66,6 +66,7 @@ public class OpmlParser {
                 xmlSerializer.attribute("", "htmlUrl", rssChannel.link);
                 xmlSerializer.attribute("", "language", "unknown");
                 xmlSerializer.attribute("", "version", "RSS2");
+                xmlSerializer.attribute("", "type", "rss");
                 xmlSerializer.attribute("", "xmlUrl", rssChannel.url);
             } catch (Throwable throwable) {
                 mLogger.get().e(TAG,
