@@ -24,9 +24,15 @@ public class RssChannel implements Serializable {
     @ColumnInfo(name = "title")
     public String title;
 
+    /**
+     * URL to reach this RSS feed
+     */
     @ColumnInfo(name = "url")
     public String url;
 
+    /**
+     * HTML Link from RSS feed element
+     */
     @ColumnInfo(name = "link")
     public String link;
 

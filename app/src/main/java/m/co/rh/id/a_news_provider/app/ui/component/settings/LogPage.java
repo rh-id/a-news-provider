@@ -1,8 +1,6 @@
 package m.co.rh.id.a_news_provider.app.ui.component.settings;
 
 import android.app.Activity;
-import android.content.Intent;
-import android.net.Uri;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
@@ -20,6 +18,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 import io.reactivex.rxjava3.subjects.AsyncSubject;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
+import m.co.rh.id.a_news_provider.app.util.UiUtils;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.a_news_provider.base.provider.FileProvider;
 import m.co.rh.id.alogger.ILogger;
@@ -53,16 +52,7 @@ public class LogPage extends StatefulView<Activity> {
         prepareDisposer(provider);
         fab.setOnClickListener(v -> {
             try {
-                Uri fileUri = androidx.core.content.
-                        FileProvider.getUriForFile(
-                        activity,
-                        "m.co.rh.id.a_news_provider.fileprovider",
-                        mLogFile);
-                Intent shareIntent = new Intent();
-                shareIntent.setAction(Intent.ACTION_SEND);
-                shareIntent.putExtra(Intent.EXTRA_STREAM, fileUri);
-                shareIntent.setType("*/*");
-                activity.startActivity(Intent.createChooser(shareIntent, activity.getString(R.string.share_log_file)));
+                UiUtils.shareFile(activity, mLogFile, activity.getString(R.string.share_log_file));
             } catch (Throwable e) {
                 provider.get(ILogger.class)
                         .e(TAG, activity.getString(R.string.error_sharing_log_file), e);

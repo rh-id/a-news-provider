@@ -1,6 +1,7 @@
 package m.co.rh.id.a_news_provider.app.ui.page;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
@@ -24,17 +25,21 @@ import java.io.File;
 import java.util.concurrent.ExecutorService;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.constants.Routes;
 import m.co.rh.id.a_news_provider.app.constants.Shortcuts;
 import m.co.rh.id.a_news_provider.app.provider.command.SyncRssCmd;
 import m.co.rh.id.a_news_provider.app.provider.notifier.DeviceStatusNotifier;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
+import m.co.rh.id.a_news_provider.app.provider.parser.OpmlParser;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.NewRssChannelSV;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.RssChannelListSV;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.RssItemListSV;
+import m.co.rh.id.a_news_provider.app.util.UiUtils;
 import m.co.rh.id.a_news_provider.app.workmanager.ConstantsKey;
 import m.co.rh.id.a_news_provider.app.workmanager.OpmlParseWorker;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
@@ -106,6 +111,18 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
             if (itemId == R.id.menu_sync_feed) {
                 syncRssCmd.execute();
                 return true;
+            } else if (itemId == R.id.menu_export_opml) {
+                Context appContext = activity.getApplicationContext();
+                Single<File> fileSingle =
+                        Single.fromCallable(() -> provider.get(OpmlParser.class).exportOpml())
+                                .subscribeOn(Schedulers.from(provider.get(ExecutorService.class)))
+                                .observeOn(AndroidSchedulers.mainThread());
+                mRxDisposer.add("asyncExportOpml", fileSingle.subscribe(
+                        file -> UiUtils.shareFile(activity, file, activity.getString(R.string.share_opml)),
+                        throwable -> provider.get(ILogger.class)
+                                .e(TAG, appContext.getString(R.string.error_exporting_opml),
+                                        throwable)
+                ));
             }
             return false;
         });

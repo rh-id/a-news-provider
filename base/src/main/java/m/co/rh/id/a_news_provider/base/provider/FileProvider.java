@@ -28,6 +28,10 @@ public class FileProvider {
         mTempFileRoot.mkdirs();
     }
 
+    public File createTempFile(String fileName) throws IOException {
+        return createTempFile(fileName, null);
+    }
+
     /**
      * Create temporary file
      *
@@ -46,22 +50,24 @@ public class FileProvider {
         File tmpFile = new File(parent, fName);
         tmpFile.createNewFile();
 
-        ContentResolver cr = mAppContext.getContentResolver();
-        InputStream inputStream = cr.openInputStream(content);
-        BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
+        if (content != null) {
+            ContentResolver cr = mAppContext.getContentResolver();
+            InputStream inputStream = cr.openInputStream(content);
+            BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
 
-        FileOutputStream fileOutputStream = new FileOutputStream(tmpFile);
-        BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
-        byte[] buff = new byte[2048];
-        int b = bufferedInputStream.read(buff);
-        while (b != -1) {
-            bufferedOutputStream.write(buff);
-            b = bufferedInputStream.read(buff);
+            FileOutputStream fileOutputStream = new FileOutputStream(tmpFile);
+            BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
+            byte[] buff = new byte[2048];
+            int b = bufferedInputStream.read(buff);
+            while (b != -1) {
+                bufferedOutputStream.write(buff);
+                b = bufferedInputStream.read(buff);
+            }
+            bufferedOutputStream.close();
+            fileOutputStream.close();
+            bufferedInputStream.close();
+            inputStream.close();
         }
-        bufferedOutputStream.close();
-        fileOutputStream.close();
-        bufferedInputStream.close();
-        inputStream.close();
         return tmpFile;
     }
 

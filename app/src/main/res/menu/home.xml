@@ -10,5 +10,10 @@
             android:icon="@drawable/ic_sync_white"
             android:title="@string/menu_sync_feed"
             app:showAsAction="withText|ifRoom" />
+        <item
+            android:id="@+id/menu_export_opml"
+            android:icon="@drawable/ic_sync_white"
+            android:title="@string/menu_export_opml"
+            app:showAsAction="collapseActionView|withText" />
     </group>
 </menu>

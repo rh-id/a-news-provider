@@ -3,7 +3,7 @@
     <string name="appbar_title_home">Home</string>
     <string name="nav_header_title">Android Studio</string>
     <string name="nav_header_subtitle">android.studio@android.com</string>
-    <string name="menu_sync_feed">Sync feed</string>
+    <string name="menu_sync_feed">Sync Feed</string>
     <string name="toast_back_press_exit">Press BACK again to exit</string>
     <string name="new_feed">New feed</string>
     <string name="hint_feed_url">Feed URL</string>
@@ -52,6 +52,10 @@
     <string name="error_failed_to_open_file">Failed to open file</string>
     <string name="error_parsing_opml_file">Error parsing OPML file</string>
     <string name="added_rss">Added RSS: %d</string>
+    <string name="error_exporting_rss_channel">Error exporting feed: %s</string>
+    <string name="menu_export_opml">Export My Feed</string>
+    <string name="error_exporting_opml">Error exporting feed</string>
+    <string name="share_opml">Share feed</string>
 
     <string-array name="array_filter_by">
         <item>None</item>
