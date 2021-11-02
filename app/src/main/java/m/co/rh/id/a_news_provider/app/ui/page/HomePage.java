@@ -3,6 +3,7 @@ package m.co.rh.id.a_news_provider.app.ui.page;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
+import android.net.Uri;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -11,10 +12,16 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+import androidx.work.Data;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkManager;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
+
+import java.io.File;
+import java.util.concurrent.ExecutorService;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import m.co.rh.id.a_news_provider.R;
@@ -28,8 +35,11 @@ import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.NewRssChannelSV;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.RssChannelListSV;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.RssItemListSV;
+import m.co.rh.id.a_news_provider.app.workmanager.ConstantsKey;
+import m.co.rh.id.a_news_provider.app.workmanager.OpmlParseWorker;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
+import m.co.rh.id.a_news_provider.base.provider.FileProvider;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.component.INavigator;
@@ -195,7 +205,8 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
         }
 
         // Handle shortcut
-        String intentAction = activity.getIntent().getAction();
+        Intent intent = activity.getIntent();
+        String intentAction = intent.getAction();
         if (Shortcuts.NEW_RSS_CHANNEL_ACTION.equals(intentAction)) {
             fab.performClick();
         } else if (Intent.ACTION_SEND.equals(intentAction)) {
@@ -203,6 +214,28 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
                     .getStringExtra(Intent.EXTRA_TEXT);
             mNewRssChannelSV.setFeedUrl(sharedText);
             fab.performClick();
+        } else if (Intent.ACTION_VIEW.equals(intentAction)) {
+            Uri fileData = intent.getData();
+            provider.get(ExecutorService.class)
+                    .execute(() -> {
+                        try {
+                            File file = provider.get(FileProvider.class)
+                                    .createTempFile("Feed.opml", fileData);
+                            OneTimeWorkRequest oneTimeWorkRequest =
+                                    new OneTimeWorkRequest.Builder(OpmlParseWorker.class)
+                                            .setInputData(new Data.Builder()
+                                                    .putString(ConstantsKey.KEY_FILE_ABSOLUTE_PATH,
+                                                            file.getAbsolutePath())
+                                                    .build())
+                                            .build();
+                            provider.get(WorkManager.class)
+                                    .enqueue(oneTimeWorkRequest);
+                        } catch (Throwable throwable) {
+                            provider.get(ILogger.class)
+                                    .e(TAG, activity.getString(R.string.error_failed_to_open_file)
+                                            , throwable);
+                        }
+                    });
         }
         return view;
     }

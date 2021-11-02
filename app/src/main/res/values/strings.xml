@@ -49,6 +49,9 @@
     <string name="error_failed_to_sync_some_rss">Failed to sync some RSS</string>
     <string name="version">Version:</string>
     <string name="filter_by">Filter by:</string>
+    <string name="error_failed_to_open_file">Failed to open file</string>
+    <string name="error_parsing_opml_file">Error parsing OPML file</string>
+    <string name="added_rss">Added RSS: %d</string>
 
     <string-array name="array_filter_by">
         <item>None</item>

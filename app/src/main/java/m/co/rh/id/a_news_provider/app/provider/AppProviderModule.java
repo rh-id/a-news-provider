@@ -11,6 +11,7 @@ import m.co.rh.id.a_news_provider.app.provider.command.RenameRssFeedCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.SyncRssCmd;
 import m.co.rh.id.a_news_provider.app.provider.notifier.DeviceStatusNotifier;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
+import m.co.rh.id.a_news_provider.app.provider.parser.OpmlParser;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.a_news_provider.base.provider.BaseProviderModule;
@@ -41,6 +42,7 @@ public class AppProviderModule implements ProviderModule {
         providerRegistry.registerAsync(AppSharedPreferences.class, () -> new AppSharedPreferences(provider, context));
         providerRegistry.registerLazy(RssRequestFactory.class, () -> new RssRequestFactory(provider, context));
         providerRegistry.registerAsync(RssChangeNotifier.class, () -> new RssChangeNotifier(provider, context));
+        providerRegistry.registerLazy(OpmlParser.class, () -> new OpmlParser(provider, context));
         providerRegistry.registerFactory(PagedRssItemsCmd.class, () -> new PagedRssItemsCmd(provider));
         providerRegistry.registerFactory(NewRssChannelCmd.class, () -> new NewRssChannelCmd(provider, context));
         providerRegistry.registerFactory(RenameRssFeedCmd.class, () -> new RenameRssFeedCmd(provider, context));
