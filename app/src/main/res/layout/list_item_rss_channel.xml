@@ -7,11 +7,9 @@
 
     <com.android.volley.toolbox.NetworkImageView
         android:id="@+id/network_image_view_icon"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
         android:layout_margin="@dimen/text_margin"
-        android:minWidth="32dp"
-        android:minHeight="32dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -22,9 +20,9 @@
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/text_margin"
         android:maxWidth="240dp"
+        app:layout_constraintBottom_toBottomOf="@id/network_image_view_icon"
         app:layout_constraintStart_toEndOf="@id/network_image_view_icon"
         app:layout_constraintTop_toTopOf="@id/network_image_view_icon"
-        app:layout_constraintBottom_toBottomOf="@id/network_image_view_icon"
         tools:text="News 1" />
 
     <com.google.android.material.textfield.TextInputEditText
