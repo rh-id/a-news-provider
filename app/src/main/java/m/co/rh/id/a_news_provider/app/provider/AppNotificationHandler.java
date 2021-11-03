@@ -51,23 +51,11 @@ public class AppNotificationHandler {
 
     public void postRssSyncNotification(List<RssModel> rssModels) {
         createRssSyncNotificationChannel();
-        int totalUnread = 0;
         if (rssModels != null && !rssModels.isEmpty()) {
             for (RssModel rssModel :
                     rssModels) {
-                AndroidNotification androidNotification = new AndroidNotification();
-                androidNotification.groupKey = GROUP_KEY_RSS_SYNC;
-                androidNotification.refId = rssModel.getRssChannel().id;
-                mAndroidNotificationDao.get().insertNotification(androidNotification);
-                Intent receiverIntent = new Intent(mAppContext, MainActivity.class);
-                receiverIntent.putExtra(KEY_INT_REQUEST_ID, (Integer) androidNotification.requestId);
-                PendingIntent pendingIntent = PendingIntent.getActivity(mAppContext, androidNotification.requestId, receiverIntent,
-                        PendingIntent.FLAG_IMMUTABLE);
-                Intent deleteIntent = new Intent(mAppContext, NotificationDeleteReceiver.class);
-                deleteIntent.putExtra(KEY_INT_REQUEST_ID, (Integer) androidNotification.requestId);
-                PendingIntent deletePendingIntent = PendingIntent.getBroadcast(mAppContext, androidNotification.requestId, deleteIntent,
-                        PendingIntent.FLAG_IMMUTABLE);
                 List<RssItem> rssItemList = rssModel.getRssItems();
+                int totalUnread = 0;
                 if (rssItemList != null && !rssItemList.isEmpty()) {
                     for (RssItem rssItem : rssItemList) {
                         if (!rssItem.isRead) {
@@ -75,6 +63,21 @@ public class AppNotificationHandler {
                         }
                     }
                 }
+                if (totalUnread == 0) {
+                    continue;
+                }
+                AndroidNotification androidNotification = new AndroidNotification();
+                androidNotification.groupKey = GROUP_KEY_RSS_SYNC;
+                androidNotification.refId = rssModel.getRssChannel().id;
+                mAndroidNotificationDao.get().insertNotification(androidNotification);
+                Intent receiverIntent = new Intent(mAppContext, MainActivity.class);
+                receiverIntent.putExtra(KEY_INT_REQUEST_ID, (Integer) androidNotification.requestId);
+                PendingIntent pendingIntent = PendingIntent.getActivity(mAppContext, androidNotification.requestId, receiverIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT);
+                Intent deleteIntent = new Intent(mAppContext, NotificationDeleteReceiver.class);
+                deleteIntent.putExtra(KEY_INT_REQUEST_ID, (Integer) androidNotification.requestId);
+                PendingIntent deletePendingIntent = PendingIntent.getBroadcast(mAppContext, androidNotification.requestId, deleteIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT);
                 String title = mAppContext.getString(R.string.notification_rss_sync_title, rssModel.getRssChannel().feedName);
                 String content = mAppContext.getString(R.string.notification_rss_sync_content, totalUnread);
                 NotificationCompat.Builder builder = new NotificationCompat.Builder(mAppContext, CHANNEL_ID_RSS_SYNC)
@@ -96,7 +99,7 @@ public class AppNotificationHandler {
                     NotificationCompat.Builder summaryBuilder = new NotificationCompat.Builder(mAppContext, CHANNEL_ID_RSS_SYNC)
                             .setSmallIcon(R.drawable.ic_notification_launcher)
                             .setColorized(true)
-                            .setColor(mAppContext.getResources().getColor(R.color.orange_600))
+                            .setColor(mAppContext.getColor(R.color.orange_600))
                             .setContentText(mAppContext.getString(R.string.notification_rss_sync_content_summary, rssModels.size()))
                             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                             .setGroup(GROUP_KEY_RSS_SYNC)
