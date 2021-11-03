@@ -6,14 +6,19 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.os.Handler;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.ImageLoader;
+
 import java.io.Serializable;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Consumer;
 
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.MainActivity;
@@ -40,6 +45,8 @@ public class AppNotificationHandler {
     private final ProviderValue<RssChangeNotifier> mRssChangeNotifier;
     private final ProviderValue<AndroidNotificationDao> mAndroidNotificationDao;
     private final ProviderValue<RssDao> mRssDao;
+    private final ProviderValue<Handler> mHandler;
+    private final ProviderValue<ImageLoader> mImageLoader;
 
     public AppNotificationHandler(Provider provider, Context context) {
         mAppContext = context.getApplicationContext();
@@ -47,13 +54,17 @@ public class AppNotificationHandler {
         mRssChangeNotifier = provider.lazyGet(RssChangeNotifier.class);
         mAndroidNotificationDao = provider.lazyGet(AndroidNotificationDao.class);
         mRssDao = provider.lazyGet(RssDao.class);
+        mHandler = provider.lazyGet(Handler.class);
+        mImageLoader = provider.lazyGet(ImageLoader.class);
     }
 
     public void postRssSyncNotification(List<RssModel> rssModels) {
         createRssSyncNotificationChannel();
+        int totalNotification = 0;
         if (rssModels != null && !rssModels.isEmpty()) {
             for (RssModel rssModel :
                     rssModels) {
+                RssChannel rssChannel = rssModel.getRssChannel();
                 List<RssItem> rssItemList = rssModel.getRssItems();
                 int totalUnread = 0;
                 if (rssItemList != null && !rssItemList.isEmpty()) {
@@ -66,18 +77,23 @@ public class AppNotificationHandler {
                 if (totalUnread == 0) {
                     continue;
                 }
+                totalNotification++;
                 AndroidNotification androidNotification = new AndroidNotification();
                 androidNotification.groupKey = GROUP_KEY_RSS_SYNC;
                 androidNotification.refId = rssModel.getRssChannel().id;
                 mAndroidNotificationDao.get().insertNotification(androidNotification);
                 Intent receiverIntent = new Intent(mAppContext, MainActivity.class);
                 receiverIntent.putExtra(KEY_INT_REQUEST_ID, (Integer) androidNotification.requestId);
+                int intentFlag = PendingIntent.FLAG_UPDATE_CURRENT;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    intentFlag = PendingIntent.FLAG_IMMUTABLE;
+                }
                 PendingIntent pendingIntent = PendingIntent.getActivity(mAppContext, androidNotification.requestId, receiverIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT);
+                        intentFlag);
                 Intent deleteIntent = new Intent(mAppContext, NotificationDeleteReceiver.class);
                 deleteIntent.putExtra(KEY_INT_REQUEST_ID, (Integer) androidNotification.requestId);
                 PendingIntent deletePendingIntent = PendingIntent.getBroadcast(mAppContext, androidNotification.requestId, deleteIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT);
+                        intentFlag);
                 String title = mAppContext.getString(R.string.notification_rss_sync_title, rssModel.getRssChannel().feedName);
                 String content = mAppContext.getString(R.string.notification_rss_sync_content, totalUnread);
                 NotificationCompat.Builder builder = new NotificationCompat.Builder(mAppContext, CHANNEL_ID_RSS_SYNC)
@@ -90,12 +106,32 @@ public class AppNotificationHandler {
                         .setContentIntent(pendingIntent)
                         .setDeleteIntent(deletePendingIntent)
                         .setGroup(GROUP_KEY_RSS_SYNC)
-                        .setAutoCancel(false);
+                        .setAutoCancel(true);
                 NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(mAppContext);
-                notificationManagerCompat.notify(GROUP_KEY_RSS_SYNC, androidNotification.requestId, builder.build());
+                Consumer<NotificationCompat.Builder> postNotification = builder1 ->
+                        notificationManagerCompat.notify(GROUP_KEY_RSS_SYNC,
+                                androidNotification.requestId,
+                                builder1.build());
+                if (rssChannel.imageUrl != null && !rssChannel.imageUrl.isEmpty()) {
+                    mHandler.get().post(() ->
+                            mImageLoader.get().get(rssChannel.imageUrl, new ImageLoader.ImageListener() {
+                                @Override
+                                public void onResponse(ImageLoader.ImageContainer response, boolean isImmediate) {
+                                    builder.setLargeIcon(response.getBitmap());
+                                    postNotification.accept(builder);
+                                }
+
+                                @Override
+                                public void onErrorResponse(VolleyError error) {
+                                    postNotification.accept(builder);
+                                }
+                            }));
+                } else {
+                    postNotification.accept(builder);
+                }
             }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-                if (rssModels.size() > 1) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                if (totalNotification > 0) {
                     NotificationCompat.Builder summaryBuilder = new NotificationCompat.Builder(mAppContext, CHANNEL_ID_RSS_SYNC)
                             .setSmallIcon(R.drawable.ic_notification_launcher)
                             .setColorized(true)
@@ -103,8 +139,7 @@ public class AppNotificationHandler {
                             .setContentText(mAppContext.getString(R.string.notification_rss_sync_content_summary, rssModels.size()))
                             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                             .setGroup(GROUP_KEY_RSS_SYNC)
-                            .setGroupSummary(true)
-                            .setAutoCancel(false);
+                            .setGroupSummary(true);
                     NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(mAppContext);
                     notificationManagerCompat.notify(GROUP_KEY_RSS_SYNC, GROUP_SUMMARY_ID_RSS_SYNC, summaryBuilder.build());
                 }
