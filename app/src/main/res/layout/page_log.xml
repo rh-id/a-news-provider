@@ -6,10 +6,10 @@
 
     <com.google.android.material.progressindicator.CircularProgressIndicator
         android:id="@+id/progress_circular"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
         android:layout_gravity="center"
-        android:visibility="visible" />
+        android:indeterminate="true" />
 
     <include
         android:id="@+id/no_record"
@@ -17,6 +17,8 @@
         android:visibility="gone" />
 
     <ScrollView
+        android:id="@+id/scroll_view"
+        android:visibility="gone"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
@@ -24,8 +26,7 @@
             android:id="@+id/text_content"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="@dimen/text_margin"
-            android:visibility="gone" />
+            android:layout_margin="@dimen/text_margin" />
     </ScrollView>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton

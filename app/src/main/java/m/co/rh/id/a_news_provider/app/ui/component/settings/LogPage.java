@@ -4,13 +4,14 @@ import android.app.Activity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.util.Scanner;
+import java.io.FileReader;
 import java.util.concurrent.ExecutorService;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
@@ -46,6 +47,7 @@ public class LogPage extends StatefulView<Activity> {
                 container, false);
         ProgressBar progressBar = view.findViewById(R.id.progress_circular);
         View noRecord = view.findViewById(R.id.no_record);
+        ScrollView scrollView = view.findViewById(R.id.scroll_view);
         TextView textView = view.findViewById(R.id.text_content);
         FloatingActionButton fab = view.findViewById(R.id.fab);
         Provider provider = BaseApplication.of(activity).getProvider();
@@ -70,9 +72,12 @@ public class LogPage extends StatefulView<Activity> {
                                 return "";
                             } else {
                                 StringBuilder stringBuilder = new StringBuilder();
-                                Scanner scanner = new Scanner(new FileInputStream(file));
-                                while (scanner.hasNextLine()) {
-                                    stringBuilder.append(scanner.nextLine());
+                                BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
+                                char[] buff = new char[2048];
+                                int b = bufferedReader.read(buff);
+                                while (b != -1) {
+                                    stringBuilder.append(buff);
+                                    b = bufferedReader.read(buff);
                                 }
                                 return stringBuilder.toString();
                             }
@@ -83,11 +88,12 @@ public class LogPage extends StatefulView<Activity> {
                             textView.setText(s);
                             if (s.isEmpty()) {
                                 noRecord.setVisibility(View.VISIBLE);
-                                textView.setVisibility(View.GONE);
+                                scrollView.setVisibility(View.GONE);
                                 fab.setVisibility(View.GONE);
                             } else {
                                 noRecord.setVisibility(View.GONE);
-                                textView.setVisibility(View.VISIBLE);
+                                scrollView.setVisibility(View.VISIBLE);
+                                scrollView.post(() -> scrollView.fullScroll(View.FOCUS_DOWN));
                                 fab.setVisibility(View.VISIBLE);
                             }
                         }));
