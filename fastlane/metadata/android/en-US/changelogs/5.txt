@@ -1,0 +1,4 @@
+Release 1.1.1+5
+
+Fixes:
+* Log page in settings not display properly
