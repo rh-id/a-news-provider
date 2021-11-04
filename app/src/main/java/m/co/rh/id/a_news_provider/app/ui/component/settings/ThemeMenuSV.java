@@ -24,16 +24,14 @@ public class ThemeMenuSV extends StatefulView<Activity> {
         RadioGroup radioGroup = view.findViewById(R.id.radioGroup);
         radioGroup.check(selectedRadioId);
         radioGroup.setOnCheckedChangeListener((radioGroup1, i) -> {
-            if (i == R.id.radio_system) {
-                appSharedPreferences
-                        .setSelectedTheme(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
-            } else if (i == R.id.radio_light) {
-                appSharedPreferences
-                        .setSelectedTheme(AppCompatDelegate.MODE_NIGHT_NO);
+            int selectedTheme = AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM;
+            if (i == R.id.radio_light) {
+                selectedTheme = AppCompatDelegate.MODE_NIGHT_NO;
             } else if (i == R.id.radio_dark) {
-                appSharedPreferences
-                        .setSelectedTheme(AppCompatDelegate.MODE_NIGHT_YES);
+                selectedTheme = AppCompatDelegate.MODE_NIGHT_YES;
             }
+            appSharedPreferences
+                    .setSelectedTheme(selectedTheme);
         });
         return view;
     }

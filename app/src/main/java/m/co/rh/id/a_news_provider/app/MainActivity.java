@@ -1,10 +1,11 @@
 package m.co.rh.id.a_news_provider.app;
 
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.Bundle;
-import android.util.Log;
 
 import androidx.activity.OnBackPressedCallback;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -45,5 +46,13 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         // this is required to let navigator handle onActivityResult
         BaseApplication.of(this).getNavigator(this).onActivityResult(requestCode, resultCode, data);
+    }
+
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // using AppCompatDelegate.setDefaultNightMode trigger this method
+        // but not triggering Application.onConfigurationChanged
+        BaseApplication.of(this).getNavigator(this).reBuildAllRoute();
     }
 }
