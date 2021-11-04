@@ -1,6 +1,9 @@
 package m.co.rh.id.a_news_provider.app;
 
 import android.app.Activity;
+import android.content.Context;
+
+import androidx.multidex.MultiDex;
 
 import java.io.File;
 import java.util.HashMap;
@@ -44,6 +47,12 @@ public class MainApplication extends BaseApplication {
         mMainNavigator = navigator;
         registerActivityLifecycleCallbacks(navigator);
         registerComponentCallbacks(navigator);
+    }
+
+    @Override
+    protected void attachBaseContext(Context base) {
+        super.attachBaseContext(base);
+        MultiDex.install(this);
     }
 
     @Override
