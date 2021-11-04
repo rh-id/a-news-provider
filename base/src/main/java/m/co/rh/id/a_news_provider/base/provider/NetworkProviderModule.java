@@ -2,6 +2,7 @@ package m.co.rh.id.a_news_provider.base.provider;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.os.Build;
 import android.util.LruCache;
 
 import androidx.annotation.Nullable;
@@ -9,6 +10,7 @@ import androidx.annotation.Nullable;
 import com.android.volley.Cache;
 import com.android.volley.Network;
 import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.BaseHttpStack;
 import com.android.volley.toolbox.BasicNetwork;
 import com.android.volley.toolbox.DiskBasedCache;
 import com.android.volley.toolbox.HurlStack;
@@ -16,6 +18,10 @@ import com.android.volley.toolbox.ImageLoader;
 
 import java.io.File;
 
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLSocketFactory;
+
+import m.co.rh.id.a_news_provider.base.volley.TlsEnabledSSLSocketFactory;
 import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderModule;
 import m.co.rh.id.aprovider.ProviderRegistry;
@@ -28,7 +34,16 @@ public class NetworkProviderModule implements ProviderModule {
     @Override
     public void provides(Context context, ProviderRegistry providerRegistry, Provider provider) {
         Context appContext = context.getApplicationContext();
-        providerRegistry.registerLazy(Network.class, () -> new BasicNetwork(new HurlStack()));
+        providerRegistry.registerLazy(BaseHttpStack.class, () -> {
+            SSLSocketFactory sslSocketFactory = null;
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT_WATCH) {
+                SocketFactory socketFactory = SSLSocketFactory.getDefault();
+                sslSocketFactory =
+                        new TlsEnabledSSLSocketFactory((SSLSocketFactory) socketFactory);
+            }
+            return new HurlStack(null, sslSocketFactory);
+        });
+        providerRegistry.registerLazy(Network.class, () -> new BasicNetwork(provider.get(BaseHttpStack.class)));
         providerRegistry.registerLazy(Cache.class, () -> new DiskBasedCache(new File(appContext.getCacheDir(), "volley"),
                 1024 * 20480));
         providerRegistry.registerLazy(RequestQueue.class, () -> {
