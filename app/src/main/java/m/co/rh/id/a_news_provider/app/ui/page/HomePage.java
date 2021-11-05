@@ -59,6 +59,7 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
     private AppBarSV mAppBarSV;
     private boolean mIsDrawerOpen;
     private boolean mIsNewRssChannelDialogShow;
+    private transient AlertDialog mDialog;
     private RssItemListSV mRssItemListSV;
     private NewRssChannelSV mNewRssChannelSV;
     private RssChannelListSV mRssChannelListSV;
@@ -205,6 +206,10 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
         ViewGroup containerListNews = view.findViewById(R.id.container_list_news);
         containerListNews.addView(mRssItemListSV.buildView(activity, container));
         if (mIsNewRssChannelDialogShow) {
+            if (mDialog != null) {
+                mDialog.dismiss();
+                mDialog = null;
+            }
             showNewRssChannelDialog(activity, container);
         }
 
@@ -275,14 +280,15 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
             mIsNewRssChannelDialogShow = false;
             mNewRssChannelSV.clearText(dialogView);
         });
-        AlertDialog alertDialog = alertBuilder.create();
-        alertDialog.show();
+        mDialog = alertBuilder.create();
+        mDialog.show();
         mIsNewRssChannelDialogShow = true;
-        Button positiveButton = alertDialog.getButton(AlertDialog.BUTTON_POSITIVE);
+        Button positiveButton = mDialog.getButton(AlertDialog.BUTTON_POSITIVE);
         positiveButton.setOnClickListener(v -> {
             if (mNewRssChannelSV.isValid()) {
                 mNewRssChannelSV.addNewFeed();
-                alertDialog.dismiss();
+                mDialog.dismiss();
+                mDialog = null;
                 mIsNewRssChannelDialogShow = false;
             }
         });
