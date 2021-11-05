@@ -60,6 +60,7 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
     private boolean mIsDrawerOpen;
     private boolean mIsNewRssChannelDialogShow;
     private transient AlertDialog mDialog;
+    private transient Runnable mPendingDialogCmd;
     private RssItemListSV mRssItemListSV;
     private NewRssChannelSV mNewRssChannelSV;
     private RssChannelListSV mRssChannelListSV;
@@ -205,17 +206,15 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
 
         ViewGroup containerListNews = view.findViewById(R.id.container_list_news);
         containerListNews.addView(mRssItemListSV.buildView(activity, container));
-        if (mIsNewRssChannelDialogShow) {
-            if (mDialog != null) {
-                mDialog.dismiss();
-                mDialog = null;
-            }
-            showNewRssChannelDialog(activity, container);
-        }
 
         FloatingActionButton fab = view.findViewById(R.id.fab);
         fab.setOnClickListener(view1 -> showNewRssChannelDialog(activity, container));
-
+        if (mDialog != null) {
+            mDialog.dismiss();
+        }
+        if (mIsNewRssChannelDialogShow) {
+            fab.performClick();
+        }
         SwipeRefreshLayout swipeRefreshLayout = view.findViewById(R.id.container_swipe_refresh);
         swipeRefreshLayout.setOnRefreshListener(() -> mRssItemListSV.refresh());
         if (mRssItemListSV.observeRssItems() != null) {
@@ -270,6 +269,15 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
     }
 
     private void showNewRssChannelDialog(Activity activity, ViewGroup container) {
+        // queue guard to ensure only one dialog can be displayed at a time
+        if (mDialog != null) {
+            mPendingDialogCmd = () -> {
+                showNewRssChannelDialog(activity, container);
+                mPendingDialogCmd = null;
+            };
+            return;
+        }
+        mIsNewRssChannelDialogShow = true;
         View dialogView = mNewRssChannelSV.buildView(activity, container);
         MaterialAlertDialogBuilder alertBuilder = new MaterialAlertDialogBuilder(activity);
         alertBuilder.setView(dialogView);
@@ -277,12 +285,24 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
             //leave blank
         });
         alertBuilder.setNegativeButton(android.R.string.cancel, (dialogInterface, i) -> {
-            mIsNewRssChannelDialogShow = false;
             mNewRssChannelSV.clearText(dialogView);
+        });
+        alertBuilder.setOnCancelListener(dialog -> {
+            mIsNewRssChannelDialogShow = false;
+            mDialog = null;
+            if (mPendingDialogCmd != null) {
+                mPendingDialogCmd.run();
+            }
+        });
+        alertBuilder.setOnDismissListener(dialog -> {
+            mIsNewRssChannelDialogShow = false;
+            mDialog = null;
+            if (mPendingDialogCmd != null) {
+                mPendingDialogCmd.run();
+            }
         });
         mDialog = alertBuilder.create();
         mDialog.show();
-        mIsNewRssChannelDialogShow = true;
         Button positiveButton = mDialog.getButton(AlertDialog.BUTTON_POSITIVE);
         positiveButton.setOnClickListener(v -> {
             if (mNewRssChannelSV.isValid()) {
@@ -297,6 +317,10 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
     @Override
     public void dispose(Activity activity) {
         super.dispose(activity);
+        mPendingDialogCmd = null;
+        if (mDialog != null) {
+            mDialog.dismiss();
+        }
         mAppBarSV.dispose(activity);
         mAppBarSV = null;
         mRssItemListSV.dispose(activity);
