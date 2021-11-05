@@ -40,11 +40,7 @@ public class StatefulViewArrayAdapter extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        View currentView = convertView;
-        if (currentView == null) {
-            StatefulView statefulView = getItem(position);
-            currentView = statefulView.buildView(UiUtils.getActivity(parent), parent);
-        }
-        return currentView;
+        StatefulView statefulView = getItem(position);
+        return statefulView.buildView(UiUtils.getActivity(parent), parent);
     }
 }
