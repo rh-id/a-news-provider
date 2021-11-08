@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -39,6 +41,7 @@ public class BaseProviderModule implements ProviderModule {
             threadPoolExecutor.prestartAllCoreThreads();
             return threadPoolExecutor;
         });
+        providerRegistry.register(ScheduledExecutorService.class, Executors.newSingleThreadScheduledExecutor());
         providerRegistry.register(Handler.class, new Handler(Looper.getMainLooper()));
         providerRegistry.register(FileProvider.class, new FileProvider(context));
         providerRegistry.registerAsync(ILogger.class, () -> {
