@@ -1,4 +1,4 @@
 <resources>
     <!--Allowed height to collapse on one hand mode-->
-    <dimen name="one_hand_collapsible_height">100dp</dimen>
+    <dimen name="one_hand_collapsible_height">120dp</dimen>
 </resources>

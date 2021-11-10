@@ -3,6 +3,7 @@ package m.co.rh.id.a_news_provider.app.ui.page;
 import android.app.Activity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 
 import java.util.ArrayList;
 
@@ -70,7 +71,10 @@ public class SettingsPage extends StatefulView<Activity> implements RequireNavig
         containerAppBar.addView(mAppBarSV.buildView(activity, container));
         ViewGroup content = view.findViewById(R.id.content);
         for (StatefulView statefulView : mStatefulViews) {
-            content.addView(statefulView.buildView(activity, content));
+            LinearLayout.LayoutParams lparams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
+            content.addView(statefulView.buildView(activity, content), lparams);
         }
         return view;
     }
