@@ -30,6 +30,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.constants.Routes;
 import m.co.rh.id.a_news_provider.app.constants.Shortcuts;
+import m.co.rh.id.a_news_provider.app.provider.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.app.provider.command.SyncRssCmd;
 import m.co.rh.id.a_news_provider.app.provider.notifier.DeviceStatusNotifier;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
@@ -89,8 +90,13 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
 
     @Override
     protected View createView(Activity activity, ViewGroup container) {
-        View view = activity.getLayoutInflater().inflate(R.layout.page_home, container, false);
         Provider provider = BaseApplication.of(activity).getProvider();
+        AppSharedPreferences appSharedPreferences = provider.get(AppSharedPreferences.class);
+        int layoutId = R.layout.page_home;
+        if (appSharedPreferences.isOneHandMode()) {
+            layoutId = R.layout.one_hand_mode_page_home;
+        }
+        View view = activity.getLayoutInflater().inflate(layoutId, container, false);
         prepareDisposer(provider);
         ILogger logger = provider.get(ILogger.class);
         SyncRssCmd syncRssCmd = provider.get(SyncRssCmd.class);

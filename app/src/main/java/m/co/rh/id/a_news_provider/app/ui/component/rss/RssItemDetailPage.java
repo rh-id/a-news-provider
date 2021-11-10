@@ -16,6 +16,7 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import m.co.rh.id.a_news_provider.R;
+import m.co.rh.id.a_news_provider.app.provider.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
@@ -48,8 +49,13 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
 
     @Override
     protected View createView(Activity activity, ViewGroup container) {
-        View view = activity.getLayoutInflater().inflate(R.layout.page_rss_item_detail, container, false);
+        int layoutId = R.layout.page_rss_item_detail;
         Provider provider = BaseApplication.of(activity).getProvider();
+        AppSharedPreferences appSharedPreferences = provider.get(AppSharedPreferences.class);
+        if (appSharedPreferences.isOneHandMode()) {
+            layoutId = R.layout.one_hand_mode_page_rss_item_detail;
+        }
+        View view = activity.getLayoutInflater().inflate(layoutId, container, false);
         prepareDisposer(provider);
         ViewGroup containerAppBar = view.findViewById(R.id.container_app_bar);
         containerAppBar.addView(mAppBarSV.buildView(activity, container));

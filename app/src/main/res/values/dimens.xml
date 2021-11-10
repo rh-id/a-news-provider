@@ -7,4 +7,6 @@
     <dimen name="nav_header_height">176dp</dimen>
     <dimen name="text_margin">16dp</dimen>
     <dimen name="text_nav_menu">16sp</dimen>
+    <!--Allowed height to collapse on one hand mode-->
+    <dimen name="one_hand_collapsible_height">0dp</dimen>
 </resources>

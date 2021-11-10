@@ -56,6 +56,8 @@
     <string name="menu_export_opml">Export My Feed</string>
     <string name="error_exporting_opml">Error exporting feed</string>
     <string name="share_opml">Share feed</string>
+    <string name="menu_one_hand_mode">App One Hand Mode</string>
+    <string name="menu_subtitle_one_hand_mode">Enable app built in one hand mode layout for easier use</string>
 
     <string-array name="array_filter_by">
         <item>None</item>

@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 
 import m.co.rh.id.a_news_provider.app.workmanager.ConstantsWork;
 import m.co.rh.id.a_news_provider.app.workmanager.PeriodicRssSyncWorker;
+import m.co.rh.id.anavigator.component.INavigator;
 import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderValue;
 
@@ -24,6 +25,7 @@ public class AppSharedPreferences {
     private ProviderValue<ExecutorService> mExecutorService;
     private ProviderValue<Handler> mHandler;
     private ProviderValue<WorkManager> mWorkManager;
+    private ProviderValue<INavigator> mNavigator;
     private SharedPreferences mSharedPreferences;
 
     private boolean mPeriodicSyncInit;
@@ -38,10 +40,14 @@ public class AppSharedPreferences {
     private int mSelectedTheme;
     private String mSelectedThemeKey;
 
+    private boolean mOneHandMode;
+    private String mOneHandModeKey;
+
     public AppSharedPreferences(Provider provider, Context context) {
         mExecutorService = provider.lazyGet(ExecutorService.class);
         mHandler = provider.lazyGet(Handler.class);
         mWorkManager = provider.lazyGet(WorkManager.class);
+        mNavigator = provider.lazyGet(INavigator.class);
         mSharedPreferences = context.getSharedPreferences(
                 SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE);
         initValue();
@@ -56,6 +62,8 @@ public class AppSharedPreferences {
                 + ".periodicSyncRssHour";
         mSelectedThemeKey = SHARED_PREFERENCES_NAME
                 + ".selectedTheme";
+        mOneHandModeKey = SHARED_PREFERENCES_NAME
+                + ".oneHandMode";
 
         boolean periodicSyncInit = mSharedPreferences.getBoolean(mPeriodicSyncInitKey, false);
         periodicSyncInit(periodicSyncInit);
@@ -72,6 +80,8 @@ public class AppSharedPreferences {
                 mSelectedThemeKey,
                 AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
         setSelectedTheme(selectedTheme);
+        boolean oneHandMode = mSharedPreferences.getBoolean(mOneHandModeKey, false);
+        oneHandMode(oneHandMode);
     }
 
     private void initPeriodicSync() {
@@ -148,5 +158,24 @@ public class AppSharedPreferences {
 
     public int getSelectedTheme() {
         return mSelectedTheme;
+    }
+
+    private void oneHandMode(boolean oneHandMode) {
+        mOneHandMode = oneHandMode;
+        mExecutorService.get().execute(() ->
+                mSharedPreferences.edit().putBoolean(mOneHandModeKey, oneHandMode)
+                        .commit());
+    }
+
+    public boolean isOneHandMode() {
+        return mOneHandMode;
+    }
+
+    public void setOneHandMode(boolean oneHandMode) {
+        oneHandMode(oneHandMode);
+        mHandler.get().post(() -> {
+            // refresh all route after one hand mode changed
+            mNavigator.get().reBuildAllRoute();
+        });
     }
 }
