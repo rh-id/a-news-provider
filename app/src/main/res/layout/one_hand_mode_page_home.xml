@@ -61,7 +61,7 @@
                 app:srcCompat="@drawable/ic_add_white" />
         </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
-        <androidx.appcompat.widget.LinearLayoutCompat
+        <androidx.coordinatorlayout.widget.CoordinatorLayout
             android:id="@+id/nav_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -69,39 +69,53 @@
             android:background="?attr/colorOnPrimary"
             android:orientation="vertical">
 
-            <FrameLayout
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/one_hand_collapsible_height"
-                android:background="?attr/colorSecondary" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/menu_settings"
-                style="@style/Theme.Anewsprovider.BorderlessMenuButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/settings"
-                app:icon="@drawable/ic_settings_black" />
-
-            <androidx.appcompat.widget.LinearLayoutCompat
+            <androidx.core.widget.NestedScrollView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:orientation="vertical">
+                app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-                <com.google.android.material.textview.MaterialTextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="@dimen/text_margin"
-                    android:text="@string/feeds"
-                    android:textSize="@dimen/text_nav_menu" />
-
-                <FrameLayout
-                    android:id="@+id/container_list_channel"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:layout_margin="@dimen/text_margin" />
-            </androidx.appcompat.widget.LinearLayoutCompat>
+                    android:orientation="vertical">
 
-        </androidx.appcompat.widget.LinearLayoutCompat>
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/menu_settings"
+                        style="@style/Theme.Anewsprovider.BorderlessMenuButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings"
+                        app:icon="@drawable/ic_settings_black" />
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="@dimen/text_margin"
+                        android:text="@string/feeds"
+                        android:textSize="@dimen/text_nav_menu" />
+
+                    <FrameLayout
+                        android:id="@+id/container_list_channel"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_margin="@dimen/text_margin" />
+                </LinearLayout>
+            </androidx.core.widget.NestedScrollView>
+
+            <com.google.android.material.appbar.AppBarLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <com.google.android.material.appbar.CollapsingToolbarLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/one_hand_collapsible_height"
+                    android:background="?attr/colorSecondary"
+                    app:layout_scrollFlags="scroll|snap" />
+
+            </com.google.android.material.appbar.AppBarLayout>
+
+        </androidx.coordinatorlayout.widget.CoordinatorLayout>
     </androidx.drawerlayout.widget.DrawerLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

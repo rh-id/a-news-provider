@@ -43,7 +43,7 @@
 
             <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="@dimen/one_hand_collapsible_height"
+                android:layout_height="100dp"
                 android:background="?attr/colorSecondary" />
 
             <com.google.android.material.button.MaterialButton
