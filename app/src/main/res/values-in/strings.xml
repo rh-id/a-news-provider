@@ -1,0 +1,64 @@
+<resources>
+    <string name="app_name">Penyedia Berita</string>
+    <string name="appbar_title_home">Beranda</string>
+    <string name="menu_sync_feed">Sinkron Feed</string>
+    <string name="toast_back_press_exit">Tekan KEMBALI lagi untuk keluar</string>
+    <string name="new_feed">Feed baru</string>
+    <string name="hint_feed_url">Feed URL</string>
+    <string name="add">Tambah</string>
+    <string name="no_record">Tidak ada data</string>
+    <string name="error_message">\"Error: %s\"</string>
+    <string name="invalid_url">URL tidak valid</string>
+    <string name="url_is_required">URL dibutuhkan</string>
+    <string name="unable_to_parse">Tidak dapat mengurai %s</string>
+    <string name="feed_added">Feed ditambah %s</string>
+    <string name="error_feed_add">Tambah feed error</string>
+    <string name="error_parse_data_from">Error mengurai data dari %s</string>
+    <string name="feeds">Feeds</string>
+    <string name="rename">Ganti nama</string>
+    <string name="delete">Hapus</string>
+    <string name="name_is_required">Nama dibutuhkan</string>
+    <string name="invalid_name">Nama tidak valid</string>
+    <string name="record_not_found">Data tidak ditemukan</string>
+    <string name="rename_feed_to">Ganti nama feed menjadi %s</string>
+    <string name="feed_sync_success">Sinkronisasi feed sukses</string>
+    <string name="error_feed_sync_failed">Sinkronisasi feed gagal</string>
+    <string name="error_rss_read">Gagal membaca : %s</string>
+    <string name="error_rss_channel_update">Gagal perbarui saluran : %s</string>
+    <string name="feed_new_pending_online">Feed akan ditambah ketika online</string>
+    <string name="feed_sync_pending_online">Feed akan disinkron ketika online</string>
+    <string name="device_status_offline">Kamu sekarang offline</string>
+    <string name="settings">Pengaturan</string>
+    <string name="licenses">Lisensi</string>
+    <string name="sync_every_x_hour">Sinkronisasi setiap %d jam</string>
+    <string name="notification_rss_sync_channel_name">Notifikasi sinkronisasi feed</string>
+    <string name="notification_rss_sync_channel_description">Memberi notifikasi ketika sinkronisasi feed selesai</string>
+    <string name="notification_rss_sync_title">%s telah diperbarui !</string>
+    <string name="notification_rss_sync_content">%d barang tidak terbaca</string>
+    <string name="notification_rss_sync_content_summary">Ada %d pembaruan</string>
+    <string name="follow_system">Ikuti sistem</string>
+    <string name="light_mode">Mode Terang</string>
+    <string name="dark_mode">Mode Gelap</string>
+    <string name="theme_setting">Pengaturan Tema</string>
+    <string name="url">Url</string>
+    <string name="log_file">Log File</string>
+    <string name="share_log_file">Bagi log file</string>
+    <string name="error_sharing_log_file">Error membagikan log file</string>
+    <string name="error_failed_to_sync_some_rss">Gagal sinkronisasi beberapa RSS</string>
+    <string name="version">Versi:</string>
+    <string name="filter_by">Filter menurut:</string>
+    <string name="error_failed_to_open_file">Gagal membuka file</string>
+    <string name="error_parsing_opml_file">Error mengurai OPML file</string>
+    <string name="added_rss">RSS bertambah: %d</string>
+    <string name="error_exporting_rss_channel">Error ekspor feed: %s</string>
+    <string name="menu_export_opml">Ekspor Feed Saya</string>
+    <string name="error_exporting_opml">Error mengekspor feed</string>
+    <string name="share_opml">Bagi feed</string>
+    <string name="menu_one_hand_mode">App Mode Satu Tangan</string>
+    <string name="menu_subtitle_one_hand_mode">Menyalakan tata letak satu tangan untuk memudahkan penggunaan</string>
+
+    <string-array name="array_filter_by">
+        <item>None</item>
+        <item>Unread</item>
+    </string-array>
+</resources>
