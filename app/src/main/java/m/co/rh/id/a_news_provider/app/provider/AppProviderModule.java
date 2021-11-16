@@ -38,17 +38,23 @@ import m.co.rh.id.aprovider.ProviderRegistry;
 
 public class AppProviderModule implements ProviderModule {
 
-    private Application application;
+    private Application mApplication;
+    private BaseProviderModule mBaseProviderModule;
+    private DatabaseProviderModule mDatabaseProviderModule;
+    private NetworkProviderModule mNetworkProviderModule;
 
     public AppProviderModule(Application application) {
-        this.application = application;
+        mApplication = application;
+        mBaseProviderModule = new BaseProviderModule();
+        mDatabaseProviderModule = new DatabaseProviderModule();
+        mNetworkProviderModule = new NetworkProviderModule();
     }
 
     @Override
     public void provides(Context context, ProviderRegistry providerRegistry, Provider provider) {
-        providerRegistry.registerModule(new BaseProviderModule());
-        providerRegistry.registerModule(new DatabaseProviderModule());
-        providerRegistry.registerModule(new NetworkProviderModule());
+        providerRegistry.registerModule(mBaseProviderModule);
+        providerRegistry.registerModule(mDatabaseProviderModule);
+        providerRegistry.registerModule(mNetworkProviderModule);
         providerRegistry.register(DeviceStatusNotifier.class, getDeviceStatusNotifier(context, provider));
         providerRegistry.registerLazy(AppNotificationHandler.class, () -> new AppNotificationHandler(provider, context));
         providerRegistry.registerFactory(RxDisposer.class, RxDisposer::new);
@@ -70,7 +76,7 @@ public class AppProviderModule implements ProviderModule {
     @NonNull
     private DeviceStatusNotifier getDeviceStatusNotifier(Context context, Provider provider) {
         DeviceStatusNotifier deviceStatusNotifier = new DeviceStatusNotifier(provider, context);
-        application.registerActivityLifecycleCallbacks(deviceStatusNotifier);
+        mApplication.registerActivityLifecycleCallbacks(deviceStatusNotifier);
         return deviceStatusNotifier;
     }
 
@@ -85,17 +91,19 @@ public class AppProviderModule implements ProviderModule {
         navMap.put(Routes.SETTINGS_PAGE, (args, activity) -> new SettingsPage());
         NavConfiguration.Builder<Activity, StatefulView> navBuilder =
                 new NavConfiguration.Builder<>(Routes.HOME_PAGE, navMap);
-        navBuilder.setSaveStateFile(new File(application.getCacheDir(),
+        navBuilder.setSaveStateFile(new File(mApplication.getCacheDir(),
                 "anavigator/Navigator.state"));
         NavConfiguration<Activity, StatefulView> navConfiguration = navBuilder.build();
         Navigator navigator = new Navigator(MainActivity.class, navConfiguration);
-        application.registerActivityLifecycleCallbacks(navigator);
-        application.registerComponentCallbacks(navigator);
+        mApplication.registerActivityLifecycleCallbacks(navigator);
+        mApplication.registerComponentCallbacks(navigator);
         return navigator;
     }
 
     @Override
     public void dispose(Context context, Provider provider) {
-        // Leave blank
+        mNetworkProviderModule.dispose(context, provider);
+        mDatabaseProviderModule.dispose(context, provider);
+        mBaseProviderModule.dispose(context, provider);
     }
 }

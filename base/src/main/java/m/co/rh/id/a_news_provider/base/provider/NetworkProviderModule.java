@@ -73,6 +73,6 @@ public class NetworkProviderModule implements ProviderModule {
 
     @Override
     public void dispose(Context context, Provider provider) {
-        // nothing to dispose
+        provider.get(RequestQueue.class).stop();
     }
 }
