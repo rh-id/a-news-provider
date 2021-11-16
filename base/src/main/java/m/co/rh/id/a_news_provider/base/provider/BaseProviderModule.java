@@ -44,7 +44,6 @@ public class BaseProviderModule implements ProviderModule {
         });
         providerRegistry.register(ScheduledExecutorService.class, Executors.newSingleThreadScheduledExecutor());
         providerRegistry.register(Handler.class, new Handler(Looper.getMainLooper()));
-        providerRegistry.register(FileProvider.class, new FileProvider(context));
         providerRegistry.registerAsync(ILogger.class, () -> {
             ILogger defaultLogger = new AndroidLogger(ILogger.ERROR);
             List<ILogger> loggerList = new ArrayList<>();
@@ -66,6 +65,7 @@ public class BaseProviderModule implements ProviderModule {
 
             return new CompositeLogger(loggerList);
         });
+        providerRegistry.register(FileProvider.class, new FileProvider(provider, context));
     }
 
     @Override

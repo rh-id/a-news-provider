@@ -56,6 +56,8 @@
     <string name="share_opml">Bagi feed</string>
     <string name="menu_one_hand_mode">App Mode Satu Tangan</string>
     <string name="menu_subtitle_one_hand_mode">Menyalakan tata letak satu tangan untuk memudahkan penggunaan</string>
+    <string name="ui_desc_floating_action_button_menu">Menu tombol aksi mengambang</string>
+    <string name="log_file_deleted">Log file dihapus</string>
 
     <string-array name="array_filter_by">
         <item>None</item>

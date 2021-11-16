@@ -53,7 +53,7 @@ public class AppBarSV extends StatefulView<Activity> implements RequireNavigator
         mRxDisposer.add("updateTitle",
                 mUpdateTitle.subscribe(toolbar::setTitle));
         if (mIsInitialRoute) {
-            toolbar.setNavigationIcon(R.drawable.ic_navigation_menu_white);
+            toolbar.setNavigationIcon(R.drawable.ic_menu_white);
             toolbar.setNavigationOnClickListener(mNavigationOnClickListener);
         } else {
             toolbar.setNavigationIcon(R.drawable.ic_navigation_arrow_back_white);

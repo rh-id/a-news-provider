@@ -12,16 +12,24 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
 
+import m.co.rh.id.alogger.ILogger;
+import m.co.rh.id.aprovider.Provider;
+import m.co.rh.id.aprovider.ProviderValue;
+
 /**
  * Class to provide files through this app
  */
 public class FileProvider {
+    private static final String TAG = FileProvider.class.getName();
+
     private Context mAppContext;
+    private ProviderValue<ILogger> mLogger;
     private File mLogFile;
     private File mTempFileRoot;
 
-    public FileProvider(Context context) {
+    public FileProvider(Provider provider, Context context) {
         mAppContext = context.getApplicationContext();
+        mLogger = provider.lazyGet(ILogger.class);
         File cacheDir = context.getCacheDir();
         mLogFile = new File(cacheDir, "alogger/app.log");
         mTempFileRoot = new File(cacheDir, "/tmp");
@@ -69,6 +77,17 @@ public class FileProvider {
             inputStream.close();
         }
         return tmpFile;
+    }
+
+    public void clearLogFile() {
+        if (mLogFile.exists()) {
+            mLogFile.delete();
+            try {
+                mLogFile.createNewFile();
+            } catch (Throwable throwable) {
+                mLogger.get().e(TAG, "Failed to create new file for log", throwable);
+            }
+        }
     }
 
     public File getLogFile() {
