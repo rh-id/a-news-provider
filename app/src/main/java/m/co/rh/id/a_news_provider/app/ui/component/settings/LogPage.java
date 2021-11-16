@@ -25,20 +25,12 @@ import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.a_news_provider.base.provider.FileProvider;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.StatefulView;
-import m.co.rh.id.anavigator.component.INavigator;
-import m.co.rh.id.anavigator.component.RequireNavigator;
 import m.co.rh.id.aprovider.Provider;
 
-public class LogPage extends StatefulView<Activity> implements RequireNavigator {
+public class LogPage extends StatefulView<Activity> {
     private static final String TAG = LogPage.class.getName();
 
     private transient RxDisposer mRxDisposer;
-    private transient INavigator mNavigator;
-
-    @Override
-    public void provideNavigator(INavigator navigator) {
-        mNavigator = navigator;
-    }
 
     @Override
     protected View createView(Activity activity, ViewGroup container) {
