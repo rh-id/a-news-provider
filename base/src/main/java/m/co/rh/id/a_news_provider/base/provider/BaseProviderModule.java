@@ -15,6 +15,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import m.co.rh.id.a_news_provider.base.BuildConfig;
 import m.co.rh.id.alogger.AndroidLogger;
 import m.co.rh.id.alogger.CompositeLogger;
 import m.co.rh.id.alogger.FileLogger;
@@ -49,7 +50,11 @@ public class BaseProviderModule implements ProviderModule {
             List<ILogger> loggerList = new ArrayList<>();
             loggerList.add(defaultLogger);
             try {
-                ILogger fileLogger = new FileLogger(ILogger.VERBOSE,
+                int logLevel = ILogger.INFO;
+                if (BuildConfig.DEBUG) {
+                    logLevel = ILogger.VERBOSE;
+                }
+                ILogger fileLogger = new FileLogger(logLevel,
                         provider.get(FileProvider.class).getLogFile()
                         , provider.get(ScheduledExecutorService.class));
                 loggerList.add(fileLogger);
