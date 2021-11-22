@@ -68,7 +68,7 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         TextView textView = view.findViewById(R.id.text_content);
         String desc = mRssItem.description;
         if (desc != null && !desc.isEmpty()) {
-            textView.setText(HtmlCompat.fromHtml(mRssItem.description, HtmlCompat.FROM_HTML_MODE_LEGACY));
+            textView.setText(HtmlCompat.fromHtml(desc, HtmlCompat.FROM_HTML_MODE_LEGACY));
             textView.setMovementMethod(LinkMovementMethod.getInstance());
         }
         if (mRssChannel == null) {
