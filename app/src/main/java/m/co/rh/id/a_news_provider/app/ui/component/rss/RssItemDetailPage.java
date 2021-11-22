@@ -66,8 +66,11 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
             activity.startActivity(browserIntent);
         });
         TextView textView = view.findViewById(R.id.text_content);
-        textView.setText(HtmlCompat.fromHtml(mRssItem.description, HtmlCompat.FROM_HTML_MODE_LEGACY));
-        textView.setMovementMethod(LinkMovementMethod.getInstance());
+        String desc = mRssItem.description;
+        if (desc != null && !desc.isEmpty()) {
+            textView.setText(HtmlCompat.fromHtml(mRssItem.description, HtmlCompat.FROM_HTML_MODE_LEGACY));
+            textView.setMovementMethod(LinkMovementMethod.getInstance());
+        }
         if (mRssChannel == null) {
             RssDao rssDao = provider.get(RssDao.class);
             mRxDisposer.add("getRssChannel",
