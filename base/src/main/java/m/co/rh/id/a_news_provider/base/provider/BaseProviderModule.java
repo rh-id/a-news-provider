@@ -49,7 +49,7 @@ public class BaseProviderModule implements ProviderModule {
             List<ILogger> loggerList = new ArrayList<>();
             loggerList.add(defaultLogger);
             try {
-                int logLevel = ILogger.INFO;
+                int logLevel = ILogger.DEBUG;
                 if (BuildConfig.DEBUG) {
                     logLevel = ILogger.VERBOSE;
                 }
@@ -79,14 +79,14 @@ public class BaseProviderModule implements ProviderModule {
         try {
             executorService.shutdown();
             boolean terminated = executorService.awaitTermination(1500, TimeUnit.MILLISECONDS);
-            iLogger.i(TAG, "ExecutorService shutdown? " + terminated);
+            iLogger.d(TAG, "ExecutorService shutdown? " + terminated);
         } catch (Throwable throwable) {
             iLogger.e(TAG, "Failed to shutdown ExecutorService", throwable);
         }
         try {
             scheduledExecutorService.shutdown();
             boolean terminated = scheduledExecutorService.awaitTermination(1500, TimeUnit.MILLISECONDS);
-            iLogger.i(TAG, "ScheduledExecutorService shutdown? " + terminated);
+            iLogger.d(TAG, "ScheduledExecutorService shutdown? " + terminated);
         } catch (Throwable throwable) {
             iLogger.e(TAG, "Failed to shutdown ScheduledExecutorService", throwable);
         }

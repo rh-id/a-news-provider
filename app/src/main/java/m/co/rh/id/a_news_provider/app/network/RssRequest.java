@@ -68,7 +68,7 @@ public class RssRequest extends Request<RssModel> {
                     skip(xpp);
                 }
             }
-            mLogger.get().d(TAG, "Parsed RssModel: " + rssModel);
+            mLogger.get().v(TAG, "Parsed RssModel: " + rssModel);
             if (rssModel == null) {
                 throw new XmlPullParserException(mAppContext.getString
                         (R.string.unable_to_parse, getUrl())
