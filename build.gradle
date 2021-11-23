@@ -22,8 +22,3 @@ allprojects {
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
-
-tasks.withType(JavaCompile) {
-    options.incremental = true // one flag, and things will get MUCH faster
-    options.fork = true //enable compilation in a separate daemon process
-}
