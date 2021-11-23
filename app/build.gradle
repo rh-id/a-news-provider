@@ -29,8 +29,8 @@ android {
         applicationId "m.co.rh.id.a_news_provider"
         minSdkVersion 16
         targetSdkVersion 31
-        versionCode 12
-        versionName "1.2.4"
+        versionCode 13
+        versionName "1.2.5"
         vectorDrawables.useSupportLibrary true
         multiDexEnabled = true
 
@@ -70,7 +70,7 @@ dependencies {
     implementation project(path: ':base')
 
     implementation 'com.google.android.material:material:1.4.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.1'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.2'
     implementation 'androidx.drawerlayout:drawerlayout:1.1.1'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'androidx.recyclerview:recyclerview:1.2.1'
@@ -81,7 +81,7 @@ dependencies {
     // (see https://github.com/ReactiveX/RxJava/releases for latest 3.x.x version)
     implementation 'io.reactivex.rxjava3:rxjava:3.0.0'
 
-    def work_version = "2.7.0"
+    def work_version = "2.7.1"
     implementation "androidx.work:work-runtime:$work_version"
 
     def multidex_version = "2.0.1"

@@ -1,0 +1,5 @@
+Release 1.2.5+13
+
+Fixes:
+* Log file
+* Update libraries
