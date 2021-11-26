@@ -1,6 +1,7 @@
 package m.co.rh.id.a_news_provider.app.ui.component.rss;
 
 import android.app.Activity;
+import android.content.Context;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
@@ -32,12 +33,16 @@ import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.aprovider.Provider;
 
-public class RssChannelItemSV extends StatefulView<Activity> {
+public class RssChannelItemSV extends StatefulView<Activity> implements View.OnClickListener, View.OnLongClickListener {
 
     private transient BehaviorSubject<Map.Entry<RssChannel, Integer>> mRssChannelCountSubject;
     private transient BehaviorSubject<Boolean> mEditModeSubject;
     private transient BehaviorSubject<Optional<String>> mImageUrlSubject;
+    private transient BehaviorSubject<String> mEditNameSubject;
     private transient RxDisposer mRxDisposer;
+    private transient Provider mProvider;
+    private transient RssChangeNotifier mRssChangeNotifier;
+    private transient RenameRssFeedCmd mRenameRssFeedCmd;
 
     public void setRssChannelCount(Map.Entry<RssChannel, Integer> rssChannelCount) {
         if (mRssChannelCountSubject == null) {
@@ -62,6 +67,9 @@ public class RssChannelItemSV extends StatefulView<Activity> {
         if (mImageUrlSubject == null) {
             mImageUrlSubject = BehaviorSubject.createDefault(Optional.empty());
         }
+        if (mEditNameSubject == null) {
+            mEditNameSubject = BehaviorSubject.createDefault("");
+        }
         View view = activity.getLayoutInflater().inflate(R.layout.list_item_rss_channel, container, false);
         NetworkImageView networkImageViewIcon = view.findViewById(R.id.network_image_view_icon);
         TextView textName = view.findViewById(R.id.text_name);
@@ -73,20 +81,13 @@ public class RssChannelItemSV extends StatefulView<Activity> {
         Button buttonLink = view.findViewById(R.id.button_link);
 
         Provider provider = BaseApplication.of(activity).getProvider();
+        mProvider = provider;
         prepareDisposer(provider);
-        RenameRssFeedCmd renameRssFeedCmd = provider.get(RenameRssFeedCmd.class);
-        RssChangeNotifier rssChangeNotifier = provider.get(RssChangeNotifier.class);
-        view.setOnClickListener(view1 -> {
-            Map.Entry<RssChannel, Integer> entry = mRssChannelCountSubject.getValue();
-            if (entry != null) {
-                rssChangeNotifier.selectRssChannel(entry.getKey());
-            }
-        });
+        mRenameRssFeedCmd = provider.get(RenameRssFeedCmd.class);
+        mRssChangeNotifier = provider.get(RssChangeNotifier.class);
+        view.setOnClickListener(this);
         view.setLongClickable(true);
-        view.setOnLongClickListener(view12 -> {
-            mEditModeSubject.onNext(!mEditModeSubject.getValue());
-            return true;
-        });
+        view.setOnLongClickListener(this);
         editName.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
@@ -100,39 +101,17 @@ public class RssChannelItemSV extends StatefulView<Activity> {
 
             @Override
             public void afterTextChanged(Editable editable) {
-                renameRssFeedCmd.validName(editable.toString());
+                String s = editable.toString();
+                mEditNameSubject.onNext(s);
+                mRenameRssFeedCmd.validName(s);
             }
         });
-        buttonRename.setOnClickListener(view13 ->
-        {
-            String feedName = editName.getText().toString();
-            if (renameRssFeedCmd.validName(feedName)) {
-                Map.Entry<RssChannel, Integer> rssChannelCount = mRssChannelCountSubject.getValue();
-                if (rssChannelCount != null) {
-                    renameRssFeedCmd.execute(rssChannelCount.getKey().id, feedName);
-                }
-            }
-            mEditModeSubject.onNext(!mEditModeSubject.getValue());
-        });
-        buttonDelete.setOnClickListener(view13 ->
-        {
-            Map.Entry<RssChannel, Integer> rssChannelCount = mRssChannelCountSubject.getValue();
-            if (rssChannelCount != null) {
-                rssChangeNotifier.deleteRssChannel(rssChannelCount.getKey());
-            }
-            mEditModeSubject.onNext(!mEditModeSubject.getValue());
-        });
-        buttonCancel.setOnClickListener(view13 ->
-                mEditModeSubject.onNext(!mEditModeSubject.getValue()));
-        buttonLink.setOnClickListener(v -> {
-            MaterialAlertDialogBuilder materialAlertDialogBuilder = new MaterialAlertDialogBuilder(activity);
-            materialAlertDialogBuilder.setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss());
-            materialAlertDialogBuilder.setTitle(activity.getString(R.string.url).toUpperCase());
-            materialAlertDialogBuilder.setMessage(mRssChannelCountSubject.getValue().getKey().url);
-            materialAlertDialogBuilder.create().show();
-        });
-        mRxDisposer.add("renameRssFeedCmd.getNameValidation",
-                renameRssFeedCmd.liveNameValidation()
+        buttonRename.setOnClickListener(this);
+        buttonDelete.setOnClickListener(this);
+        buttonCancel.setOnClickListener(this);
+        buttonLink.setOnClickListener(this);
+        mRxDisposer.add("mRenameRssFeedCmd.getNameValidation",
+                mRenameRssFeedCmd.liveNameValidation()
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(s -> {
                             if (!s.isEmpty()) {
@@ -142,8 +121,8 @@ public class RssChannelItemSV extends StatefulView<Activity> {
                             }
                         })
         );
-        mRxDisposer.add("renameRssFeedCmd.getRssChannel",
-                renameRssFeedCmd.liveRssChannel()
+        mRxDisposer.add("mRenameRssFeedCmd.getRssChannel",
+                mRenameRssFeedCmd.liveRssChannel()
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(rssChannel -> Toast
                                         .makeText(activity,
@@ -178,8 +157,9 @@ public class RssChannelItemSV extends StatefulView<Activity> {
         );
         mRxDisposer.add("rssChannelUiChange", Flowable.combineLatest(
                 Flowable.fromObservable(mRssChannelCountSubject, BackpressureStrategy.BUFFER)
+                        .debounce(100, TimeUnit.MILLISECONDS)
                         .observeOn(AndroidSchedulers.mainThread()),
-                rssChangeNotifier.selectedRssChannel()
+                mRssChangeNotifier.selectedRssChannel()
                         .observeOn(AndroidSchedulers.mainThread()),
                 (rssChannelCountEntry, rssChannelOptional) -> {
                     RssChannel rssChannel = rssChannelCountEntry.getKey();
@@ -224,15 +204,70 @@ public class RssChannelItemSV extends StatefulView<Activity> {
     }
 
     @Override
+    public void onClick(View view) {
+        int viewId = view.getId();
+        if (viewId == R.id.root_layout) {
+            Map.Entry<RssChannel, Integer> entry = mRssChannelCountSubject.getValue();
+            if (entry != null) {
+                mRssChangeNotifier.selectRssChannel(entry.getKey());
+            }
+        } else if (viewId == R.id.button_rename) {
+            String feedName = mEditNameSubject.getValue();
+            if (mRenameRssFeedCmd.validName(feedName)) {
+                Map.Entry<RssChannel, Integer> rssChannelCount = mRssChannelCountSubject.getValue();
+                if (rssChannelCount != null) {
+                    mRenameRssFeedCmd.execute(rssChannelCount.getKey().id, feedName);
+                }
+            }
+            mEditModeSubject.onNext(!mEditModeSubject.getValue());
+        } else if (viewId == R.id.button_delete) {
+            Map.Entry<RssChannel, Integer> rssChannelCount = mRssChannelCountSubject.getValue();
+            if (rssChannelCount != null) {
+                mRssChangeNotifier.deleteRssChannel(rssChannelCount.getKey());
+            }
+            mEditModeSubject.onNext(!mEditModeSubject.getValue());
+        } else if (viewId == R.id.button_cancel) {
+            mEditModeSubject.onNext(!mEditModeSubject.getValue());
+        } else if (viewId == R.id.button_link) {
+            Context context = view.getContext();
+            MaterialAlertDialogBuilder materialAlertDialogBuilder = new MaterialAlertDialogBuilder(context);
+            materialAlertDialogBuilder.setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss());
+            materialAlertDialogBuilder.setTitle(context.getString(R.string.url).toUpperCase());
+            materialAlertDialogBuilder.setMessage(mRssChannelCountSubject.getValue().getKey().url);
+            materialAlertDialogBuilder.create().show();
+        }
+    }
+
+    @Override
+    public boolean onLongClick(View view) {
+        int viewId = view.getId();
+        if (viewId == R.id.root_layout) {
+            mEditModeSubject.onNext(!mEditModeSubject.getValue());
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     public void dispose(Activity activity) {
         super.dispose(activity);
-        if (mRssChannelCountSubject != null) {
-            mRssChannelCountSubject.onComplete();
-            mRssChannelCountSubject = null;
-        }
         if (mRxDisposer != null) {
             mRxDisposer.dispose();
             mRxDisposer = null;
         }
+        if (mRssChannelCountSubject != null) {
+            mRssChannelCountSubject.onComplete();
+            mRssChannelCountSubject = null;
+        }
+        if (mEditModeSubject != null) {
+            mEditModeSubject.onComplete();
+            mEditModeSubject = null;
+        }
+        if (mImageUrlSubject != null) {
+            mImageUrlSubject.onComplete();
+            mImageUrlSubject = null;
+        }
+        mRssChangeNotifier = null;
+        mRenameRssFeedCmd = null;
     }
 }
