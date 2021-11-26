@@ -1,4 +1,4 @@
-package m.co.rh.id.a_news_provider.app.provider;
+package m.co.rh.id.a_news_provider.app.component;
 
 import android.content.Context;
 import android.content.SharedPreferences;

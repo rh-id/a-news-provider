@@ -28,9 +28,10 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import m.co.rh.id.a_news_provider.R;
+import m.co.rh.id.a_news_provider.app.component.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.app.constants.Routes;
 import m.co.rh.id.a_news_provider.app.constants.Shortcuts;
-import m.co.rh.id.a_news_provider.app.provider.AppSharedPreferences;
+import m.co.rh.id.a_news_provider.app.provider.StatefulViewProviderModule;
 import m.co.rh.id.a_news_provider.app.provider.command.SyncRssCmd;
 import m.co.rh.id.a_news_provider.app.provider.notifier.DeviceStatusNotifier;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
@@ -68,7 +69,7 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
     private RssChannel mSelectedRssChannel;
     private boolean mLastOnlineStatus;
     private transient long mLastBackPressMilis;
-    private transient RxDisposer mRxDisposer;
+    private transient Provider mSvProvider;
 
     @Override
     public void provideNavigator(INavigator navigator) {
@@ -91,15 +92,14 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
     @Override
     protected View createView(Activity activity, ViewGroup container) {
         Provider provider = BaseApplication.of(activity).getProvider();
+        mSvProvider = Provider.createProvider(activity, new StatefulViewProviderModule(activity));
         AppSharedPreferences appSharedPreferences = provider.get(AppSharedPreferences.class);
         int layoutId = R.layout.page_home;
         if (appSharedPreferences.isOneHandMode()) {
             layoutId = R.layout.one_hand_mode_page_home;
         }
         View view = activity.getLayoutInflater().inflate(layoutId, container, false);
-        prepareDisposer(provider);
         ILogger logger = provider.get(ILogger.class);
-        SyncRssCmd syncRssCmd = provider.get(SyncRssCmd.class);
         View menuSettings = view.findViewById(R.id.menu_settings);
         menuSettings.setOnClickListener(view12 -> mNavigator.push(Routes.SETTINGS_PAGE));
         DrawerLayout drawerLayout = view.findViewById(R.id.drawer);
@@ -117,7 +117,7 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
         mAppBarSV.setMenu(R.menu.home, item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.menu_sync_feed) {
-                syncRssCmd.execute();
+                mSvProvider.get(SyncRssCmd.class).execute();
                 return true;
             } else if (itemId == R.id.menu_export_opml) {
                 Context appContext = activity.getApplicationContext();
@@ -125,7 +125,7 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
                         Single.fromCallable(() -> provider.get(OpmlParser.class).exportOpml())
                                 .subscribeOn(Schedulers.from(provider.get(ExecutorService.class)))
                                 .observeOn(AndroidSchedulers.mainThread());
-                mRxDisposer.add("asyncExportOpml", fileSingle.subscribe(
+                mSvProvider.get(RxDisposer.class).add("asyncExportOpml", fileSingle.subscribe(
                         file -> UiUtils.shareFile(activity, file, activity.getString(R.string.share_opml)),
                         throwable -> provider.get(ILogger.class)
                                 .e(TAG, appContext.getString(R.string.error_exporting_opml),
@@ -143,8 +143,8 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
         if (mIsDrawerOpen) {
             drawerLayout.open();
         }
-        mRxDisposer.add("syncRssCmd.syncedRss",
-                syncRssCmd.syncedRss()
+        mSvProvider.get(RxDisposer.class).add("syncRssCmd.syncedRss",
+                mSvProvider.get(SyncRssCmd.class).syncedRss()
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(rssModels -> {
                                     if (!rssModels.isEmpty()) {
@@ -163,7 +163,7 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
         if (mSelectedRssChannel != null) {
             rssChangeNotifier.selectRssChannel(mSelectedRssChannel);
         }
-        mRxDisposer.add("rssChangeNotifier.selectedRssChannel",
+        mSvProvider.get(RxDisposer.class).add("rssChangeNotifier.selectedRssChannel",
                 rssChangeNotifier.selectedRssChannel()
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(rssChannelOptional -> {
@@ -175,7 +175,7 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
                             }
                         })
         );
-        mRxDisposer.add("rssChangeNotifier.newRssModel",
+        mSvProvider.get(RxDisposer.class).add("rssChangeNotifier.newRssModel",
                 rssChangeNotifier.liveNewRssModel()
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(rssModelOptional ->
@@ -189,7 +189,7 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
                                                                         .feedName)))
                         ));
         DeviceStatusNotifier deviceStatusNotifier = provider.get(DeviceStatusNotifier.class);
-        mRxDisposer.add("deviceStatusNotifier.onlineStatus",
+        mSvProvider.get(RxDisposer.class).add("deviceStatusNotifier.onlineStatus",
                 deviceStatusNotifier.onlineStatus().subscribe(isOnline -> {
                     if (!isOnline) {
                         // only show when there are changes on online status
@@ -224,7 +224,7 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
         SwipeRefreshLayout swipeRefreshLayout = view.findViewById(R.id.container_swipe_refresh);
         swipeRefreshLayout.setOnRefreshListener(() -> mRssItemListSV.refresh());
         if (mRssItemListSV.observeRssItems() != null) {
-            mRxDisposer.add("mRssItemListSV.observeRssItems",
+            mSvProvider.get(RxDisposer.class).add("mRssItemListSV.observeRssItems",
                     mRssItemListSV.observeRssItems()
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribe(rssItems -> swipeRefreshLayout.setRefreshing(false))
@@ -265,13 +265,6 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
                     });
         }
         return view;
-    }
-
-    private void prepareDisposer(Provider provider) {
-        if (mRxDisposer != null) {
-            mRxDisposer.dispose();
-        }
-        mRxDisposer = provider.get(RxDisposer.class);
     }
 
     private void showNewRssChannelDialog(Activity activity, ViewGroup container) {
@@ -334,9 +327,9 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
         if (mSelectedRssChannel != null) {
             mSelectedRssChannel = null;
         }
-        if (mRxDisposer != null) {
-            mRxDisposer.dispose();
-            mRxDisposer = null;
+        if (mSvProvider != null) {
+            mSvProvider.dispose();
+            mSvProvider = null;
         }
     }
 

@@ -8,6 +8,7 @@ import android.widget.TextView;
 
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.a_news_provider.R;
+import m.co.rh.id.a_news_provider.app.provider.RxProviderModule;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
@@ -21,7 +22,7 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
 
     private RssItem mRssItem;
     private transient BehaviorSubject<RssItem> mRssItemBehaviorSubject;
-    private transient RxDisposer mRxDisposer;
+    private transient Provider mSvProvider;
     private transient INavigator mNavigator;
 
     public void setRssItem(RssItem rssItem) {
@@ -51,7 +52,7 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
         TextView textDate = view.findViewById(R.id.text_date);
         TextView textTitle = view.findViewById(R.id.text_title);
         Provider provider = BaseApplication.of(activity).getProvider();
-        prepareDisposer(provider);
+        mSvProvider = Provider.createProvider(activity, new RxProviderModule());
         RssChangeNotifier rssChangeNotifier = provider.get(RssChangeNotifier.class);
         view.setOnClickListener(view1 -> {
             if (mNavigator != null) {
@@ -63,7 +64,7 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
                 mRssItemBehaviorSubject.onNext(mRssItem);
             }
         });
-        mRxDisposer.add("mRssItemSubject",
+        mSvProvider.get(RxDisposer.class).add("mRssItemSubject",
                 mRssItemBehaviorSubject.subscribe(rssItem -> {
                     if (rssItem.pubDate != null) {
                         textDate.setText(rssItem.pubDate.toString());
@@ -85,13 +86,6 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
         return view;
     }
 
-    private void prepareDisposer(Provider provider) {
-        if (mRxDisposer != null) {
-            mRxDisposer.dispose();
-        }
-        mRxDisposer = provider.get(RxDisposer.class);
-    }
-
     @Override
     public void dispose(Activity activity) {
         super.dispose(activity);
@@ -99,9 +93,9 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
             mRssItemBehaviorSubject.onComplete();
             mRssItemBehaviorSubject = null;
         }
-        if (mRxDisposer != null) {
-            mRxDisposer.dispose();
-            mRxDisposer = null;
+        if (mSvProvider != null) {
+            mSvProvider.dispose();
+            mSvProvider = null;
         }
     }
 }

@@ -12,16 +12,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 import m.co.rh.id.a_news_provider.app.MainActivity;
+import m.co.rh.id.a_news_provider.app.component.AppNotificationHandler;
+import m.co.rh.id.a_news_provider.app.component.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.app.constants.Routes;
 import m.co.rh.id.a_news_provider.app.network.RssRequestFactory;
-import m.co.rh.id.a_news_provider.app.provider.command.NewRssChannelCmd;
-import m.co.rh.id.a_news_provider.app.provider.command.PagedRssItemsCmd;
-import m.co.rh.id.a_news_provider.app.provider.command.RenameRssFeedCmd;
-import m.co.rh.id.a_news_provider.app.provider.command.SyncRssCmd;
 import m.co.rh.id.a_news_provider.app.provider.notifier.DeviceStatusNotifier;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.provider.parser.OpmlParser;
-import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.ui.page.SettingsPage;
 import m.co.rh.id.a_news_provider.app.ui.page.SplashPage;
 import m.co.rh.id.a_news_provider.base.provider.BaseProviderModule;
@@ -39,35 +36,24 @@ import m.co.rh.id.aprovider.ProviderRegistry;
 public class AppProviderModule implements ProviderModule {
 
     private Application mApplication;
-    private BaseProviderModule mBaseProviderModule;
-    private DatabaseProviderModule mDatabaseProviderModule;
-    private NetworkProviderModule mNetworkProviderModule;
 
     public AppProviderModule(Application application) {
         mApplication = application;
-        mBaseProviderModule = new BaseProviderModule();
-        mDatabaseProviderModule = new DatabaseProviderModule();
-        mNetworkProviderModule = new NetworkProviderModule();
     }
 
     @Override
     public void provides(Context context, ProviderRegistry providerRegistry, Provider provider) {
-        providerRegistry.registerModule(mBaseProviderModule);
-        providerRegistry.registerModule(mDatabaseProviderModule);
-        providerRegistry.registerModule(mNetworkProviderModule);
+        providerRegistry.registerModule(new BaseProviderModule());
+        providerRegistry.registerModule(new DatabaseProviderModule());
+        providerRegistry.registerModule(new NetworkProviderModule());
         providerRegistry.register(DeviceStatusNotifier.class, getDeviceStatusNotifier(context, provider));
         providerRegistry.registerLazy(AppNotificationHandler.class, () -> new AppNotificationHandler(provider, context));
-        providerRegistry.registerFactory(RxDisposer.class, RxDisposer::new);
         providerRegistry.registerAsync(WorkManager.class, () -> WorkManager.getInstance(context));
         // for rss
         providerRegistry.registerAsync(AppSharedPreferences.class, () -> new AppSharedPreferences(provider, context));
         providerRegistry.registerLazy(RssRequestFactory.class, () -> new RssRequestFactory(provider, context));
         providerRegistry.registerAsync(RssChangeNotifier.class, () -> new RssChangeNotifier(provider, context));
         providerRegistry.registerLazy(OpmlParser.class, () -> new OpmlParser(provider, context));
-        providerRegistry.registerFactory(PagedRssItemsCmd.class, () -> new PagedRssItemsCmd(provider));
-        providerRegistry.registerFactory(NewRssChannelCmd.class, () -> new NewRssChannelCmd(provider, context));
-        providerRegistry.registerFactory(RenameRssFeedCmd.class, () -> new RenameRssFeedCmd(provider, context));
-        providerRegistry.registerFactory(SyncRssCmd.class, () -> new SyncRssCmd(provider, context));
 
         // it is safer to register navigator last in case it needs dependency from all above, provider can be passed here
         providerRegistry.register(INavigator.class, getNavigator());
@@ -102,8 +88,6 @@ public class AppProviderModule implements ProviderModule {
 
     @Override
     public void dispose(Context context, Provider provider) {
-        mNetworkProviderModule.dispose(context, provider);
-        mDatabaseProviderModule.dispose(context, provider);
-        mBaseProviderModule.dispose(context, provider);
+        // leave blank
     }
 }

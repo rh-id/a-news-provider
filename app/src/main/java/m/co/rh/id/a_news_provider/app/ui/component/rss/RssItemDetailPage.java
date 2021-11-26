@@ -16,7 +16,8 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import m.co.rh.id.a_news_provider.R;
-import m.co.rh.id.a_news_provider.app.provider.AppSharedPreferences;
+import m.co.rh.id.a_news_provider.app.component.AppSharedPreferences;
+import m.co.rh.id.a_news_provider.app.provider.StatefulViewProviderModule;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
@@ -32,7 +33,7 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
     private AppBarSV mAppBarSV;
     private RssItem mRssItem;
     private RssChannel mRssChannel;
-    private transient RxDisposer mRxDisposer;
+    private transient Provider mSvProvider;
 
     public RssItemDetailPage(RssItem rssItem) {
         mRssItem = rssItem;
@@ -51,12 +52,12 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
     protected View createView(Activity activity, ViewGroup container) {
         int layoutId = R.layout.page_rss_item_detail;
         Provider provider = BaseApplication.of(activity).getProvider();
+        mSvProvider = Provider.createProvider(activity, new StatefulViewProviderModule(activity));
         AppSharedPreferences appSharedPreferences = provider.get(AppSharedPreferences.class);
         if (appSharedPreferences.isOneHandMode()) {
             layoutId = R.layout.one_hand_mode_page_rss_item_detail;
         }
         View view = activity.getLayoutInflater().inflate(layoutId, container, false);
-        prepareDisposer(provider);
         ViewGroup containerAppBar = view.findViewById(R.id.container_app_bar);
         containerAppBar.addView(mAppBarSV.buildView(activity, container));
         TextView titleText = view.findViewById(R.id.text_title);
@@ -73,7 +74,7 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         }
         if (mRssChannel == null) {
             RssDao rssDao = provider.get(RssDao.class);
-            mRxDisposer.add("getRssChannel",
+            mSvProvider.get(RxDisposer.class).add("getRssChannel",
                     Single.fromCallable(() ->
                             rssDao.findRssChannelById(mRssItem.channelId))
                             .subscribeOn(Schedulers.from(provider.get(ExecutorService.class)))
@@ -89,19 +90,12 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         return view;
     }
 
-    private void prepareDisposer(Provider provider) {
-        if (mRxDisposer != null) {
-            mRxDisposer.dispose();
-        }
-        mRxDisposer = provider.get(RxDisposer.class);
-    }
-
     @Override
     public void dispose(Activity activity) {
         super.dispose(activity);
-        if (mRxDisposer != null) {
-            mRxDisposer.dispose();
-            mRxDisposer = null;
+        if (mSvProvider != null) {
+            mSvProvider.dispose();
+            mSvProvider = null;
         }
         mAppBarSV.dispose(activity);
         mAppBarSV = null;

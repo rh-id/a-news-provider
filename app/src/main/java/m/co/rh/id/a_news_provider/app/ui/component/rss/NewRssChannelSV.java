@@ -9,26 +9,25 @@ import android.widget.EditText;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import m.co.rh.id.a_news_provider.R;
+import m.co.rh.id.a_news_provider.app.provider.StatefulViewProviderModule;
 import m.co.rh.id.a_news_provider.app.provider.command.NewRssChannelCmd;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
-import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.aprovider.Provider;
 
 public class NewRssChannelSV extends StatefulView<Activity> {
-    private transient NewRssChannelCmd mNewRssChannelCmd;
-    private transient RxDisposer mRxDisposer;
+    private transient Provider mSvProvider;
     private String mFeedUrl;
 
     public void addNewFeed() {
-        if (mNewRssChannelCmd != null) {
-            mNewRssChannelCmd.execute(mFeedUrl);
+        if (mSvProvider != null) {
+            mSvProvider.get(NewRssChannelCmd.class).execute(mFeedUrl);
         }
     }
 
     public boolean isValid() {
-        if (mNewRssChannelCmd != null) {
-            return mNewRssChannelCmd.validUrl(mFeedUrl);
+        if (mSvProvider != null) {
+            return mSvProvider.get(NewRssChannelCmd.class).validUrl(mFeedUrl);
         }
         return false;
     }
@@ -42,9 +41,7 @@ public class NewRssChannelSV extends StatefulView<Activity> {
     @Override
     protected View createView(Activity activity, ViewGroup container) {
         View view = activity.getLayoutInflater().inflate(R.layout.rss_channel_new, container, false);
-        Provider provider = BaseApplication.of(activity).getProvider();
-        prepareDisposer(provider);
-        mNewRssChannelCmd = provider.get(NewRssChannelCmd.class);
+        mSvProvider = Provider.createProvider(activity, new StatefulViewProviderModule(activity));
         EditText feedUrlEditText = view.findViewById(R.id.input_text_url);
         feedUrlEditText.setText(mFeedUrl);
         feedUrlEditText.addTextChangedListener(new TextWatcher() {
@@ -60,11 +57,12 @@ public class NewRssChannelSV extends StatefulView<Activity> {
 
             @Override
             public void afterTextChanged(Editable editable) {
-                mNewRssChannelCmd.validUrl(editable.toString());
+                mSvProvider.get(NewRssChannelCmd.class).validUrl(editable.toString());
                 mFeedUrl = editable.toString();
             }
         });
-        mRxDisposer.add("mNewRssChannelCmd", mNewRssChannelCmd.getUrlValidation()
+        mSvProvider.get(RxDisposer.class).add("mNewRssChannelCmd", mSvProvider.get(NewRssChannelCmd.class)
+                .getUrlValidation()
                 .observeOn(AndroidSchedulers.mainThread()).subscribe(s ->
                 {
                     if (!s.isEmpty()) {
@@ -77,19 +75,12 @@ public class NewRssChannelSV extends StatefulView<Activity> {
         return view;
     }
 
-    private void prepareDisposer(Provider provider) {
-        if (mRxDisposer != null) {
-            mRxDisposer.dispose();
-        }
-        mRxDisposer = provider.get(RxDisposer.class);
-    }
-
     @Override
     public void dispose(Activity activity) {
         super.dispose(activity);
-        if (mRxDisposer != null) {
-            mRxDisposer.dispose();
-            mRxDisposer = null;
+        if (mSvProvider != null) {
+            mSvProvider.dispose();
+            mSvProvider = null;
         }
     }
 

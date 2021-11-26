@@ -19,6 +19,7 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.a_news_provider.R;
+import m.co.rh.id.a_news_provider.app.provider.RxProviderModule;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.util.UiUtils;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
@@ -30,7 +31,7 @@ import m.co.rh.id.aprovider.Provider;
 public class LogPage extends StatefulView<Activity> {
     private static final String TAG = LogPage.class.getName();
 
-    private transient RxDisposer mRxDisposer;
+    private transient Provider mSvProvider;
 
     @Override
     protected View createView(Activity activity, ViewGroup container) {
@@ -41,7 +42,7 @@ public class LogPage extends StatefulView<Activity> {
         ScrollView scrollView = view.findViewById(R.id.scroll_view);
         TextView textView = view.findViewById(R.id.text_content);
         Provider provider = BaseApplication.of(activity).getProvider();
-        prepareDisposer(provider);
+        mSvProvider = Provider.createProvider(activity, new RxProviderModule());
         FileProvider fileProvider = provider.get(FileProvider.class);
         File logFile = fileProvider.getLogFile();
         FloatingActionButton fabClear = view.findViewById(R.id.fab_clear);
@@ -61,7 +62,7 @@ public class LogPage extends StatefulView<Activity> {
             provider.get(Handler.class)
                     .post(() -> subject.onNext(logFile));
         });
-        mRxDisposer.add("readLogFile",
+        mSvProvider.get(RxDisposer.class).add("readLogFile",
                 subject.
                         observeOn(Schedulers.from(BaseApplication.of(activity)
                                 .getProvider().get(ExecutorService.class)))
@@ -101,10 +102,12 @@ public class LogPage extends StatefulView<Activity> {
         return view;
     }
 
-    private void prepareDisposer(Provider provider) {
-        if (mRxDisposer != null) {
-            mRxDisposer.dispose();
+    @Override
+    public void dispose(Activity activity) {
+        super.dispose(activity);
+        if (mSvProvider != null) {
+            mSvProvider.dispose();
+            mSvProvider = null;
         }
-        mRxDisposer = provider.get(RxDisposer.class);
     }
 }

@@ -24,6 +24,7 @@ import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.a_news_provider.R;
+import m.co.rh.id.a_news_provider.app.provider.StatefulViewProviderModule;
 import m.co.rh.id.a_news_provider.app.provider.command.RenameRssFeedCmd;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
@@ -39,10 +40,8 @@ public class RssChannelItemSV extends StatefulView<Activity> implements View.OnC
     private transient BehaviorSubject<Boolean> mEditModeSubject;
     private transient BehaviorSubject<Optional<String>> mImageUrlSubject;
     private transient BehaviorSubject<String> mEditNameSubject;
-    private transient RxDisposer mRxDisposer;
-    private transient Provider mProvider;
+    private transient Provider mSvProvider;
     private transient RssChangeNotifier mRssChangeNotifier;
-    private transient RenameRssFeedCmd mRenameRssFeedCmd;
 
     public void setRssChannelCount(Map.Entry<RssChannel, Integer> rssChannelCount) {
         if (mRssChannelCountSubject == null) {
@@ -81,9 +80,7 @@ public class RssChannelItemSV extends StatefulView<Activity> implements View.OnC
         Button buttonLink = view.findViewById(R.id.button_link);
 
         Provider provider = BaseApplication.of(activity).getProvider();
-        mProvider = provider;
-        prepareDisposer(provider);
-        mRenameRssFeedCmd = provider.get(RenameRssFeedCmd.class);
+        mSvProvider = Provider.createProvider(activity, new StatefulViewProviderModule(activity));
         mRssChangeNotifier = provider.get(RssChangeNotifier.class);
         view.setOnClickListener(this);
         view.setLongClickable(true);
@@ -103,15 +100,15 @@ public class RssChannelItemSV extends StatefulView<Activity> implements View.OnC
             public void afterTextChanged(Editable editable) {
                 String s = editable.toString();
                 mEditNameSubject.onNext(s);
-                mRenameRssFeedCmd.validName(s);
+                mSvProvider.get(RenameRssFeedCmd.class).validName(s);
             }
         });
         buttonRename.setOnClickListener(this);
         buttonDelete.setOnClickListener(this);
         buttonCancel.setOnClickListener(this);
         buttonLink.setOnClickListener(this);
-        mRxDisposer.add("mRenameRssFeedCmd.getNameValidation",
-                mRenameRssFeedCmd.liveNameValidation()
+        mSvProvider.get(RxDisposer.class).add("mRenameRssFeedCmd.getNameValidation",
+                mSvProvider.get(RenameRssFeedCmd.class).liveNameValidation()
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(s -> {
                             if (!s.isEmpty()) {
@@ -121,8 +118,8 @@ public class RssChannelItemSV extends StatefulView<Activity> implements View.OnC
                             }
                         })
         );
-        mRxDisposer.add("mRenameRssFeedCmd.getRssChannel",
-                mRenameRssFeedCmd.liveRssChannel()
+        mSvProvider.get(RxDisposer.class).add("mRenameRssFeedCmd.getRssChannel",
+                mSvProvider.get(RenameRssFeedCmd.class).liveRssChannel()
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(rssChannel -> Toast
                                         .makeText(activity,
@@ -133,7 +130,7 @@ public class RssChannelItemSV extends StatefulView<Activity> implements View.OnC
                                                 throwable.getMessage()
                                                 , Toast.LENGTH_LONG).show())
         );
-        mRxDisposer.add("mEditModeSubject", mEditModeSubject.subscribe(editMode -> {
+        mSvProvider.get(RxDisposer.class).add("mEditModeSubject", mEditModeSubject.subscribe(editMode -> {
                     if (editMode) {
                         networkImageViewIcon.setVisibility(View.GONE);
                         textName.setVisibility(View.GONE);
@@ -155,7 +152,7 @@ public class RssChannelItemSV extends StatefulView<Activity> implements View.OnC
                     }
                 })
         );
-        mRxDisposer.add("rssChannelUiChange", Flowable.combineLatest(
+        mSvProvider.get(RxDisposer.class).add("rssChannelUiChange", Flowable.combineLatest(
                 Flowable.fromObservable(mRssChannelCountSubject, BackpressureStrategy.BUFFER)
                         .debounce(100, TimeUnit.MILLISECONDS)
                         .observeOn(AndroidSchedulers.mainThread()),
@@ -187,20 +184,13 @@ public class RssChannelItemSV extends StatefulView<Activity> implements View.OnC
                 }).subscribe(aBoolean -> {
                 })
         );
-        mRxDisposer.add("setImageUrl",
+        mSvProvider.get(RxDisposer.class).add("setImageUrl",
                 mImageUrlSubject.debounce(100, TimeUnit.MILLISECONDS)
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(imageUrlOpt -> imageUrlOpt.ifPresent(s ->
                                 networkImageViewIcon.setImageUrl(s,
                                         provider.get(ImageLoader.class)))));
         return view;
-    }
-
-    private void prepareDisposer(Provider provider) {
-        if (mRxDisposer != null) {
-            mRxDisposer.dispose();
-        }
-        mRxDisposer = provider.get(RxDisposer.class);
     }
 
     @Override
@@ -213,10 +203,10 @@ public class RssChannelItemSV extends StatefulView<Activity> implements View.OnC
             }
         } else if (viewId == R.id.button_rename) {
             String feedName = mEditNameSubject.getValue();
-            if (mRenameRssFeedCmd.validName(feedName)) {
+            if (mSvProvider.get(RenameRssFeedCmd.class).validName(feedName)) {
                 Map.Entry<RssChannel, Integer> rssChannelCount = mRssChannelCountSubject.getValue();
                 if (rssChannelCount != null) {
-                    mRenameRssFeedCmd.execute(rssChannelCount.getKey().id, feedName);
+                    mSvProvider.get(RenameRssFeedCmd.class).execute(rssChannelCount.getKey().id, feedName);
                 }
             }
             mEditModeSubject.onNext(!mEditModeSubject.getValue());
@@ -251,9 +241,9 @@ public class RssChannelItemSV extends StatefulView<Activity> implements View.OnC
     @Override
     public void dispose(Activity activity) {
         super.dispose(activity);
-        if (mRxDisposer != null) {
-            mRxDisposer.dispose();
-            mRxDisposer = null;
+        if (mSvProvider != null) {
+            mSvProvider.dispose();
+            mSvProvider = null;
         }
         if (mRssChannelCountSubject != null) {
             mRssChannelCountSubject.onComplete();
@@ -268,6 +258,5 @@ public class RssChannelItemSV extends StatefulView<Activity> implements View.OnC
             mImageUrlSubject = null;
         }
         mRssChangeNotifier = null;
-        mRenameRssFeedCmd = null;
     }
 }

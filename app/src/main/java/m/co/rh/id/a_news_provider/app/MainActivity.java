@@ -9,7 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import m.co.rh.id.a_news_provider.app.provider.AppNotificationHandler;
+import m.co.rh.id.a_news_provider.app.component.AppNotificationHandler;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.aprovider.Provider;
 

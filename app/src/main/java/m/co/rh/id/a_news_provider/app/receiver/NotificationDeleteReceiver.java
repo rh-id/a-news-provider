@@ -4,7 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
-import m.co.rh.id.a_news_provider.app.provider.AppNotificationHandler;
+import m.co.rh.id.a_news_provider.app.component.AppNotificationHandler;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.aprovider.Provider;
 

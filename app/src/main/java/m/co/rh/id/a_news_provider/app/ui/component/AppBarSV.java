@@ -9,8 +9,8 @@ import androidx.appcompat.widget.Toolbar;
 
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.a_news_provider.R;
+import m.co.rh.id.a_news_provider.app.provider.StatefulViewProviderModule;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
-import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.component.INavigator;
 import m.co.rh.id.anavigator.component.RequireNavigator;
@@ -24,7 +24,7 @@ public class AppBarSV extends StatefulView<Activity> implements RequireNavigator
     private boolean mIsInitialRoute;
     private transient Integer mMenuResId;
     private transient Toolbar.OnMenuItemClickListener mOnMenuItemClickListener;
-    private transient RxDisposer mRxDisposer;
+    private transient Provider mSvProvider;
     private transient BehaviorSubject<String> mUpdateTitle;
 
     public AppBarSV(INavigator navigator) {
@@ -47,10 +47,9 @@ public class AppBarSV extends StatefulView<Activity> implements RequireNavigator
                 mUpdateTitle = BehaviorSubject.createDefault(mTitle);
             }
         }
-        Provider provider = BaseApplication.of(activity).getProvider();
-        prepareDisposer(provider);
+        mSvProvider = Provider.createProvider(activity, new StatefulViewProviderModule(activity));
         Toolbar toolbar = view.findViewById(R.id.toolbar);
-        mRxDisposer.add("updateTitle",
+        mSvProvider.get(RxDisposer.class).add("updateTitle",
                 mUpdateTitle.subscribe(toolbar::setTitle));
         if (mIsInitialRoute) {
             toolbar.setNavigationIcon(R.drawable.ic_menu_white);
@@ -68,16 +67,13 @@ public class AppBarSV extends StatefulView<Activity> implements RequireNavigator
         return view;
     }
 
-    private void prepareDisposer(Provider provider) {
-        if (mRxDisposer != null) {
-            mRxDisposer.dispose();
-        }
-        mRxDisposer = provider.get(RxDisposer.class);
-    }
-
     @Override
     public void dispose(Activity activity) {
         super.dispose(activity);
+        if (mSvProvider != null) {
+            mSvProvider.dispose();
+            mSvProvider = null;
+        }
         mNavigationOnClickListener = null;
         mTitle = null;
     }
