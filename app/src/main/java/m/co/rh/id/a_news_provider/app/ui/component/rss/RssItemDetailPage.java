@@ -99,7 +99,13 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
     @Override
     public void dispose(Activity activity) {
         super.dispose(activity);
+        if (mRxDisposer != null) {
+            mRxDisposer.dispose();
+            mRxDisposer = null;
+        }
         mAppBarSV.dispose(activity);
         mAppBarSV = null;
+        mRssItem = null;
+        mRssChannel = null;
     }
 }
