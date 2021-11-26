@@ -1,0 +1,4 @@
+Release 1.2.6+14
+
+Fixes:
+* Memory issues & other performance fixes
