@@ -7,17 +7,14 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.work.Data;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
 
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -38,7 +35,7 @@ import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.provider.parser.OpmlParser;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
-import m.co.rh.id.a_news_provider.app.ui.component.rss.NewRssChannelSV;
+import m.co.rh.id.a_news_provider.app.ui.component.rss.NewRssChannelSVDialog;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.RssChannelListSV;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.RssItemListSV;
 import m.co.rh.id.a_news_provider.app.util.UiUtils;
@@ -60,11 +57,8 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
     private transient INavigator mNavigator;
     private AppBarSV mAppBarSV;
     private boolean mIsDrawerOpen;
-    private boolean mIsNewRssChannelDialogShow;
-    private transient AlertDialog mDialog;
     private transient Runnable mPendingDialogCmd;
     private RssItemListSV mRssItemListSV;
-    private NewRssChannelSV mNewRssChannelSV;
     private RssChannelListSV mRssChannelListSV;
     private RssChannel mSelectedRssChannel;
     private boolean mLastOnlineStatus;
@@ -85,7 +79,6 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
     protected void initState(Activity activity) {
         super.initState(activity);
         mRssItemListSV = new RssItemListSV();
-        mNewRssChannelSV = new NewRssChannelSV();
         mRssChannelListSV = new RssChannelListSV();
     }
 
@@ -214,13 +207,9 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
         containerListNews.addView(mRssItemListSV.buildView(activity, container));
 
         FloatingActionButton fab = view.findViewById(R.id.fab);
-        fab.setOnClickListener(view1 -> showNewRssChannelDialog(activity, container));
-        if (mDialog != null) {
-            mDialog.dismiss();
-        }
-        if (mIsNewRssChannelDialogShow) {
-            fab.performClick();
-        }
+        fab.setOnClickListener(view1 ->
+                mNavigator.push((args, activity1) ->
+                        new NewRssChannelSVDialog()));
         SwipeRefreshLayout swipeRefreshLayout = view.findViewById(R.id.container_swipe_refresh);
         swipeRefreshLayout.setOnRefreshListener(() -> mRssItemListSV.refresh());
         if (mRssItemListSV.observeRssItems() != null) {
@@ -239,8 +228,8 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
         } else if (Intent.ACTION_SEND.equals(intentAction)) {
             String sharedText = activity.getIntent()
                     .getStringExtra(Intent.EXTRA_TEXT);
-            mNewRssChannelSV.setFeedUrl(sharedText);
-            fab.performClick();
+            mNavigator.push((args, activity1) ->
+                    new NewRssChannelSVDialog((String) args), sharedText);
         } else if (Intent.ACTION_VIEW.equals(intentAction)) {
             Uri fileData = intent.getData();
             provider.get(ExecutorService.class)
@@ -267,59 +256,10 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
         return view;
     }
 
-    private void showNewRssChannelDialog(Activity activity, ViewGroup container) {
-        // queue guard to ensure only one dialog can be displayed at a time
-        if (mDialog != null) {
-            mPendingDialogCmd = () -> {
-                showNewRssChannelDialog(activity, container);
-                mPendingDialogCmd = null;
-            };
-            return;
-        }
-        mIsNewRssChannelDialogShow = true;
-        View dialogView = mNewRssChannelSV.buildView(activity, container);
-        MaterialAlertDialogBuilder alertBuilder = new MaterialAlertDialogBuilder(activity);
-        alertBuilder.setView(dialogView);
-        alertBuilder.setPositiveButton(R.string.add, (dialogInterface, i) -> {
-            //leave blank
-        });
-        alertBuilder.setNegativeButton(android.R.string.cancel, (dialogInterface, i) -> {
-            mNewRssChannelSV.clearText(dialogView);
-        });
-        alertBuilder.setOnCancelListener(dialog -> {
-            mIsNewRssChannelDialogShow = false;
-            mDialog = null;
-            if (mPendingDialogCmd != null) {
-                mPendingDialogCmd.run();
-            }
-        });
-        alertBuilder.setOnDismissListener(dialog -> {
-            mIsNewRssChannelDialogShow = false;
-            mDialog = null;
-            if (mPendingDialogCmd != null) {
-                mPendingDialogCmd.run();
-            }
-        });
-        mDialog = alertBuilder.create();
-        mDialog.show();
-        Button positiveButton = mDialog.getButton(AlertDialog.BUTTON_POSITIVE);
-        positiveButton.setOnClickListener(v -> {
-            if (mNewRssChannelSV.isValid()) {
-                mNewRssChannelSV.addNewFeed();
-                mDialog.dismiss();
-                mDialog = null;
-                mIsNewRssChannelDialogShow = false;
-            }
-        });
-    }
-
     @Override
     public void dispose(Activity activity) {
         super.dispose(activity);
         mPendingDialogCmd = null;
-        if (mDialog != null) {
-            mDialog.dismiss();
-        }
         mAppBarSV.dispose(activity);
         mAppBarSV = null;
         mRssItemListSV.dispose(activity);

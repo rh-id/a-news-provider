@@ -1,23 +1,38 @@
 package m.co.rh.id.a_news_provider.app.ui.component.rss;
 
 import android.app.Activity;
+import android.app.Dialog;
+import android.content.DialogInterface;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProviderModule;
 import m.co.rh.id.a_news_provider.app.provider.command.NewRssChannelCmd;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
-import m.co.rh.id.anavigator.StatefulView;
+import m.co.rh.id.anavigator.StatefulViewDialog;
 import m.co.rh.id.aprovider.Provider;
 
-public class NewRssChannelSV extends StatefulView<Activity> {
+public class NewRssChannelSVDialog extends StatefulViewDialog<Activity> implements DialogInterface.OnClickListener {
     private transient Provider mSvProvider;
     private String mFeedUrl;
+    private transient BehaviorSubject<String> mFeedUrlSubject;
+
+    public NewRssChannelSVDialog() {
+        super(null);
+    }
+
+    public NewRssChannelSVDialog(String feedUrl) {
+        super(null);
+        mFeedUrl = feedUrl;
+    }
 
     public void addNewFeed() {
         if (mSvProvider != null) {
@@ -32,16 +47,23 @@ public class NewRssChannelSV extends StatefulView<Activity> {
         return false;
     }
 
-    public void clearText(View currentView) {
-        mFeedUrl = null;
-        EditText editText = currentView.findViewById(R.id.input_text_url);
-        editText.setText(null);
+    @Override
+    protected void initState(Activity activity) {
+        super.initState(activity);
+        if (mFeedUrl == null) {
+            mFeedUrl = "";
+        }
     }
 
     @Override
     protected View createView(Activity activity, ViewGroup container) {
         View view = activity.getLayoutInflater().inflate(R.layout.rss_channel_new, container, false);
         mSvProvider = Provider.createProvider(activity, new StatefulViewProviderModule(activity));
+        if (mFeedUrlSubject == null) {
+            mFeedUrlSubject = BehaviorSubject.createDefault(mFeedUrl);
+        } else {
+            mFeedUrlSubject.onNext(mFeedUrl);
+        }
         EditText feedUrlEditText = view.findViewById(R.id.input_text_url);
         feedUrlEditText.setText(mFeedUrl);
         feedUrlEditText.addTextChangedListener(new TextWatcher() {
@@ -72,7 +94,19 @@ public class NewRssChannelSV extends StatefulView<Activity> {
                     }
                 })
         );
+        mSvProvider.get(RxDisposer.class).add("feedUrlChanged",
+                mFeedUrlSubject.subscribe(feedUrlEditText::setText));
         return view;
+    }
+
+    @Override
+    protected Dialog createDialog(Activity activity) {
+        View dialogView = buildView(activity, null);
+        MaterialAlertDialogBuilder alertBuilder = new MaterialAlertDialogBuilder(activity);
+        alertBuilder.setView(dialogView);
+        alertBuilder.setPositiveButton(R.string.add, this);
+        alertBuilder.setNegativeButton(android.R.string.cancel, this);
+        return alertBuilder.create();
     }
 
     @Override
@@ -84,7 +118,14 @@ public class NewRssChannelSV extends StatefulView<Activity> {
         }
     }
 
-    public void setFeedUrl(String url) {
-        mFeedUrl = url;
+    @Override
+    public void onClick(DialogInterface dialogInterface, int id) {
+        if (id == DialogInterface.BUTTON_POSITIVE) {
+            if (isValid()) {
+                addNewFeed();
+            }
+        } else if (id == DialogInterface.BUTTON_NEGATIVE) {
+            mFeedUrlSubject.onNext("");
+        }
     }
 }

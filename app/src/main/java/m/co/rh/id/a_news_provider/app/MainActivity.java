@@ -9,14 +9,35 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.util.concurrent.TimeUnit;
+
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.a_news_provider.app.component.AppNotificationHandler;
+import m.co.rh.id.a_news_provider.app.provider.RxProviderModule;
+import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.aprovider.Provider;
 
 public class MainActivity extends AppCompatActivity {
 
+    private BehaviorSubject<Boolean> mRebuildUi;
+    private Provider mProvider;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+        mProvider = Provider.createProvider(this, new RxProviderModule());
+        mRebuildUi = BehaviorSubject.create();
+        // rebuild UI is expensive and error prone, avoid spam rebuild (especially due to day and night mode)
+        mProvider.get(RxDisposer.class)
+                .add("rebuildUI", mRebuildUi.debounce(100, TimeUnit.MILLISECONDS)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(aBoolean -> {
+                            if (aBoolean) {
+                                BaseApplication.of(this).getNavigator(this).reBuildAllRoute();
+                            }
+                        })
+                );
         getOnBackPressedDispatcher().addCallback(this,
                 new OnBackPressedCallback(true) {
                     @Override
@@ -53,6 +74,15 @@ public class MainActivity extends AppCompatActivity {
         super.onConfigurationChanged(newConfig);
         // using AppCompatDelegate.setDefaultNightMode trigger this method
         // but not triggering Application.onConfigurationChanged
-        BaseApplication.of(this).getNavigator(this).reBuildAllRoute();
+        mRebuildUi.onNext(true);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mProvider.dispose();
+        mProvider = null;
+        mRebuildUi.onComplete();
+        mRebuildUi = null;
     }
 }
