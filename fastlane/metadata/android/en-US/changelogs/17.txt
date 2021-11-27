@@ -1,0 +1,4 @@
+Release 1.2.9+17
+
+Fixes:
+* Memory leak issue
