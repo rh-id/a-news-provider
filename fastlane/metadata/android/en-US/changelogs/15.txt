@@ -1,0 +1,5 @@
+Release 1.2.7+15
+
+Fixes:
+* Memory issues & other performance fixes
+* OPML file not exported
