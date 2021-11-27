@@ -22,7 +22,9 @@ public class UiUtils {
         shareIntent.setAction(Intent.ACTION_SEND);
         shareIntent.putExtra(Intent.EXTRA_STREAM, fileUri);
         shareIntent.setType("*/*");
-        context.startActivity(Intent.createChooser(shareIntent, chooserMessage));
+        shareIntent = Intent.createChooser(shareIntent, chooserMessage);
+        shareIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(shareIntent);
     }
 
     public static Activity getActivity(View view) {
