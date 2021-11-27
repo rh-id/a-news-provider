@@ -67,7 +67,10 @@ public class AppBarSV extends StatefulView<Activity> implements Externalizable, 
                 mUpdateTitle = BehaviorSubject.createDefault(mTitle);
             }
         }
-        mSvProvider = Provider.createProvider(activity, new StatefulViewProviderModule(activity));
+        if (mSvProvider != null) {
+            mSvProvider.dispose();
+        }
+        mSvProvider = Provider.createProvider(activity.getApplicationContext(), new StatefulViewProviderModule(activity));
         Toolbar toolbar = view.findViewById(R.id.toolbar);
         mSvProvider.get(RxDisposer.class).add("updateTitle",
                 mUpdateTitle.subscribe(toolbar::setTitle));

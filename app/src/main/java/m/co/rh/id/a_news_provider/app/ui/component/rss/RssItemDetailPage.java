@@ -52,7 +52,10 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
     protected View createView(Activity activity, ViewGroup container) {
         int layoutId = R.layout.page_rss_item_detail;
         Provider provider = BaseApplication.of(activity).getProvider();
-        mSvProvider = Provider.createProvider(activity, new StatefulViewProviderModule(activity));
+        if (mSvProvider != null) {
+            mSvProvider.dispose();
+        }
+        mSvProvider = Provider.createProvider(activity.getApplicationContext(), new StatefulViewProviderModule(activity));
         AppSharedPreferences appSharedPreferences = provider.get(AppSharedPreferences.class);
         if (appSharedPreferences.isOneHandMode()) {
             layoutId = R.layout.one_hand_mode_page_rss_item_detail;

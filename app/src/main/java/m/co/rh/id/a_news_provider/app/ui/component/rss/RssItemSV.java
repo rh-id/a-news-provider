@@ -52,7 +52,10 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
         TextView textDate = view.findViewById(R.id.text_date);
         TextView textTitle = view.findViewById(R.id.text_title);
         Provider provider = BaseApplication.of(activity).getProvider();
-        mSvProvider = Provider.createProvider(activity, new RxProviderModule());
+        if (mSvProvider != null) {
+            mSvProvider.dispose();
+        }
+        mSvProvider = Provider.createProvider(activity.getApplicationContext(), new RxProviderModule());
         RssChangeNotifier rssChangeNotifier = provider.get(RssChangeNotifier.class);
         view.setOnClickListener(view1 -> {
             if (mNavigator != null) {

@@ -19,7 +19,6 @@ import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProviderModule;
 import m.co.rh.id.a_news_provider.app.provider.command.PagedRssItemsCmd;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
-import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.aprovider.Provider;
@@ -37,7 +36,7 @@ public class RssItemListSV extends StatefulView<Activity> {
         if (mSvProvider != null) {
             return mSvProvider.get(PagedRssItemsCmd.class).getRssItems();
         }
-        return Flowable.fromSupplier(() -> new ArrayList<>());
+        return Flowable.fromSupplier(ArrayList::new);
     }
 
     @Override
@@ -47,8 +46,10 @@ public class RssItemListSV extends StatefulView<Activity> {
         RecyclerView recyclerView = view.findViewById(R.id.recyclerView);
         recyclerView.setAdapter(rssItemRecyclerViewAdapter);
         recyclerView.addItemDecoration(new DividerItemDecoration(activity, DividerItemDecoration.VERTICAL));
-        Provider provider = BaseApplication.of(activity).getProvider();
-        mSvProvider = Provider.createProvider(activity, new StatefulViewProviderModule(activity));
+        if (mSvProvider != null) {
+            mSvProvider.dispose();
+        }
+        mSvProvider = Provider.createProvider(activity.getApplicationContext(), new StatefulViewProviderModule(activity));
         mSvProvider.get(PagedRssItemsCmd.class).load();
         Spinner spinnerFilterBy = view.findViewById(R.id.spinner_filter_by);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(activity,

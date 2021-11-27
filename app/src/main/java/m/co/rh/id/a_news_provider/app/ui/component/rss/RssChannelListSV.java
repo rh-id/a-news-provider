@@ -28,12 +28,14 @@ public class RssChannelListSV extends StatefulView<Activity> {
         recyclerView.setAdapter(rssChannelRecyclerViewAdapter);
         recyclerView.addItemDecoration(new DividerItemDecoration(activity, DividerItemDecoration.VERTICAL));
         Provider provider = BaseApplication.of(activity).getProvider();
-        mSvProvider = Provider.createProvider(activity, new RxProviderModule());
+        if (mSvProvider != null) {
+            mSvProvider.dispose();
+        }
+        mSvProvider = Provider.createProvider(activity.getApplicationContext(), new RxProviderModule());
         mSvProvider.get(RxDisposer.class).add("rssChannelUnReadCount",
                 provider.get(RssChangeNotifier.class).rssChannelUnReadCount()
                         .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(rssChannelIntegerMap ->
-                                rssChannelRecyclerViewAdapter.setItems(rssChannelIntegerMap))
+                        .subscribe(rssChannelRecyclerViewAdapter::setItems)
         );
         return view;
     }

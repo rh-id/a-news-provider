@@ -42,7 +42,10 @@ public class LogPage extends StatefulView<Activity> {
         ScrollView scrollView = view.findViewById(R.id.scroll_view);
         TextView textView = view.findViewById(R.id.text_content);
         Provider provider = BaseApplication.of(activity).getProvider();
-        mSvProvider = Provider.createProvider(activity, new RxProviderModule());
+        if (mSvProvider != null) {
+            mSvProvider.dispose();
+        }
+        mSvProvider = Provider.createProvider(activity.getApplicationContext(), new RxProviderModule());
         FileProvider fileProvider = provider.get(FileProvider.class);
         File logFile = fileProvider.getLogFile();
         FloatingActionButton fabClear = view.findViewById(R.id.fab_clear);

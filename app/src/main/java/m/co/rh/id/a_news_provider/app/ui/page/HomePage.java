@@ -96,7 +96,10 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
     @Override
     protected View createView(Activity activity, ViewGroup container) {
         Provider provider = BaseApplication.of(activity).getProvider();
-        mSvProvider = Provider.createProvider(activity, new StatefulViewProviderModule(activity));
+        if (mSvProvider != null) {
+            mSvProvider.dispose();
+        }
+        mSvProvider = Provider.createProvider(activity.getApplicationContext(), new StatefulViewProviderModule(activity));
         AppSharedPreferences appSharedPreferences = provider.get(AppSharedPreferences.class);
         int layoutId = R.layout.page_home;
         if (appSharedPreferences.isOneHandMode()) {

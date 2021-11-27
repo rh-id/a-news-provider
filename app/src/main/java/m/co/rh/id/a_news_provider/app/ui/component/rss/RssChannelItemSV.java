@@ -80,7 +80,10 @@ public class RssChannelItemSV extends StatefulView<Activity> implements View.OnC
         Button buttonLink = view.findViewById(R.id.button_link);
 
         Provider provider = BaseApplication.of(activity).getProvider();
-        mSvProvider = Provider.createProvider(activity, new StatefulViewProviderModule(activity));
+        if (mSvProvider != null) {
+            mSvProvider.dispose();
+        }
+        mSvProvider = Provider.createProvider(activity.getApplicationContext(), new StatefulViewProviderModule(activity));
         mRssChangeNotifier = provider.get(RssChangeNotifier.class);
         view.setOnClickListener(this);
         view.setLongClickable(true);

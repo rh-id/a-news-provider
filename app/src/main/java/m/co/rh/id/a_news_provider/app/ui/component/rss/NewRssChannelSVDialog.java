@@ -58,7 +58,10 @@ public class NewRssChannelSVDialog extends StatefulViewDialog<Activity> implemen
     @Override
     protected View createView(Activity activity, ViewGroup container) {
         View view = activity.getLayoutInflater().inflate(R.layout.rss_channel_new, container, false);
-        mSvProvider = Provider.createProvider(activity, new StatefulViewProviderModule(activity));
+        if (mSvProvider != null) {
+            mSvProvider.dispose();
+        }
+        mSvProvider = Provider.createProvider(activity.getApplicationContext(), new StatefulViewProviderModule(activity));
         if (mFeedUrlSubject == null) {
             mFeedUrlSubject = BehaviorSubject.createDefault(mFeedUrl);
         } else {
