@@ -200,9 +200,12 @@ public class RssChannelItemSV extends StatefulView<Activity> implements View.OnC
     public void onClick(View view) {
         int viewId = view.getId();
         if (viewId == R.id.root_layout) {
-            Map.Entry<RssChannel, Integer> entry = mRssChannelCountSubject.getValue();
-            if (entry != null) {
-                mRssChangeNotifier.selectRssChannel(entry.getKey());
+            Boolean editMode = mEditModeSubject.getValue();
+            if (editMode == null || !editMode) {
+                Map.Entry<RssChannel, Integer> entry = mRssChannelCountSubject.getValue();
+                if (entry != null) {
+                    mRssChangeNotifier.selectRssChannel(entry.getKey());
+                }
             }
         } else if (viewId == R.id.button_rename) {
             String feedName = mEditNameSubject.getValue();
