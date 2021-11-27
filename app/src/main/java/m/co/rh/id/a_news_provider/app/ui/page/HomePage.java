@@ -70,11 +70,12 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
 
     // View related
     private transient DrawerLayout mDrawerLayout;
+    private transient Runnable mOnNavigationClicked;
 
     @Override
     public void provideNavigator(INavigator navigator) {
         if (mAppBarSV == null) {
-            mAppBarSV = new AppBarSV(navigator);
+            mAppBarSV = new AppBarSV(navigator, R.menu.home);
         } else {
             mAppBarSV.provideNavigator(navigator);
         }
@@ -103,13 +104,16 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
         menuSettings.setOnClickListener(view12 -> mNavigator.push(Routes.SETTINGS_PAGE));
         mDrawerLayout = view.findViewById(R.id.drawer);
         mDrawerLayout.addDrawerListener(this);
-        mAppBarSV.setMenu(R.menu.home, this);
+        if (mOnNavigationClicked == null) {
+            mOnNavigationClicked = () -> {
+                if (!mDrawerLayout.isOpen()) {
+                    mDrawerLayout.open();
+                }
+            };
+        }
+        mAppBarSV.setMenuItemListener(this);
         mAppBarSV.setTitle(activity.getString(R.string.appbar_title_home));
-        mAppBarSV.setNavigationOnClickListener(view1 -> {
-            if (!mDrawerLayout.isOpen()) {
-                mDrawerLayout.open();
-            }
-        });
+        mAppBarSV.setNavigationOnClick(mOnNavigationClicked);
         if (mIsDrawerOpen) {
             mDrawerLayout.open();
         }
@@ -247,6 +251,7 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
             mSvProvider = null;
         }
         mDrawerLayout = null;
+        mOnNavigationClicked = null;
     }
 
     @Override
