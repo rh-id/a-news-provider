@@ -46,6 +46,8 @@ public class AppProviderModule implements ProviderModule {
         providerRegistry.registerModule(new BaseProviderModule());
         providerRegistry.registerModule(new DatabaseProviderModule());
         providerRegistry.registerModule(new NetworkProviderModule());
+        providerRegistry.registerModule(new CommandProviderModule(provider));
+
         providerRegistry.register(DeviceStatusNotifier.class, getDeviceStatusNotifier(context, provider));
         providerRegistry.registerLazy(AppNotificationHandler.class, () -> new AppNotificationHandler(provider, context));
         providerRegistry.registerAsync(WorkManager.class, () -> WorkManager.getInstance(context));

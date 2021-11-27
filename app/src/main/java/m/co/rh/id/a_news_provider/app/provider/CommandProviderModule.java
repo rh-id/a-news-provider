@@ -28,6 +28,6 @@ public class CommandProviderModule implements ProviderModule {
 
     @Override
     public void dispose(Context context, Provider provider) {
-        // leave blank
+        mAppProvider = null;
     }
 }

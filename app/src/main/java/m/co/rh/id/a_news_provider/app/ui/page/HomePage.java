@@ -5,10 +5,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.widget.Toolbar;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.work.Data;
@@ -51,7 +54,7 @@ import m.co.rh.id.anavigator.component.NavOnBackPressed;
 import m.co.rh.id.anavigator.component.RequireNavigator;
 import m.co.rh.id.aprovider.Provider;
 
-public class HomePage extends StatefulView<Activity> implements RequireNavigator, NavOnBackPressed {
+public class HomePage extends StatefulView<Activity> implements RequireNavigator, NavOnBackPressed, Toolbar.OnMenuItemClickListener, SwipeRefreshLayout.OnRefreshListener, DrawerLayout.DrawerListener, View.OnClickListener {
     private static final String TAG = HomePage.class.getName();
 
     private transient INavigator mNavigator;
@@ -64,6 +67,9 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
     private boolean mLastOnlineStatus;
     private transient long mLastBackPressMilis;
     private transient Provider mSvProvider;
+
+    // View related
+    private transient DrawerLayout mDrawerLayout;
 
     @Override
     public void provideNavigator(INavigator navigator) {
@@ -95,46 +101,17 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
         ILogger logger = provider.get(ILogger.class);
         View menuSettings = view.findViewById(R.id.menu_settings);
         menuSettings.setOnClickListener(view12 -> mNavigator.push(Routes.SETTINGS_PAGE));
-        DrawerLayout drawerLayout = view.findViewById(R.id.drawer);
-        drawerLayout.addDrawerListener(new DrawerLayout.SimpleDrawerListener() {
-            @Override
-            public void onDrawerOpened(View drawerView) {
-                mIsDrawerOpen = true;
-            }
-
-            @Override
-            public void onDrawerClosed(View drawerView) {
-                mIsDrawerOpen = false;
-            }
-        });
-        mAppBarSV.setMenu(R.menu.home, item -> {
-            int itemId = item.getItemId();
-            if (itemId == R.id.menu_sync_feed) {
-                mSvProvider.get(SyncRssCmd.class).execute();
-                return true;
-            } else if (itemId == R.id.menu_export_opml) {
-                Context appContext = activity.getApplicationContext();
-                Single<File> fileSingle =
-                        Single.fromCallable(() -> provider.get(OpmlParser.class).exportOpml())
-                                .subscribeOn(Schedulers.from(provider.get(ExecutorService.class)))
-                                .observeOn(AndroidSchedulers.mainThread());
-                mSvProvider.get(RxDisposer.class).add("asyncExportOpml", fileSingle.subscribe(
-                        file -> UiUtils.shareFile(activity, file, activity.getString(R.string.share_opml)),
-                        throwable -> provider.get(ILogger.class)
-                                .e(TAG, appContext.getString(R.string.error_exporting_opml),
-                                        throwable)
-                ));
-            }
-            return false;
-        });
+        mDrawerLayout = view.findViewById(R.id.drawer);
+        mDrawerLayout.addDrawerListener(this);
+        mAppBarSV.setMenu(R.menu.home, this);
         mAppBarSV.setTitle(activity.getString(R.string.appbar_title_home));
         mAppBarSV.setNavigationOnClickListener(view1 -> {
-            if (!drawerLayout.isOpen()) {
-                drawerLayout.open();
+            if (!mDrawerLayout.isOpen()) {
+                mDrawerLayout.open();
             }
         });
         if (mIsDrawerOpen) {
-            drawerLayout.open();
+            mDrawerLayout.open();
         }
         mSvProvider.get(RxDisposer.class).add("syncRssCmd.syncedRss",
                 mSvProvider.get(SyncRssCmd.class).syncedRss()
@@ -161,8 +138,8 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(rssChannelOptional -> {
                             if (rssChannelOptional.isPresent()) {
-                                if (drawerLayout.isOpen()) {
-                                    drawerLayout.close();
+                                if (mDrawerLayout.isOpen()) {
+                                    mDrawerLayout.close();
                                 }
                                 mSelectedRssChannel = rssChannelOptional.get();
                             }
@@ -207,11 +184,9 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
         containerListNews.addView(mRssItemListSV.buildView(activity, container));
 
         FloatingActionButton fab = view.findViewById(R.id.fab);
-        fab.setOnClickListener(view1 ->
-                mNavigator.push((args, activity1) ->
-                        new NewRssChannelSVDialog()));
+        fab.setOnClickListener(this);
         SwipeRefreshLayout swipeRefreshLayout = view.findViewById(R.id.container_swipe_refresh);
-        swipeRefreshLayout.setOnRefreshListener(() -> mRssItemListSV.refresh());
+        swipeRefreshLayout.setOnRefreshListener(this);
         if (mRssItemListSV.observeRssItems() != null) {
             mSvProvider.get(RxDisposer.class).add("mRssItemListSV.observeRssItems",
                     mRssItemListSV.observeRssItems()
@@ -271,6 +246,7 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
             mSvProvider.dispose();
             mSvProvider = null;
         }
+        mDrawerLayout = null;
     }
 
     @Override
@@ -289,6 +265,63 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
                         .get(ILogger.class)
                         .i(TAG, activity.getString(R.string.toast_back_press_exit));
             }
+        }
+    }
+
+    @Override
+    public boolean onMenuItemClick(MenuItem item) {
+        int itemId = item.getItemId();
+        if (itemId == R.id.menu_sync_feed) {
+            mSvProvider.get(SyncRssCmd.class).execute();
+            return true;
+        } else if (itemId == R.id.menu_export_opml) {
+            Context context = mSvProvider.getContext();
+            Provider provider = BaseApplication.of(context).getProvider();
+            Single<File> fileSingle =
+                    Single.fromCallable(() -> provider.get(OpmlParser.class).exportOpml())
+                            .subscribeOn(Schedulers.from(provider.get(ExecutorService.class)))
+                            .observeOn(AndroidSchedulers.mainThread());
+            mSvProvider.get(RxDisposer.class).add("asyncExportOpml", fileSingle.subscribe(
+                    file -> UiUtils.shareFile(context, file, context.getString(R.string.share_opml)),
+                    throwable -> provider.get(ILogger.class)
+                            .e(TAG, context.getString(R.string.error_exporting_opml),
+                                    throwable)
+            ));
+        }
+        return false;
+    }
+
+    @Override
+    public void onRefresh() {
+        mRssItemListSV.refresh();
+    }
+
+    @Override
+    public void onDrawerSlide(@NonNull View drawerView, float slideOffset) {
+        // Leave blank
+    }
+
+    @Override
+    public void onDrawerOpened(@NonNull View drawerView) {
+        mIsDrawerOpen = true;
+    }
+
+    @Override
+    public void onDrawerClosed(@NonNull View drawerView) {
+        mIsDrawerOpen = false;
+    }
+
+    @Override
+    public void onDrawerStateChanged(int newState) {
+        // Leave blank
+    }
+
+    @Override
+    public void onClick(View view) {
+        int viewId = view.getId();
+        if (viewId == R.id.fab) {
+            mNavigator.push((args, activity1) ->
+                    new NewRssChannelSVDialog());
         }
     }
 }
