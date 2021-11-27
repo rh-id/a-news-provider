@@ -21,7 +21,11 @@ import androidx.work.WorkManager;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
+import java.io.Externalizable;
 import java.io.File;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.concurrent.ExecutorService;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
@@ -54,7 +58,7 @@ import m.co.rh.id.anavigator.component.NavOnBackPressed;
 import m.co.rh.id.anavigator.component.RequireNavigator;
 import m.co.rh.id.aprovider.Provider;
 
-public class HomePage extends StatefulView<Activity> implements RequireNavigator, NavOnBackPressed, Toolbar.OnMenuItemClickListener, SwipeRefreshLayout.OnRefreshListener, DrawerLayout.DrawerListener, View.OnClickListener {
+public class HomePage extends StatefulView<Activity> implements Externalizable, RequireNavigator, NavOnBackPressed, Toolbar.OnMenuItemClickListener, SwipeRefreshLayout.OnRefreshListener, DrawerLayout.DrawerListener, View.OnClickListener {
     private static final String TAG = HomePage.class.getName();
 
     private transient INavigator mNavigator;
@@ -328,5 +332,27 @@ public class HomePage extends StatefulView<Activity> implements RequireNavigator
             mNavigator.push((args, activity1) ->
                     new NewRssChannelSVDialog());
         }
+    }
+
+    @Override
+    public void writeExternal(ObjectOutput objectOutput) throws IOException {
+        super.writeExternal(objectOutput);
+        objectOutput.writeObject(mAppBarSV);
+        objectOutput.writeBoolean(mIsDrawerOpen);
+        objectOutput.writeObject(mRssItemListSV);
+        objectOutput.writeObject(mRssChannelListSV);
+        objectOutput.writeObject(mSelectedRssChannel);
+        objectOutput.writeBoolean(mLastOnlineStatus);
+    }
+
+    @Override
+    public void readExternal(ObjectInput objectInput) throws ClassNotFoundException, IOException {
+        super.readExternal(objectInput);
+        mAppBarSV = (AppBarSV) objectInput.readObject();
+        mIsDrawerOpen = objectInput.readBoolean();
+        mRssItemListSV = (RssItemListSV) objectInput.readObject();
+        mRssChannelListSV = (RssChannelListSV) objectInput.readObject();
+        mSelectedRssChannel = (RssChannel) objectInput.readObject();
+        mLastOnlineStatus = objectInput.readBoolean();
     }
 }

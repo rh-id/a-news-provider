@@ -5,7 +5,13 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.widget.Toolbar;
+
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.a_news_provider.R;
@@ -16,7 +22,7 @@ import m.co.rh.id.anavigator.component.INavigator;
 import m.co.rh.id.anavigator.component.RequireNavigator;
 import m.co.rh.id.aprovider.Provider;
 
-public class AppBarSV extends StatefulView<Activity> implements RequireNavigator, View.OnClickListener, Toolbar.OnMenuItemClickListener {
+public class AppBarSV extends StatefulView<Activity> implements Externalizable, RequireNavigator, View.OnClickListener, Toolbar.OnMenuItemClickListener {
 
     private transient INavigator mNavigator;
     private String mTitle;
@@ -26,6 +32,15 @@ public class AppBarSV extends StatefulView<Activity> implements RequireNavigator
     private transient Toolbar.OnMenuItemClickListener mOnMenuItemClickListener;
     private transient Provider mSvProvider;
     private transient BehaviorSubject<String> mUpdateTitle;
+
+    /**
+     * This was meant for Externalizable only, to speed up serialization process
+     * do not use this
+     */
+    @Deprecated
+    @VisibleForTesting
+    public AppBarSV() {
+    }
 
     public AppBarSV(INavigator navigator) {
         this(navigator, null);
@@ -113,5 +128,21 @@ public class AppBarSV extends StatefulView<Activity> implements RequireNavigator
             return mOnMenuItemClickListener.onMenuItemClick(item);
         }
         return false;
+    }
+
+    @Override
+    public void writeExternal(ObjectOutput objectOutput) throws IOException {
+        super.writeExternal(objectOutput);
+        objectOutput.writeObject(mTitle);
+        objectOutput.writeBoolean(mIsInitialRoute);
+        objectOutput.writeObject(mMenuResId);
+    }
+
+    @Override
+    public void readExternal(ObjectInput objectInput) throws ClassNotFoundException, IOException {
+        super.readExternal(objectInput);
+        mTitle = (String) objectInput.readObject();
+        mIsInitialRoute = objectInput.readBoolean();
+        mMenuResId = (Integer) objectInput.readObject();
     }
 }
