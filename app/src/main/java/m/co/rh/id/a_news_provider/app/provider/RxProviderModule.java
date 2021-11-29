@@ -16,6 +16,6 @@ public class RxProviderModule implements ProviderModule {
 
     @Override
     public void dispose(Context context, Provider provider) {
-        provider.get(RxDisposer.class).dispose();
+        // leave blank
     }
 }

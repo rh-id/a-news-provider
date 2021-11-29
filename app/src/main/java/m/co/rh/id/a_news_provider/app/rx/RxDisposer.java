@@ -1,14 +1,17 @@
 package m.co.rh.id.a_news_provider.app.rx;
 
+import android.content.Context;
+
 import java.util.HashMap;
 import java.util.Map;
 
 import io.reactivex.rxjava3.disposables.Disposable;
+import m.co.rh.id.aprovider.ProviderDisposable;
 
 /**
  * Helper class to help manage Rx disposable instances
  */
-public class RxDisposer {
+public class RxDisposer implements ProviderDisposable {
     private Map<String, Disposable> disposableMap;
 
     public RxDisposer() {
@@ -30,5 +33,10 @@ public class RxDisposer {
             }
             disposableMap.clear();
         }
+    }
+
+    @Override
+    public void dispose(Context context) {
+        dispose();
     }
 }
