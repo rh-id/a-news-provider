@@ -24,7 +24,7 @@ import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.a_news_provider.R;
-import m.co.rh.id.a_news_provider.app.provider.StatefulViewProviderModule;
+import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.RenameRssFeedCmd;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
@@ -83,7 +83,7 @@ public class RssChannelItemSV extends StatefulView<Activity> implements View.OnC
         if (mSvProvider != null) {
             mSvProvider.dispose();
         }
-        mSvProvider = Provider.createProvider(activity.getApplicationContext(), new StatefulViewProviderModule(activity));
+        mSvProvider = BaseApplication.of(activity).getProvider().get(StatefulViewProvider.class);
         mRssChangeNotifier = provider.get(RssChangeNotifier.class);
         view.setOnClickListener(this);
         view.setLongClickable(true);

@@ -54,7 +54,7 @@ public class BaseProviderModule implements ProviderModule {
                     logLevel = ILogger.VERBOSE;
                 }
                 ILogger fileLogger = new FileLogger(logLevel,
-                        provider.get(FileProvider.class).getLogFile());
+                        provider.get(FileHelper.class).getLogFile());
                 loggerList.add(fileLogger);
             } catch (IOException e) {
                 defaultLogger.e(TAG, "Error creating file logger", e);
@@ -68,7 +68,7 @@ public class BaseProviderModule implements ProviderModule {
 
             return new CompositeLogger(loggerList);
         });
-        providerRegistry.register(FileProvider.class, new FileProvider(provider, context));
+        providerRegistry.register(FileHelper.class, new FileHelper(provider, context));
     }
 
     @Override

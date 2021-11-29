@@ -16,9 +16,10 @@ import java.util.ArrayList;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Flowable;
 import m.co.rh.id.a_news_provider.R;
-import m.co.rh.id.a_news_provider.app.provider.StatefulViewProviderModule;
+import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.PagedRssItemsCmd;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
+import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.aprovider.Provider;
@@ -49,7 +50,7 @@ public class RssItemListSV extends StatefulView<Activity> {
         if (mSvProvider != null) {
             mSvProvider.dispose();
         }
-        mSvProvider = Provider.createProvider(activity.getApplicationContext(), new StatefulViewProviderModule(activity));
+        mSvProvider = BaseApplication.of(activity).getProvider().get(StatefulViewProvider.class);
         mSvProvider.get(PagedRssItemsCmd.class).load();
         Spinner spinnerFilterBy = view.findViewById(R.id.spinner_filter_by);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(activity,

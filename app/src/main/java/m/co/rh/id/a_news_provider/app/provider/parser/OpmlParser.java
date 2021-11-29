@@ -22,7 +22,7 @@ import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.command.NewRssChannelCmd;
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
-import m.co.rh.id.a_news_provider.base.provider.FileProvider;
+import m.co.rh.id.a_news_provider.base.provider.FileHelper;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderValue;
@@ -32,19 +32,19 @@ public class OpmlParser {
     private final Context mAppContext;
     private final ProviderValue<ILogger> mLogger;
     private final ProviderValue<NewRssChannelCmd> mNewRssChannelCmd;
-    private final ProviderValue<FileProvider> mFileProvider;
+    private final ProviderValue<FileHelper> mFileHelper;
     private final ProviderValue<RssDao> mRssDao;
 
     public OpmlParser(Provider provider, Context context) {
         mAppContext = context.getApplicationContext();
         mLogger = provider.lazyGet(ILogger.class);
         mNewRssChannelCmd = provider.lazyGet(NewRssChannelCmd.class);
-        mFileProvider = provider.lazyGet(FileProvider.class);
+        mFileHelper = provider.lazyGet(FileHelper.class);
         mRssDao = provider.lazyGet(RssDao.class);
     }
 
     public File exportOpml() throws IOException {
-        File resultFile = mFileProvider.get().createTempFile("Feed.opml");
+        File resultFile = mFileHelper.get().createTempFile("Feed.opml");
         XmlSerializer xmlSerializer = Xml.newSerializer();
         FileWriter fileWriter = new FileWriter(resultFile);
         xmlSerializer.setOutput(fileWriter);

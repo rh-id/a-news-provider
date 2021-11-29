@@ -8,7 +8,7 @@ import android.widget.TextView;
 
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.a_news_provider.R;
-import m.co.rh.id.a_news_provider.app.provider.RxProviderModule;
+import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
@@ -55,7 +55,7 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
         if (mSvProvider != null) {
             mSvProvider.dispose();
         }
-        mSvProvider = Provider.createProvider(activity.getApplicationContext(), new RxProviderModule());
+        mSvProvider = BaseApplication.of(activity).getProvider().get(StatefulViewProvider.class);
         RssChangeNotifier rssChangeNotifier = provider.get(RssChangeNotifier.class);
         view.setOnClickListener(view1 -> {
             if (mNavigator != null) {

@@ -14,9 +14,10 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.a_news_provider.R;
-import m.co.rh.id.a_news_provider.app.provider.StatefulViewProviderModule;
+import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.NewRssChannelCmd;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
+import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.anavigator.StatefulViewDialog;
 import m.co.rh.id.aprovider.Provider;
 
@@ -61,7 +62,7 @@ public class NewRssChannelSVDialog extends StatefulViewDialog<Activity> implemen
         if (mSvProvider != null) {
             mSvProvider.dispose();
         }
-        mSvProvider = Provider.createProvider(activity.getApplicationContext(), new StatefulViewProviderModule(activity));
+        mSvProvider = BaseApplication.of(activity).getProvider().get(StatefulViewProvider.class);
         if (mFeedUrlSubject == null) {
             mFeedUrlSubject = BehaviorSubject.createDefault(mFeedUrl);
         } else {

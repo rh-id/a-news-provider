@@ -35,7 +35,7 @@ import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.component.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.app.constants.Routes;
 import m.co.rh.id.a_news_provider.app.constants.Shortcuts;
-import m.co.rh.id.a_news_provider.app.provider.StatefulViewProviderModule;
+import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.SyncRssCmd;
 import m.co.rh.id.a_news_provider.app.provider.notifier.DeviceStatusNotifier;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
@@ -50,7 +50,7 @@ import m.co.rh.id.a_news_provider.app.workmanager.ConstantsKey;
 import m.co.rh.id.a_news_provider.app.workmanager.OpmlParseWorker;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
-import m.co.rh.id.a_news_provider.base.provider.FileProvider;
+import m.co.rh.id.a_news_provider.base.provider.FileHelper;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.component.INavigator;
@@ -99,7 +99,7 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
         if (mSvProvider != null) {
             mSvProvider.dispose();
         }
-        mSvProvider = Provider.createProvider(activity.getApplicationContext(), new StatefulViewProviderModule(activity));
+        mSvProvider = BaseApplication.of(activity).getProvider().get(StatefulViewProvider.class);
         AppSharedPreferences appSharedPreferences = provider.get(AppSharedPreferences.class);
         int layoutId = R.layout.page_home;
         if (appSharedPreferences.isOneHandMode()) {
@@ -221,7 +221,7 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
             provider.get(ExecutorService.class)
                     .execute(() -> {
                         try {
-                            File file = provider.get(FileProvider.class)
+                            File file = provider.get(FileHelper.class)
                                     .createTempFile("Feed.opml", fileData);
                             OneTimeWorkRequest oneTimeWorkRequest =
                                     new OneTimeWorkRequest.Builder(OpmlParseWorker.class)

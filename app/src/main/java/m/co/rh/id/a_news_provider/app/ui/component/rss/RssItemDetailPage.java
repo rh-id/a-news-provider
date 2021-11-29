@@ -17,7 +17,7 @@ import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.component.AppSharedPreferences;
-import m.co.rh.id.a_news_provider.app.provider.StatefulViewProviderModule;
+import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
@@ -55,7 +55,7 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         if (mSvProvider != null) {
             mSvProvider.dispose();
         }
-        mSvProvider = Provider.createProvider(activity.getApplicationContext(), new StatefulViewProviderModule(activity));
+        mSvProvider = BaseApplication.of(activity).getProvider().get(StatefulViewProvider.class);
         AppSharedPreferences appSharedPreferences = provider.get(AppSharedPreferences.class);
         if (appSharedPreferences.isOneHandMode()) {
             layoutId = R.layout.one_hand_mode_page_rss_item_detail;

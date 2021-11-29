@@ -23,7 +23,7 @@ import m.co.rh.id.a_news_provider.app.provider.RxProviderModule;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.util.UiUtils;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
-import m.co.rh.id.a_news_provider.base.provider.FileProvider;
+import m.co.rh.id.a_news_provider.base.provider.FileHelper;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.aprovider.Provider;
@@ -46,8 +46,8 @@ public class LogPage extends StatefulView<Activity> {
             mSvProvider.dispose();
         }
         mSvProvider = Provider.createProvider(activity.getApplicationContext(), new RxProviderModule());
-        FileProvider fileProvider = provider.get(FileProvider.class);
-        File logFile = fileProvider.getLogFile();
+        FileHelper fileHelper = provider.get(FileHelper.class);
+        File logFile = fileHelper.getLogFile();
         FloatingActionButton fabClear = view.findViewById(R.id.fab_clear);
         FloatingActionButton fabShare = view.findViewById(R.id.fab_share);
         fabShare.setOnClickListener(v -> {
@@ -60,7 +60,7 @@ public class LogPage extends StatefulView<Activity> {
         });
         BehaviorSubject<File> subject = BehaviorSubject.createDefault(logFile);
         fabClear.setOnClickListener(view1 -> {
-            fileProvider.clearLogFile();
+            fileHelper.clearLogFile();
             provider.get(ILogger.class).i(TAG, activity.getString(R.string.log_file_deleted));
             provider.get(Handler.class)
                     .post(() -> subject.onNext(logFile));
