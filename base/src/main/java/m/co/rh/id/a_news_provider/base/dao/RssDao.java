@@ -28,16 +28,16 @@ public abstract class RssDao {
     @Query("SELECT * FROM rss_item WHERE channel_id = :channelId")
     public abstract List<RssItem> findRssItemsByChannelId(long channelId);
 
-    @Query("SELECT * FROM rss_item WHERE channel_id = :channelId AND is_read = :isRead ORDER BY created_date_time DESC LIMIT :limit")
+    @Query("SELECT * FROM rss_item WHERE channel_id = :channelId AND is_read = :isRead ORDER BY pub_date DESC,created_date_time DESC LIMIT :limit")
     public abstract List<RssItem> findRssItemsByChannelIdAndIsReadWithLimit(long channelId, int isRead, int limit);
 
-    @Query("SELECT * FROM rss_item WHERE channel_id = :channelId ORDER BY created_date_time DESC LIMIT :limit")
+    @Query("SELECT * FROM rss_item WHERE channel_id = :channelId ORDER BY pub_date DESC,created_date_time DESC LIMIT :limit")
     public abstract List<RssItem> findRssItemsByChannelIdWithLimit(long channelId, int limit);
 
-    @Query("SELECT * FROM rss_item ORDER BY created_date_time DESC LIMIT :limit")
+    @Query("SELECT * FROM rss_item ORDER BY pub_date DESC,created_date_time DESC LIMIT :limit")
     public abstract List<RssItem> loadRssItemsWithLimit(int limit);
 
-    @Query("SELECT * FROM rss_item WHERE is_read = :isRead ORDER BY created_date_time DESC LIMIT :limit")
+    @Query("SELECT * FROM rss_item WHERE is_read = :isRead ORDER BY pub_date DESC,created_date_time DESC LIMIT :limit")
     public abstract List<RssItem> findRssItemsByIsReadWithLimit(int isRead, int limit);
 
     @Query("SELECT COUNT(id) FROM rss_item")
