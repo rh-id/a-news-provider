@@ -29,8 +29,8 @@ android {
         applicationId "m.co.rh.id.a_news_provider"
         minSdkVersion 16
         targetSdkVersion 31
-        versionCode 18
-        versionName "1.2.10"
+        versionCode 19
+        versionName "1.2.11"
         vectorDrawables.useSupportLibrary true
         multiDexEnabled = true
 
