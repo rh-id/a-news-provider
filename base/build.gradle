@@ -40,7 +40,7 @@ dependencies {
     annotationProcessor "androidx.room:room-compiler:$room_version"
 
     api 'com.android.volley:volley:1.2.1'
-    api 'com.github.rh-id:a-provider:v0.0.13'
+    api 'com.github.rh-id:a-provider:v0.0.14'
     api 'com.github.rh-id:a-navigator:v0.0.27'
     api 'com.github.rh-id:a-logger:v0.0.3'
     testImplementation 'junit:junit:4.13.2'
