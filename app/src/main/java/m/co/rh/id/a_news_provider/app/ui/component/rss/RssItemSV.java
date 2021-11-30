@@ -6,6 +6,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import androidx.core.text.HtmlCompat;
+
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
@@ -75,7 +77,8 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
                         textDate.setText(rssItem.createdDateTime.toString());
                     }
                     if (rssItem.title != null) {
-                        textTitle.setText(rssItem.title);
+                        textTitle.setText(HtmlCompat
+                                .fromHtml(rssItem.title, HtmlCompat.FROM_HTML_MODE_COMPACT));
                     }
                     if (rssItem.isRead) {
                         textDate.setTypeface(null, Typeface.NORMAL);

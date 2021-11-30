@@ -64,7 +64,8 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         ViewGroup containerAppBar = view.findViewById(R.id.container_app_bar);
         containerAppBar.addView(mAppBarSV.buildView(activity, container));
         TextView titleText = view.findViewById(R.id.text_title);
-        titleText.setText(mRssItem.title);
+        titleText.setText(HtmlCompat
+                .fromHtml(mRssItem.title, HtmlCompat.FROM_HTML_MODE_COMPACT));
         titleText.setOnClickListener(view1 -> {
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(mRssItem.link));
             activity.startActivity(browserIntent);
