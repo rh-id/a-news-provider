@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.text.method.LinkMovementMethod;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.core.text.HtmlCompat;
@@ -20,6 +21,7 @@ import m.co.rh.id.a_news_provider.app.component.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
+import m.co.rh.id.a_news_provider.app.util.UiUtils;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
@@ -29,7 +31,7 @@ import m.co.rh.id.anavigator.component.INavigator;
 import m.co.rh.id.anavigator.component.RequireNavigator;
 import m.co.rh.id.aprovider.Provider;
 
-public class RssItemDetailPage extends StatefulView<Activity> implements RequireNavigator {
+public class RssItemDetailPage extends StatefulView<Activity> implements RequireNavigator, View.OnClickListener {
     private AppBarSV mAppBarSV;
     private RssItem mRssItem;
     private RssChannel mRssChannel;
@@ -66,16 +68,15 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         TextView titleText = view.findViewById(R.id.text_title);
         titleText.setText(HtmlCompat
                 .fromHtml(mRssItem.title, HtmlCompat.FROM_HTML_MODE_COMPACT));
-        titleText.setOnClickListener(view1 -> {
-            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(mRssItem.link));
-            activity.startActivity(browserIntent);
-        });
+        titleText.setOnClickListener(this);
         TextView textView = view.findViewById(R.id.text_content);
         String desc = mRssItem.description;
         if (desc != null && !desc.isEmpty()) {
             textView.setText(HtmlCompat.fromHtml(desc, HtmlCompat.FROM_HTML_MODE_LEGACY));
             textView.setMovementMethod(LinkMovementMethod.getInstance());
         }
+        Button fabOpenLink = view.findViewById(R.id.fab_open_link);
+        fabOpenLink.setOnClickListener(this);
         if (mRssChannel == null) {
             RssDao rssDao = provider.get(RssDao.class);
             mSvProvider.get(RxDisposer.class).add("getRssChannel",
@@ -105,5 +106,15 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         mAppBarSV = null;
         mRssItem = null;
         mRssChannel = null;
+    }
+
+    @Override
+    public void onClick(View view) {
+        int viewId = view.getId();
+        if (viewId == R.id.text_title || viewId == R.id.fab_open_link) {
+            Activity activity = UiUtils.getActivity(view);
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(mRssItem.link));
+            activity.startActivity(browserIntent);
+        }
     }
 }

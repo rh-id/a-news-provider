@@ -68,4 +68,14 @@
             app:layout_scrollFlags="scroll|snap" />
 
     </com.google.android.material.appbar.AppBarLayout>
+
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/fab_open_link"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/text_margin"
+        android:text="@string/open_link"
+        app:icon="@drawable/ic_open_in_browser_white"
+        app:layout_anchor="@id/container_app_bar"
+        app:layout_anchorGravity="end" />
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
