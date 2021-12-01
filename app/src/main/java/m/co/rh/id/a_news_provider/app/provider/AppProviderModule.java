@@ -57,7 +57,7 @@ public class AppProviderModule implements ProviderModule {
         providerRegistry.registerAsync(RssChangeNotifier.class, () -> new RssChangeNotifier(provider, context));
         providerRegistry.registerLazy(OpmlParser.class, () -> new OpmlParser(provider, context));
 
-        providerRegistry.registerFactory(StatefulViewProvider.class, () -> new StatefulViewProvider(provider));
+        providerRegistry.registerPool(StatefulViewProvider.class, () -> new StatefulViewProvider(provider));
 
         // it is safer to register navigator last in case it needs dependency from all above, provider can be passed here
         providerRegistry.register(INavigator.class, getNavigator());

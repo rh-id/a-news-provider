@@ -3,12 +3,13 @@ package m.co.rh.id.a_news_provider.app.provider;
 import android.content.Context;
 
 import m.co.rh.id.aprovider.Provider;
+import m.co.rh.id.aprovider.ProviderDisposable;
 import m.co.rh.id.aprovider.ProviderValue;
 
 /**
  * Common provider used for StatefulView
  */
-public class StatefulViewProvider implements Provider {
+public class StatefulViewProvider implements Provider, ProviderDisposable {
 
     private Provider mProvider;
 
@@ -44,6 +45,15 @@ public class StatefulViewProvider implements Provider {
 
     @Override
     public void dispose() {
-        mProvider.dispose();
+        // dispose may be called multiple times
+        if (mProvider != null) {
+            mProvider.dispose();
+            mProvider = null;
+        }
+    }
+
+    @Override
+    public void dispose(Context context) {
+        dispose();
     }
 }
