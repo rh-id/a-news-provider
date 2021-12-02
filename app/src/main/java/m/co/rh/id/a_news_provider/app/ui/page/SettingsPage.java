@@ -16,14 +16,15 @@ import m.co.rh.id.a_news_provider.app.ui.component.settings.OneHandModeMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.RssSyncMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.ThemeMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.VersionMenuSV;
-import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.component.INavigator;
+import m.co.rh.id.anavigator.component.RequireComponent;
 import m.co.rh.id.anavigator.component.RequireNavigator;
 import m.co.rh.id.aprovider.Provider;
 
-public class SettingsPage extends StatefulView<Activity> implements RequireNavigator {
+public class SettingsPage extends StatefulView<Activity> implements RequireNavigator, RequireComponent<Provider> {
 
+    private transient Provider mProvider; // global provider
     private AppBarSV mAppBarSV;
     private ArrayList<StatefulView> mStatefulViews;
 
@@ -58,10 +59,21 @@ public class SettingsPage extends StatefulView<Activity> implements RequireNavig
     }
 
     @Override
+    public void provideComponent(Provider provider) {
+        mProvider = provider;
+        if (mStatefulViews != null) {
+            for (StatefulView statefulView : mStatefulViews) {
+                if (statefulView instanceof RequireComponent) {
+                    ((RequireComponent) statefulView).provideComponent(provider);
+                }
+            }
+        }
+    }
+
+    @Override
     protected View createView(Activity activity, ViewGroup container) {
         int layoutId = R.layout.page_settings;
-        Provider provider = BaseApplication.of(activity).getProvider();
-        AppSharedPreferences appSharedPreferences = provider.get(AppSharedPreferences.class);
+        AppSharedPreferences appSharedPreferences = mProvider.get(AppSharedPreferences.class);
         if (appSharedPreferences.isOneHandMode()) {
             layoutId = R.layout.one_hand_mode_page_settings;
         }
@@ -89,5 +101,6 @@ public class SettingsPage extends StatefulView<Activity> implements RequireNavig
             mStatefulViews.clear();
             mStatefulViews = null;
         }
+        mProvider = null;
     }
 }

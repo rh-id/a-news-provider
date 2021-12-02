@@ -60,7 +60,7 @@ public class AppProviderModule implements ProviderModule {
         providerRegistry.registerPool(StatefulViewProvider.class, () -> new StatefulViewProvider(provider));
 
         // it is safer to register navigator last in case it needs dependency from all above, provider can be passed here
-        providerRegistry.register(INavigator.class, getNavigator());
+        providerRegistry.register(INavigator.class, getNavigator(provider));
     }
 
     @NonNull
@@ -70,7 +70,7 @@ public class AppProviderModule implements ProviderModule {
         return deviceStatusNotifier;
     }
 
-    private Navigator getNavigator() {
+    private Navigator getNavigator(Provider provider) {
         Map<String, StatefulViewFactory<Activity, StatefulView>> navMap = new HashMap<>();
         navMap.put(Routes.HOME_PAGE, (args, activity) -> {
             if (args instanceof StatefulView) {
@@ -83,6 +83,7 @@ public class AppProviderModule implements ProviderModule {
                 new NavConfiguration.Builder<>(Routes.HOME_PAGE, navMap);
         navBuilder.setSaveStateFile(new File(mApplication.getCacheDir(),
                 "anavigator/Navigator.state"));
+        navBuilder.setRequiredComponent(provider);
         NavConfiguration<Activity, StatefulView> navConfiguration = navBuilder.build();
         Navigator navigator = new Navigator(MainActivity.class, navConfiguration);
         mApplication.registerActivityLifecycleCallbacks(navigator);
