@@ -58,7 +58,7 @@ import m.co.rh.id.anavigator.component.RequireComponent;
 import m.co.rh.id.anavigator.component.RequireNavigator;
 import m.co.rh.id.aprovider.Provider;
 
-public class HomePage extends StatefulView<Activity> implements Externalizable, RequireNavigator, RequireComponent<Provider>, NavOnBackPressed, Toolbar.OnMenuItemClickListener, SwipeRefreshLayout.OnRefreshListener, DrawerLayout.DrawerListener, View.OnClickListener {
+public class HomePage extends StatefulView<Activity> implements Externalizable, RequireNavigator, RequireComponent<Provider>, NavOnBackPressed<Activity>, Toolbar.OnMenuItemClickListener, SwipeRefreshLayout.OnRefreshListener, DrawerLayout.DrawerListener, View.OnClickListener {
     private static final String TAG = HomePage.class.getName();
 
     private transient INavigator mNavigator;
@@ -72,13 +72,6 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
     private transient long mLastBackPressMilis;
 
     // component
-    private transient ExecutorService mExecutorService;
-    private transient FileHelper mFileHelper;
-    private transient ILogger mLogger;
-    private transient WorkManager mWorkManager;
-    private transient DeviceStatusNotifier mDeviceStatusNotifier;
-    private transient AppSharedPreferences mAppSharedPreferences;
-    private transient RssChangeNotifier mRssChangeNotifier;
     private transient Provider mSvProvider;
 
     // View related
@@ -97,13 +90,6 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
 
     @Override
     public void provideComponent(Provider provider) {
-        mExecutorService = provider.get(ExecutorService.class);
-        mFileHelper = provider.get(FileHelper.class);
-        mLogger = provider.get(ILogger.class);
-        mWorkManager = provider.get(WorkManager.class);
-        mDeviceStatusNotifier = provider.get(DeviceStatusNotifier.class);
-        mAppSharedPreferences = provider.get(AppSharedPreferences.class);
-        mRssChangeNotifier = provider.get(RssChangeNotifier.class);
         if (mSvProvider != null) {
             mSvProvider.dispose();
         }
@@ -120,7 +106,7 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
     @Override
     protected View createView(Activity activity, ViewGroup container) {
         int layoutId = R.layout.page_home;
-        if (mAppSharedPreferences.isOneHandMode()) {
+        if (mSvProvider.get(AppSharedPreferences.class).isOneHandMode()) {
             layoutId = R.layout.one_hand_mode_page_home;
         }
         View view = activity.getLayoutInflater().inflate(layoutId, container, false);
@@ -154,14 +140,17 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
                                     }
                                 },
                                 throwable ->
-                                        mLogger.e(TAG, feedSyncError, throwable)
+                                        mSvProvider.get(ILogger.class)
+                                                .e(TAG, feedSyncError, throwable)
                         )
         );
         if (mSelectedRssChannel != null) {
-            mRssChangeNotifier.selectRssChannel(mSelectedRssChannel);
+            mSvProvider.get(RssChangeNotifier.class)
+                    .selectRssChannel(mSelectedRssChannel);
         }
         mSvProvider.get(RxDisposer.class).add("rssChangeNotifier.selectedRssChannel",
-                mRssChangeNotifier.selectedRssChannel()
+                mSvProvider.get(RssChangeNotifier.class)
+                        .selectedRssChannel()
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(rssChannelOptional -> {
                             if (rssChannelOptional.isPresent()) {
@@ -173,21 +162,24 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
                         })
         );
         mSvProvider.get(RxDisposer.class).add("rssChangeNotifier.newRssModel",
-                mRssChangeNotifier.liveNewRssModel()
+                mSvProvider.get(RssChangeNotifier.class)
+                        .liveNewRssModel()
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(rssModelOptional ->
                                 rssModelOptional
                                         .ifPresent(rssModel ->
-                                                mLogger.i(TAG,
-                                                        mSvProvider.getContext()
-                                                                .getString(
-                                                                        R.string.feed_added,
-                                                                        rssModel
-                                                                                .getRssChannel()
-                                                                                .feedName)))
+                                                mSvProvider.get(ILogger.class)
+                                                        .i(TAG,
+                                                                mSvProvider.getContext()
+                                                                        .getString(
+                                                                                R.string.feed_added,
+                                                                                rssModel
+                                                                                        .getRssChannel()
+                                                                                        .feedName)))
                         ));
         mSvProvider.get(RxDisposer.class).add("deviceStatusNotifier.onlineStatus",
-                mDeviceStatusNotifier.onlineStatus().subscribe(isOnline -> {
+                mSvProvider.get(DeviceStatusNotifier.class)
+                        .onlineStatus().subscribe(isOnline -> {
                     if (!isOnline) {
                         // only show when there are changes on online status
                         if (mLastOnlineStatus != isOnline) {
@@ -235,10 +227,10 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
         } else if (Intent.ACTION_VIEW.equals(intentAction)) {
             Uri fileData = intent.getData();
             String errorMessage = activity.getString(R.string.error_failed_to_open_file);
-            mExecutorService
+            mSvProvider.get(ExecutorService.class)
                     .execute(() -> {
                         try {
-                            File file = mFileHelper
+                            File file = mSvProvider.get(FileHelper.class)
                                     .createTempFile("Feed.opml", fileData);
                             OneTimeWorkRequest oneTimeWorkRequest =
                                     new OneTimeWorkRequest.Builder(OpmlParseWorker.class)
@@ -247,10 +239,10 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
                                                             file.getAbsolutePath())
                                                     .build())
                                             .build();
-                            mWorkManager
+                            mSvProvider.get(WorkManager.class)
                                     .enqueue(oneTimeWorkRequest);
                         } catch (Throwable throwable) {
-                            mLogger
+                            mSvProvider.get(ILogger.class)
                                     .e(TAG, errorMessage
                                             , throwable);
                         }
@@ -276,27 +268,19 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
         }
         mDrawerLayout = null;
         mOnNavigationClicked = null;
-        mExecutorService = null;
-        mFileHelper = null;
-        mLogger = null;
-        mWorkManager = null;
-        mDeviceStatusNotifier = null;
-        mAppSharedPreferences = null;
-        mRssChangeNotifier = null;
     }
 
     @Override
     public void onBackPressed(View currentView, Activity activity, INavigator navigator) {
-        DrawerLayout drawerLayout = currentView.findViewById(R.id.drawer);
-        if (drawerLayout.isOpen()) {
-            drawerLayout.close();
+        if (mDrawerLayout.isOpen()) {
+            mDrawerLayout.close();
         } else {
             long currentMilis = System.currentTimeMillis();
             if ((currentMilis - mLastBackPressMilis) < 1000) {
                 navigator.finishActivity(null);
             } else {
                 mLastBackPressMilis = currentMilis;
-                mLogger.i(TAG,
+                mSvProvider.get(ILogger.class).i(TAG,
                         activity.getString(R.string.toast_back_press_exit));
             }
         }
@@ -312,11 +296,11 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
             Context context = mSvProvider.getContext();
             Single<File> fileSingle =
                     Single.fromCallable(() -> mSvProvider.get(OpmlParser.class).exportOpml())
-                            .subscribeOn(Schedulers.from(mExecutorService))
+                            .subscribeOn(Schedulers.from(mSvProvider.get(ExecutorService.class)))
                             .observeOn(AndroidSchedulers.mainThread());
             mSvProvider.get(RxDisposer.class).add("asyncExportOpml", fileSingle.subscribe(
                     file -> UiUtils.shareFile(context, file, context.getString(R.string.share_opml)),
-                    throwable -> mLogger
+                    throwable -> mSvProvider.get(ILogger.class)
                             .e(TAG, context.getString(R.string.error_exporting_opml),
                                     throwable)
             ));
