@@ -22,17 +22,21 @@ import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
 import m.co.rh.id.a_news_provider.app.util.UiUtils;
-import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.anavigator.StatefulView;
+import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.anavigator.component.INavigator;
 import m.co.rh.id.anavigator.component.RequireNavigator;
 import m.co.rh.id.aprovider.Provider;
 
 public class RssItemDetailPage extends StatefulView<Activity> implements RequireNavigator, View.OnClickListener {
+
+    @NavInject
     private AppBarSV mAppBarSV;
+    @NavInject
+    private transient Provider mProvider;
     private RssItem mRssItem;
     private RssChannel mRssChannel;
     private transient Provider mSvProvider;
@@ -45,20 +49,17 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
     public void provideNavigator(INavigator navigator) {
         if (mAppBarSV == null) {
             mAppBarSV = new AppBarSV(navigator);
-        } else {
-            mAppBarSV.provideNavigator(navigator);
         }
     }
 
     @Override
     protected View createView(Activity activity, ViewGroup container) {
         int layoutId = R.layout.page_rss_item_detail;
-        Provider provider = BaseApplication.of(activity).getProvider();
         if (mSvProvider != null) {
             mSvProvider.dispose();
         }
-        mSvProvider = BaseApplication.of(activity).getProvider().get(StatefulViewProvider.class);
-        AppSharedPreferences appSharedPreferences = provider.get(AppSharedPreferences.class);
+        mSvProvider = mProvider.get(StatefulViewProvider.class);
+        AppSharedPreferences appSharedPreferences = mSvProvider.get(AppSharedPreferences.class);
         if (appSharedPreferences.isOneHandMode()) {
             layoutId = R.layout.one_hand_mode_page_rss_item_detail;
         }
@@ -78,11 +79,11 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         Button fabOpenLink = view.findViewById(R.id.fab_open_link);
         fabOpenLink.setOnClickListener(this);
         if (mRssChannel == null) {
-            RssDao rssDao = provider.get(RssDao.class);
+            RssDao rssDao = mSvProvider.get(RssDao.class);
             mSvProvider.get(RxDisposer.class).add("getRssChannel",
                     Single.fromCallable(() ->
                             rssDao.findRssChannelById(mRssItem.channelId))
-                            .subscribeOn(Schedulers.from(provider.get(ExecutorService.class)))
+                            .subscribeOn(Schedulers.from(mSvProvider.get(ExecutorService.class)))
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribe((rssChannel, throwable) -> {
                                 mRssChannel = rssChannel;
@@ -106,6 +107,7 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         mAppBarSV = null;
         mRssItem = null;
         mRssChannel = null;
+        mProvider = null;
     }
 
     @Override

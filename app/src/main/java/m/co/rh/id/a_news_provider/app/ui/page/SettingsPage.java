@@ -17,44 +17,41 @@ import m.co.rh.id.a_news_provider.app.ui.component.settings.RssSyncMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.ThemeMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.VersionMenuSV;
 import m.co.rh.id.anavigator.StatefulView;
+import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.anavigator.component.INavigator;
-import m.co.rh.id.anavigator.component.RequireComponent;
 import m.co.rh.id.anavigator.component.RequireNavigator;
 import m.co.rh.id.aprovider.Provider;
 
-public class SettingsPage extends StatefulView<Activity> implements RequireNavigator, RequireComponent<Provider> {
+public class SettingsPage extends StatefulView<Activity> implements RequireNavigator {
 
+    @NavInject
     private transient Provider mProvider; // global provider
+    @NavInject
     private AppBarSV mAppBarSV;
+    @NavInject
     private ArrayList<StatefulView> mStatefulViews;
+
+    public SettingsPage() {
+        mStatefulViews = new ArrayList<>();
+        RssSyncMenuSV rssSyncMenuSV = new RssSyncMenuSV();
+        mStatefulViews.add(rssSyncMenuSV);
+        ThemeMenuSV themeMenuSV = new ThemeMenuSV();
+        mStatefulViews.add(themeMenuSV);
+        OneHandModeMenuSV oneHandModeMenuSV = new OneHandModeMenuSV();
+        mStatefulViews.add(oneHandModeMenuSV);
+        LogMenuSV logMenuSV = new LogMenuSV();
+        mStatefulViews.add(logMenuSV);
+        LicensesMenuSV licensesMenuSV = new LicensesMenuSV();
+        mStatefulViews.add(licensesMenuSV);
+        VersionMenuSV versionMenuSV = new VersionMenuSV();
+        mStatefulViews.add(versionMenuSV);
+    }
 
     @Override
     public void provideNavigator(INavigator navigator) {
         if (mAppBarSV == null) {
             mAppBarSV = new AppBarSV(navigator);
         }
-        navigator.injectRequired(this, mAppBarSV);
-        if (mStatefulViews == null) {
-            mStatefulViews = new ArrayList<>();
-            RssSyncMenuSV rssSyncMenuSV = new RssSyncMenuSV();
-            mStatefulViews.add(rssSyncMenuSV);
-            ThemeMenuSV themeMenuSV = new ThemeMenuSV();
-            mStatefulViews.add(themeMenuSV);
-            OneHandModeMenuSV oneHandModeMenuSV = new OneHandModeMenuSV();
-            mStatefulViews.add(oneHandModeMenuSV);
-            LogMenuSV logMenuSV = new LogMenuSV();
-            mStatefulViews.add(logMenuSV);
-            LicensesMenuSV licensesMenuSV = new LicensesMenuSV();
-            mStatefulViews.add(licensesMenuSV);
-            VersionMenuSV versionMenuSV = new VersionMenuSV();
-            mStatefulViews.add(versionMenuSV);
-        }
-        navigator.injectRequired(this, mStatefulViews.toArray(new StatefulView[0]));
-    }
-
-    @Override
-    public void provideComponent(Provider provider) {
-        mProvider = provider;
     }
 
     @Override

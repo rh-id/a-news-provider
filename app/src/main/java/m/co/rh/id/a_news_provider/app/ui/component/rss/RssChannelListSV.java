@@ -14,10 +14,13 @@ import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.anavigator.StatefulView;
+import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.aprovider.Provider;
 
 public class RssChannelListSV extends StatefulView<Activity> {
 
+    @NavInject
+    private transient Provider mProvider;
     private transient Provider mSvProvider;
 
     @Override
@@ -31,7 +34,7 @@ public class RssChannelListSV extends StatefulView<Activity> {
         if (mSvProvider != null) {
             mSvProvider.dispose();
         }
-        mSvProvider = BaseApplication.of(activity).getProvider().get(StatefulViewProvider.class);
+        mSvProvider = mProvider.get(StatefulViewProvider.class);
         mSvProvider.get(RxDisposer.class).add("rssChannelUnReadCount",
                 provider.get(RssChangeNotifier.class).rssChannelUnReadCount()
                         .observeOn(AndroidSchedulers.mainThread())
@@ -47,5 +50,6 @@ public class RssChannelListSV extends StatefulView<Activity> {
             mSvProvider.dispose();
             mSvProvider = null;
         }
+        mProvider = null;
     }
 }

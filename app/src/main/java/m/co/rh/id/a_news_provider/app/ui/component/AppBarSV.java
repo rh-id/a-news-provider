@@ -17,15 +17,17 @@ import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
-import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.anavigator.StatefulView;
+import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.anavigator.component.INavigator;
-import m.co.rh.id.anavigator.component.RequireNavigator;
 import m.co.rh.id.aprovider.Provider;
 
-public class AppBarSV extends StatefulView<Activity> implements Externalizable, RequireNavigator, View.OnClickListener, Toolbar.OnMenuItemClickListener {
+public class AppBarSV extends StatefulView<Activity> implements Externalizable, View.OnClickListener, Toolbar.OnMenuItemClickListener {
 
+    @NavInject
     private transient INavigator mNavigator;
+    @NavInject
+    private transient Provider mProvider;
     private String mTitle;
     private transient Runnable mNavigationOnClick;
     private boolean mIsInitialRoute;
@@ -54,11 +56,6 @@ public class AppBarSV extends StatefulView<Activity> implements Externalizable, 
     }
 
     @Override
-    public void provideNavigator(INavigator navigator) {
-        mNavigator = navigator;
-    }
-
-    @Override
     protected View createView(Activity activity, ViewGroup container) {
         View view = activity.getLayoutInflater().inflate(R.layout.app_bar, container, false);
         if (mUpdateTitle == null) {
@@ -71,7 +68,7 @@ public class AppBarSV extends StatefulView<Activity> implements Externalizable, 
         if (mSvProvider != null) {
             mSvProvider.dispose();
         }
-        mSvProvider = BaseApplication.of(activity).getProvider().get(StatefulViewProvider.class);
+        mSvProvider = mProvider.get(StatefulViewProvider.class);
         Toolbar toolbar = view.findViewById(R.id.toolbar);
         mSvProvider.get(RxDisposer.class).add("updateTitle",
                 mUpdateTitle.subscribe(toolbar::setTitle));
@@ -99,6 +96,7 @@ public class AppBarSV extends StatefulView<Activity> implements Externalizable, 
         mNavigator = null;
         mNavigationOnClick = null;
         mTitle = null;
+        mProvider = null;
     }
 
     public void setTitle(String title) {

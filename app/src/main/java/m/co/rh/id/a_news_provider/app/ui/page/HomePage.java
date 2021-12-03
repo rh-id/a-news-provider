@@ -52,6 +52,7 @@ import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.provider.FileHelper;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.StatefulView;
+import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.anavigator.component.INavigator;
 import m.co.rh.id.anavigator.component.NavOnBackPressed;
 import m.co.rh.id.anavigator.component.RequireComponent;
@@ -61,11 +62,15 @@ import m.co.rh.id.aprovider.Provider;
 public class HomePage extends StatefulView<Activity> implements Externalizable, RequireNavigator, RequireComponent<Provider>, NavOnBackPressed<Activity>, Toolbar.OnMenuItemClickListener, SwipeRefreshLayout.OnRefreshListener, DrawerLayout.DrawerListener, View.OnClickListener {
     private static final String TAG = HomePage.class.getName();
 
+    @NavInject
     private transient INavigator mNavigator;
+    @NavInject
     private AppBarSV mAppBarSV;
     private boolean mIsDrawerOpen;
     private transient Runnable mPendingDialogCmd;
+    @NavInject
     private RssItemListSV mRssItemListSV;
+    @NavInject
     private RssChannelListSV mRssChannelListSV;
     private RssChannel mSelectedRssChannel;
     private boolean mLastOnlineStatus;
@@ -78,14 +83,16 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
     private transient DrawerLayout mDrawerLayout;
     private transient Runnable mOnNavigationClicked;
 
+    public HomePage() {
+        mRssItemListSV = new RssItemListSV();
+        mRssChannelListSV = new RssChannelListSV();
+    }
+
     @Override
     public void provideNavigator(INavigator navigator) {
         if (mAppBarSV == null) {
             mAppBarSV = new AppBarSV(navigator, R.menu.home);
-        } else {
-            mAppBarSV.provideNavigator(navigator);
         }
-        mNavigator = navigator;
     }
 
     @Override
@@ -94,13 +101,6 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
             mSvProvider.dispose();
         }
         mSvProvider = provider.get(StatefulViewProvider.class);
-    }
-
-    @Override
-    protected void initState(Activity activity) {
-        super.initState(activity);
-        mRssItemListSV = new RssItemListSV();
-        mRssChannelListSV = new RssChannelListSV();
     }
 
     @Override
