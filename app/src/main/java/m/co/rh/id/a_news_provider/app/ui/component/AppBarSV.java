@@ -96,6 +96,7 @@ public class AppBarSV extends StatefulView<Activity> implements Externalizable, 
             mSvProvider.dispose();
             mSvProvider = null;
         }
+        mNavigator = null;
         mNavigationOnClick = null;
         mTitle = null;
     }

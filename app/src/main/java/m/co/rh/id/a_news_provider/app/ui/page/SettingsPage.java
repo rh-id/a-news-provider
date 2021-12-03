@@ -32,9 +32,8 @@ public class SettingsPage extends StatefulView<Activity> implements RequireNavig
     public void provideNavigator(INavigator navigator) {
         if (mAppBarSV == null) {
             mAppBarSV = new AppBarSV(navigator);
-        } else {
-            mAppBarSV.provideNavigator(navigator);
         }
+        navigator.injectRequired(this, mAppBarSV);
         if (mStatefulViews == null) {
             mStatefulViews = new ArrayList<>();
             RssSyncMenuSV rssSyncMenuSV = new RssSyncMenuSV();
@@ -43,31 +42,19 @@ public class SettingsPage extends StatefulView<Activity> implements RequireNavig
             mStatefulViews.add(themeMenuSV);
             OneHandModeMenuSV oneHandModeMenuSV = new OneHandModeMenuSV();
             mStatefulViews.add(oneHandModeMenuSV);
-            LogMenuSV logMenuSV = new LogMenuSV(navigator);
+            LogMenuSV logMenuSV = new LogMenuSV();
             mStatefulViews.add(logMenuSV);
-            LicensesMenuSV licensesMenuSV = new LicensesMenuSV(navigator);
+            LicensesMenuSV licensesMenuSV = new LicensesMenuSV();
             mStatefulViews.add(licensesMenuSV);
             VersionMenuSV versionMenuSV = new VersionMenuSV();
             mStatefulViews.add(versionMenuSV);
-        } else {
-            for (StatefulView statefulView : mStatefulViews) {
-                if (statefulView instanceof RequireNavigator) {
-                    ((RequireNavigator) statefulView).provideNavigator(navigator);
-                }
-            }
         }
+        navigator.injectRequired(this, mStatefulViews.toArray(new StatefulView[0]));
     }
 
     @Override
     public void provideComponent(Provider provider) {
         mProvider = provider;
-        if (mStatefulViews != null) {
-            for (StatefulView statefulView : mStatefulViews) {
-                if (statefulView instanceof RequireComponent) {
-                    ((RequireComponent) statefulView).provideComponent(provider);
-                }
-            }
-        }
     }
 
     @Override
