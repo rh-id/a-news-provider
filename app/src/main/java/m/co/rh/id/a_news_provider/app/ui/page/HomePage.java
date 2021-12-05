@@ -56,10 +56,9 @@ import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.anavigator.component.INavigator;
 import m.co.rh.id.anavigator.component.NavOnBackPressed;
 import m.co.rh.id.anavigator.component.RequireComponent;
-import m.co.rh.id.anavigator.component.RequireNavigator;
 import m.co.rh.id.aprovider.Provider;
 
-public class HomePage extends StatefulView<Activity> implements Externalizable, RequireNavigator, RequireComponent<Provider>, NavOnBackPressed<Activity>, Toolbar.OnMenuItemClickListener, SwipeRefreshLayout.OnRefreshListener, DrawerLayout.DrawerListener, View.OnClickListener {
+public class HomePage extends StatefulView<Activity> implements Externalizable, RequireComponent<Provider>, NavOnBackPressed<Activity>, Toolbar.OnMenuItemClickListener, SwipeRefreshLayout.OnRefreshListener, DrawerLayout.DrawerListener, View.OnClickListener {
     private static final String TAG = HomePage.class.getName();
 
     @NavInject
@@ -84,15 +83,9 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
     private transient Runnable mOnNavigationClicked;
 
     public HomePage() {
+        mAppBarSV = new AppBarSV(R.menu.home);
         mRssItemListSV = new RssItemListSV();
         mRssChannelListSV = new RssChannelListSV();
-    }
-
-    @Override
-    public void provideNavigator(INavigator navigator) {
-        if (mAppBarSV == null) {
-            mAppBarSV = new AppBarSV(navigator, R.menu.home);
-        }
     }
 
     @Override

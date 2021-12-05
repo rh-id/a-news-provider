@@ -27,11 +27,9 @@ import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.annotation.NavInject;
-import m.co.rh.id.anavigator.component.INavigator;
-import m.co.rh.id.anavigator.component.RequireNavigator;
 import m.co.rh.id.aprovider.Provider;
 
-public class RssItemDetailPage extends StatefulView<Activity> implements RequireNavigator, View.OnClickListener {
+public class RssItemDetailPage extends StatefulView<Activity> implements View.OnClickListener {
 
     @NavInject
     private AppBarSV mAppBarSV;
@@ -43,13 +41,7 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
 
     public RssItemDetailPage(RssItem rssItem) {
         mRssItem = rssItem;
-    }
-
-    @Override
-    public void provideNavigator(INavigator navigator) {
-        if (mAppBarSV == null) {
-            mAppBarSV = new AppBarSV(navigator);
-        }
+        mAppBarSV = new AppBarSV();
     }
 
     @Override

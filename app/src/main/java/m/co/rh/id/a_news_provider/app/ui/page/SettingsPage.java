@@ -18,11 +18,9 @@ import m.co.rh.id.a_news_provider.app.ui.component.settings.ThemeMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.VersionMenuSV;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.annotation.NavInject;
-import m.co.rh.id.anavigator.component.INavigator;
-import m.co.rh.id.anavigator.component.RequireNavigator;
 import m.co.rh.id.aprovider.Provider;
 
-public class SettingsPage extends StatefulView<Activity> implements RequireNavigator {
+public class SettingsPage extends StatefulView<Activity> {
 
     @NavInject
     private transient Provider mProvider; // global provider
@@ -32,6 +30,7 @@ public class SettingsPage extends StatefulView<Activity> implements RequireNavig
     private ArrayList<StatefulView> mStatefulViews;
 
     public SettingsPage() {
+        mAppBarSV = new AppBarSV();
         mStatefulViews = new ArrayList<>();
         RssSyncMenuSV rssSyncMenuSV = new RssSyncMenuSV();
         mStatefulViews.add(rssSyncMenuSV);
@@ -45,13 +44,6 @@ public class SettingsPage extends StatefulView<Activity> implements RequireNavig
         mStatefulViews.add(licensesMenuSV);
         VersionMenuSV versionMenuSV = new VersionMenuSV();
         mStatefulViews.add(versionMenuSV);
-    }
-
-    @Override
-    public void provideNavigator(INavigator navigator) {
-        if (mAppBarSV == null) {
-            mAppBarSV = new AppBarSV(navigator);
-        }
     }
 
     @Override
