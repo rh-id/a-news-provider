@@ -115,7 +115,7 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
             };
         }
         mAppBarSV.setMenuItemListener(this);
-        mAppBarSV.setTitle(activity.getString(R.string.appbar_title_home));
+        mAppBarSV.setTitle(activity.getString(R.string.home));
         mAppBarSV.setNavigationOnClick(mOnNavigationClicked);
         if (mIsDrawerOpen) {
             mDrawerLayout.open();

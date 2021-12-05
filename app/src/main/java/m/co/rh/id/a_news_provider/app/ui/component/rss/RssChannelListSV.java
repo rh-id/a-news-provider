@@ -12,7 +12,6 @@ import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
-import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.aprovider.Provider;
@@ -30,13 +29,12 @@ public class RssChannelListSV extends StatefulView<Activity> {
         RecyclerView recyclerView = view.findViewById(R.id.recyclerView);
         recyclerView.setAdapter(rssChannelRecyclerViewAdapter);
         recyclerView.addItemDecoration(new DividerItemDecoration(activity, DividerItemDecoration.VERTICAL));
-        Provider provider = BaseApplication.of(activity).getProvider();
         if (mSvProvider != null) {
             mSvProvider.dispose();
         }
         mSvProvider = mProvider.get(StatefulViewProvider.class);
         mSvProvider.get(RxDisposer.class).add("rssChannelUnReadCount",
-                provider.get(RssChangeNotifier.class).rssChannelUnReadCount()
+                mProvider.get(RssChangeNotifier.class).rssChannelUnReadCount()
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(rssChannelRecyclerViewAdapter::setItems)
         );

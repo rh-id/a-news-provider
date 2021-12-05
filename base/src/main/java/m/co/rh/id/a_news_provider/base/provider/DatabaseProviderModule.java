@@ -17,12 +17,22 @@ import m.co.rh.id.aprovider.ProviderRegistry;
  */
 public class DatabaseProviderModule implements ProviderModule {
 
+    private String mDbName;
+
+    public DatabaseProviderModule(String dbName) {
+        mDbName = dbName;
+    }
+
+    public DatabaseProviderModule() {
+        mDbName = "a-news-provider.db";
+    }
+
     @Override
     public void provides(Context context, ProviderRegistry providerRegistry, Provider provider) {
         Context appContext = context.getApplicationContext();
         providerRegistry.registerAsync(AppDatabase.class, () ->
                 Room.databaseBuilder(appContext,
-                        AppDatabase.class, "a-news-provider.db")
+                        AppDatabase.class, mDbName)
                         .addMigrations(DbMigration.MIGRATION_1_2
                                 , DbMigration.MIGRATION_2_3)
                         .build());
@@ -35,6 +45,6 @@ public class DatabaseProviderModule implements ProviderModule {
 
     @Override
     public void dispose(Context context, Provider provider) {
-        // nothing to dispose
+        mDbName = null;
     }
 }

@@ -23,20 +23,21 @@ import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.aprovider.Provider;
+import m.co.rh.id.aprovider.ProviderDisposable;
 import m.co.rh.id.aprovider.ProviderValue;
 
 /**
  * Hub to handle status of device
  */
-public class DeviceStatusNotifier implements Application.ActivityLifecycleCallbacks {
-    private final Context mAppContext;
-    private final ProviderValue<ExecutorService> mExecutorService;
+public class DeviceStatusNotifier implements ProviderDisposable, Application.ActivityLifecycleCallbacks {
+    private Context mAppContext;
+    private ProviderValue<ExecutorService> mExecutorService;
 
     // network related
     private BroadcastReceiver mNetworkActionBroadcastReceiver;
     private ConnectivityManager.NetworkCallback mNetworkCallback;
 
-    private final BehaviorSubject<Boolean> mIsOnlineBehaviorSubject;
+    private BehaviorSubject<Boolean> mIsOnlineBehaviorSubject;
 
     public DeviceStatusNotifier(Provider provider, Context context) {
         mAppContext = context.getApplicationContext();
@@ -151,5 +152,18 @@ public class DeviceStatusNotifier implements Application.ActivityLifecycleCallba
     @Override
     public void onActivityDestroyed(@NonNull Activity activity) {
         // leave blank
+    }
+
+    @Override
+    public void dispose(Context context) {
+        disposeNetworkStatus();
+        mExecutorService = null;
+        mAppContext = null;
+        mNetworkActionBroadcastReceiver = null;
+        mNetworkCallback = null;
+        if (mIsOnlineBehaviorSubject != null) {
+            mIsOnlineBehaviorSubject.onComplete();
+            mIsOnlineBehaviorSubject = null;
+        }
     }
 }

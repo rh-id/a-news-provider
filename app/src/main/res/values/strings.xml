@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">News Provider</string>
-    <string name="appbar_title_home">Home</string>
+    <string name="home">Home</string>
     <string name="menu_sync_feed">Sync Feed</string>
     <string name="toast_back_press_exit">Press BACK again to exit</string>
     <string name="new_feed">New feed</string>
