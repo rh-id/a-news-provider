@@ -7,17 +7,13 @@ import android.widget.Button;
 
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.anavigator.StatefulView;
+import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.anavigator.component.INavigator;
-import m.co.rh.id.anavigator.component.RequireNavigator;
 
-public class LicensesMenuSV extends StatefulView<Activity> implements RequireNavigator, View.OnClickListener {
+public class LicensesMenuSV extends StatefulView<Activity> implements View.OnClickListener {
 
+    @NavInject
     private transient INavigator mNavigator;
-
-    @Override
-    public void provideNavigator(INavigator navigator) {
-        mNavigator = navigator;
-    }
 
     @Override
     protected View createView(Activity activity, ViewGroup container) {

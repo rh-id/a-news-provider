@@ -10,20 +10,16 @@ import com.google.android.material.switchmaterial.SwitchMaterial;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.component.AppSharedPreferences;
 import m.co.rh.id.anavigator.StatefulView;
-import m.co.rh.id.anavigator.component.RequireComponent;
+import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.aprovider.Provider;
 
-public class OneHandModeMenuSV extends StatefulView<Activity> implements RequireComponent<Provider>, View.OnClickListener, CompoundButton.OnCheckedChangeListener {
+public class OneHandModeMenuSV extends StatefulView<Activity> implements View.OnClickListener, CompoundButton.OnCheckedChangeListener {
 
+    @NavInject
     private transient Provider mProvider;
     private transient AppSharedPreferences mAppSharedPreferences;
 
     private transient SwitchMaterial mSwitchMaterial;
-
-    @Override
-    public void provideComponent(Provider provider) {
-        mProvider = provider;
-    }
 
     @Override
     protected View createView(Activity activity, ViewGroup container) {
