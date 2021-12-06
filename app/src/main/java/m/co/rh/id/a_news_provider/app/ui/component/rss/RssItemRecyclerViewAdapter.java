@@ -18,7 +18,11 @@ import m.co.rh.id.a_news_provider.base.entity.RssItem;
 public class RssItemRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final int VIEW_TYPE_NEWS_ITEM = 0;
     private static final int VIEW_TYPE_EMPTY_TEXT = 1;
-    private PagedRssItemsCmd mRssItems;
+    private PagedRssItemsCmd mPagedRssItemsCmd;
+
+    public RssItemRecyclerViewAdapter(PagedRssItemsCmd pagedRssItemsCmd) {
+        mPagedRssItemsCmd = pagedRssItemsCmd;
+    }
 
     @NonNull
     @Override
@@ -39,10 +43,10 @@ public class RssItemRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerVie
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         if (holder instanceof RssItemViewHolder) {
-            ArrayList<RssItem> rssItems = mRssItems.getAllRssItems();
+            ArrayList<RssItem> rssItems = mPagedRssItemsCmd.getAllRssItems();
             ((RssItemViewHolder) holder).setRssItem(rssItems.get(position));
             if (rssItems.size() - 1 == position) {
-                mRssItems.loadNextPage();
+                mPagedRssItemsCmd.loadNextPage();
             }
         }
     }
@@ -52,7 +56,7 @@ public class RssItemRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerVie
         if (isEmpty()) {
             return 1;
         }
-        return mRssItems.getAllRssItems().size();
+        return mPagedRssItemsCmd.getAllRssItems().size();
     }
 
     @Override
@@ -64,18 +68,10 @@ public class RssItemRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerVie
     }
 
     private boolean isEmpty() {
-        if (mRssItems == null) {
+        if (mPagedRssItemsCmd == null) {
             return true;
         }
-        if (mRssItems.getAllRssItems().size() == 0) {
-            return true;
-        }
-        return false;
-    }
-
-    public void setItems(PagedRssItemsCmd rssItems) {
-        mRssItems = rssItems;
-        notifyDataSetChanged();
+        return mPagedRssItemsCmd.getAllRssItems().size() == 0;
     }
 
     protected static class RssItemViewHolder extends RecyclerView.ViewHolder {

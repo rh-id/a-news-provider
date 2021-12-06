@@ -45,16 +45,16 @@ public class RssItemListSV extends StatefulView<Activity> {
 
     @Override
     protected View createView(Activity activity, ViewGroup container) {
-        View view = activity.getLayoutInflater().inflate(R.layout.list_rss_item, container, false);
-        RssItemRecyclerViewAdapter rssItemRecyclerViewAdapter = new RssItemRecyclerViewAdapter();
-        RecyclerView recyclerView = view.findViewById(R.id.recyclerView);
-        recyclerView.setAdapter(rssItemRecyclerViewAdapter);
-        recyclerView.addItemDecoration(new DividerItemDecoration(activity, DividerItemDecoration.VERTICAL));
         if (mSvProvider != null) {
             mSvProvider.dispose();
         }
         mSvProvider = mProvider.get(StatefulViewProvider.class);
         mSvProvider.get(PagedRssItemsCmd.class).load();
+        View view = activity.getLayoutInflater().inflate(R.layout.list_rss_item, container, false);
+        RssItemRecyclerViewAdapter rssItemRecyclerViewAdapter = new RssItemRecyclerViewAdapter(mSvProvider.get(PagedRssItemsCmd.class));
+        RecyclerView recyclerView = view.findViewById(R.id.recyclerView);
+        recyclerView.setAdapter(rssItemRecyclerViewAdapter);
+        recyclerView.addItemDecoration(new DividerItemDecoration(activity, DividerItemDecoration.VERTICAL));
         Spinner spinnerFilterBy = view.findViewById(R.id.spinner_filter_by);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(activity,
                 R.array.array_filter_by, android.R.layout.simple_spinner_item);
@@ -77,7 +77,7 @@ public class RssItemListSV extends StatefulView<Activity> {
                 mSvProvider.get(PagedRssItemsCmd.class).getRssItems()
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(rssItems ->
-                                        rssItemRecyclerViewAdapter.setItems(mSvProvider.get(PagedRssItemsCmd.class)),
+                                        rssItemRecyclerViewAdapter.notifyDataSetChanged(),
                                 throwable ->
                                         Toast.makeText(activity, activity.getString(R.string.error_message, throwable.getMessage()),
                                                 Toast.LENGTH_LONG).show()
