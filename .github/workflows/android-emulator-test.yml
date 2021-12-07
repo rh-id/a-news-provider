@@ -12,8 +12,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        api-level: [ 21, 31 ]
-        target: [ default ]
+        api-level: [ 21, 29 ]
+        target: [ default, google_apis ]
     steps:
       - name: checkout
         uses: actions/checkout@v2
