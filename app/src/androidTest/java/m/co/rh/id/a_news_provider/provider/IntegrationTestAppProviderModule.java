@@ -22,7 +22,8 @@ import m.co.rh.id.aprovider.ProviderModule;
 import m.co.rh.id.aprovider.ProviderRegistry;
 
 /**
- * ProviderModule that is the exact same as AppProviderModule except Navigator
+ * ProviderModule that is the exact same as AppProviderModule except Navigator,
+ * and some components are set to registerLazy
  */
 public class IntegrationTestAppProviderModule implements ProviderModule {
 
@@ -45,11 +46,11 @@ public class IntegrationTestAppProviderModule implements ProviderModule {
 
         providerRegistry.register(DeviceStatusNotifier.class, getDeviceStatusNotifier(context, provider));
         providerRegistry.registerLazy(AppNotificationHandler.class, () -> new AppNotificationHandler(provider, context));
-        providerRegistry.registerAsync(WorkManager.class, () -> WorkManager.getInstance(context));
+        providerRegistry.registerLazy(WorkManager.class, () -> WorkManager.getInstance(context));
         // for rss
-        providerRegistry.registerAsync(AppSharedPreferences.class, () -> new AppSharedPreferences(provider, context));
+        providerRegistry.registerLazy(AppSharedPreferences.class, () -> new AppSharedPreferences(provider, context));
         providerRegistry.registerLazy(RssRequestFactory.class, () -> new RssRequestFactory(provider, context));
-        providerRegistry.registerAsync(RssChangeNotifier.class, () -> new RssChangeNotifier(provider, context));
+        providerRegistry.registerLazy(RssChangeNotifier.class, () -> new RssChangeNotifier(provider, context));
         providerRegistry.registerLazy(OpmlParser.class, () -> new OpmlParser(provider, context));
 
         providerRegistry.registerPool(StatefulViewProvider.class, () -> new StatefulViewProvider(provider));
