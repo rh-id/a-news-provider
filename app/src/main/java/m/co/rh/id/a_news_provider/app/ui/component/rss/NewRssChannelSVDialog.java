@@ -11,6 +11,8 @@ import android.widget.EditText;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
+import java.io.Serializable;
+
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.a_news_provider.R;
@@ -18,22 +20,20 @@ import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.NewRssChannelCmd;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
+import m.co.rh.id.anavigator.NavRoute;
 import m.co.rh.id.anavigator.StatefulViewDialog;
+import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.aprovider.Provider;
 
 public class NewRssChannelSVDialog extends StatefulViewDialog<Activity> implements DialogInterface.OnClickListener {
+
+    @NavInject
+    private transient NavRoute mNavRoute;
+
     private transient Provider mSvProvider;
     private String mFeedUrl;
     private transient BehaviorSubject<String> mFeedUrlSubject;
 
-    public NewRssChannelSVDialog() {
-        super(null);
-    }
-
-    public NewRssChannelSVDialog(String feedUrl) {
-        super(null);
-        mFeedUrl = feedUrl;
-    }
 
     public void addNewFeed() {
         if (mSvProvider != null) {
@@ -51,7 +51,10 @@ public class NewRssChannelSVDialog extends StatefulViewDialog<Activity> implemen
     @Override
     protected void initState(Activity activity) {
         super.initState(activity);
-        if (mFeedUrl == null) {
+        Args args = getArgs();
+        if (args != null) {
+            mFeedUrl = args.getFeedUrl();
+        } else {
             mFeedUrl = "";
         }
     }
@@ -130,6 +133,38 @@ public class NewRssChannelSVDialog extends StatefulViewDialog<Activity> implemen
             }
         } else if (id == DialogInterface.BUTTON_NEGATIVE) {
             mFeedUrlSubject.onNext("");
+        }
+    }
+
+    public Args getArgs() {
+        return Args.of(mNavRoute);
+    }
+
+    public static class Args implements Serializable {
+        public static Args newArgs(String feedUrl) {
+            Args args = new Args();
+            args.mFeedUrl = feedUrl;
+            return args;
+        }
+
+        public static Args of(NavRoute navRoute) {
+            if (navRoute != null) {
+                return of(navRoute.getRouteArgs());
+            }
+            return null;
+        }
+
+        public static Args of(Serializable serializable) {
+            if (serializable instanceof Args) {
+                return (Args) serializable;
+            }
+            return null;
+        }
+
+        private String mFeedUrl;
+
+        public String getFeedUrl() {
+            return mFeedUrl;
         }
     }
 }

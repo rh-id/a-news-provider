@@ -216,7 +216,8 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
             String sharedText = activity.getIntent()
                     .getStringExtra(Intent.EXTRA_TEXT);
             mNavigator.push((args, activity1) ->
-                    new NewRssChannelSVDialog((String) args), sharedText);
+                    new NewRssChannelSVDialog(), NewRssChannelSVDialog.
+                    Args.newArgs(sharedText));
         } else if (Intent.ACTION_VIEW.equals(intentAction)) {
             Uri fileData = intent.getData();
             String errorMessage = activity.getString(R.string.error_failed_to_open_file);
