@@ -4,4 +4,6 @@ A simple and easy to use RSS aggregator that deliver news to your smartphone
   <li>Support background sync</li>
   <li>Simple interface to add and read your news</li>
   <li>Support dark mode and light mode</li>
+  <li>Accessibility friendly with one hand mode</li>
+  <li>Accessibility friendly on screen reader (tested with TalkBack)</li>
 </ul>
