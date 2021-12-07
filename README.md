@@ -2,6 +2,7 @@
 
 ![Android CI](https://github.com/rh-id/a-news-provider/actions/workflows/gradlew-build.yml/badge.svg)
 ![Release Build](https://github.com/rh-id/a-news-provider/actions/workflows/android-release.yml/badge.svg)
+![Emulator Test](https://github.com/rh-id/a-news-provider/actions/workflows/android-emulator-test.yml/badge.svg)
 
 
 A simple RSS feed android application.
