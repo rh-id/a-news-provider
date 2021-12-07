@@ -64,8 +64,10 @@ public class AppBarSV extends StatefulView<Activity> implements Externalizable, 
                 mUpdateTitle.subscribe(toolbar::setTitle));
         if (isInitialRoute()) {
             toolbar.setNavigationIcon(R.drawable.ic_menu_white);
+            toolbar.setNavigationContentDescription(R.string.main_menu);
         } else {
             toolbar.setNavigationIcon(R.drawable.ic_navigation_arrow_back_white);
+            toolbar.setNavigationContentDescription(R.string.back_to_previous_page);
         }
         toolbar.setNavigationOnClickListener(this);
 

@@ -56,9 +56,14 @@
     <string name="share_opml">Bagi feed</string>
     <string name="menu_one_hand_mode">App Mode Satu Tangan</string>
     <string name="menu_subtitle_one_hand_mode">Menyalakan tata letak satu tangan untuk memudahkan penggunaan</string>
-    <string name="ui_desc_floating_action_button_menu">Menu tombol aksi mengambang</string>
+    <string name="clear_log_file">Bersihkan log file</string>
     <string name="log_file_deleted">Log file dihapus</string>
     <string name="open_link">Buka link</string>
+    <string name="main_menu">Menu utama</string>
+    <string name="back_to_previous_page">Kembali ke halaman sebelumnya</string>
+    <string name="sync_feed_period_in_hour">Periode sinkron feed dalam jam</string>
+    <string name="one_hand_mode_activated">Mode satu tangan diaktifkan</string>
+    <string name="one_hand_mode_deactivated">Mode satu tangan dinonaktifkan</string>
 
     <string-array name="array_filter_by">
         <item>None</item>

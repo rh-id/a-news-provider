@@ -56,9 +56,14 @@
     <string name="share_opml">Share feed</string>
     <string name="menu_one_hand_mode">App One Hand Mode</string>
     <string name="menu_subtitle_one_hand_mode">Enable app built-in one hand mode layout for easier use</string>
-    <string name="ui_desc_floating_action_button_menu">Floating action button menu</string>
+    <string name="clear_log_file">Clear log file</string>
     <string name="log_file_deleted">Log file deleted</string>
     <string name="open_link">Open link</string>
+    <string name="main_menu">Main menu</string>
+    <string name="back_to_previous_page">Back to previous page</string>
+    <string name="sync_feed_period_in_hour">Sync feed period in hour</string>
+    <string name="one_hand_mode_activated">One hand mode activated</string>
+    <string name="one_hand_mode_deactivated">One hand mode deactivated</string>
 
     <string-array name="array_filter_by">
         <item>None</item>

@@ -62,6 +62,7 @@ public class RssItemDetailPage extends StatefulView<Activity> implements View.On
         titleText.setText(HtmlCompat
                 .fromHtml(mRssItem.title, HtmlCompat.FROM_HTML_MODE_COMPACT));
         titleText.setOnClickListener(this);
+        titleText.setContentDescription(activity.getString(R.string.open_link));
         TextView textView = view.findViewById(R.id.text_content);
         String desc = mRssItem.description;
         if (desc != null && !desc.isEmpty()) {

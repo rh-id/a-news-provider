@@ -21,22 +21,35 @@ import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.RxProviderModule;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
+import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
 import m.co.rh.id.a_news_provider.app.util.UiUtils;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.a_news_provider.base.provider.FileHelper;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.StatefulView;
+import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.aprovider.Provider;
 
 public class LogPage extends StatefulView<Activity> {
     private static final String TAG = LogPage.class.getName();
 
+    @NavInject
+    private AppBarSV mAppBarSV;
+
     private transient Provider mSvProvider;
+
+    public LogPage() {
+        mAppBarSV = new AppBarSV();
+    }
 
     @Override
     protected View createView(Activity activity, ViewGroup container) {
         View view = activity.getLayoutInflater().inflate(R.layout.page_log,
                 container, false);
+        ViewGroup rootLayout = view.findViewById(R.id.root_layout);
+        ViewGroup containerAppBar = view.findViewById(R.id.container_app_bar);
+        mAppBarSV.setTitle(activity.getString(R.string.log_file));
+        containerAppBar.addView(mAppBarSV.buildView(activity, rootLayout));
         ProgressBar progressBar = view.findViewById(R.id.progress_circular);
         View noRecord = view.findViewById(R.id.no_record);
         ScrollView scrollView = view.findViewById(R.id.scroll_view);

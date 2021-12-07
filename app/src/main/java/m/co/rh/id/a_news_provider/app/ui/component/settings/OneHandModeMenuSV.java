@@ -1,9 +1,11 @@
 package m.co.rh.id.a_news_provider.app.ui.component.settings;
 
 import android.app.Activity;
+import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CompoundButton;
+import android.widget.Toast;
 
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
@@ -51,5 +53,13 @@ public class OneHandModeMenuSV extends StatefulView<Activity> implements View.On
     @Override
     public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
         mAppSharedPreferences.setOneHandMode(checked);
+        Context context = compoundButton.getContext();
+        String message;
+        if (checked) {
+            message = context.getString(R.string.one_hand_mode_activated);
+        } else {
+            message = context.getString(R.string.one_hand_mode_deactivated);
+        }
+        Toast.makeText(context, message, Toast.LENGTH_LONG).show();
     }
 }

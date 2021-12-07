@@ -34,6 +34,7 @@ public class RssSyncMenuSV extends StatefulView<Activity> {
             numberPicker.setMinValue(1);
             numberPicker.setMaxValue(24);
             MaterialAlertDialogBuilder materialAlertDialogBuilder = new MaterialAlertDialogBuilder(activity);
+            materialAlertDialogBuilder.setTitle(activity.getString(R.string.sync_feed_period_in_hour));
             materialAlertDialogBuilder.setView(numberPicker);
             materialAlertDialogBuilder.setPositiveButton(android.R.string.ok, (dialogInterface, i) ->
             {
