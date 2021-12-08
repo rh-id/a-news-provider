@@ -107,7 +107,11 @@ public class NewRssChannelCmd {
         return Flowable.fromObservable(mUrlValidationBehaviorSubject, BackpressureStrategy.BUFFER);
     }
 
-    public String getLatestUrlValidation() {
-        return mUrlValidationBehaviorSubject.getValue();
+    public String getValidationError() {
+        String validation = mUrlValidationBehaviorSubject.getValue();
+        if (validation == null) {
+            validation = "";
+        }
+        return validation;
     }
 }

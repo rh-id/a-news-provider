@@ -8,7 +8,6 @@ import android.text.TextWatcher;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
@@ -21,12 +20,14 @@ import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.NewRssChannelCmd;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
+import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.NavRoute;
 import m.co.rh.id.anavigator.StatefulViewDialog;
 import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.aprovider.Provider;
 
 public class NewRssChannelSVDialog extends StatefulViewDialog<Activity> implements DialogInterface.OnClickListener {
+    private static final String TAG = NewRssChannelSVDialog.class.getName();
 
     @NavInject
     private transient NavRoute mNavRoute;
@@ -132,8 +133,8 @@ public class NewRssChannelSVDialog extends StatefulViewDialog<Activity> implemen
             if (isValid()) {
                 addNewFeed();
             } else {
-                String validation = mSvProvider.get(NewRssChannelCmd.class).getLatestUrlValidation();
-                Toast.makeText(mSvProvider.getContext(), validation, Toast.LENGTH_LONG).show();
+                String validation = mSvProvider.get(NewRssChannelCmd.class).getValidationError();
+                mSvProvider.get(ILogger.class).i(TAG, validation);
             }
         } else if (id == DialogInterface.BUTTON_NEGATIVE) {
             mFeedUrlSubject.onNext("");
