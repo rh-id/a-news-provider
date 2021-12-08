@@ -64,6 +64,7 @@
     <string name="sync_feed_period_in_hour">Sync feed period in hour</string>
     <string name="one_hand_mode_activated">One hand mode activated</string>
     <string name="one_hand_mode_deactivated">One hand mode deactivated</string>
+    <string name="http_not_allowed">HTTP not allowed use HTTPS instead</string>
 
     <string-array name="array_filter_by">
         <item>None</item>

@@ -54,6 +54,9 @@ public class NewRssChannelCmd {
         } else if (!Patterns.WEB_URL.matcher(url).matches()) {
             valid = false;
             mUrlValidationBehaviorSubject.onNext(mAppContext.getString(R.string.invalid_url));
+        } else if (url.startsWith("http://")) {
+            valid = false;
+            mUrlValidationBehaviorSubject.onNext(mAppContext.getString(R.string.http_not_allowed));
         } else {
             mUrlValidationBehaviorSubject.onNext("");
         }
@@ -94,7 +97,7 @@ public class NewRssChannelCmd {
                         mRssModelBehaviorSubject.onNext(rssModelOptional.get());
                     }
                 })
-                .doOnError(throwable -> mRssModelBehaviorSubject.onError(throwable))
+                .doOnError(mRssModelBehaviorSubject::onError)
                 .concatMap(rssModelOptional ->
                         Flowable.fromObservable(mRssModelBehaviorSubject, BackpressureStrategy.BUFFER));
     }
@@ -102,5 +105,9 @@ public class NewRssChannelCmd {
     // validation message
     public Flowable<String> getUrlValidation() {
         return Flowable.fromObservable(mUrlValidationBehaviorSubject, BackpressureStrategy.BUFFER);
+    }
+
+    public String getLatestUrlValidation() {
+        return mUrlValidationBehaviorSubject.getValue();
     }
 }

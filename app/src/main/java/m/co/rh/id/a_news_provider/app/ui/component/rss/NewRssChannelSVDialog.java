@@ -8,6 +8,7 @@ import android.text.TextWatcher;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
@@ -130,6 +131,9 @@ public class NewRssChannelSVDialog extends StatefulViewDialog<Activity> implemen
         if (id == DialogInterface.BUTTON_POSITIVE) {
             if (isValid()) {
                 addNewFeed();
+            } else {
+                String validation = mSvProvider.get(NewRssChannelCmd.class).getLatestUrlValidation();
+                Toast.makeText(mSvProvider.getContext(), validation, Toast.LENGTH_LONG).show();
             }
         } else if (id == DialogInterface.BUTTON_NEGATIVE) {
             mFeedUrlSubject.onNext("");

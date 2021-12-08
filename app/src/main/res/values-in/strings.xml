@@ -64,6 +64,7 @@
     <string name="sync_feed_period_in_hour">Periode sinkron feed dalam jam</string>
     <string name="one_hand_mode_activated">Mode satu tangan diaktifkan</string>
     <string name="one_hand_mode_deactivated">Mode satu tangan dinonaktifkan</string>
+    <string name="http_not_allowed">HTTP tidak diizinkan gunakan HTTPS sebagai gantinya</string>
 
     <string-array name="array_filter_by">
         <item>None</item>
