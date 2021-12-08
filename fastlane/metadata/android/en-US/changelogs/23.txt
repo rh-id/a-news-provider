@@ -1,0 +1,5 @@
+Release 1.3.3+23
+
+Fixes:
+* Validate for HTTP when adding new RSS, force user to use HTTPS
+* Fix app crashing when listing news
