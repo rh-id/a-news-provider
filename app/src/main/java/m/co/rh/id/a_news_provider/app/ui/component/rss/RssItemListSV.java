@@ -1,6 +1,7 @@
 package m.co.rh.id.a_news_provider.app.ui.component.rss;
 
 import android.app.Activity;
+import android.os.Handler;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -68,9 +69,10 @@ public class RssItemListSV extends StatefulView<Activity> {
         });
         mSvProvider.get(RxDisposer.class).add("mPagedRssItemsCmd.getRssItems",
                 mSvProvider.get(PagedRssItemsCmd.class).getRssItems()
-                        .debounce(1, TimeUnit.SECONDS)
+                        .debounce(83, TimeUnit.MILLISECONDS)
                         .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(rssItems -> rssItemRecyclerViewAdapter.notifyDataSetChanged(),
+                        .subscribe(rssItems -> mSvProvider.get(Handler.class)
+                                        .post(rssItemRecyclerViewAdapter::notifyDataSetChanged),
                                 throwable ->
                                         mSvProvider.get(ILogger.class).e(TAG,
                                                 mSvProvider.getContext()
