@@ -26,6 +26,7 @@ public class PagedRssItemsCmd {
     private final ProviderValue<ExecutorService> mExecutorService;
     private final ProviderValue<RssDao> mRssDao;
     private final BehaviorSubject<ArrayList<RssItem>> mRssItemsSubject;
+    private final BehaviorSubject<Boolean> mIsLoadingSubject;
     private Optional<RssChannel> mSelectedRssChannel;
     private final Flowable<ArrayList<RssItem>> mRssItems;
     private int mLimit;
@@ -37,6 +38,7 @@ public class PagedRssItemsCmd {
         mRssItemsSubject = BehaviorSubject.createDefault(new ArrayList<>());
         mSelectedRssChannel = Optional.empty();
         mFilterTypeSubject = BehaviorSubject.createDefault(Optional.of(FILTER_BY_UNREAD));
+        mIsLoadingSubject = BehaviorSubject.createDefault(true);
         RssChangeNotifier rssChangeNotifier = provider.get(RssChangeNotifier.class);
         mRssItems =
                 Flowable.combineLatest(
@@ -63,11 +65,16 @@ public class PagedRssItemsCmd {
                 )
                         .doOnNext(aBoolean -> {
                             if (aBoolean) {
+                                mIsLoadingSubject.onNext(true);
                                 try {
                                     mRssItemsSubject.onNext(loadRssItems());
                                 } catch (Throwable throwable) {
                                     mRssItemsSubject.onError(throwable);
+                                } finally {
+                                    mIsLoadingSubject.onNext(false);
                                 }
+                            } else {
+                                mIsLoadingSubject.onNext(false);
                             }
                         }).flatMap(aBoolean ->
                         Flowable.fromObservable(mRssItemsSubject, BackpressureStrategy.BUFFER));
@@ -92,11 +99,14 @@ public class PagedRssItemsCmd {
 
     public void load() {
         mExecutorService.get().execute(() -> {
+            mIsLoadingSubject.onNext(true);
             try {
                 mRssItemsSubject.onNext(
                         loadRssItems());
             } catch (Throwable throwable) {
                 mRssItemsSubject.onError(throwable);
+            } finally {
+                mIsLoadingSubject.onNext(false);
             }
         });
     }
@@ -159,11 +169,12 @@ public class PagedRssItemsCmd {
         return Flowable.fromObservable(mFilterTypeSubject, BackpressureStrategy.BUFFER);
     }
 
+    public Flowable<Boolean> getLoadingFlow() {
+        return Flowable.fromObservable(mIsLoadingSubject, BackpressureStrategy.BUFFER);
+    }
+
     private Integer getFilterTypeValue() {
         Optional<Integer> filterTypeOpt = mFilterTypeSubject.getValue();
-        if (filterTypeOpt == null) {
-            return null;
-        }
         return filterTypeOpt.orElse(null);
     }
 

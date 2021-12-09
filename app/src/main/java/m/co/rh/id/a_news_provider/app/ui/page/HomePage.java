@@ -199,11 +199,11 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
         fab.setOnClickListener(this);
         SwipeRefreshLayout swipeRefreshLayout = view.findViewById(R.id.container_swipe_refresh);
         swipeRefreshLayout.setOnRefreshListener(this);
-        if (mRssItemListSV.observeRssItems() != null) {
-            mSvProvider.get(RxDisposer.class).add("mRssItemListSV.observeRssItems",
-                    mRssItemListSV.observeRssItems()
+        if (mRssItemListSV.getLoadingFlow() != null) {
+            mSvProvider.get(RxDisposer.class).add("mRssItemListSV.isLoading",
+                    mRssItemListSV.getLoadingFlow()
                             .observeOn(AndroidSchedulers.mainThread())
-                            .subscribe(rssItems -> swipeRefreshLayout.setRefreshing(false))
+                            .subscribe(swipeRefreshLayout::setRefreshing)
             );
         }
 

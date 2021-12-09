@@ -6,12 +6,10 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
-import android.widget.Toast;
 
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
@@ -20,12 +18,13 @@ import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.PagedRssItemsCmd;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
-import m.co.rh.id.a_news_provider.base.entity.RssItem;
+import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.aprovider.Provider;
 
 public class RssItemListSV extends StatefulView<Activity> {
+    private static final String TAG = RssItemListSV.class.getName();
     @NavInject
     private transient Provider mProvider;
 
@@ -35,13 +34,6 @@ public class RssItemListSV extends StatefulView<Activity> {
         if (mSvProvider != null) {
             mSvProvider.get(PagedRssItemsCmd.class).reload();
         }
-    }
-
-    public Flowable<ArrayList<RssItem>> observeRssItems() {
-        if (mSvProvider != null) {
-            return mSvProvider.get(PagedRssItemsCmd.class).getRssItems();
-        }
-        return Flowable.fromSupplier(ArrayList::new);
     }
 
     @Override
@@ -76,13 +68,13 @@ public class RssItemListSV extends StatefulView<Activity> {
         });
         mSvProvider.get(RxDisposer.class).add("mPagedRssItemsCmd.getRssItems",
                 mSvProvider.get(PagedRssItemsCmd.class).getRssItems()
-                        .debounce(83, TimeUnit.MILLISECONDS)
+                        .debounce(1, TimeUnit.SECONDS)
                         .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(rssItems ->
-                                        rssItemRecyclerViewAdapter.notifyDataSetChanged(),
+                        .subscribe(rssItems -> rssItemRecyclerViewAdapter.notifyDataSetChanged(),
                                 throwable ->
-                                        Toast.makeText(activity, activity.getString(R.string.error_message, throwable.getMessage()),
-                                                Toast.LENGTH_LONG).show()
+                                        mSvProvider.get(ILogger.class).e(TAG,
+                                                mSvProvider.getContext()
+                                                        .getString(R.string.error_message, throwable.getMessage()))
                         )
         );
         return view;
@@ -96,5 +88,10 @@ public class RssItemListSV extends StatefulView<Activity> {
             mSvProvider = null;
         }
         mProvider = null;
+    }
+
+    public Flowable<Boolean> getLoadingFlow() {
+        if (mSvProvider == null) return null;
+        return mSvProvider.get(PagedRssItemsCmd.class).getLoadingFlow();
     }
 }
