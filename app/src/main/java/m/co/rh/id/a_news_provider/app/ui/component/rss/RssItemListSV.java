@@ -11,8 +11,6 @@ import android.widget.Spinner;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.util.concurrent.TimeUnit;
-
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Flowable;
 import m.co.rh.id.a_news_provider.R;
@@ -69,7 +67,6 @@ public class RssItemListSV extends StatefulView<Activity> {
         });
         mSvProvider.get(RxDisposer.class).add("mPagedRssItemsCmd.getRssItems",
                 mSvProvider.get(PagedRssItemsCmd.class).getRssItems()
-                        .debounce(83, TimeUnit.MILLISECONDS)
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(rssItems -> mSvProvider.get(Handler.class)
                                         .post(rssItemRecyclerViewAdapter::notifyDataSetChanged),
