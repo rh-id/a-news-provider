@@ -43,7 +43,9 @@ public class RssItemListSV extends StatefulView<Activity> {
         mSvProvider = mProvider.get(StatefulViewProvider.class);
         mSvProvider.get(PagedRssItemsCmd.class).load();
         View view = activity.getLayoutInflater().inflate(R.layout.list_rss_item, container, false);
-        RssItemRecyclerViewAdapter rssItemRecyclerViewAdapter = new RssItemRecyclerViewAdapter(mSvProvider.get(PagedRssItemsCmd.class));
+        RssItemRecyclerViewAdapter rssItemRecyclerViewAdapter = new RssItemRecyclerViewAdapter(
+                mSvProvider.get(Handler.class),
+                mSvProvider.get(PagedRssItemsCmd.class));
         RecyclerView recyclerView = view.findViewById(R.id.recyclerView);
         recyclerView.setAdapter(rssItemRecyclerViewAdapter);
         recyclerView.addItemDecoration(new DividerItemDecoration(activity, DividerItemDecoration.VERTICAL));
