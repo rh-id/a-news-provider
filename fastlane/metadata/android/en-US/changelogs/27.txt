@@ -1,0 +1,4 @@
+Release 1.3.7+27
+
+Fixes:
+* Fix app crashing when listing news
