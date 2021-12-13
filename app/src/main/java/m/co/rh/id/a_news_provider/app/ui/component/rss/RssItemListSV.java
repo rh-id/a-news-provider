@@ -8,6 +8,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 
+import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -28,6 +29,7 @@ public class RssItemListSV extends StatefulView<Activity> {
     private transient Provider mProvider;
 
     private transient Provider mSvProvider;
+    private transient RecyclerView.OnScrollListener mOnScrollListener;
 
     public void refresh() {
         if (mSvProvider != null) {
@@ -44,11 +46,22 @@ public class RssItemListSV extends StatefulView<Activity> {
         mSvProvider.get(PagedRssItemsCmd.class).load();
         View view = activity.getLayoutInflater().inflate(R.layout.list_rss_item, container, false);
         RssItemRecyclerViewAdapter rssItemRecyclerViewAdapter = new RssItemRecyclerViewAdapter(
-                mSvProvider.get(Handler.class),
                 mSvProvider.get(PagedRssItemsCmd.class));
         RecyclerView recyclerView = view.findViewById(R.id.recyclerView);
         recyclerView.setAdapter(rssItemRecyclerViewAdapter);
         recyclerView.addItemDecoration(new DividerItemDecoration(activity, DividerItemDecoration.VERTICAL));
+        if (mOnScrollListener == null) {
+            mOnScrollListener = new RecyclerView.OnScrollListener() {
+                @Override
+                public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+                    if (!recyclerView.canScrollVertically(1) &&
+                            newState == RecyclerView.SCROLL_STATE_IDLE) {
+                        mSvProvider.get(PagedRssItemsCmd.class).loadNextPage();
+                    }
+                }
+            };
+        }
+        recyclerView.addOnScrollListener(mOnScrollListener);
         Spinner spinnerFilterBy = view.findViewById(R.id.spinner_filter_by);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(activity,
                 R.array.array_filter_by, android.R.layout.simple_spinner_item);

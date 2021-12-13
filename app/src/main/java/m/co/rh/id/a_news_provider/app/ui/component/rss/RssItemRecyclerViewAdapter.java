@@ -1,7 +1,6 @@
 package m.co.rh.id.a_news_provider.app.ui.component.rss;
 
 import android.app.Activity;
-import android.os.Handler;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -19,11 +18,9 @@ import m.co.rh.id.a_news_provider.base.entity.RssItem;
 public class RssItemRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final int VIEW_TYPE_NEWS_ITEM = 0;
     private static final int VIEW_TYPE_EMPTY_TEXT = 1;
-    private Handler mHandler;
     private PagedRssItemsCmd mPagedRssItemsCmd;
 
-    public RssItemRecyclerViewAdapter(Handler handler, PagedRssItemsCmd pagedRssItemsCmd) {
-        mHandler = handler;
+    public RssItemRecyclerViewAdapter(PagedRssItemsCmd pagedRssItemsCmd) {
         mPagedRssItemsCmd = pagedRssItemsCmd;
     }
 
@@ -48,9 +45,6 @@ public class RssItemRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerVie
         if (holder instanceof RssItemViewHolder) {
             ArrayList<RssItem> rssItems = mPagedRssItemsCmd.getAllRssItems();
             ((RssItemViewHolder) holder).setRssItem(rssItems.get(position));
-            if (rssItems.size() - 1 == position) {
-                mHandler.post(mPagedRssItemsCmd::loadNextPage);
-            }
         }
     }
 
