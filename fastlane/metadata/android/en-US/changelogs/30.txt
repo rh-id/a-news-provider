@@ -1,0 +1,4 @@
+Release 1.3.10+30
+
+Fixes:
+* Animation performance on Android 11
