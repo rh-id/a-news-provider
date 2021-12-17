@@ -133,7 +133,8 @@ public class RssChannelItemSV extends StatefulView<Activity> implements View.OnC
                                                 throwable.getMessage()
                                                 , Toast.LENGTH_LONG).show())
         );
-        mSvProvider.get(RxDisposer.class).add("mEditModeSubject", mEditModeSubject.subscribe(editMode -> {
+        mSvProvider.get(RxDisposer.class).add("mEditModeSubject",
+                mEditModeSubject.subscribe(editMode -> {
                     if (editMode) {
                         networkImageViewIcon.setVisibility(View.GONE);
                         textName.setVisibility(View.GONE);
@@ -160,6 +161,7 @@ public class RssChannelItemSV extends StatefulView<Activity> implements View.OnC
                         .debounce(100, TimeUnit.MILLISECONDS)
                         .observeOn(AndroidSchedulers.mainThread()),
                 mRssChangeNotifier.selectedRssChannel()
+                        .debounce(100, TimeUnit.MILLISECONDS)
                         .observeOn(AndroidSchedulers.mainThread()),
                 (rssChannelCountEntry, rssChannelOptional) -> {
                     RssChannel rssChannel = rssChannelCountEntry.getKey();
