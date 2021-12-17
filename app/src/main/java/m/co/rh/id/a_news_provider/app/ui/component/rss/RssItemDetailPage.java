@@ -46,11 +46,11 @@ public class RssItemDetailPage extends StatefulView<Activity> implements View.On
 
     @Override
     protected View createView(Activity activity, ViewGroup container) {
-        int layoutId = R.layout.page_rss_item_detail;
         if (mSvProvider != null) {
             mSvProvider.dispose();
         }
         mSvProvider = mProvider.get(StatefulViewProvider.class);
+        int layoutId = R.layout.page_rss_item_detail;
         AppSharedPreferences appSharedPreferences = mSvProvider.get(AppSharedPreferences.class);
         if (appSharedPreferences.isOneHandMode()) {
             layoutId = R.layout.one_hand_mode_page_rss_item_detail;
@@ -72,10 +72,10 @@ public class RssItemDetailPage extends StatefulView<Activity> implements View.On
         Button fabOpenLink = view.findViewById(R.id.fab_open_link);
         fabOpenLink.setOnClickListener(this);
         if (mRssChannel == null) {
-            RssDao rssDao = mSvProvider.get(RssDao.class);
             mSvProvider.get(RxDisposer.class).add("getRssChannel",
                     Single.fromCallable(() ->
-                            rssDao.findRssChannelById(mRssItem.channelId))
+                            mSvProvider.get(RssDao.class)
+                                    .findRssChannelById(mRssItem.channelId))
                             .subscribeOn(Schedulers.from(mSvProvider.get(ExecutorService.class)))
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribe((rssChannel, throwable) -> {

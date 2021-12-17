@@ -41,7 +41,7 @@ dependencies {
 
     api 'com.android.volley:volley:1.2.1'
     api 'com.github.rh-id:a-provider:v0.0.15'
-    api 'com.github.rh-id:a-navigator:v0.0.34'
+    api 'com.github.rh-id:a-navigator:v0.0.37'
     api 'com.github.rh-id:a-logger:v0.0.3'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'junit:junit:4.13.2'
