@@ -11,20 +11,16 @@ import android.widget.TextView;
 
 import androidx.core.text.HtmlCompat;
 
-import java.util.concurrent.ExecutorService;
+import java.io.Serializable;
 
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.core.Single;
-import io.reactivex.rxjava3.schedulers.Schedulers;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.component.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
-import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
 import m.co.rh.id.a_news_provider.app.util.UiUtils;
-import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
+import m.co.rh.id.anavigator.NavRoute;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.aprovider.Provider;
@@ -35,13 +31,24 @@ public class RssItemDetailPage extends StatefulView<Activity> implements View.On
     private AppBarSV mAppBarSV;
     @NavInject
     private transient Provider mProvider;
+    @NavInject
+    private transient NavRoute mNavRoute;
     private RssItem mRssItem;
     private RssChannel mRssChannel;
     private transient Provider mSvProvider;
 
-    public RssItemDetailPage(RssItem rssItem) {
-        mRssItem = rssItem;
+    public RssItemDetailPage() {
         mAppBarSV = new AppBarSV();
+    }
+
+    @Override
+    protected void initState(Activity activity) {
+        super.initState(activity);
+        Args args = Args.of(mNavRoute);
+        if (args != null) {
+            mRssItem = args.getRssItem();
+            mRssChannel = args.getRssChannel();
+        }
     }
 
     @Override
@@ -71,21 +78,7 @@ public class RssItemDetailPage extends StatefulView<Activity> implements View.On
         }
         Button fabOpenLink = view.findViewById(R.id.fab_open_link);
         fabOpenLink.setOnClickListener(this);
-        if (mRssChannel == null) {
-            mSvProvider.get(RxDisposer.class).add("getRssChannel",
-                    Single.fromCallable(() ->
-                            mSvProvider.get(RssDao.class)
-                                    .findRssChannelById(mRssItem.channelId))
-                            .subscribeOn(Schedulers.from(mSvProvider.get(ExecutorService.class)))
-                            .observeOn(AndroidSchedulers.mainThread())
-                            .subscribe((rssChannel, throwable) -> {
-                                mRssChannel = rssChannel;
-                                if (mRssChannel != null) {
-                                    mAppBarSV.setTitle(mRssChannel.feedName);
-                                }
-                            })
-            );
-        }
+        mAppBarSV.setTitle(mRssChannel.feedName);
         return view;
     }
 
@@ -110,6 +103,40 @@ public class RssItemDetailPage extends StatefulView<Activity> implements View.On
             Activity activity = UiUtils.getActivity(view);
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(mRssItem.link));
             activity.startActivity(browserIntent);
+        }
+    }
+
+    public static class Args implements Serializable {
+        public static Args withRss(RssItem rssItem, RssChannel rssChannel) {
+            Args args = new Args();
+            args.mRssItem = rssItem;
+            args.mRssChannel = rssChannel;
+            return args;
+        }
+
+        public static Args of(NavRoute navRoute) {
+            if (navRoute != null) {
+                return of(navRoute.getRouteArgs());
+            }
+            return null;
+        }
+
+        public static Args of(Serializable serializable) {
+            if (serializable instanceof Args) {
+                return (Args) serializable;
+            }
+            return null;
+        }
+
+        private RssItem mRssItem;
+        private RssChannel mRssChannel;
+
+        public RssItem getRssItem() {
+            return mRssItem;
+        }
+
+        public RssChannel getRssChannel() {
+            return mRssChannel;
         }
     }
 }

@@ -11,17 +11,20 @@ import androidx.core.text.HtmlCompat;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
+import m.co.rh.id.a_news_provider.app.provider.command.RssQueryCmd;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
+import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.component.INavigator;
 import m.co.rh.id.anavigator.component.RequireNavigator;
 import m.co.rh.id.aprovider.Provider;
 
-public class RssItemSV extends StatefulView<Activity> implements RequireNavigator {
+public class RssItemSV extends StatefulView<Activity> implements RequireNavigator, View.OnClickListener {
 
+    private static final String TAG = RssItemSV.class.getName();
     private RssItem mRssItem;
     private transient BehaviorSubject<RssItem> mRssItemBehaviorSubject;
     private transient Provider mSvProvider;
@@ -57,18 +60,8 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
         if (mSvProvider != null) {
             mSvProvider.dispose();
         }
-        mSvProvider = BaseApplication.of(activity).getProvider().get(StatefulViewProvider.class);
-        RssChangeNotifier rssChangeNotifier = provider.get(RssChangeNotifier.class);
-        view.setOnClickListener(view1 -> {
-            if (mNavigator != null) {
-                mNavigator.push((args, activity1) -> new RssItemDetailPage((RssItem) args),
-                        mRssItem, null);
-            }
-            if (!mRssItem.isRead) {
-                rssChangeNotifier.readRssItem(mRssItem);
-                mRssItemBehaviorSubject.onNext(mRssItem);
-            }
-        });
+        mSvProvider = provider.get(StatefulViewProvider.class);
+        view.setOnClickListener(this);
         mSvProvider.get(RxDisposer.class).add("mRssItemSubject",
                 mRssItemBehaviorSubject.subscribe(rssItem -> {
                     if (rssItem.pubDate != null) {
@@ -102,6 +95,31 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
         if (mSvProvider != null) {
             mSvProvider.dispose();
             mSvProvider = null;
+        }
+    }
+
+    @Override
+    public void onClick(View view) {
+        if (mNavigator != null) {
+            mSvProvider.get(RxDisposer.class)
+                    .add("onClick_getRssChannelById",
+                            mSvProvider.get(RssQueryCmd.class)
+                                    .getRssChannelById(mRssItem.channelId)
+                                    .subscribe((rssChannel, throwable) -> {
+                                        if (throwable != null) {
+                                            mSvProvider.get(ILogger.class)
+                                                    .e(TAG, throwable.getMessage(), throwable);
+                                        } else {
+                                            mNavigator.push((args, activity1) -> new RssItemDetailPage(),
+                                                    RssItemDetailPage.Args.withRss(mRssItem, rssChannel));
+                                        }
+                                    })
+                    );
+        }
+        if (!mRssItem.isRead) {
+            mSvProvider.get(RssChangeNotifier.class)
+                    .readRssItem(mRssItem);
+            mRssItemBehaviorSubject.onNext(mRssItem);
         }
     }
 }
