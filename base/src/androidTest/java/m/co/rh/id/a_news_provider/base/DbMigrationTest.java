@@ -50,5 +50,6 @@ public class DbMigrationTest {
 
     // Array of all migrations
     private static final Migration[] ALL_MIGRATIONS = new Migration[]{
-            DbMigration.MIGRATION_1_2, DbMigration.MIGRATION_2_3};
+            DbMigration.MIGRATION_1_2, DbMigration.MIGRATION_2_3,
+            DbMigration.MIGRATION_3_4};
 }
