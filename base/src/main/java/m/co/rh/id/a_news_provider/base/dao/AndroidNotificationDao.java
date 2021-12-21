@@ -1,6 +1,7 @@
 package m.co.rh.id.a_news_provider.base.dao;
 
 import androidx.room.Dao;
+import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
 import androidx.room.Transaction;
@@ -23,11 +24,13 @@ public abstract class AndroidNotificationDao {
     public void insertNotification(AndroidNotification androidNotification) {
         long count = count();
         androidNotification.requestId = (int) (count % Integer.MAX_VALUE);
-        long id = insert(androidNotification);
-        androidNotification.id = id;
+        androidNotification.id = insert(androidNotification);
     }
 
 
     @Insert
     protected abstract long insert(AndroidNotification androidNotification);
+
+    @Delete
+    public abstract void delete(AndroidNotification androidNotification);
 }

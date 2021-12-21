@@ -17,4 +17,12 @@ public class DbMigration {
             database.execSQL("ALTER TABLE `rss_channel` ADD COLUMN image_url TEXT");
         }
     };
+
+    public static final Migration MIGRATION_3_4 = new Migration(3, 4) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            // cleanup android notification that are not deleted due to bug
+            database.execSQL("DELETE FROM `android_notification`");
+        }
+    };
 }

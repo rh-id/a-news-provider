@@ -180,6 +180,7 @@ public class AppNotificationHandler {
                     if (rssChannel != null) {
                         mRssChangeNotifier.get().selectRssChannel(rssChannel);
                     }
+                    mAndroidNotificationDao.get().delete(androidNotification);
                 }
             });
         }
