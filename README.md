@@ -15,3 +15,9 @@ The app uses a-navigator framework as navigator and StatefulView as base structu
 combined with a-provider library for service locator,
 and finally RxAndroid to handle UI use cases.
 
+## Screenshots
+<img src="https://github.com/rh-id/a-news-provider/blob/master/fastlane/metadata/android/en-US/images/featureGraphic.png" width="1024"/>
+
+<img src="https://github.com/rh-id/a-news-provider/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/1.png" height="512"/>
+<img src="https://github.com/rh-id/a-news-provider/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/2.png" height="512"/>
+
