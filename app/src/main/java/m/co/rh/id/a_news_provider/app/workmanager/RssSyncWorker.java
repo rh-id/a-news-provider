@@ -54,7 +54,7 @@ public class RssSyncWorker extends Worker {
                 rssModels.add(requestFuture.get());
             } catch (Throwable throwable) {
                 provider.get(ILogger.class)
-                        .e(TAG, getApplicationContext()
+                        .d(TAG, getApplicationContext()
                                         .getString(R.string.error_failed_to_sync_some_rss),
                                 throwable);
             }
