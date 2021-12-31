@@ -65,6 +65,8 @@
     <string name="one_hand_mode_activated">Mode satu tangan diaktifkan</string>
     <string name="one_hand_mode_deactivated">Mode satu tangan dinonaktifkan</string>
     <string name="http_not_allowed">HTTP tidak diizinkan gunakan HTTPS sebagai gantinya</string>
+    <string name="mark_as_read">Tandai sebagai terbaca</string>
+    <string name="mark_as_unread">Tandai sebagai belum terbaca</string>
 
     <string-array name="array_filter_by">
         <item>None</item>

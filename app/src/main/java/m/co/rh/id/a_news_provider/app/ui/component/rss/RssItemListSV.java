@@ -21,15 +21,19 @@ import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.annotation.NavInject;
+import m.co.rh.id.anavigator.component.INavigator;
 import m.co.rh.id.aprovider.Provider;
 
 public class RssItemListSV extends StatefulView<Activity> {
     private static final String TAG = RssItemListSV.class.getName();
     @NavInject
+    private transient INavigator mNavigator;
+    @NavInject
     private transient Provider mProvider;
 
     private transient Provider mSvProvider;
     private transient RecyclerView.OnScrollListener mOnScrollListener;
+    private transient RssItemRecyclerViewAdapter mRssItemRecyclerViewAdapter;
 
     public void refresh() {
         if (mSvProvider != null) {
@@ -45,10 +49,10 @@ public class RssItemListSV extends StatefulView<Activity> {
         mSvProvider = mProvider.get(StatefulViewProvider.class);
         mSvProvider.get(PagedRssItemsCmd.class).load();
         View view = activity.getLayoutInflater().inflate(R.layout.list_rss_item, container, false);
-        RssItemRecyclerViewAdapter rssItemRecyclerViewAdapter = new RssItemRecyclerViewAdapter(
-                mSvProvider.get(PagedRssItemsCmd.class));
+        mRssItemRecyclerViewAdapter = new RssItemRecyclerViewAdapter(
+                mSvProvider.get(PagedRssItemsCmd.class), mNavigator, this);
         RecyclerView recyclerView = view.findViewById(R.id.recyclerView);
-        recyclerView.setAdapter(rssItemRecyclerViewAdapter);
+        recyclerView.setAdapter(mRssItemRecyclerViewAdapter);
         recyclerView.addItemDecoration(new DividerItemDecoration(activity, DividerItemDecoration.VERTICAL));
         if (mOnScrollListener == null) {
             mOnScrollListener = new RecyclerView.OnScrollListener() {
@@ -84,7 +88,7 @@ public class RssItemListSV extends StatefulView<Activity> {
                 mSvProvider.get(PagedRssItemsCmd.class).getRssItems()
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(rssItems -> mSvProvider.get(Handler.class)
-                                        .post(rssItemRecyclerViewAdapter::notifyDataSetChanged),
+                                        .post(mRssItemRecyclerViewAdapter::notifyDataSetChanged),
                                 throwable ->
                                         mSvProvider.get(ILogger.class).e(TAG,
                                                 mSvProvider.getContext()
@@ -101,7 +105,10 @@ public class RssItemListSV extends StatefulView<Activity> {
             mSvProvider.dispose();
             mSvProvider = null;
         }
-        mProvider = null;
+        if (mRssItemRecyclerViewAdapter != null) {
+            mRssItemRecyclerViewAdapter.dispose(activity);
+            mRssItemRecyclerViewAdapter = null;
+        }
     }
 
     public Flowable<Boolean> getLoadingFlow() {

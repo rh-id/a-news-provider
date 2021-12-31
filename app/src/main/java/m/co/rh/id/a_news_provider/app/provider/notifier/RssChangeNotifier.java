@@ -36,7 +36,6 @@ public class RssChangeNotifier {
     private final PublishSubject<Optional<RssChannel>> mUpdatedRssChannelPublishSubject;
     private final BehaviorSubject<Optional<RssChannel>> mSelectedRssChannelBehaviourSubject;
     private final BehaviorSubject<Map<RssChannel, Integer>> mRssChannelUnReadCountMapBehaviourSubject;
-    private final PublishSubject<RssItem> mReadRssItemPublishSubject;
     private final PublishSubject<List<RssModel>> mSyncedRssModelPublishSubject;
 
     public RssChangeNotifier(Provider provider, Context context) {
@@ -48,7 +47,6 @@ public class RssChangeNotifier {
         mUpdatedRssChannelPublishSubject = PublishSubject.create();
         mSelectedRssChannelBehaviourSubject = BehaviorSubject.createDefault(Optional.empty());
         mRssChannelUnReadCountMapBehaviourSubject = BehaviorSubject.createDefault(new HashMap<>());
-        mReadRssItemPublishSubject = PublishSubject.create();
         mSyncedRssModelPublishSubject = PublishSubject.create();
         refreshRssChannelCount();
     }
@@ -108,7 +106,20 @@ public class RssChangeNotifier {
         mExecutorService.get().execute(() -> {
             try {
                 mRssDao.get().updateRssItem(rssItem);
-                mReadRssItemPublishSubject.onNext(rssItem);
+                refreshRssChannelCount();
+            } catch (Throwable throwable) {
+                mLogger.get().e(TAG,
+                        mAppContext.getString(R.string.error_rss_read, rssItem.title
+                        ), throwable);
+            }
+        });
+    }
+
+    public void unReadRssItem(RssItem rssItem) {
+        rssItem.isRead = false;
+        mExecutorService.get().execute(() -> {
+            try {
+                mRssDao.get().updateRssItem(rssItem);
                 refreshRssChannelCount();
             } catch (Throwable throwable) {
                 mLogger.get().e(TAG,

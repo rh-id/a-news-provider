@@ -65,6 +65,8 @@
     <string name="one_hand_mode_activated">One hand mode activated</string>
     <string name="one_hand_mode_deactivated">One hand mode deactivated</string>
     <string name="http_not_allowed">HTTP not allowed use HTTPS instead</string>
+    <string name="mark_as_read">Mark as read</string>
+    <string name="mark_as_unread">Mark as unread</string>
 
     <string-array name="array_filter_by">
         <item>None</item>
