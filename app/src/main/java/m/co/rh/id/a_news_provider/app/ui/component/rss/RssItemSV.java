@@ -113,7 +113,8 @@ public class RssItemSV extends StatefulView<Activity> implements View.OnClickLis
             }
             /*
              Strange issue here, bold text seemed to cause animation jank when transition to new page,
-             fixed by delaying navigation on to next frame (assuming 60FPS so around 16 milis)
+             fixed by delaying navigation on to next frame (assuming 60FPS so around 16 milis).
+             Update: Still jank sometimes when opening the detail, adjusting the delay to 3 frames.
              */
             mSvProvider.get(Handler.class)
                     .postDelayed(() -> mSvProvider.get(RxDisposer.class)
@@ -129,7 +130,7 @@ public class RssItemSV extends StatefulView<Activity> implements View.OnClickLis
                                                             RssItemDetailPage.Args.withRss(mRssItem, rssChannel));
                                                 }
                                             })
-                            ), 16);
+                            ), 48);
         }
     }
 
