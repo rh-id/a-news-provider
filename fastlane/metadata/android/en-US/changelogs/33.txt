@@ -1,0 +1,10 @@
+Release 1.4.0+33
+
+Fixes:
+* Simplified date format on news list
+* Update log level to avoid annoying background sync error toast message
+* Optimize memory usage
+
+Feature:
+* Long press unread news to mark it as read
+* Long press read news to mark it as unread
