@@ -3,6 +3,7 @@ package m.co.rh.id.a_news_provider.app.ui.component.rss;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Typeface;
+import android.os.Handler;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -105,27 +106,30 @@ public class RssItemSV extends StatefulView<Activity> implements View.OnClickLis
     public void onClick(View view) {
         int id = view.getId();
         if (id == R.id.root_layout) {
-            if (mNavigator != null) {
-                mSvProvider.get(RxDisposer.class)
-                        .add("onClick_getRssChannelById",
-                                mSvProvider.get(RssQueryCmd.class)
-                                        .getRssChannelById(mRssItem.channelId)
-                                        .subscribe((rssChannel, throwable) -> {
-                                            if (throwable != null) {
-                                                mSvProvider.get(ILogger.class)
-                                                        .e(TAG, throwable.getMessage(), throwable);
-                                            } else {
-                                                mNavigator.push((args, activity1) -> new RssItemDetailPage(),
-                                                        RssItemDetailPage.Args.withRss(mRssItem, rssChannel));
-                                            }
-                                        })
-                        );
-            }
             if (!mRssItem.isRead) {
                 mSvProvider.get(RssChangeNotifier.class)
                         .readRssItem(mRssItem);
                 mRssItemBehaviorSubject.onNext(mRssItem);
             }
+            /*
+             Strange issue here, bold text seemed to cause animation jank when transition to new page,
+             fixed by delaying navigation on to next frame (assuming 60FPS so around 16 milis)
+             */
+            mSvProvider.get(Handler.class)
+                    .postDelayed(() -> mSvProvider.get(RxDisposer.class)
+                            .add("onClick_getRssChannelById",
+                                    mSvProvider.get(RssQueryCmd.class)
+                                            .getRssChannelById(mRssItem.channelId)
+                                            .subscribe((rssChannel, throwable) -> {
+                                                if (throwable != null) {
+                                                    mSvProvider.get(ILogger.class)
+                                                            .e(TAG, throwable.getMessage(), throwable);
+                                                } else {
+                                                    mNavigator.push((args, activity1) -> new RssItemDetailPage(),
+                                                            RssItemDetailPage.Args.withRss(mRssItem, rssChannel));
+                                                }
+                                            })
+                            ), 16);
         }
     }
 
