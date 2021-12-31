@@ -8,6 +8,9 @@ import android.widget.TextView;
 
 import androidx.core.text.HtmlCompat;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
@@ -29,14 +32,11 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
     private transient BehaviorSubject<RssItem> mRssItemBehaviorSubject;
     private transient Provider mSvProvider;
     private transient INavigator mNavigator;
+    private DateFormat mDateFormat;
 
-    public void setRssItem(RssItem rssItem) {
-        mRssItem = rssItem;
-        if (mRssItemBehaviorSubject != null) {
-            mRssItemBehaviorSubject.onNext(rssItem);
-        }
+    public RssItemSV() {
+        mDateFormat = new SimpleDateFormat("E, d MMM yyyy");
     }
-
 
     @Override
     public void provideNavigator(INavigator navigator) {
@@ -65,9 +65,9 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
         mSvProvider.get(RxDisposer.class).add("mRssItemSubject",
                 mRssItemBehaviorSubject.subscribe(rssItem -> {
                     if (rssItem.pubDate != null) {
-                        textDate.setText(rssItem.pubDate.toString());
+                        textDate.setText(mDateFormat.format(rssItem.pubDate));
                     } else if (rssItem.createdDateTime != null) {
-                        textDate.setText(rssItem.createdDateTime.toString());
+                        textDate.setText(mDateFormat.format(rssItem.createdDateTime));
                     }
                     if (rssItem.title != null) {
                         textTitle.setText(HtmlCompat
@@ -120,6 +120,13 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
             mSvProvider.get(RssChangeNotifier.class)
                     .readRssItem(mRssItem);
             mRssItemBehaviorSubject.onNext(mRssItem);
+        }
+    }
+
+    public void setRssItem(RssItem rssItem) {
+        mRssItem = rssItem;
+        if (mRssItemBehaviorSubject != null) {
+            mRssItemBehaviorSubject.onNext(rssItem);
         }
     }
 }
