@@ -4,14 +4,16 @@ import android.content.Context;
 
 import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderDisposable;
+import m.co.rh.id.aprovider.ProviderIsDisposed;
 import m.co.rh.id.aprovider.ProviderValue;
 
 /**
  * Common provider used for StatefulView
  */
-public class StatefulViewProvider implements Provider, ProviderDisposable {
+public class StatefulViewProvider implements Provider, ProviderDisposable, ProviderIsDisposed {
 
     private Provider mProvider;
+    private boolean mIsDisposed;
 
     public StatefulViewProvider(Provider parentProvider) {
         mProvider = Provider.createNestedProvider("StatefulViewProvider",
@@ -45,7 +47,8 @@ public class StatefulViewProvider implements Provider, ProviderDisposable {
 
     @Override
     public void dispose() {
-        // dispose may be called multiple times
+        if (mIsDisposed) return;
+        mIsDisposed = true;
         if (mProvider != null) {
             mProvider.dispose();
             mProvider = null;
@@ -55,5 +58,10 @@ public class StatefulViewProvider implements Provider, ProviderDisposable {
     @Override
     public void dispose(Context context) {
         dispose();
+    }
+
+    @Override
+    public boolean isDisposed() {
+        return mIsDisposed;
     }
 }
