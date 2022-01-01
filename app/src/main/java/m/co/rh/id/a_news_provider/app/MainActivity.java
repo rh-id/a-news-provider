@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
+import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.component.AppNotificationHandler;
 import m.co.rh.id.a_news_provider.app.provider.RxProviderModule;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
@@ -37,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
                                 BaseApplication.of(this).getNavigator(this).reBuildAllRoute();
                                 // Switching to night mode didn't update window background for some reason?
                                 // seemed to occur on android 8 and below
-                                getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+                                getWindow().setBackgroundDrawableResource(R.color.daynight_white_black);
                             }
                         })
                 );
