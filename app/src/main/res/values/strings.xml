@@ -67,6 +67,12 @@
     <string name="http_not_allowed">HTTP not allowed use HTTPS instead</string>
     <string name="mark_as_read">Mark as read</string>
     <string name="mark_as_unread">Mark as unread</string>
+    <string name="menu_edit_link">Edit Link</string>
+    <string name="save_and_open">Save and Open</string>
+    <string name="cancel">Cancel</string>
+    <string name="save">Save</string>
+    <string name="success_save_link">Link saved</string>
+    <string name="title_edit_link">Edit Link</string>
 
     <string-array name="array_filter_by">
         <item>None</item>

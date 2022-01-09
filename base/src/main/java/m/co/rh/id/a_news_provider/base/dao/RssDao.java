@@ -119,4 +119,6 @@ public abstract class RssDao {
         deleteRssItemsByChannelId(rssChannel.id);
     }
 
+    @Query("SELECT * FROM rss_item WHERE id = :rssItemId")
+    public abstract RssItem findRssItemById(long rssItemId);
 }

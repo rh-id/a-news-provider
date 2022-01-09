@@ -37,6 +37,7 @@ public class RssChangeNotifier {
     private final BehaviorSubject<Optional<RssChannel>> mSelectedRssChannelBehaviourSubject;
     private final BehaviorSubject<Map<RssChannel, Integer>> mRssChannelUnReadCountMapBehaviourSubject;
     private final PublishSubject<List<RssModel>> mSyncedRssModelPublishSubject;
+    private final PublishSubject<RssItem> mUpdatedRssItemSubject;
 
     public RssChangeNotifier(Provider provider, Context context) {
         mAppContext = context.getApplicationContext();
@@ -48,6 +49,7 @@ public class RssChangeNotifier {
         mSelectedRssChannelBehaviourSubject = BehaviorSubject.createDefault(Optional.empty());
         mRssChannelUnReadCountMapBehaviourSubject = BehaviorSubject.createDefault(new HashMap<>());
         mSyncedRssModelPublishSubject = PublishSubject.create();
+        mUpdatedRssItemSubject = PublishSubject.create();
         refreshRssChannelCount();
     }
 
@@ -161,6 +163,10 @@ public class RssChangeNotifier {
         });
     }
 
+    public void updatedRssItem(RssItem rssItem) {
+        mUpdatedRssItemSubject.onNext(rssItem);
+    }
+
     public Flowable<Optional<RssModel>> liveNewRssModel() {
         return Flowable.fromObservable(mAddedRssModelPublishSubject, BackpressureStrategy.BUFFER);
     }
@@ -175,5 +181,9 @@ public class RssChangeNotifier {
 
     public Flowable<List<RssModel>> liveSyncedRssModel() {
         return Flowable.fromObservable(mSyncedRssModelPublishSubject, BackpressureStrategy.BUFFER);
+    }
+
+    public Flowable<RssItem> getUpdatedRssItem() {
+        return Flowable.fromObservable(mUpdatedRssItemSubject, BackpressureStrategy.BUFFER);
     }
 }

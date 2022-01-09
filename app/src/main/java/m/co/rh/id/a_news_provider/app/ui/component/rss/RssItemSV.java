@@ -14,6 +14,7 @@ import androidx.core.text.HtmlCompat;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
@@ -67,25 +68,34 @@ public class RssItemSV extends StatefulView<Activity> implements View.OnClickLis
         }
         mSvProvider = mProvider.get(StatefulViewProvider.class);
         mSvProvider.get(RxDisposer.class).add("mRssItemSubject",
-                mRssItemBehaviorSubject.subscribe(rssItem -> {
-                    if (rssItem.pubDate != null) {
-                        textDate.setText(mDateFormat.format(rssItem.pubDate));
-                    } else if (rssItem.createdDateTime != null) {
-                        textDate.setText(mDateFormat.format(rssItem.createdDateTime));
-                    }
-                    if (rssItem.title != null) {
-                        textTitle.setText(HtmlCompat
-                                .fromHtml(rssItem.title, HtmlCompat.FROM_HTML_MODE_COMPACT));
-                    }
-                    if (rssItem.isRead) {
-                        textDate.setTypeface(null, Typeface.NORMAL);
-                        textTitle.setTypeface(null, Typeface.NORMAL);
-                    } else {
-                        textDate.setTypeface(null, Typeface.BOLD);
-                        textTitle.setTypeface(null, Typeface.BOLD);
-                    }
-                })
+                mRssItemBehaviorSubject.observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(rssItem -> {
+                            if (rssItem.pubDate != null) {
+                                textDate.setText(mDateFormat.format(rssItem.pubDate));
+                            } else if (rssItem.createdDateTime != null) {
+                                textDate.setText(mDateFormat.format(rssItem.createdDateTime));
+                            }
+                            if (rssItem.title != null) {
+                                textTitle.setText(HtmlCompat
+                                        .fromHtml(rssItem.title, HtmlCompat.FROM_HTML_MODE_COMPACT));
+                            }
+                            if (rssItem.isRead) {
+                                textDate.setTypeface(null, Typeface.NORMAL);
+                                textTitle.setTypeface(null, Typeface.NORMAL);
+                            } else {
+                                textDate.setTypeface(null, Typeface.BOLD);
+                                textTitle.setTypeface(null, Typeface.BOLD);
+                            }
+                        })
         );
+        mSvProvider.get(RxDisposer.class).add("createView_onRssItemUpdated",
+                mSvProvider.get(RssChangeNotifier.class).getUpdatedRssItem()
+                        .subscribe(rssItem -> {
+                            if (rssItem.id.equals(mRssItem.id)) {
+                                mRssItem = rssItem;
+                                mRssItemBehaviorSubject.onNext(rssItem);
+                            }
+                        }));
         return view;
     }
 

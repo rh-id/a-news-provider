@@ -4,33 +4,43 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.text.method.LinkMovementMethod;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 
+import androidx.appcompat.widget.Toolbar;
 import androidx.core.text.HtmlCompat;
 
 import java.io.Serializable;
 
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.component.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
+import m.co.rh.id.a_news_provider.app.provider.command.RssQueryCmd;
 import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
 import m.co.rh.id.a_news_provider.app.util.UiUtils;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
+import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.NavRoute;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.annotation.NavInject;
+import m.co.rh.id.anavigator.component.INavigator;
 import m.co.rh.id.aprovider.Provider;
 
-public class RssItemDetailPage extends StatefulView<Activity> implements View.OnClickListener {
+public class RssItemDetailPage extends StatefulView<Activity> implements View.OnClickListener, Toolbar.OnMenuItemClickListener {
 
+    private static final String TAG = RssItemDetailPage.class.getName();
     @NavInject
     private AppBarSV mAppBarSV;
     @NavInject
     private transient Provider mProvider;
+    @NavInject
+    private transient INavigator mNavigator;
     @NavInject
     private transient NavRoute mNavRoute;
     private RssItem mRssItem;
@@ -38,7 +48,7 @@ public class RssItemDetailPage extends StatefulView<Activity> implements View.On
     private transient Provider mSvProvider;
 
     public RssItemDetailPage() {
-        mAppBarSV = new AppBarSV();
+        mAppBarSV = new AppBarSV(R.menu.page_rss_item_detail);
     }
 
     @Override
@@ -64,6 +74,7 @@ public class RssItemDetailPage extends StatefulView<Activity> implements View.On
         }
         View view = activity.getLayoutInflater().inflate(layoutId, container, false);
         ViewGroup containerAppBar = view.findViewById(R.id.container_app_bar);
+        mAppBarSV.setMenuItemListener(this);
         containerAppBar.addView(mAppBarSV.buildView(activity, container));
         TextView titleText = view.findViewById(R.id.text_title);
         titleText.setText(HtmlCompat
@@ -104,6 +115,35 @@ public class RssItemDetailPage extends StatefulView<Activity> implements View.On
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(mRssItem.link));
             activity.startActivity(browserIntent);
         }
+    }
+
+    @Override
+    public boolean onMenuItemClick(MenuItem menuItem) {
+        int id = menuItem.getItemId();
+        if (id == R.id.menu_edit_link) {
+            mNavigator.push((args, activity) -> new EditRssLinkSVDialog(),
+                    EditRssLinkSVDialog.Args.newArgs(mRssItem),
+                    (navigator, navRoute, activity, currentView) -> {
+                        StatefulView sv = navigator.getCurrentRoute().getStatefulView();
+                        if (sv instanceof RssItemDetailPage) {
+                            Provider provider = (Provider) navigator.getNavConfiguration().getRequiredComponent();
+                            CompositeDisposable compositeDisposable = new CompositeDisposable();
+                            compositeDisposable.add(provider.get(RssQueryCmd.class)
+                                    .getRssItemById(((RssItemDetailPage) sv).mRssItem.id)
+                                    .observeOn(AndroidSchedulers.mainThread())
+                                    .subscribe((rssItem, throwable) -> {
+                                        if (throwable != null) {
+                                            provider.get(ILogger.class).e(TAG, throwable.getMessage(), throwable);
+                                        } else {
+                                            ((RssItemDetailPage) sv).mRssItem = rssItem;
+                                        }
+                                        compositeDisposable.dispose();
+                                    })
+                            );
+                        }
+                    });
+        }
+        return false;
     }
 
     public static class Args implements Serializable {

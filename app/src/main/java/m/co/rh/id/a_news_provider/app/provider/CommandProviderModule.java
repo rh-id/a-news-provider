@@ -2,6 +2,7 @@ package m.co.rh.id.a_news_provider.app.provider;
 
 import android.content.Context;
 
+import m.co.rh.id.a_news_provider.app.provider.command.EditRssLinkCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.NewRssChannelCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.PagedRssItemsCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.RenameRssFeedCmd;
@@ -26,6 +27,7 @@ public class CommandProviderModule implements ProviderModule {
         providerRegistry.registerLazy(RenameRssFeedCmd.class, () -> new RenameRssFeedCmd(mAppProvider, context));
         providerRegistry.registerLazy(SyncRssCmd.class, () -> new SyncRssCmd(mAppProvider, context));
         providerRegistry.registerLazy(RssQueryCmd.class, () -> new RssQueryCmd(mAppProvider, context));
+        providerRegistry.registerLazy(EditRssLinkCmd.class, () -> new EditRssLinkCmd(mAppProvider, context));
     }
 
     @Override

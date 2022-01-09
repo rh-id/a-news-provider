@@ -67,6 +67,12 @@
     <string name="http_not_allowed">HTTP tidak diizinkan gunakan HTTPS sebagai gantinya</string>
     <string name="mark_as_read">Tandai sebagai terbaca</string>
     <string name="mark_as_unread">Tandai sebagai belum terbaca</string>
+    <string name="menu_edit_link">Edit Link</string>
+    <string name="save_and_open">Simpan dan Buka</string>
+    <string name="cancel">Batal</string>
+    <string name="save">Simpan</string>
+    <string name="success_save_link">Link tersimpan</string>
+    <string name="title_edit_link">Edit Link</string>
 
     <string-array name="array_filter_by">
         <item>None</item>
