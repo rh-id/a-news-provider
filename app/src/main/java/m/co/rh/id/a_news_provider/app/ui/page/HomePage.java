@@ -20,12 +20,16 @@ import androidx.work.WorkManager;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
+import com.tokopedia.showcase.ShowCaseBuilder;
+import com.tokopedia.showcase.ShowCaseDialog;
+import com.tokopedia.showcase.ShowCaseObject;
 
 import java.io.Externalizable;
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
@@ -36,6 +40,7 @@ import m.co.rh.id.a_news_provider.app.component.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.app.constants.Routes;
 import m.co.rh.id.a_news_provider.app.constants.Shortcuts;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
+import m.co.rh.id.a_news_provider.app.provider.command.RssQueryCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.SyncRssCmd;
 import m.co.rh.id.a_news_provider.app.provider.notifier.DeviceStatusNotifier;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
@@ -77,6 +82,7 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
 
     // component
     private transient Provider mSvProvider;
+    private transient AppSharedPreferences mAppSharedPreferences;
 
     // View related
     private transient DrawerLayout mDrawerLayout;
@@ -94,6 +100,7 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
             mSvProvider.dispose();
         }
         mSvProvider = provider.get(StatefulViewProvider.class);
+        mAppSharedPreferences = mSvProvider.get(AppSharedPreferences.class);
     }
 
     @Override
@@ -315,6 +322,42 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
     @Override
     public void onDrawerOpened(@NonNull View drawerView) {
         mIsDrawerOpen = true;
+        if (!mAppSharedPreferences.isShowCaseRssChannelList()) {
+            mSvProvider.get(RxDisposer.class)
+                    .add("onDrawerOpened_countRssItems",
+                            mSvProvider.get(RssQueryCmd.class).countRssItem()
+                                    .observeOn(AndroidSchedulers.mainThread())
+                                    .subscribe((integer, throwable) -> {
+                                        if (throwable == null && integer > 0) {
+                                            int textColor = R.color.daynight_gray_700_white;
+                                            Activity activity = mNavigator.getActivity();
+                                            ShowCaseDialog showCaseDialog = new ShowCaseBuilder()
+                                                    .textColorRes(textColor)
+                                                    .titleTextColorRes(textColor)
+                                                    .shadowColorRes(R.color.shadow)
+                                                    .titleTextSizeRes(R.dimen.text_title)
+                                                    .textSizeRes(R.dimen.text_normal)
+                                                    .spacingRes(R.dimen.spacing_normal)
+                                                    .backgroundContentColorRes(R.color.orange_600)
+                                                    .circleIndicatorBackgroundDrawableRes(R.drawable.selector_circle_green)
+                                                    .prevStringRes(R.string.previous)
+                                                    .nextStringRes(R.string.next)
+                                                    .finishStringRes(R.string.finish)
+                                                    .useCircleIndicator(false)
+                                                    .clickable(true)
+                                                    .build();
+                                            String title = activity.getString(R.string.title_showcase_rss_channel_list);
+                                            String description = activity.getString(R.string.showcase_rss_channel_list);
+                                            ArrayList<ShowCaseObject> showCaseList = new ArrayList<>();
+                                            showCaseList.add(new ShowCaseObject(
+                                                    drawerView.findViewById(R.id.container_list_channel),
+                                                    title,
+                                                    description));
+                                            showCaseDialog.show(activity, null, showCaseList);
+                                            mAppSharedPreferences.setShowCaseRssChannelList(true);
+                                        }
+                                    }));
+        }
     }
 
     @Override

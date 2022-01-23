@@ -35,4 +35,10 @@ public class RssQueryCmd {
                         .findRssItemById(id))
         );
     }
+
+    public Single<Integer> countRssItem() {
+        return Single.fromFuture(mExecutorService.get().submit(() ->
+                mRssDao.get().countRssItem())
+        );
+    }
 }

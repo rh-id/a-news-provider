@@ -73,6 +73,8 @@
     <string name="save">Save</string>
     <string name="success_save_link">Link saved</string>
     <string name="title_edit_link">Edit Link</string>
+    <string name="title_showcase_rss_channel_list">Feed List</string>
+    <string name="showcase_rss_channel_list">List of feed, tap and hold to edit your feed name, or delete it, you could also see the link for this feed</string>
 
     <string-array name="array_filter_by">
         <item>None</item>

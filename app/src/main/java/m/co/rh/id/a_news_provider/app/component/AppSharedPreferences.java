@@ -43,6 +43,9 @@ public class AppSharedPreferences {
     private boolean mOneHandMode;
     private String mOneHandModeKey;
 
+    private boolean mShowCaseRssChannelList;
+    private String mShowCaseRssChannelListKey;
+
     public AppSharedPreferences(Provider provider, Context context) {
         mExecutorService = provider.lazyGet(ExecutorService.class);
         mHandler = provider.lazyGet(Handler.class);
@@ -64,6 +67,8 @@ public class AppSharedPreferences {
                 + ".selectedTheme";
         mOneHandModeKey = SHARED_PREFERENCES_NAME
                 + ".oneHandMode";
+        mShowCaseRssChannelListKey = SHARED_PREFERENCES_NAME
+                + ".showCaseRssChannelList";
 
         boolean periodicSyncInit = mSharedPreferences.getBoolean(mPeriodicSyncInitKey, false);
         periodicSyncInit(periodicSyncInit);
@@ -82,6 +87,8 @@ public class AppSharedPreferences {
         setSelectedTheme(selectedTheme);
         boolean oneHandMode = mSharedPreferences.getBoolean(mOneHandModeKey, false);
         oneHandMode(oneHandMode);
+        boolean showCaseRssChannelList = mSharedPreferences.getBoolean(mShowCaseRssChannelListKey, false);
+        setShowCaseRssChannelList(showCaseRssChannelList);
     }
 
     private void initPeriodicSync() {
@@ -177,5 +184,16 @@ public class AppSharedPreferences {
             // refresh all route after one hand mode changed
             mNavigator.get().reBuildAllRoute();
         });
+    }
+
+    public void setShowCaseRssChannelList(boolean show) {
+        mShowCaseRssChannelList = show;
+        mExecutorService.get().execute(() ->
+                mSharedPreferences.edit().putBoolean(mShowCaseRssChannelListKey, show)
+                        .commit());
+    }
+
+    public boolean isShowCaseRssChannelList() {
+        return mShowCaseRssChannelList;
     }
 }

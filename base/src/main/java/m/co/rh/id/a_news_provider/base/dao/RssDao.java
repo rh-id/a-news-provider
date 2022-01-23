@@ -41,7 +41,7 @@ public abstract class RssDao {
     public abstract List<RssItem> findRssItemsByIsReadWithLimit(int isRead, int limit);
 
     @Query("SELECT COUNT(id) FROM rss_item")
-    public abstract int countRssItems();
+    public abstract int countRssItem();
 
     @Query("SELECT COUNT(id) FROM rss_item WHERE is_read = 0 AND channel_id = :channelId")
     public abstract int countUnReadRssItems(long channelId);
