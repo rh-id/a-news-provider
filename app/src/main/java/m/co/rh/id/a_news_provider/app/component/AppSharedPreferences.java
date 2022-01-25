@@ -46,6 +46,9 @@ public class AppSharedPreferences {
     private boolean mShowCaseRssChannelList;
     private String mShowCaseRssChannelListKey;
 
+    private boolean mShowCaseRssItemList;
+    private String mShowCaseRssItemListKey;
+
     public AppSharedPreferences(Provider provider, Context context) {
         mExecutorService = provider.lazyGet(ExecutorService.class);
         mHandler = provider.lazyGet(Handler.class);
@@ -69,6 +72,8 @@ public class AppSharedPreferences {
                 + ".oneHandMode";
         mShowCaseRssChannelListKey = SHARED_PREFERENCES_NAME
                 + ".showCaseRssChannelList";
+        mShowCaseRssItemListKey = SHARED_PREFERENCES_NAME
+                + ".showCaseRssItemList";
 
         boolean periodicSyncInit = mSharedPreferences.getBoolean(mPeriodicSyncInitKey, false);
         periodicSyncInit(periodicSyncInit);
@@ -89,6 +94,8 @@ public class AppSharedPreferences {
         oneHandMode(oneHandMode);
         boolean showCaseRssChannelList = mSharedPreferences.getBoolean(mShowCaseRssChannelListKey, false);
         setShowCaseRssChannelList(showCaseRssChannelList);
+        boolean showCaseRssItemList = mSharedPreferences.getBoolean(mShowCaseRssItemListKey, false);
+        setShowCaseRssItemList(showCaseRssItemList);
     }
 
     private void initPeriodicSync() {
@@ -195,5 +202,16 @@ public class AppSharedPreferences {
 
     public boolean isShowCaseRssChannelList() {
         return mShowCaseRssChannelList;
+    }
+
+    public void setShowCaseRssItemList(boolean show) {
+        mShowCaseRssItemList = show;
+        mExecutorService.get().execute(() ->
+                mSharedPreferences.edit().putBoolean(mShowCaseRssItemListKey, show)
+                        .commit());
+    }
+
+    public boolean isShowCaseRssItemList() {
+        return mShowCaseRssItemList;
     }
 }

@@ -74,7 +74,9 @@
     <string name="success_save_link">Link saved</string>
     <string name="title_edit_link">Edit Link</string>
     <string name="title_showcase_rss_channel_list">Feed List</string>
-    <string name="showcase_rss_channel_list">List of feed, tap and hold to edit your feed name, or delete it, you could also see the link for this feed</string>
+    <string name="showcase_rss_channel_list">Tap and hold to edit your feed name, or delete it, you could also see the link for this feed</string>
+    <string name="title_showcase_rss_item_list">Your news list</string>
+    <string name="showcase_rss_item_list">Tap to open detail, or tap and hold unread news to mark as read, or tap and hold read news to mark as unread</string>
 
     <string-array name="array_filter_by">
         <item>None</item>

@@ -17,4 +17,5 @@
     <color name="daynight_gray_700_white">@color/gray_700</color>
     <color name="daynight_gray_300_gray_600">@color/gray_300</color>
     <color name="daynight_white_black">@color/white</color>
+    <color name="daynight_transparent_white_black">#A0FFFFFF</color>
 </resources>

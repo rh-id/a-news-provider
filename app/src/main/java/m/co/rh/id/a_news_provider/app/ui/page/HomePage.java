@@ -329,14 +329,13 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
                                     .observeOn(AndroidSchedulers.mainThread())
                                     .subscribe((integer, throwable) -> {
                                         if (throwable == null && integer > 0) {
-                                            int textColor = R.color.daynight_gray_700_white;
+                                            int textColor = R.color.white;
                                             Activity activity = mNavigator.getActivity();
                                             ShowCaseDialog showCaseDialog = new ShowCaseBuilder()
                                                     .textColorRes(textColor)
                                                     .titleTextColorRes(textColor)
                                                     .shadowColorRes(R.color.shadow)
-                                                    .titleTextSizeRes(R.dimen.text_title)
-                                                    .textSizeRes(R.dimen.text_normal)
+                                                    .titleTextSizeRes(R.dimen.text_nav_menu)
                                                     .spacingRes(R.dimen.spacing_normal)
                                                     .backgroundContentColorRes(R.color.orange_600)
                                                     .circleIndicatorBackgroundDrawableRes(R.drawable.selector_circle_green)

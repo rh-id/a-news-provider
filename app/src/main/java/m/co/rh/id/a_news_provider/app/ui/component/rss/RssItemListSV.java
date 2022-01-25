@@ -12,9 +12,17 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.tokopedia.showcase.ShowCaseBuilder;
+import com.tokopedia.showcase.ShowCaseDialog;
+import com.tokopedia.showcase.ShowCaseObject;
+
+import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
+
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Flowable;
 import m.co.rh.id.a_news_provider.R;
+import m.co.rh.id.a_news_provider.app.component.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.PagedRssItemsCmd;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
@@ -86,9 +94,44 @@ public class RssItemListSV extends StatefulView<Activity> {
         });
         mSvProvider.get(RxDisposer.class).add("mPagedRssItemsCmd.getRssItems",
                 mSvProvider.get(PagedRssItemsCmd.class).getRssItems()
+                        .debounce(100, TimeUnit.MILLISECONDS)
                         .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(rssItems -> mSvProvider.get(Handler.class)
-                                        .post(mRssItemRecyclerViewAdapter::notifyDataSetChanged),
+                        .subscribe(rssItems -> {
+                                    mSvProvider.get(Handler.class)
+                                            .post(mRssItemRecyclerViewAdapter::notifyDataSetChanged);
+                                    if (!rssItems.isEmpty()) {
+                                        AppSharedPreferences appSharedPreferences = mSvProvider.get(AppSharedPreferences.class);
+                                        if (!appSharedPreferences.isShowCaseRssItemList()) {
+                                            mSvProvider.get(Handler.class)
+                                                    .postDelayed(() -> {
+                                                        int textColor = R.color.white;
+                                                        ShowCaseDialog showCaseDialog = new ShowCaseBuilder()
+                                                                .textColorRes(textColor)
+                                                                .titleTextColorRes(textColor)
+                                                                .shadowColorRes(R.color.daynight_transparent_white_black)
+                                                                .titleTextSizeRes(R.dimen.text_nav_menu)
+                                                                .spacingRes(R.dimen.spacing_normal)
+                                                                .backgroundContentColorRes(R.color.orange_600)
+                                                                .circleIndicatorBackgroundDrawableRes(R.drawable.selector_circle_green)
+                                                                .prevStringRes(R.string.previous)
+                                                                .nextStringRes(R.string.next)
+                                                                .finishStringRes(R.string.finish)
+                                                                .useCircleIndicator(false)
+                                                                .clickable(true)
+                                                                .build();
+                                                        String title = activity.getString(R.string.title_showcase_rss_item_list);
+                                                        String description = activity.getString(R.string.showcase_rss_item_list);
+                                                        ArrayList<ShowCaseObject> showCaseList = new ArrayList<>();
+                                                        showCaseList.add(new ShowCaseObject(
+                                                                recyclerView.getChildAt(0),
+                                                                title,
+                                                                description));
+                                                        showCaseDialog.show(activity, null, showCaseList);
+                                                    }, 1000);
+                                            appSharedPreferences.setShowCaseRssItemList(true);
+                                        }
+                                    }
+                                },
                                 throwable ->
                                         mSvProvider.get(ILogger.class).e(TAG,
                                                 mSvProvider.getContext()
