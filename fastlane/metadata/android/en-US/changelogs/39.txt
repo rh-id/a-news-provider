@@ -1,0 +1,4 @@
+Release 1.5.1+39
+
+Features:
+* Implement show case to inform about news list and feed list features
