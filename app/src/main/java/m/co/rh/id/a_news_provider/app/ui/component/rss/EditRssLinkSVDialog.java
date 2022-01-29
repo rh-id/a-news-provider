@@ -13,87 +13,87 @@ import android.widget.EditText;
 import java.io.Serializable;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.EditRssLinkCmd;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.util.UiUtils;
-import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
+import m.co.rh.id.a_news_provider.base.rx.SerialBehaviorSubject;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.NavRoute;
 import m.co.rh.id.anavigator.StatefulViewDialog;
-import m.co.rh.id.anavigator.annotation.NavInject;
+import m.co.rh.id.anavigator.component.RequireComponent;
+import m.co.rh.id.anavigator.component.RequireNavRoute;
 import m.co.rh.id.aprovider.Provider;
 
-public class EditRssLinkSVDialog extends StatefulViewDialog<Activity> implements View.OnClickListener {
+public class EditRssLinkSVDialog extends StatefulViewDialog<Activity> implements RequireNavRoute, RequireComponent<Provider>, View.OnClickListener {
     private static final String TAG = EditRssLinkSVDialog.class.getName();
 
-    @NavInject
     private transient NavRoute mNavRoute;
 
     private transient Provider mSvProvider;
-    private String mUrl;
-    private transient BehaviorSubject<String> mUrlSubject;
+    private transient RxDisposer mRxDisposer;
+    private transient EditRssLinkCmd mEditRssLinkCmd;
+    private SerialBehaviorSubject<String> mUrlSubject;
 
+    private transient TextWatcher mUrlTextWatcher;
 
-    public boolean isValid() {
-        if (mSvProvider != null) {
-            return mSvProvider.get(EditRssLinkCmd.class).validUrl(mUrl);
-        }
-        return false;
+    @Override
+    public void provideNavRoute(NavRoute navRoute) {
+        mNavRoute = navRoute;
     }
 
     @Override
-    protected void initState(Activity activity) {
-        super.initState(activity);
-        Args args = getArgs();
-        if (args != null) {
-            mUrl = args.getRssItem().link;
-        } else {
-            mUrl = "";
+    public void provideComponent(Provider provider) {
+        mSvProvider = provider.get(StatefulViewProvider.class);
+        mRxDisposer = mSvProvider.get(RxDisposer.class);
+        mEditRssLinkCmd = mSvProvider.get(EditRssLinkCmd.class);
+        if (mUrlSubject == null) {
+            String url;
+            Args args = getArgs();
+            if (args != null) {
+                url = args.getRssItem().link;
+            } else {
+                url = "";
+            }
+            mUrlSubject = new SerialBehaviorSubject<>(url);
+        }
+        if (mUrlTextWatcher == null) {
+            mUrlTextWatcher = new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                    // leave blank
+                }
+
+                @Override
+                public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                    // leave blank
+                }
+
+                @Override
+                public void afterTextChanged(Editable editable) {
+                    String url = editable.toString();
+                    mUrlSubject.onNext(url);
+                    mEditRssLinkCmd.validUrl(url);
+                }
+            };
         }
     }
 
     @Override
     protected View createView(Activity activity, ViewGroup container) {
         View rootLayout = activity.getLayoutInflater().inflate(R.layout.edit_rss_link, container, false);
-        if (mSvProvider != null) {
-            mSvProvider.dispose();
-        }
-        mSvProvider = BaseApplication.of(activity).getProvider().get(StatefulViewProvider.class);
-        if (mUrlSubject == null) {
-            mUrlSubject = BehaviorSubject.createDefault(mUrl);
-        } else {
-            mUrlSubject.onNext(mUrl);
-        }
         EditText urlEditText = rootLayout.findViewById(R.id.input_text_url);
-        urlEditText.setText(mUrl);
-        urlEditText.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                // leave blank
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                // leave blank
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-                mSvProvider.get(EditRssLinkCmd.class).validUrl(editable.toString());
-                mUrl = editable.toString();
-            }
-        });
+        urlEditText.setText(mUrlSubject.getValue());
+        urlEditText.addTextChangedListener(mUrlTextWatcher);
         Button cancelButton = rootLayout.findViewById(R.id.button_cancel);
         cancelButton.setOnClickListener(this);
         Button saveButton = rootLayout.findViewById(R.id.button_save);
         saveButton.setOnClickListener(this);
         Button saveAndOpenButton = rootLayout.findViewById(R.id.button_save_and_open);
         saveAndOpenButton.setOnClickListener(this);
-        mSvProvider.get(RxDisposer.class).add("createView_editRssLink", mSvProvider.get(EditRssLinkCmd.class)
+        mRxDisposer.add("createView_editRssLink", mEditRssLinkCmd
                 .getUrlValidation()
                 .observeOn(AndroidSchedulers.mainThread()).subscribe(s ->
                 {
@@ -104,8 +104,6 @@ public class EditRssLinkSVDialog extends StatefulViewDialog<Activity> implements
                     }
                 })
         );
-        mSvProvider.get(RxDisposer.class).add("createView_urlChanged",
-                mUrlSubject.subscribe(urlEditText::setText));
         return rootLayout;
     }
 
@@ -116,6 +114,7 @@ public class EditRssLinkSVDialog extends StatefulViewDialog<Activity> implements
             mSvProvider.dispose();
             mSvProvider = null;
         }
+        mUrlTextWatcher = null;
     }
 
     public Args getArgs() {
@@ -132,7 +131,7 @@ public class EditRssLinkSVDialog extends StatefulViewDialog<Activity> implements
         } else if (id == R.id.button_save_and_open) {
             saveUrl();
             Activity activity = UiUtils.getActivity(view);
-            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(mUrl));
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(mUrlSubject.getValue()));
             activity.startActivity(browserIntent);
         }
     }
@@ -140,9 +139,9 @@ public class EditRssLinkSVDialog extends StatefulViewDialog<Activity> implements
     private void saveUrl() {
         if (isValid()) {
             Args args = getArgs();
-            mSvProvider.get(RxDisposer.class)
+            mRxDisposer
                     .add(".saveUrl.editRssLinkCmd.execute",
-                            mSvProvider.get(EditRssLinkCmd.class).execute(args.mRssItem.id, mUrl)
+                            mEditRssLinkCmd.execute(args.mRssItem.id, mUrlSubject.getValue())
                                     .observeOn(AndroidSchedulers.mainThread())
                                     .subscribe((s, throwable) -> {
                                         if (throwable != null) {
@@ -155,9 +154,16 @@ public class EditRssLinkSVDialog extends StatefulViewDialog<Activity> implements
                                     })
                     );
         } else {
-            String validation = mSvProvider.get(EditRssLinkCmd.class).getValidationError();
+            String validation = mEditRssLinkCmd.getValidationError();
             mSvProvider.get(ILogger.class).i(TAG, validation);
         }
+    }
+
+    private boolean isValid() {
+        if (mEditRssLinkCmd != null) {
+            return mEditRssLinkCmd.validUrl(mUrlSubject.getValue());
+        }
+        return false;
     }
 
     public static class Args implements Serializable {

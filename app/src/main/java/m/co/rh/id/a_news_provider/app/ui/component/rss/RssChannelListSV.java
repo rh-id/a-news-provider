@@ -13,30 +13,42 @@ import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.anavigator.StatefulView;
-import m.co.rh.id.anavigator.annotation.NavInject;
+import m.co.rh.id.anavigator.component.INavigator;
+import m.co.rh.id.anavigator.component.RequireComponent;
+import m.co.rh.id.anavigator.component.RequireNavigator;
 import m.co.rh.id.aprovider.Provider;
 
-public class RssChannelListSV extends StatefulView<Activity> {
+public class RssChannelListSV extends StatefulView<Activity> implements RequireNavigator, RequireComponent<Provider> {
 
-    @NavInject
-    private transient Provider mProvider;
+    private transient INavigator mNavigator;
     private transient Provider mSvProvider;
+    private transient RxDisposer mRxDisposer;
+    private transient RssChangeNotifier mRssChangeNotifier;
+    private transient RssChannelRecyclerViewAdapter mRssChannelRecyclerViewAdapter;
+
+    @Override
+    public void provideNavigator(INavigator navigator) {
+        mNavigator = navigator;
+    }
+
+    @Override
+    public void provideComponent(Provider provider) {
+        mSvProvider = provider.get(StatefulViewProvider.class);
+        mRxDisposer = mSvProvider.get(RxDisposer.class);
+        mRssChangeNotifier = mSvProvider.get(RssChangeNotifier.class);
+        mRssChannelRecyclerViewAdapter = new RssChannelRecyclerViewAdapter(mNavigator, this);
+    }
 
     @Override
     protected View createView(Activity activity, ViewGroup container) {
         View view = activity.getLayoutInflater().inflate(R.layout.list_rss_channel, container, false);
-        RssChannelRecyclerViewAdapter rssChannelRecyclerViewAdapter = new RssChannelRecyclerViewAdapter();
         RecyclerView recyclerView = view.findViewById(R.id.recyclerView);
-        recyclerView.setAdapter(rssChannelRecyclerViewAdapter);
+        recyclerView.setAdapter(mRssChannelRecyclerViewAdapter);
         recyclerView.addItemDecoration(new DividerItemDecoration(activity, DividerItemDecoration.VERTICAL));
-        if (mSvProvider != null) {
-            mSvProvider.dispose();
-        }
-        mSvProvider = mProvider.get(StatefulViewProvider.class);
-        mSvProvider.get(RxDisposer.class).add("rssChannelUnReadCount",
-                mProvider.get(RssChangeNotifier.class).rssChannelUnReadCount()
+        mRxDisposer.add("rssChannelUnReadCount",
+                mRssChangeNotifier.rssChannelUnReadCount()
                         .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(rssChannelRecyclerViewAdapter::setItems)
+                        .subscribe(mRssChannelRecyclerViewAdapter::setItems)
         );
         return view;
     }
@@ -48,6 +60,9 @@ public class RssChannelListSV extends StatefulView<Activity> {
             mSvProvider.dispose();
             mSvProvider = null;
         }
-        mProvider = null;
+        if (mRssChannelRecyclerViewAdapter != null) {
+            mRssChannelRecyclerViewAdapter.dispose(activity);
+            mRssChannelRecyclerViewAdapter = null;
+        }
     }
 }

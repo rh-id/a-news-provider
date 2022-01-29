@@ -7,6 +7,7 @@ android {
 
     defaultConfig {
         minSdkVersion 16
+        multiDexEnabled = true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         javaCompileOptions {
             annotationProcessorOptions {
@@ -28,13 +29,18 @@ android {
         }
     }
     compileOptions {
+        // Flag to enable support for the new language APIs
+        coreLibraryDesugaringEnabled true
+
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
 }
 
 dependencies {
-    def room_version = "2.4.0"
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.5'
+
+    def room_version = "2.4.1"
 
     implementation "androidx.room:room-runtime:$room_version"
     annotationProcessor "androidx.room:room-compiler:$room_version"
@@ -43,6 +49,8 @@ dependencies {
     api 'com.github.rh-id:a-provider:v0.0.17'
     api 'com.github.rh-id:a-navigator:v0.0.44'
     api 'com.github.rh-id:a-logger:v0.0.3'
+    api 'io.reactivex.rxjava3:rxandroid:3.0.0'
+    api 'io.reactivex.rxjava3:rxjava:3.0.13'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'

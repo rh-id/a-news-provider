@@ -60,7 +60,7 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
     buildFeatures {
-        viewBinding true
+        viewBinding false
     }
 }
 
@@ -74,10 +74,6 @@ dependencies {
     implementation 'androidx.drawerlayout:drawerlayout:1.1.1'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'androidx.recyclerview:recyclerview:1.2.1'
-
-    implementation 'io.reactivex.rxjava3:rxandroid:3.0.0'
-    // unable to update to 3.1.x due to minimum android requirement API 21 since 3.1.0
-    implementation 'io.reactivex.rxjava3:rxjava:3.0.13'
 
     implementation 'com.github.rh-id:AndroidShowCase:v0.0.1'
 

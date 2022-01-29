@@ -14,85 +14,79 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.io.Serializable;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.NewRssChannelCmd;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
-import m.co.rh.id.a_news_provider.base.BaseApplication;
+import m.co.rh.id.a_news_provider.base.rx.SerialBehaviorSubject;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.NavRoute;
 import m.co.rh.id.anavigator.StatefulViewDialog;
-import m.co.rh.id.anavigator.annotation.NavInject;
+import m.co.rh.id.anavigator.component.RequireComponent;
+import m.co.rh.id.anavigator.component.RequireNavRoute;
 import m.co.rh.id.aprovider.Provider;
 
-public class NewRssChannelSVDialog extends StatefulViewDialog<Activity> implements DialogInterface.OnClickListener {
+public class NewRssChannelSVDialog extends StatefulViewDialog<Activity> implements RequireNavRoute, RequireComponent<Provider>, DialogInterface.OnClickListener {
     private static final String TAG = NewRssChannelSVDialog.class.getName();
 
-    @NavInject
     private transient NavRoute mNavRoute;
 
     private transient Provider mSvProvider;
-    private String mFeedUrl;
-    private transient BehaviorSubject<String> mFeedUrlSubject;
+    private transient RxDisposer mRxDisposer;
+    private transient NewRssChannelCmd mNewRssChannelCmd;
+    private SerialBehaviorSubject<String> mFeedUrlSubject;
 
+    private transient TextWatcher mFeedUrlTextWatcher;
 
-    public void addNewFeed() {
-        if (mSvProvider != null) {
-            mSvProvider.get(NewRssChannelCmd.class).execute(mFeedUrl);
-        }
-    }
-
-    public boolean isValid() {
-        if (mSvProvider != null) {
-            return mSvProvider.get(NewRssChannelCmd.class).validUrl(mFeedUrl);
-        }
-        return false;
+    @Override
+    public void provideNavRoute(NavRoute navRoute) {
+        mNavRoute = navRoute;
     }
 
     @Override
-    protected void initState(Activity activity) {
-        super.initState(activity);
-        Args args = getArgs();
-        if (args != null) {
-            mFeedUrl = args.getFeedUrl();
-        } else {
-            mFeedUrl = "";
+    public void provideComponent(Provider provider) {
+        mSvProvider = provider.get(StatefulViewProvider.class);
+        mRxDisposer = mSvProvider.get(RxDisposer.class);
+        mNewRssChannelCmd = mSvProvider.get(NewRssChannelCmd.class);
+        if (mFeedUrlSubject == null) {
+            String url;
+            Args args = getArgs();
+            if (args != null) {
+                url = args.getFeedUrl();
+            } else {
+                url = "";
+            }
+            mFeedUrlSubject = new SerialBehaviorSubject<>(url);
+        }
+        if (mFeedUrlTextWatcher == null) {
+            mFeedUrlTextWatcher = new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                    // leave blank
+                }
+
+                @Override
+                public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                    // leave blank
+                }
+
+                @Override
+                public void afterTextChanged(Editable editable) {
+                    String url = editable.toString();
+                    mFeedUrlSubject.onNext(url);
+                    mNewRssChannelCmd.validUrl(url);
+                }
+            };
         }
     }
 
     @Override
     protected View createView(Activity activity, ViewGroup container) {
         View view = activity.getLayoutInflater().inflate(R.layout.rss_channel_new, container, false);
-        if (mSvProvider != null) {
-            mSvProvider.dispose();
-        }
-        mSvProvider = BaseApplication.of(activity).getProvider().get(StatefulViewProvider.class);
-        if (mFeedUrlSubject == null) {
-            mFeedUrlSubject = BehaviorSubject.createDefault(mFeedUrl);
-        } else {
-            mFeedUrlSubject.onNext(mFeedUrl);
-        }
         EditText feedUrlEditText = view.findViewById(R.id.input_text_url);
-        feedUrlEditText.setText(mFeedUrl);
-        feedUrlEditText.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                // leave blank
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                // leave blank
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-                mSvProvider.get(NewRssChannelCmd.class).validUrl(editable.toString());
-                mFeedUrl = editable.toString();
-            }
-        });
-        mSvProvider.get(RxDisposer.class).add("mNewRssChannelCmd", mSvProvider.get(NewRssChannelCmd.class)
+        feedUrlEditText.setText(mFeedUrlSubject.getValue());
+        feedUrlEditText.addTextChangedListener(mFeedUrlTextWatcher);
+        mRxDisposer.add("mNewRssChannelCmd", mNewRssChannelCmd
                 .getUrlValidation()
                 .observeOn(AndroidSchedulers.mainThread()).subscribe(s ->
                 {
@@ -103,8 +97,6 @@ public class NewRssChannelSVDialog extends StatefulViewDialog<Activity> implemen
                     }
                 })
         );
-        mSvProvider.get(RxDisposer.class).add("feedUrlChanged",
-                mFeedUrlSubject.subscribe(feedUrlEditText::setText));
         return view;
     }
 
@@ -133,7 +125,7 @@ public class NewRssChannelSVDialog extends StatefulViewDialog<Activity> implemen
             if (isValid()) {
                 addNewFeed();
             } else {
-                String validation = mSvProvider.get(NewRssChannelCmd.class).getValidationError();
+                String validation = mNewRssChannelCmd.getValidationError();
                 mSvProvider.get(ILogger.class).i(TAG, validation);
             }
         } else if (id == DialogInterface.BUTTON_NEGATIVE) {
@@ -141,8 +133,21 @@ public class NewRssChannelSVDialog extends StatefulViewDialog<Activity> implemen
         }
     }
 
-    public Args getArgs() {
+    private Args getArgs() {
         return Args.of(mNavRoute);
+    }
+
+    private void addNewFeed() {
+        if (mNewRssChannelCmd != null) {
+            mNewRssChannelCmd.execute(mFeedUrlSubject.getValue());
+        }
+    }
+
+    private boolean isValid() {
+        if (mNewRssChannelCmd != null) {
+            return mNewRssChannelCmd.validUrl(mFeedUrlSubject.getValue());
+        }
+        return false;
     }
 
     public static class Args implements Serializable {

@@ -19,18 +19,18 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.a_news_provider.R;
-import m.co.rh.id.a_news_provider.app.provider.RxProviderModule;
+import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
 import m.co.rh.id.a_news_provider.app.util.UiUtils;
-import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.a_news_provider.base.provider.FileHelper;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.annotation.NavInject;
+import m.co.rh.id.anavigator.component.RequireComponent;
 import m.co.rh.id.aprovider.Provider;
 
-public class LogPage extends StatefulView<Activity> {
+public class LogPage extends StatefulView<Activity> implements RequireComponent<Provider> {
     private static final String TAG = LogPage.class.getName();
 
     @NavInject
@@ -40,6 +40,11 @@ public class LogPage extends StatefulView<Activity> {
 
     public LogPage() {
         mAppBarSV = new AppBarSV();
+    }
+
+    @Override
+    public void provideComponent(Provider provider) {
+        mSvProvider = provider.get(StatefulViewProvider.class);
     }
 
     @Override
@@ -54,12 +59,7 @@ public class LogPage extends StatefulView<Activity> {
         View noRecord = view.findViewById(R.id.no_record);
         ScrollView scrollView = view.findViewById(R.id.scroll_view);
         TextView textView = view.findViewById(R.id.text_content);
-        Provider provider = BaseApplication.of(activity).getProvider();
-        if (mSvProvider != null) {
-            mSvProvider.dispose();
-        }
-        mSvProvider = Provider.createProvider(activity.getApplicationContext(), new RxProviderModule());
-        FileHelper fileHelper = provider.get(FileHelper.class);
+        FileHelper fileHelper = mSvProvider.get(FileHelper.class);
         File logFile = fileHelper.getLogFile();
         FloatingActionButton fabClear = view.findViewById(R.id.fab_clear);
         FloatingActionButton fabShare = view.findViewById(R.id.fab_share);
@@ -67,21 +67,20 @@ public class LogPage extends StatefulView<Activity> {
             try {
                 UiUtils.shareFile(activity, logFile, activity.getString(R.string.share_log_file));
             } catch (Throwable e) {
-                provider.get(ILogger.class)
+                mSvProvider.get(ILogger.class)
                         .e(TAG, activity.getString(R.string.error_sharing_log_file), e);
             }
         });
         BehaviorSubject<File> subject = BehaviorSubject.createDefault(logFile);
         fabClear.setOnClickListener(view1 -> {
             fileHelper.clearLogFile();
-            provider.get(ILogger.class).i(TAG, activity.getString(R.string.log_file_deleted));
-            provider.get(Handler.class)
+            mSvProvider.get(ILogger.class).i(TAG, activity.getString(R.string.log_file_deleted));
+            mSvProvider.get(Handler.class)
                     .post(() -> subject.onNext(logFile));
         });
         mSvProvider.get(RxDisposer.class).add("readLogFile",
                 subject.
-                        observeOn(Schedulers.from(BaseApplication.of(activity)
-                                .getProvider().get(ExecutorService.class)))
+                        observeOn(Schedulers.from(mSvProvider.get(ExecutorService.class)))
                         .map(file -> {
                             if (!file.exists()) {
                                 return "";

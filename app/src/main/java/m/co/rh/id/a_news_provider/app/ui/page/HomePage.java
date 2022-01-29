@@ -82,7 +82,10 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
 
     // component
     private transient Provider mSvProvider;
+    private transient RxDisposer mRxDisposer;
     private transient AppSharedPreferences mAppSharedPreferences;
+    private transient RssChangeNotifier mRssChangeNotifier;
+    private transient SyncRssCmd mSyncRssCmd;
 
     // View related
     private transient DrawerLayout mDrawerLayout;
@@ -96,17 +99,17 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
 
     @Override
     public void provideComponent(Provider provider) {
-        if (mSvProvider != null) {
-            mSvProvider.dispose();
-        }
         mSvProvider = provider.get(StatefulViewProvider.class);
+        mRxDisposer = mSvProvider.get(RxDisposer.class);
         mAppSharedPreferences = mSvProvider.get(AppSharedPreferences.class);
+        mRssChangeNotifier = mSvProvider.get(RssChangeNotifier.class);
+        mSyncRssCmd = mSvProvider.get(SyncRssCmd.class);
     }
 
     @Override
     protected View createView(Activity activity, ViewGroup container) {
         int layoutId = R.layout.page_home;
-        if (mSvProvider.get(AppSharedPreferences.class).isOneHandMode()) {
+        if (mAppSharedPreferences.isOneHandMode()) {
             layoutId = R.layout.one_hand_mode_page_home;
         }
         View view = activity.getLayoutInflater().inflate(layoutId, container, false);
@@ -129,8 +132,8 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
         }
         String feedSyncSuccess = activity.getString(R.string.feed_sync_success);
         String feedSyncError = activity.getString(R.string.error_feed_sync_failed);
-        mSvProvider.get(RxDisposer.class).add("syncRssCmd.syncedRss",
-                mSvProvider.get(SyncRssCmd.class).syncedRss()
+        mRxDisposer.add("syncRssCmd.syncedRss",
+                mSyncRssCmd.syncedRss()
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(rssModels -> {
                                     if (!rssModels.isEmpty()) {
@@ -145,11 +148,11 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
                         )
         );
         if (mSelectedRssChannel != null) {
-            mSvProvider.get(RssChangeNotifier.class)
+            mRssChangeNotifier
                     .selectRssChannel(mSelectedRssChannel);
         }
-        mSvProvider.get(RxDisposer.class).add("rssChangeNotifier.selectedRssChannel",
-                mSvProvider.get(RssChangeNotifier.class)
+        mRxDisposer.add("rssChangeNotifier.selectedRssChannel",
+                mRssChangeNotifier
                         .selectedRssChannel()
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(rssChannelOptional -> {
@@ -161,8 +164,8 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
                             }
                         })
         );
-        mSvProvider.get(RxDisposer.class).add("rssChangeNotifier.newRssModel",
-                mSvProvider.get(RssChangeNotifier.class)
+        mRxDisposer.add("rssChangeNotifier.newRssModel",
+                mRssChangeNotifier
                         .liveNewRssModel()
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(rssModelOptional ->
@@ -177,7 +180,7 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
                                                                                         .getRssChannel()
                                                                                         .feedName)))
                         ));
-        mSvProvider.get(RxDisposer.class).add("deviceStatusNotifier.onlineStatus",
+        mRxDisposer.add("deviceStatusNotifier.onlineStatus",
                 mSvProvider.get(DeviceStatusNotifier.class)
                         .onlineStatus().subscribe(isOnline -> {
                     if (!isOnline) {
@@ -207,7 +210,7 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
         SwipeRefreshLayout swipeRefreshLayout = view.findViewById(R.id.container_swipe_refresh);
         swipeRefreshLayout.setOnRefreshListener(this);
         if (mRssItemListSV.getLoadingFlow() != null) {
-            mSvProvider.get(RxDisposer.class).add("mRssItemListSV.isLoading",
+            mRxDisposer.add("mRssItemListSV.isLoading",
                     mRssItemListSV.getLoadingFlow()
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribe(swipeRefreshLayout::setRefreshing)
@@ -289,17 +292,17 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
 
     @Override
     public boolean onMenuItemClick(MenuItem item) {
-        int itemId = item.getItemId();
-        if (itemId == R.id.menu_sync_feed) {
-            mSvProvider.get(SyncRssCmd.class).execute();
+        int id = item.getItemId();
+        if (id == R.id.menu_sync_feed) {
+            mSyncRssCmd.execute();
             return true;
-        } else if (itemId == R.id.menu_export_opml) {
+        } else if (id == R.id.menu_export_opml) {
             Context context = mSvProvider.getContext();
             Single<File> fileSingle =
                     Single.fromCallable(() -> mSvProvider.get(OpmlParser.class).exportOpml())
                             .subscribeOn(Schedulers.from(mSvProvider.get(ExecutorService.class)))
                             .observeOn(AndroidSchedulers.mainThread());
-            mSvProvider.get(RxDisposer.class).add("asyncExportOpml", fileSingle.subscribe(
+            mRxDisposer.add("asyncExportOpml", fileSingle.subscribe(
                     file -> UiUtils.shareFile(context, file, context.getString(R.string.share_opml)),
                     throwable -> mSvProvider.get(ILogger.class)
                             .e(TAG, context.getString(R.string.error_exporting_opml),
@@ -323,7 +326,7 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
     public void onDrawerOpened(@NonNull View drawerView) {
         mIsDrawerOpen = true;
         if (!mAppSharedPreferences.isShowCaseRssChannelList()) {
-            mSvProvider.get(RxDisposer.class)
+            mRxDisposer
                     .add("onDrawerOpened_countRssItems",
                             mSvProvider.get(RssQueryCmd.class).countRssItem()
                                     .observeOn(AndroidSchedulers.mainThread())
@@ -371,8 +374,8 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
 
     @Override
     public void onClick(View view) {
-        int viewId = view.getId();
-        if (viewId == R.id.fab) {
+        int id = view.getId();
+        if (id == R.id.fab) {
             mNavigator.push((args, activity1) ->
                     new NewRssChannelSVDialog());
         }

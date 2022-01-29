@@ -30,15 +30,14 @@ import m.co.rh.id.anavigator.NavRoute;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.anavigator.component.INavigator;
+import m.co.rh.id.anavigator.component.RequireComponent;
 import m.co.rh.id.aprovider.Provider;
 
-public class RssItemDetailPage extends StatefulView<Activity> implements View.OnClickListener, Toolbar.OnMenuItemClickListener {
+public class RssItemDetailPage extends StatefulView<Activity> implements RequireComponent<Provider>, View.OnClickListener, Toolbar.OnMenuItemClickListener {
 
     private static final String TAG = RssItemDetailPage.class.getName();
     @NavInject
     private AppBarSV mAppBarSV;
-    @NavInject
-    private transient Provider mProvider;
     @NavInject
     private transient INavigator mNavigator;
     @NavInject
@@ -49,6 +48,11 @@ public class RssItemDetailPage extends StatefulView<Activity> implements View.On
 
     public RssItemDetailPage() {
         mAppBarSV = new AppBarSV(R.menu.page_rss_item_detail);
+    }
+
+    @Override
+    public void provideComponent(Provider provider) {
+        mSvProvider = provider.get(StatefulViewProvider.class);
     }
 
     @Override
@@ -63,10 +67,6 @@ public class RssItemDetailPage extends StatefulView<Activity> implements View.On
 
     @Override
     protected View createView(Activity activity, ViewGroup container) {
-        if (mSvProvider != null) {
-            mSvProvider.dispose();
-        }
-        mSvProvider = mProvider.get(StatefulViewProvider.class);
         int layoutId = R.layout.page_rss_item_detail;
         AppSharedPreferences appSharedPreferences = mSvProvider.get(AppSharedPreferences.class);
         if (appSharedPreferences.isOneHandMode()) {
@@ -104,7 +104,6 @@ public class RssItemDetailPage extends StatefulView<Activity> implements View.On
         mAppBarSV = null;
         mRssItem = null;
         mRssChannel = null;
-        mProvider = null;
     }
 
     @Override
@@ -117,6 +116,7 @@ public class RssItemDetailPage extends StatefulView<Activity> implements View.On
         }
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public boolean onMenuItemClick(MenuItem menuItem) {
         int id = menuItem.getItemId();
