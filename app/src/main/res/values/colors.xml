@@ -14,8 +14,10 @@
     <color name="gray_400">#BDBDBD</color>
     <color name="gray_600">#757575</color>
     <color name="gray_700">#616161</color>
+    <color name="gray_900">#212121</color>
     <color name="daynight_gray_700_white">@color/gray_700</color>
     <color name="daynight_gray_300_gray_600">@color/gray_300</color>
     <color name="daynight_white_black">@color/white</color>
     <color name="daynight_transparent_white_black">#A0FFFFFF</color>
+    <color name="daynight_white_gray_900">@color/white</color>
 </resources>

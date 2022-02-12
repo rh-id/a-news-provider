@@ -9,7 +9,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 
 import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.tokopedia.showcase.ShowCaseBuilder;
@@ -78,7 +77,6 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireNavi
         View view = activity.getLayoutInflater().inflate(R.layout.list_rss_item, container, false);
         RecyclerView recyclerView = view.findViewById(R.id.recyclerView);
         recyclerView.setAdapter(mRssItemRecyclerViewAdapter);
-        recyclerView.addItemDecoration(new DividerItemDecoration(activity, DividerItemDecoration.VERTICAL));
         recyclerView.addOnScrollListener(mOnScrollListener);
         Spinner spinnerFilterBy = view.findViewById(R.id.spinner_filter_by);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(activity,
