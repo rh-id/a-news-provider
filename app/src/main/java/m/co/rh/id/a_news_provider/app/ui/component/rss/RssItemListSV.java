@@ -25,6 +25,8 @@ import m.co.rh.id.a_news_provider.app.component.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.PagedRssItemsCmd;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
+import m.co.rh.id.a_news_provider.app.ui.recyclerview.CustomLinearLayoutManager;
+import m.co.rh.id.a_news_provider.app.ui.recyclerview.CustomStaggeredGridLayoutManager;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.component.INavigator;
@@ -78,6 +80,13 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireNavi
         RecyclerView recyclerView = view.findViewById(R.id.recyclerView);
         recyclerView.setAdapter(mRssItemRecyclerViewAdapter);
         recyclerView.addOnScrollListener(mOnScrollListener);
+        RecyclerView.LayoutManager layoutManager;
+        if (activity.getResources().getBoolean(R.bool.is_landscape)) {
+            layoutManager = new CustomStaggeredGridLayoutManager(2, RecyclerView.VERTICAL);
+        } else {
+            layoutManager = new CustomLinearLayoutManager(activity);
+        }
+        recyclerView.setLayoutManager(layoutManager);
         Spinner spinnerFilterBy = view.findViewById(R.id.spinner_filter_by);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(activity,
                 R.array.array_filter_by, android.R.layout.simple_spinner_item);

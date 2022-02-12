@@ -30,6 +30,5 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layoutManager="m.co.rh.id.a_news_provider.app.ui.recyclerview.CustomLinearLayoutManager" />
+        android:layout_height="match_parent" />
 </androidx.appcompat.widget.LinearLayoutCompat>
