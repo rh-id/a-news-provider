@@ -47,7 +47,7 @@ dependencies {
 
     api 'com.android.volley:volley:1.2.1'
     api 'com.github.rh-id:a-provider:v0.0.17'
-    api 'com.github.rh-id:a-navigator:v0.0.44'
+    api 'com.github.rh-id.a-navigator:a-navigator:v0.0.51'
     api 'com.github.rh-id:a-logger:v0.0.3'
     api 'io.reactivex.rxjava3:rxandroid:3.0.0'
     api 'io.reactivex.rxjava3:rxjava:3.0.13'
