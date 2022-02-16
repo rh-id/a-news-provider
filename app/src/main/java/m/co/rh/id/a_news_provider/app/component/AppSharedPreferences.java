@@ -49,6 +49,9 @@ public class AppSharedPreferences {
     private boolean mShowCaseRssItemList;
     private String mShowCaseRssItemListKey;
 
+    private boolean mDownloadImage;
+    private String mDownloadImageKey;
+
     public AppSharedPreferences(Provider provider, Context context) {
         mExecutorService = provider.lazyGet(ExecutorService.class);
         mHandler = provider.lazyGet(Handler.class);
@@ -74,6 +77,8 @@ public class AppSharedPreferences {
                 + ".showCaseRssChannelList";
         mShowCaseRssItemListKey = SHARED_PREFERENCES_NAME
                 + ".showCaseRssItemList";
+        mDownloadImageKey = SHARED_PREFERENCES_NAME
+                + ".downloadImage";
 
         boolean periodicSyncInit = mSharedPreferences.getBoolean(mPeriodicSyncInitKey, false);
         periodicSyncInit(periodicSyncInit);
@@ -96,6 +101,8 @@ public class AppSharedPreferences {
         setShowCaseRssChannelList(showCaseRssChannelList);
         boolean showCaseRssItemList = mSharedPreferences.getBoolean(mShowCaseRssItemListKey, false);
         setShowCaseRssItemList(showCaseRssItemList);
+        boolean downloadImage = mSharedPreferences.getBoolean(mDownloadImageKey, false);
+        setDownloadImage(downloadImage);
     }
 
     private void initPeriodicSync() {
@@ -213,5 +220,16 @@ public class AppSharedPreferences {
 
     public boolean isShowCaseRssItemList() {
         return mShowCaseRssItemList;
+    }
+
+    public void setDownloadImage(boolean download) {
+        mDownloadImage = download;
+        mExecutorService.get().execute(() ->
+                mSharedPreferences.edit().putBoolean(mDownloadImageKey, download)
+                        .commit());
+    }
+
+    public boolean isDownloadImage() {
+        return mDownloadImage;
     }
 }

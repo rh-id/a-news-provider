@@ -29,21 +29,20 @@ import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.aprovider.Provider;
-import m.co.rh.id.aprovider.ProviderValue;
 
 public class RssRequest extends Request<RssModel> {
     private static final String TAG = RssRequest.class.getName();
     private final Context mAppContext;
-    private final ProviderValue<ILogger> mLogger;
-    private final ProviderValue<RssDao> mRssDao;
+    private final ILogger mLogger;
+    private final RssDao mRssDao;
     private final Response.Listener<RssModel> mListener;
 
     public RssRequest(int method, String url, @Nullable Response.ErrorListener errorListener, Response.Listener<RssModel> listener, Provider provider, Context context) {
         super(method, url, errorListener);
         mListener = listener;
         mAppContext = context.getApplicationContext();
-        mLogger = provider.lazyGet(ILogger.class);
-        mRssDao = provider.lazyGet(RssDao.class);
+        mLogger = provider.get(ILogger.class);
+        mRssDao = provider.get(RssDao.class);
     }
 
     @Override
@@ -68,17 +67,16 @@ public class RssRequest extends Request<RssModel> {
                     skip(xpp);
                 }
             }
-            mLogger.get().v(TAG, "Parsed RssModel: " + rssModel);
+            mLogger.v(TAG, "Parsed RssModel: " + rssModel);
             if (rssModel == null) {
                 throw new XmlPullParserException(mAppContext.getString
                         (R.string.unable_to_parse, getUrl())
                 );
             }
             // save to db once parsed succesfully
-            RssDao rssDao = mRssDao.get();
-            RssChannel rssChannel = rssDao.findRssChannelByUrl(rssModel.getRssChannel().url);
+            RssChannel rssChannel = mRssDao.findRssChannelByUrl(rssModel.getRssChannel().url);
             if (rssChannel == null) {
-                rssDao.insertRssChannel(rssModel.getRssChannel(), rssModel.getRssItems().toArray(new RssItem[0]));
+                mRssDao.insertRssChannel(rssModel.getRssChannel(), rssModel.getRssItems().toArray(new RssItem[0]));
             } else {
                 // map some field from db
                 RssChannel responseRssChannel = rssModel.getRssChannel();
@@ -88,7 +86,7 @@ public class RssRequest extends Request<RssModel> {
                 responseRssChannel.updatedDateTime = rssChannel.updatedDateTime;
 
                 ArrayList<RssItem> rssItemsFromModel = rssModel.getRssItems();
-                List<RssItem> rssItemList = rssDao.findRssItemsByChannelId(rssChannel.id);
+                List<RssItem> rssItemList = mRssDao.findRssItemsByChannelId(rssChannel.id);
                 // if the link is the same, import the previous isRead
                 if (rssItemList != null && !rssItemList.isEmpty() &&
                         rssItemsFromModel != null && !rssItemsFromModel.isEmpty()) {
@@ -105,7 +103,7 @@ public class RssRequest extends Request<RssModel> {
                     }
                 }
                 rssModel = new RssModel(responseRssChannel, rssItemsFromModel);
-                rssDao.updateRssChannel(responseRssChannel, rssModel.getRssItems().toArray(new RssItem[0]));
+                mRssDao.updateRssChannel(responseRssChannel, rssModel.getRssItems().toArray(new RssItem[0]));
             }
             return Response.success(rssModel, HttpHeaderParser.parseCacheHeaders(response));
         } catch (XmlPullParserException e) {
@@ -174,11 +172,55 @@ public class RssRequest extends Request<RssModel> {
                 rssItem.link = readLink(xpp);
             } else if (name.equals("pubDate")) {
                 rssItem.pubDate = readPubDate(xpp);
+            } else if (name.equals("media:content")) {
+                rssItem.mediaImage = readMediaImage(xpp);
             } else {
                 skip(xpp);
             }
         }
         return rssItem;
+    }
+
+    private String readMediaImage(XmlPullParser xpp) throws IOException, XmlPullParserException {
+        xpp.require(XmlPullParser.START_TAG, null, "media:content");
+        String url = null;
+        String mimeType = "";
+        String medium = "";
+        int attrSize = xpp.getAttributeCount();
+        for (int i = 0; i < attrSize; i++) {
+            switch (xpp.getAttributeName(i)) {
+                case "type":
+                    mimeType = xpp.getAttributeValue(i);
+                    break;
+                case "medium":
+                    medium = xpp.getAttributeValue(i);
+                    break;
+                case "url":
+                    url = xpp.getAttributeValue(i);
+                    break;
+            }
+        }
+        boolean isImage = false;
+        switch (mimeType) {
+            case "image/bmp":
+            case "image/gif":
+            case "image/png":
+            case "image/webp":
+            case "image/jpeg":
+                isImage = true;
+                break;
+            case "":
+                if (medium.equals("image")) {
+                    isImage = true;
+                }
+                break;
+        }
+        if (!isImage) {
+            url = null;
+        }
+        xpp.next();
+        xpp.require(XmlPullParser.END_TAG, null, "media:content");
+        return url;
     }
 
     private Date readPubDate(XmlPullParser xpp) throws IOException, XmlPullParserException {
@@ -189,7 +231,7 @@ public class RssRequest extends Request<RssModel> {
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
             pubDate = simpleDateFormat.parse(dateText);
         } catch (Throwable throwable) {
-            mLogger.get().d(TAG, "Failed to parse date: " + dateText, throwable);
+            mLogger.d(TAG, "Failed to parse date: " + dateText, throwable);
         }
         xpp.require(XmlPullParser.END_TAG, null, "pubDate");
         return pubDate;

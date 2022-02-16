@@ -77,6 +77,11 @@
     <string name="showcase_rss_channel_list">Ketuk dan tahan untuk merubah nama feedmu, atau hapus, kamu juga bisa melihat link untuk feed ini</string>
     <string name="title_showcase_rss_item_list">Daftar berita kamu</string>
     <string name="showcase_rss_item_list">Ketuk untuk membuka detil, atau ketuk dan tahan berita yang belum terbaca untuk menandakannya sebagai terbaca, atau ketuk dan tahan berita terbaca untuk menandakan sebagai belum terbaca</string>
+    <string name="title_download_image">Unduh Gambar</string>
+    <string name="menu_subtitle_download_image">Enable/Disable image download</string>
+    <string name="download_image_enabled">Unduh gambar dinyalakan</string>
+    <string name="download_image_disabled">Unduh gambar dimatikan</string>
+    <string name="image">Gambar</string>
 
     <string-array name="array_filter_by">
         <item>None</item>

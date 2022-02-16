@@ -20,4 +20,5 @@
     <color name="daynight_white_black">@color/white</color>
     <color name="daynight_transparent_white_black">#A0FFFFFF</color>
     <color name="daynight_white_gray_900">@color/white</color>
+    <color name="daynight_black_white">@color/black</color>
 </resources>

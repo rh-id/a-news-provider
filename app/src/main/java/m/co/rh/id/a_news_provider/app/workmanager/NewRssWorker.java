@@ -46,11 +46,11 @@ public class NewRssWorker extends Worker {
             if (t.getCause() instanceof ParseError) {
                 rssChangeNotifier.newRssModelError(new RuntimeException(
                         appContext.getString(R.string.error_parse_data_from,
-                                url)));
+                                url), t.getCause()));
             } else {
                 rssChangeNotifier.newRssModelError(new RuntimeException(
                         appContext.getString(R.string.error_message,
-                                t.getMessage())));
+                                t.getMessage()), t));
             }
 
         }

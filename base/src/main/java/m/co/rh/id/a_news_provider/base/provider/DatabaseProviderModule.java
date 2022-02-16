@@ -33,9 +33,7 @@ public class DatabaseProviderModule implements ProviderModule {
         providerRegistry.registerAsync(AppDatabase.class, () ->
                 Room.databaseBuilder(appContext,
                         AppDatabase.class, mDbName)
-                        .addMigrations(DbMigration.MIGRATION_1_2
-                                , DbMigration.MIGRATION_2_3,
-                                DbMigration.MIGRATION_3_4)
+                        .addMigrations(DbMigration.getAll())
                         .build());
         // register Dao separately to decouple from AppDatabase
         providerRegistry.registerAsync(RssDao.class, () ->

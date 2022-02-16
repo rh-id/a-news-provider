@@ -1,7 +1,6 @@
 package m.co.rh.id.a_news_provider.base;
 
 import androidx.room.Room;
-import androidx.room.migration.Migration;
 import androidx.room.testing.MigrationTestHelper;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory;
@@ -43,13 +42,8 @@ public class DbMigrationTest {
                 InstrumentationRegistry.getInstrumentation().getTargetContext(),
                 AppDatabase.class,
                 TEST_DB)
-                .addMigrations(ALL_MIGRATIONS).build();
+                .addMigrations(DbMigration.getAll()).build();
         appDb.getOpenHelper().getWritableDatabase();
         appDb.close();
     }
-
-    // Array of all migrations
-    private static final Migration[] ALL_MIGRATIONS = new Migration[]{
-            DbMigration.MIGRATION_1_2, DbMigration.MIGRATION_2_3,
-            DbMigration.MIGRATION_3_4};
 }

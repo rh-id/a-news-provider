@@ -37,6 +37,12 @@ public class RssItem implements Serializable {
     @ColumnInfo(name = "pub_date")
     public Date pubDate;
 
+    /**
+     * media:content URL
+     */
+    @ColumnInfo(name = "media_image")
+    public String mediaImage;
+
     @ColumnInfo(name = "is_read")
     public boolean isRead;
 
@@ -57,6 +63,7 @@ public class RssItem implements Serializable {
                 ", link='" + link + '\'' +
                 ", description='" + description + '\'' +
                 ", pubDate=" + pubDate +
+                ", mediaImage='" + mediaImage + '\'' +
                 ", isRead=" + isRead +
                 ", createdDateTime=" + createdDateTime +
                 ", updatedDateTime=" + updatedDateTime +

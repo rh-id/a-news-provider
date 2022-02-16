@@ -62,6 +62,9 @@ android {
     buildFeatures {
         viewBinding false
     }
+    lintOptions {
+        ignore("UseCompatLoadingForDrawables")
+    }
 }
 
 dependencies {

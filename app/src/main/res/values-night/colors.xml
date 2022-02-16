@@ -5,4 +5,5 @@
     <color name="daynight_white_black">@color/black</color>
     <color name="daynight_transparent_white_black">#A0000000</color>
     <color name="daynight_white_gray_900">@color/gray_900</color>
+    <color name="daynight_black_white">@color/white</color>
 </resources>

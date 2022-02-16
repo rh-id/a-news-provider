@@ -2,6 +2,8 @@ package m.co.rh.id.a_news_provider.app.ui.component.rss;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.res.Resources;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.text.method.LinkMovementMethod;
 import android.view.MenuItem;
@@ -11,7 +13,11 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.core.text.HtmlCompat;
+
+import com.android.volley.toolbox.ImageLoader;
+import com.android.volley.toolbox.NetworkImageView;
 
 import java.io.Serializable;
 
@@ -45,6 +51,7 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
     private RssItem mRssItem;
     private RssChannel mRssChannel;
     private transient Provider mSvProvider;
+    private transient ImageLoader mImageLoader;
 
     public RssItemDetailPage() {
         mAppBarSV = new AppBarSV(R.menu.page_rss_item_detail);
@@ -53,6 +60,7 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
     @Override
     public void provideComponent(Provider provider) {
         mSvProvider = provider.get(StatefulViewProvider.class);
+        mImageLoader = mSvProvider.get(ImageLoader.class);
     }
 
     @Override
@@ -81,6 +89,24 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
                 .fromHtml(mRssItem.title, HtmlCompat.FROM_HTML_MODE_COMPACT));
         titleText.setOnClickListener(this);
         titleText.setContentDescription(activity.getString(R.string.open_link));
+        NetworkImageView networkImageView = view.findViewById(R.id.network_image);
+        String imageUrl = null;
+        if (mRssItem.mediaImage != null) {
+            imageUrl = mRssItem.mediaImage;
+        }
+        boolean showImage = appSharedPreferences.isDownloadImage() && imageUrl != null;
+        if (showImage) {
+            Resources resources = activity.getResources();
+            Drawable drawable = DrawableCompat.wrap(resources
+                    .getDrawable(R.drawable.ic_image_black));
+            DrawableCompat.setTint(drawable, resources.getColor(R.color.daynight_black_white));
+            networkImageView.setDefaultImageDrawable(drawable);
+            networkImageView.setErrorImageResId(R.drawable.ic_broken_image_red);
+            networkImageView.setImageUrl(imageUrl, mImageLoader);
+            networkImageView.setVisibility(View.VISIBLE);
+        } else {
+            networkImageView.setVisibility(View.GONE);
+        }
         TextView textView = view.findViewById(R.id.text_content);
         String desc = mRssItem.description;
         if (desc != null && !desc.isEmpty()) {

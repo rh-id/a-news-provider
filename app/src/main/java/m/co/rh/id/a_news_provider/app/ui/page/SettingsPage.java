@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.component.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
+import m.co.rh.id.a_news_provider.app.ui.component.settings.DownloadImageMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.LicensesMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.LogMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.OneHandModeMenuSV;
@@ -38,6 +39,8 @@ public class SettingsPage extends StatefulView<Activity> {
         mStatefulViews.add(themeMenuSV);
         OneHandModeMenuSV oneHandModeMenuSV = new OneHandModeMenuSV();
         mStatefulViews.add(oneHandModeMenuSV);
+        DownloadImageMenuSV downloadImageMenuSV = new DownloadImageMenuSV();
+        mStatefulViews.add(downloadImageMenuSV);
         LogMenuSV logMenuSV = new LogMenuSV();
         mStatefulViews.add(logMenuSV);
         LicensesMenuSV licensesMenuSV = new LicensesMenuSV();
