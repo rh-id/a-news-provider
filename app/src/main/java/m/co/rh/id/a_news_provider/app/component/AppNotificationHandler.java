@@ -22,7 +22,6 @@ import java.util.function.Consumer;
 
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.MainActivity;
-import m.co.rh.id.a_news_provider.app.model.RssModel;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.receiver.NotificationDeleteReceiver;
 import m.co.rh.id.a_news_provider.base.dao.AndroidNotificationDao;
@@ -30,6 +29,7 @@ import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.AndroidNotification;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
+import m.co.rh.id.a_news_provider.base.model.RssModel;
 import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderValue;
 

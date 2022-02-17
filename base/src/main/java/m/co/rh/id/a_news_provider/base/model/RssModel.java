@@ -1,4 +1,4 @@
-package m.co.rh.id.a_news_provider.app.model;
+package m.co.rh.id.a_news_provider.base.model;
 
 import java.io.Serializable;
 import java.util.ArrayList;

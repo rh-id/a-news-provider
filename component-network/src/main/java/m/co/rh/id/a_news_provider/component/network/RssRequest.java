@@ -1,4 +1,4 @@
-package m.co.rh.id.a_news_provider.app.network;
+package m.co.rh.id.a_news_provider.component.network;
 
 import android.content.Context;
 
@@ -22,11 +22,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import m.co.rh.id.a_news_provider.R;
-import m.co.rh.id.a_news_provider.app.model.RssModel;
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
+import m.co.rh.id.a_news_provider.base.model.RssModel;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.aprovider.Provider;
 

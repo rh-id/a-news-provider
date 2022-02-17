@@ -15,7 +15,6 @@ import m.co.rh.id.a_news_provider.app.MainActivity;
 import m.co.rh.id.a_news_provider.app.component.AppNotificationHandler;
 import m.co.rh.id.a_news_provider.app.component.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.app.constants.Routes;
-import m.co.rh.id.a_news_provider.app.network.RssRequestFactory;
 import m.co.rh.id.a_news_provider.app.provider.notifier.DeviceStatusNotifier;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.provider.parser.OpmlParser;
@@ -23,7 +22,7 @@ import m.co.rh.id.a_news_provider.app.ui.page.SettingsPage;
 import m.co.rh.id.a_news_provider.app.ui.page.SplashPage;
 import m.co.rh.id.a_news_provider.base.provider.BaseProviderModule;
 import m.co.rh.id.a_news_provider.base.provider.DatabaseProviderModule;
-import m.co.rh.id.a_news_provider.base.provider.NetworkProviderModule;
+import m.co.rh.id.a_news_provider.component.network.provider.NetworkProviderModule;
 import m.co.rh.id.anavigator.NavConfiguration;
 import m.co.rh.id.anavigator.Navigator;
 import m.co.rh.id.anavigator.StatefulView;
@@ -55,7 +54,6 @@ public class AppProviderModule implements ProviderModule {
         providerRegistry.registerAsync(WorkManager.class, () -> WorkManager.getInstance(context));
         // for rss
         providerRegistry.registerAsync(AppSharedPreferences.class, () -> new AppSharedPreferences(provider, context));
-        providerRegistry.registerLazy(RssRequestFactory.class, () -> new RssRequestFactory(provider, context));
         providerRegistry.registerAsync(RssChangeNotifier.class, () -> new RssChangeNotifier(provider, context));
         providerRegistry.registerLazy(OpmlParser.class, () -> new OpmlParser(provider, context));
 

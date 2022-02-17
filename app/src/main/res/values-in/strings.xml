@@ -10,7 +10,6 @@
     <string name="error_message">\"Error: %s\"</string>
     <string name="invalid_url">URL tidak valid</string>
     <string name="url_is_required">URL dibutuhkan</string>
-    <string name="unable_to_parse">Tidak dapat mengurai %s</string>
     <string name="feed_added">Feed ditambah %s</string>
     <string name="error_feed_add">Tambah feed error</string>
     <string name="error_parse_data_from">Error mengurai data dari %s</string>

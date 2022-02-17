@@ -1,4 +1,4 @@
-package m.co.rh.id.a_news_provider.base.provider;
+package m.co.rh.id.a_news_provider.component.network.provider;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -22,6 +22,7 @@ import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 
 import m.co.rh.id.a_news_provider.base.volley.TlsEnabledSSLSocketFactory;
+import m.co.rh.id.a_news_provider.component.network.RssRequestFactory;
 import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderModule;
 import m.co.rh.id.aprovider.ProviderRegistry;
@@ -69,6 +70,7 @@ public class NetworkProviderModule implements ProviderModule {
                                 mCache.put(url, bitmap);
                             }
                         }));
+        providerRegistry.registerLazy(RssRequestFactory.class, () -> new RssRequestFactory(provider, context));
     }
 
     @Override

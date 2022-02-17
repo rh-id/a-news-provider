@@ -1,4 +1,4 @@
-package m.co.rh.id.a_news_provider.app.network;
+package m.co.rh.id.a_news_provider.component.network;
 
 import android.content.Context;
 
@@ -7,7 +7,7 @@ import androidx.annotation.Nullable;
 
 import com.android.volley.Response;
 
-import m.co.rh.id.a_news_provider.app.model.RssModel;
+import m.co.rh.id.a_news_provider.base.model.RssModel;
 import m.co.rh.id.aprovider.Provider;
 
 public class RssRequestFactory {

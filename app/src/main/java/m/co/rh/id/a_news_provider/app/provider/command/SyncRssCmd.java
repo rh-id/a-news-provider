@@ -15,12 +15,12 @@ import java.util.concurrent.ExecutorService;
 
 import io.reactivex.rxjava3.core.Flowable;
 import m.co.rh.id.a_news_provider.R;
-import m.co.rh.id.a_news_provider.app.model.RssModel;
 import m.co.rh.id.a_news_provider.app.provider.notifier.DeviceStatusNotifier;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.workmanager.ConstantsWork;
 import m.co.rh.id.a_news_provider.app.workmanager.RssSyncChangeNotifierWorker;
 import m.co.rh.id.a_news_provider.app.workmanager.RssSyncWorker;
+import m.co.rh.id.a_news_provider.base.model.RssModel;
 import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderValue;
 

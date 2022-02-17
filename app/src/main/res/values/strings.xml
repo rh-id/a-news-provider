@@ -10,7 +10,6 @@
     <string name="error_message">\"Error: %s\"</string>
     <string name="invalid_url">Invalid URL</string>
     <string name="url_is_required">URL is required</string>
-    <string name="unable_to_parse">Unable to parse %s</string>
     <string name="feed_added">Feed added %s</string>
     <string name="error_feed_add">Feed add error</string>
     <string name="error_parse_data_from">Error parsing data from %s</string>

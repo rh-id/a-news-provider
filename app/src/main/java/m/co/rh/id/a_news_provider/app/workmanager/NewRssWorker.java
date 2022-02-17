@@ -12,11 +12,11 @@ import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.RequestFuture;
 
 import m.co.rh.id.a_news_provider.R;
-import m.co.rh.id.a_news_provider.app.model.RssModel;
-import m.co.rh.id.a_news_provider.app.network.RssRequest;
-import m.co.rh.id.a_news_provider.app.network.RssRequestFactory;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
+import m.co.rh.id.a_news_provider.base.model.RssModel;
+import m.co.rh.id.a_news_provider.component.network.RssRequest;
+import m.co.rh.id.a_news_provider.component.network.RssRequestFactory;
 import m.co.rh.id.aprovider.Provider;
 
 public class NewRssWorker extends Worker {
