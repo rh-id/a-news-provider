@@ -1,0 +1,4 @@
+Release 1.6.0+43
+
+Feature:
+* Show image on the news detail if RSS has image information (disabled by default, to enable go to Settings > Download Image)
