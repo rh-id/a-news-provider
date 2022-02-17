@@ -21,8 +21,8 @@ import java.io.File;
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 
-import m.co.rh.id.a_news_provider.base.volley.TlsEnabledSSLSocketFactory;
 import m.co.rh.id.a_news_provider.component.network.RssRequestFactory;
+import m.co.rh.id.a_news_provider.component.network.volley.TlsEnabledSSLSocketFactory;
 import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderModule;
 import m.co.rh.id.aprovider.ProviderRegistry;

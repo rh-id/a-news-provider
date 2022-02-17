@@ -1,4 +1,4 @@
-package m.co.rh.id.a_news_provider.base.volley;
+package m.co.rh.id.a_news_provider.component.network.volley;
 
 import java.io.IOException;
 import java.net.InetAddress;
