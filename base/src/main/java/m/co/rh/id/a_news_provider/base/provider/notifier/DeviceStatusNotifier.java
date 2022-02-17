@@ -1,4 +1,4 @@
-package m.co.rh.id.a_news_provider.app.provider.notifier;
+package m.co.rh.id.a_news_provider.base.provider.notifier;
 
 import android.app.Activity;
 import android.app.Application;

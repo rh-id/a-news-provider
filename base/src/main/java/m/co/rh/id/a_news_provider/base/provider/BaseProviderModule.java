@@ -4,6 +4,8 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 
+import androidx.annotation.NonNull;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +16,9 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.a_news_provider.base.BuildConfig;
+import m.co.rh.id.a_news_provider.base.provider.notifier.DeviceStatusNotifier;
 import m.co.rh.id.alogger.AndroidLogger;
 import m.co.rh.id.alogger.CompositeLogger;
 import m.co.rh.id.alogger.FileLogger;
@@ -29,6 +33,8 @@ import m.co.rh.id.aprovider.ProviderRegistry;
  */
 public class BaseProviderModule implements ProviderModule {
     private static final String TAG = BaseProviderModule.class.getName();
+
+    private DeviceStatusNotifier mDeviceStatusNotifier;
 
     @Override
     public void provides(Context context, ProviderRegistry providerRegistry, Provider provider) {
@@ -69,10 +75,21 @@ public class BaseProviderModule implements ProviderModule {
             return new CompositeLogger(loggerList);
         });
         providerRegistry.register(FileHelper.class, new FileHelper(provider, context));
+        providerRegistry.register(DeviceStatusNotifier.class, getDeviceStatusNotifier(context, provider));
+    }
+
+    @NonNull
+    private DeviceStatusNotifier getDeviceStatusNotifier(Context context, Provider provider) {
+        DeviceStatusNotifier deviceStatusNotifier = new DeviceStatusNotifier(provider, context);
+        BaseApplication.of(context).registerActivityLifecycleCallbacks(deviceStatusNotifier);
+        mDeviceStatusNotifier = deviceStatusNotifier;
+        return deviceStatusNotifier;
     }
 
     @Override
     public void dispose(Context context, Provider provider) {
+        BaseApplication.of(context).unregisterActivityLifecycleCallbacks(mDeviceStatusNotifier);
+        mDeviceStatusNotifier = null;
         ILogger iLogger = provider.get(ILogger.class);
         ExecutorService executorService = provider.get(ExecutorService.class);
         ScheduledExecutorService scheduledExecutorService = provider.get(ScheduledExecutorService.class);

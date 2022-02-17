@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.work.WorkManager;
 
 import java.io.File;
@@ -15,7 +14,6 @@ import m.co.rh.id.a_news_provider.app.MainActivity;
 import m.co.rh.id.a_news_provider.app.component.AppNotificationHandler;
 import m.co.rh.id.a_news_provider.app.component.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.app.constants.Routes;
-import m.co.rh.id.a_news_provider.app.provider.notifier.DeviceStatusNotifier;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.provider.parser.OpmlParser;
 import m.co.rh.id.a_news_provider.app.ui.page.SettingsPage;
@@ -36,7 +34,6 @@ public class AppProviderModule implements ProviderModule {
 
     private Application mApplication;
     private Navigator mNavigator;
-    private DeviceStatusNotifier mDeviceStatusNotifier;
 
     public AppProviderModule(Application application) {
         mApplication = application;
@@ -49,7 +46,6 @@ public class AppProviderModule implements ProviderModule {
         providerRegistry.registerModule(new NetworkProviderModule());
         providerRegistry.registerModule(new CommandProviderModule(provider));
 
-        providerRegistry.register(DeviceStatusNotifier.class, getDeviceStatusNotifier(context, provider));
         providerRegistry.registerLazy(AppNotificationHandler.class, () -> new AppNotificationHandler(provider, context));
         providerRegistry.registerAsync(WorkManager.class, () -> WorkManager.getInstance(context));
         // for rss
@@ -61,14 +57,6 @@ public class AppProviderModule implements ProviderModule {
 
         // it is safer to register navigator last in case it needs dependency from all above, provider can be passed here
         providerRegistry.register(INavigator.class, getNavigator(provider));
-    }
-
-    @NonNull
-    private DeviceStatusNotifier getDeviceStatusNotifier(Context context, Provider provider) {
-        DeviceStatusNotifier deviceStatusNotifier = new DeviceStatusNotifier(provider, context);
-        mApplication.registerActivityLifecycleCallbacks(deviceStatusNotifier);
-        mDeviceStatusNotifier = deviceStatusNotifier;
-        return deviceStatusNotifier;
     }
 
     private Navigator getNavigator(Provider provider) {
@@ -95,7 +83,6 @@ public class AppProviderModule implements ProviderModule {
 
     @Override
     public void dispose(Context context, Provider provider) {
-        mApplication.unregisterActivityLifecycleCallbacks(mDeviceStatusNotifier);
         mApplication.unregisterActivityLifecycleCallbacks(mNavigator);
         mApplication.unregisterComponentCallbacks(mNavigator);
         mNavigator = null;
