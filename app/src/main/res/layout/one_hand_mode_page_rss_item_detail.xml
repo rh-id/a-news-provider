@@ -1,15 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?attr/pageBackground">
 
-
     <androidx.appcompat.widget.LinearLayoutCompat
+        android:id="@+id/container_body"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toTopOf="@id/fab_open_link"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
         <androidx.appcompat.widget.LinearLayoutCompat
             android:id="@+id/container_content"
@@ -29,35 +33,48 @@
                 android:layout_height="match_parent"
                 android:layout_margin="@dimen/text_margin">
 
-                <com.google.android.material.textview.MaterialTextView
-                    android:id="@+id/text_content"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textSize="18sp" />
+                    android:orientation="vertical">
+
+                    <com.android.volley.toolbox.NetworkImageView
+                        android:id="@+id/network_image"
+                        android:layout_width="match_parent"
+                        android:layout_height="200dp"
+                        android:layout_margin="@dimen/text_margin"
+                        android:contentDescription="@string/image" />
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/text_content"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textSize="18sp" />
+                </LinearLayout>
             </ScrollView>
 
         </androidx.appcompat.widget.LinearLayoutCompat>
 
     </androidx.appcompat.widget.LinearLayoutCompat>
 
-    <androidx.coordinatorlayout.widget.CoordinatorLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <FrameLayout
-            android:id="@+id/container_app_bar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom" />
-    </androidx.coordinatorlayout.widget.CoordinatorLayout>
-
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/fab_open_link"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
+        android:layout_marginEnd="@dimen/text_margin"
         android:layout_marginRight="@dimen/text_margin"
-        android:layout_marginBottom="?attr/actionBarSize"
         android:text="@string/open_link"
-        app:icon="@drawable/ic_open_in_browser_white" />
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+        app:icon="@drawable/ic_open_in_browser_white"
+        app:layout_constraintBottom_toTopOf="@id/container_app_bar"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <FrameLayout
+        android:id="@+id/container_app_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>
