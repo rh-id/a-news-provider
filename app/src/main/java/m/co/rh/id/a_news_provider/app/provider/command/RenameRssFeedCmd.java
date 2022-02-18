@@ -12,21 +12,20 @@ import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.aprovider.Provider;
-import m.co.rh.id.aprovider.ProviderValue;
 
 public class RenameRssFeedCmd {
     private final Context mAppContext;
-    private final ProviderValue<ExecutorService> mExecutorService;
-    private final ProviderValue<RssDao> mRssDao;
-    private final ProviderValue<RssChangeNotifier> mRssChangeNotifier;
+    private final ExecutorService mExecutorService;
+    private final RssDao mRssDao;
+    private final RssChangeNotifier mRssChangeNotifier;
     private PublishSubject<RssChannel> mRssChannelPublishSubject;
     private PublishSubject<String> mNameValidationPublishSubject;
 
     public RenameRssFeedCmd(Provider provider, Context context) {
         mAppContext = context.getApplicationContext();
-        mExecutorService = provider.lazyGet(ExecutorService.class);
-        mRssDao = provider.lazyGet(RssDao.class);
-        mRssChangeNotifier = provider.lazyGet(RssChangeNotifier.class);
+        mExecutorService = provider.get(ExecutorService.class);
+        mRssDao = provider.get(RssDao.class);
+        mRssChangeNotifier = provider.get(RssChangeNotifier.class);
         mRssChannelPublishSubject = PublishSubject.create();
         mNameValidationPublishSubject = PublishSubject.create();
     }
@@ -43,17 +42,17 @@ public class RenameRssFeedCmd {
     }
 
     public void execute(final long channelId, final String newName) {
-        mExecutorService.get().execute(() -> {
+        mExecutorService.execute(() -> {
             if (!validName(newName)) {
                 mRssChannelPublishSubject.onError(new RuntimeException(mAppContext.getString(R.string.invalid_name)));
             } else {
                 try {
-                    RssChannel rssChannel = mRssDao.get().findRssChannelById(channelId);
+                    RssChannel rssChannel = mRssDao.findRssChannelById(channelId);
                     if (rssChannel != null) {
                         rssChannel.feedName = newName;
-                        mRssDao.get().update(rssChannel);
+                        mRssDao.update(rssChannel);
                         mRssChannelPublishSubject.onNext(rssChannel);
-                        mRssChangeNotifier.get().updatedRssChannel(rssChannel);
+                        mRssChangeNotifier.updatedRssChannel(rssChannel);
                     } else {
                         mRssChannelPublishSubject.onError(new RuntimeException(mAppContext.getString(R.string.record_not_found)));
                     }

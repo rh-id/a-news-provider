@@ -23,25 +23,24 @@ import m.co.rh.id.a_news_provider.app.workmanager.NewRssWorker;
 import m.co.rh.id.a_news_provider.base.model.RssModel;
 import m.co.rh.id.a_news_provider.base.provider.notifier.DeviceStatusNotifier;
 import m.co.rh.id.aprovider.Provider;
-import m.co.rh.id.aprovider.ProviderValue;
 
 public class NewRssChannelCmd {
     private final Context mAppContext;
-    private final ProviderValue<ExecutorService> mExecutorService;
-    private final ProviderValue<Handler> mHandler;
-    private final ProviderValue<WorkManager> mWorkManager;
-    private final ProviderValue<RssChangeNotifier> mRssChangeNotifier;
-    private final ProviderValue<DeviceStatusNotifier> mDeviceStatusNotifier;
+    private final ExecutorService mExecutorService;
+    private final Handler mHandler;
+    private final WorkManager mWorkManager;
+    private final RssChangeNotifier mRssChangeNotifier;
+    private final DeviceStatusNotifier mDeviceStatusNotifier;
     private final BehaviorSubject<RssModel> mRssModelBehaviorSubject;
     private final BehaviorSubject<String> mUrlValidationBehaviorSubject;
 
     public NewRssChannelCmd(Provider provider, Context context) {
         mAppContext = context.getApplicationContext();
-        mExecutorService = provider.lazyGet(ExecutorService.class);
-        mHandler = provider.lazyGet(Handler.class);
-        mWorkManager = provider.lazyGet(WorkManager.class);
-        mRssChangeNotifier = provider.lazyGet(RssChangeNotifier.class);
-        mDeviceStatusNotifier = provider.lazyGet(DeviceStatusNotifier.class);
+        mExecutorService = provider.get(ExecutorService.class);
+        mHandler = provider.get(Handler.class);
+        mWorkManager = provider.get(WorkManager.class);
+        mRssChangeNotifier = provider.get(RssChangeNotifier.class);
+        mDeviceStatusNotifier = provider.get(DeviceStatusNotifier.class);
         mRssModelBehaviorSubject = BehaviorSubject.create();
         mUrlValidationBehaviorSubject = BehaviorSubject.create();
     }
@@ -64,7 +63,7 @@ public class NewRssChannelCmd {
     }
 
     public void execute(final String url) {
-        mExecutorService.get().execute(() -> {
+        mExecutorService.execute(() -> {
             final StringBuilder requestUrl = new StringBuilder(url);
             if (!url.startsWith("http://") && !url.startsWith("https://")) {
                 requestUrl.insert(0, "https://");
@@ -80,9 +79,9 @@ public class NewRssChannelCmd {
                                 .putString(ConstantsKey.KEY_STRING_URL, requestUrl.toString())
                                 .build()
                         ).build();
-                mWorkManager.get().enqueue(oneTimeWorkRequest);
-                if (!mDeviceStatusNotifier.get().isOnline()) {
-                    mHandler.get().post(() ->
+                mWorkManager.enqueue(oneTimeWorkRequest);
+                if (!mDeviceStatusNotifier.isOnline()) {
+                    mHandler.post(() ->
                             Toast.makeText(mAppContext, R.string.feed_new_pending_online
                                     , Toast.LENGTH_LONG).show());
                 }
@@ -91,12 +90,8 @@ public class NewRssChannelCmd {
     }
 
     public Flowable<RssModel> getRssModel() {
-        return mRssChangeNotifier.get().liveNewRssModel()
-                .doOnNext(rssModelOptional -> {
-                    if (rssModelOptional.isPresent()) {
-                        mRssModelBehaviorSubject.onNext(rssModelOptional.get());
-                    }
-                })
+        return mRssChangeNotifier.liveNewRssModel()
+                .doOnNext(rssModelOptional -> rssModelOptional.ifPresent(mRssModelBehaviorSubject::onNext))
                 .doOnError(mRssModelBehaviorSubject::onError)
                 .concatMap(rssModelOptional ->
                         Flowable.fromObservable(mRssModelBehaviorSubject, BackpressureStrategy.BUFFER));

@@ -9,36 +9,34 @@ import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.aprovider.Provider;
-import m.co.rh.id.aprovider.ProviderValue;
 
 public class RssQueryCmd {
     private final Context mAppContext;
-    private final ProviderValue<ExecutorService> mExecutorService;
-    private final ProviderValue<RssDao> mRssDao;
+    private final ExecutorService mExecutorService;
+    private final RssDao mRssDao;
 
     public RssQueryCmd(Provider provider, Context context) {
         mAppContext = context.getApplicationContext();
-        mExecutorService = provider.lazyGet(ExecutorService.class);
-        mRssDao = provider.lazyGet(RssDao.class);
+        mExecutorService = provider.get(ExecutorService.class);
+        mRssDao = provider.get(RssDao.class);
     }
 
     public Single<RssChannel> getRssChannelById(long id) {
-        return Single.fromFuture(mExecutorService.get().submit(() ->
-                mRssDao.get()
+        return Single.fromFuture(mExecutorService.submit(() ->
+                mRssDao
                         .findRssChannelById(id))
         );
     }
 
     public Single<RssItem> getRssItemById(long id) {
-        return Single.fromFuture(mExecutorService.get().submit(() ->
-                mRssDao.get()
+        return Single.fromFuture(mExecutorService.submit(() ->
+                mRssDao
                         .findRssItemById(id))
         );
     }
 
     public Single<Integer> countRssItem() {
-        return Single.fromFuture(mExecutorService.get().submit(() ->
-                mRssDao.get().countRssItem())
+        return Single.fromFuture(mExecutorService.submit(mRssDao::countRssItem)
         );
     }
 }

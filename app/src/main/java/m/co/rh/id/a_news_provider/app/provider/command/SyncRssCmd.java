@@ -22,27 +22,26 @@ import m.co.rh.id.a_news_provider.app.workmanager.RssSyncWorker;
 import m.co.rh.id.a_news_provider.base.model.RssModel;
 import m.co.rh.id.a_news_provider.base.provider.notifier.DeviceStatusNotifier;
 import m.co.rh.id.aprovider.Provider;
-import m.co.rh.id.aprovider.ProviderValue;
 
 public class SyncRssCmd {
     private final Context mAppContext;
-    private final ProviderValue<Handler> mHandler;
-    private final ProviderValue<WorkManager> mWorkManager;
-    private final ProviderValue<ExecutorService> mExecutorService;
-    private final ProviderValue<RssChangeNotifier> mRssChangeNotifier;
-    private final ProviderValue<DeviceStatusNotifier> mDeviceStatusNotifier;
+    private final Handler mHandler;
+    private final WorkManager mWorkManager;
+    private final ExecutorService mExecutorService;
+    private final RssChangeNotifier mRssChangeNotifier;
+    private final DeviceStatusNotifier mDeviceStatusNotifier;
 
     public SyncRssCmd(Provider provider, Context context) {
         mAppContext = context.getApplicationContext();
-        mHandler = provider.lazyGet(Handler.class);
-        mWorkManager = provider.lazyGet(WorkManager.class);
-        mExecutorService = provider.lazyGet(ExecutorService.class);
-        mRssChangeNotifier = provider.lazyGet(RssChangeNotifier.class);
-        mDeviceStatusNotifier = provider.lazyGet(DeviceStatusNotifier.class);
+        mHandler = provider.get(Handler.class);
+        mWorkManager = provider.get(WorkManager.class);
+        mExecutorService = provider.get(ExecutorService.class);
+        mRssChangeNotifier = provider.get(RssChangeNotifier.class);
+        mDeviceStatusNotifier = provider.get(DeviceStatusNotifier.class);
     }
 
     public void execute() {
-        mExecutorService.get()
+        mExecutorService
                 .execute(() -> {
                     OneTimeWorkRequest.Builder rssSyncBuilder =
                             new OneTimeWorkRequest.Builder(RssSyncWorker.class);
@@ -55,12 +54,12 @@ public class SyncRssCmd {
                     OneTimeWorkRequest rssSyncWorkRequest = rssSyncBuilder.build();
                     OneTimeWorkRequest rssSyncNotifierWorkRequest = rssSyncNotifierBuilder
                             .build();
-                    mWorkManager.get().beginUniqueWork(ConstantsWork.UNIQUE_RSS_SYNC,
+                    mWorkManager.beginUniqueWork(ConstantsWork.UNIQUE_RSS_SYNC,
                             ExistingWorkPolicy.KEEP, rssSyncWorkRequest)
                             .then(rssSyncNotifierWorkRequest)
                             .enqueue();
-                    if (!mDeviceStatusNotifier.get().isOnline()) {
-                        mHandler.get().post(() ->
+                    if (!mDeviceStatusNotifier.isOnline()) {
+                        mHandler.post(() ->
                                 Toast.makeText(mAppContext, R.string.feed_sync_pending_online
                                         , Toast.LENGTH_LONG).show());
                     }
@@ -68,6 +67,6 @@ public class SyncRssCmd {
     }
 
     public Flowable<List<RssModel>> syncedRss() {
-        return mRssChangeNotifier.get().liveSyncedRssModel();
+        return mRssChangeNotifier.liveSyncedRssModel();
     }
 }

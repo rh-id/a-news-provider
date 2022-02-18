@@ -17,14 +17,13 @@ import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.aprovider.Provider;
-import m.co.rh.id.aprovider.ProviderValue;
 
 public class PagedRssItemsCmd {
     public static final int FILTER_BY_NONE = 0;
     public static final int FILTER_BY_UNREAD = 1;
 
-    private final ProviderValue<ExecutorService> mExecutorService;
-    private final ProviderValue<RssDao> mRssDao;
+    private final ExecutorService mExecutorService;
+    private final RssDao mRssDao;
     private final BehaviorSubject<ArrayList<RssItem>> mRssItemsSubject;
     private final BehaviorSubject<Boolean> mIsLoadingSubject;
     private Optional<RssChannel> mSelectedRssChannel;
@@ -33,8 +32,8 @@ public class PagedRssItemsCmd {
     private BehaviorSubject<Optional<Integer>> mFilterTypeSubject;
 
     public PagedRssItemsCmd(Provider provider) {
-        mExecutorService = provider.lazyGet(ExecutorService.class);
-        mRssDao = provider.lazyGet(RssDao.class);
+        mExecutorService = provider.get(ExecutorService.class);
+        mRssDao = provider.get(RssDao.class);
         mRssItemsSubject = BehaviorSubject.createDefault(new ArrayList<>());
         mSelectedRssChannel = Optional.empty();
         mFilterTypeSubject = BehaviorSubject.createDefault(Optional.of(FILTER_BY_UNREAD));
@@ -44,9 +43,9 @@ public class PagedRssItemsCmd {
                 Flowable.combineLatest(
                         rssChangeNotifier.liveNewRssModel()
                                 .startWithItem(Optional.empty())
-                                .observeOn(Schedulers.from(mExecutorService.get())),
+                                .observeOn(Schedulers.from(mExecutorService)),
                         rssChangeNotifier.selectedRssChannel()
-                                .observeOn(Schedulers.from(mExecutorService.get())),
+                                .observeOn(Schedulers.from(mExecutorService)),
                         (rssModel, rssChannelOptional) -> {
                             if (rssChannelOptional.isPresent()) {
                                 if (mSelectedRssChannel.isPresent()) {
@@ -98,7 +97,7 @@ public class PagedRssItemsCmd {
     }
 
     public void load() {
-        mExecutorService.get().execute(() -> {
+        mExecutorService.execute(() -> {
             mIsLoadingSubject.onNext(true);
             try {
                 mRssItemsSubject.onNext(
@@ -116,23 +115,23 @@ public class PagedRssItemsCmd {
         Supplier<List<RssItem>> listSupplier;
         Integer filterType = getFilterTypeValue();
         if (!mSelectedRssChannel.isPresent()) {
-            listSupplier = () -> mRssDao.get()
+            listSupplier = () -> mRssDao
                     .loadRssItemsWithLimit(mLimit);
             if (filterType != null) {
                 switch (filterType) {
                     case FILTER_BY_UNREAD:
-                        listSupplier = () -> mRssDao.get()
+                        listSupplier = () -> mRssDao
                                 .findRssItemsByIsReadWithLimit(0, mLimit);
                         break;
                 }
             }
         } else {
-            listSupplier = () -> mRssDao.get()
+            listSupplier = () -> mRssDao
                     .findRssItemsByChannelIdWithLimit(mSelectedRssChannel.get().id, mLimit);
             if (filterType != null) {
                 switch (filterType) {
                     case FILTER_BY_UNREAD:
-                        listSupplier = () -> mRssDao.get()
+                        listSupplier = () -> mRssDao
                                 .findRssItemsByChannelIdAndIsReadWithLimit(
                                         mSelectedRssChannel.get().id, 0, mLimit);
                         break;
