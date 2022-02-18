@@ -67,6 +67,7 @@ public class AppSharedPreferencesEventHandler implements ProviderDisposable {
                 .subscribe(integer -> mHandler.get().post(() ->
                         AppCompatDelegate.setDefaultNightMode(integer))));
         mCompositeDisposable.add(mAppSharedPreferences.getIsOneHandModeFlow()
+                .skip(1)
                 .observeOn(Schedulers.from(mExecutorService))
                 .subscribe(aBoolean -> mHandler.get().post(() -> {
                     // refresh all route after one hand mode changed
