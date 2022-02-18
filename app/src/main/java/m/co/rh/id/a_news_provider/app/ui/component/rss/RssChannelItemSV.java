@@ -48,6 +48,12 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
 
     private transient TextWatcher mNameTextWatcher;
 
+    public RssChannelItemSV() {
+        mEditModeSubject = new SerialBehaviorSubject<>(false);
+        mImageUrlSubject = new OptionalBehaviorSubject<>();
+        mEditNameSubject = new SerialBehaviorSubject<>("");
+    }
+
     @Override
     public void provideComponent(Provider provider) {
         mSvProvider = provider.get(StatefulViewProvider.class);
@@ -56,15 +62,6 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
         mRenameRssFeedCmd = mSvProvider.get(RenameRssFeedCmd.class);
         if (mRssChannelCountSubject == null) {
             mRssChannelCountSubject = BehaviorSubject.create();
-        }
-        if (mEditModeSubject == null) {
-            mEditModeSubject = new SerialBehaviorSubject<>(false);
-        }
-        if (mImageUrlSubject == null) {
-            mImageUrlSubject = new OptionalBehaviorSubject<>();
-        }
-        if (mEditNameSubject == null) {
-            mEditNameSubject = new SerialBehaviorSubject<>("");
         }
         if (mNameTextWatcher == null) {
             mNameTextWatcher = new TextWatcher() {

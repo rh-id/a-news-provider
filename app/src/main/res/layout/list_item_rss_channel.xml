@@ -17,56 +17,63 @@
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/text_name"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/text_margin"
-        android:maxWidth="240dp"
         app:layout_constraintBottom_toBottomOf="@id/network_image_view_icon"
+        app:layout_constraintEnd_toStartOf="@id/text_count"
         app:layout_constraintStart_toEndOf="@id/network_image_view_icon"
         app:layout_constraintTop_toTopOf="@id/network_image_view_icon"
         tools:text="News 1" />
 
     <com.google.android.material.textfield.TextInputEditText
         android:id="@+id/input_text_name"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/text_margin"
         android:maxWidth="200dp"
         android:minWidth="200dp"
         android:minHeight="48dp"
+        app:layout_constraintEnd_toStartOf="@id/button_link"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         tools:text="News 1" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/button_rename"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="@string/rename"
         android:textSize="11sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/button_delete"
         app:layout_constraintStart_toStartOf="@id/input_text_name"
         app:layout_constraintTop_toBottomOf="@id/input_text_name" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/button_delete"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="10dp"
         android:layout_marginLeft="10dp"
         android:text="@string/delete"
         android:textSize="11sp"
         app:backgroundTint="@color/red"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@id/button_cancel"
         app:layout_constraintStart_toEndOf="@id/button_rename"
         app:layout_constraintTop_toBottomOf="@id/input_text_name" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/button_cancel"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="10dp"
         android:layout_marginLeft="10dp"
         android:text="@android:string/cancel"
         android:textSize="11sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/button_delete"
         app:layout_constraintTop_toBottomOf="@id/input_text_name" />
 
