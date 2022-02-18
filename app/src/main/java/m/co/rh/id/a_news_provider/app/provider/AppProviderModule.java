@@ -12,8 +12,8 @@ import java.util.Map;
 
 import m.co.rh.id.a_news_provider.app.MainActivity;
 import m.co.rh.id.a_news_provider.app.component.AppNotificationHandler;
-import m.co.rh.id.a_news_provider.app.component.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.app.constants.Routes;
+import m.co.rh.id.a_news_provider.app.provider.event.AppSharedPreferencesEventHandler;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.provider.parser.OpmlParser;
 import m.co.rh.id.a_news_provider.app.ui.page.SettingsPage;
@@ -48,8 +48,8 @@ public class AppProviderModule implements ProviderModule {
 
         providerRegistry.registerLazy(AppNotificationHandler.class, () -> new AppNotificationHandler(provider, context));
         providerRegistry.registerAsync(WorkManager.class, () -> WorkManager.getInstance(context));
+        providerRegistry.registerAsync(AppSharedPreferencesEventHandler.class, () -> new AppSharedPreferencesEventHandler(provider, context));
         // for rss
-        providerRegistry.registerAsync(AppSharedPreferences.class, () -> new AppSharedPreferences(provider, context));
         providerRegistry.registerAsync(RssChangeNotifier.class, () -> new RssChangeNotifier(provider, context));
         providerRegistry.registerLazy(OpmlParser.class, () -> new OpmlParser(provider, context));
 

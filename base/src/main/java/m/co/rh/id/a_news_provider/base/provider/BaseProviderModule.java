@@ -16,6 +16,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.a_news_provider.base.BuildConfig;
 import m.co.rh.id.a_news_provider.base.provider.notifier.DeviceStatusNotifier;
@@ -76,6 +77,7 @@ public class BaseProviderModule implements ProviderModule {
         });
         providerRegistry.register(FileHelper.class, new FileHelper(provider, context));
         providerRegistry.register(DeviceStatusNotifier.class, getDeviceStatusNotifier(context, provider));
+        providerRegistry.registerAsync(AppSharedPreferences.class, () -> new AppSharedPreferences(provider, context));
     }
 
     @NonNull

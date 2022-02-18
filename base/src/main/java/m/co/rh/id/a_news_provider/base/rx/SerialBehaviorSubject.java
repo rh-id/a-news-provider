@@ -10,6 +10,10 @@ import io.reactivex.rxjava3.subjects.BehaviorSubject;
 public class SerialBehaviorSubject<E extends Serializable> implements Serializable {
     private transient BehaviorSubject<E> mSubject;
 
+    public SerialBehaviorSubject() {
+        mSubject = BehaviorSubject.create();
+    }
+
     public SerialBehaviorSubject(E element) {
         mSubject = BehaviorSubject.createDefault(element);
     }
@@ -33,6 +37,10 @@ public class SerialBehaviorSubject<E extends Serializable> implements Serializab
     @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         E element = (E) in.readObject();
-        mSubject = BehaviorSubject.createDefault(element);
+        if (element == null) {
+            mSubject = BehaviorSubject.create();
+        } else {
+            mSubject = BehaviorSubject.createDefault(element);
+        }
     }
 }
