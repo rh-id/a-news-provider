@@ -1,0 +1,15 @@
+Release 1.6.2+45
+
+Fix:
+* Fix feed list for small screen devices
+* Some optimization
+
+Release 1.6.1+44
+
+Fix:
+* news detail crash when one hand mode enabled and download image enabled
+
+Release 1.6.0+43
+
+Feature:
+* Show image on the news detail if RSS has image information (disabled by default, to enable go to Settings > Download Image)
