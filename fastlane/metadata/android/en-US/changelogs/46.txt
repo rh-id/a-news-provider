@@ -1,0 +1,10 @@
+Release 1.6.3+46
+
+Feature:
+* For Android 4.4 and above, import OPML file menu will be available at home page
+
+Release 1.6.2+45
+
+Fix:
+* Fix feed list for small screen devices
+* Some optimization
