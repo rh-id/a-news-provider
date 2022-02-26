@@ -15,5 +15,9 @@
             android:icon="@drawable/ic_sync_white"
             android:title="@string/menu_export_opml"
             app:showAsAction="collapseActionView|withText" />
+        <item
+            android:id="@+id/menu_import_opml"
+            android:title="@string/menu_import_opml"
+            app:showAsAction="collapseActionView|withText" />
     </group>
 </menu>

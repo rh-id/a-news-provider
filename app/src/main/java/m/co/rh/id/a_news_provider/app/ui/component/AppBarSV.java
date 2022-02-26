@@ -1,6 +1,7 @@
 package m.co.rh.id.a_news_provider.app.ui.component;
 
 import android.app.Activity;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,6 +31,7 @@ public class AppBarSV extends StatefulView<Activity> implements RequireComponent
     private SerialBehaviorSubject<String> mTitleSubject;
     private transient Toolbar.OnMenuItemClickListener mOnMenuItemClickListener;
     private transient Runnable mNavigationOnClick;
+    private transient OnMenuCreated mOnMenuCreated;
     private Integer mMenuResId;
 
     public AppBarSV() {
@@ -66,6 +68,9 @@ public class AppBarSV extends StatefulView<Activity> implements RequireComponent
 
         if (mMenuResId != null) {
             toolbar.inflateMenu(mMenuResId);
+            if (mOnMenuCreated != null) {
+                mOnMenuCreated.onMenuCreated(toolbar.getMenu());
+            }
         }
         toolbar.setOnMenuItemClickListener(this);
         return view;
@@ -97,6 +102,10 @@ public class AppBarSV extends StatefulView<Activity> implements RequireComponent
         mOnMenuItemClickListener = listener;
     }
 
+    public void setOnMenuCreated(OnMenuCreated onMenuCreated) {
+        mOnMenuCreated = onMenuCreated;
+    }
+
     @Override
     public void onClick(View view) {
         if (isInitialRoute()) {
@@ -114,5 +123,9 @@ public class AppBarSV extends StatefulView<Activity> implements RequireComponent
             return mOnMenuItemClickListener.onMenuItemClick(item);
         }
         return false;
+    }
+
+    public interface OnMenuCreated {
+        void onMenuCreated(Menu menu);
     }
 }

@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -59,12 +61,14 @@ import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.anavigator.component.INavigator;
+import m.co.rh.id.anavigator.component.NavOnActivityResult;
 import m.co.rh.id.anavigator.component.NavOnBackPressed;
 import m.co.rh.id.anavigator.component.RequireComponent;
 import m.co.rh.id.aprovider.Provider;
 
-public class HomePage extends StatefulView<Activity> implements Externalizable, RequireComponent<Provider>, NavOnBackPressed<Activity>, Toolbar.OnMenuItemClickListener, SwipeRefreshLayout.OnRefreshListener, DrawerLayout.DrawerListener, View.OnClickListener {
+public class HomePage extends StatefulView<Activity> implements Externalizable, RequireComponent<Provider>, NavOnBackPressed<Activity>, Toolbar.OnMenuItemClickListener, SwipeRefreshLayout.OnRefreshListener, DrawerLayout.DrawerListener, View.OnClickListener, AppBarSV.OnMenuCreated, NavOnActivityResult<Activity> {
     private static final String TAG = HomePage.class.getName();
+    private static final int REQUEST_CODE_IMPORT_OPML = 1;
 
     @NavInject
     private transient INavigator mNavigator;
@@ -125,6 +129,7 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
             };
         }
         mAppBarSV.setMenuItemListener(this);
+        mAppBarSV.setOnMenuCreated(this);
         mAppBarSV.setTitle(activity.getString(R.string.home));
         mAppBarSV.setNavigationOnClick(mOnNavigationClicked);
         if (mIsDrawerOpen) {
@@ -229,30 +234,34 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
                     new NewRssChannelSVDialog(), NewRssChannelSVDialog.
                     Args.newArgs(sharedText));
         } else if (Intent.ACTION_VIEW.equals(intentAction)) {
-            Uri fileData = intent.getData();
-            String errorMessage = activity.getString(R.string.error_failed_to_open_file);
-            mSvProvider.get(ExecutorService.class)
-                    .execute(() -> {
-                        try {
-                            File file = mSvProvider.get(FileHelper.class)
-                                    .createTempFile("Feed.opml", fileData);
-                            OneTimeWorkRequest oneTimeWorkRequest =
-                                    new OneTimeWorkRequest.Builder(OpmlParseWorker.class)
-                                            .setInputData(new Data.Builder()
-                                                    .putString(ConstantsKey.KEY_FILE_ABSOLUTE_PATH,
-                                                            file.getAbsolutePath())
-                                                    .build())
-                                            .build();
-                            mSvProvider.get(WorkManager.class)
-                                    .enqueue(oneTimeWorkRequest);
-                        } catch (Throwable throwable) {
-                            mSvProvider.get(ILogger.class)
-                                    .e(TAG, errorMessage
-                                            , throwable);
-                        }
-                    });
+            parseOpmlFile(intent.getData());
         }
         return view;
+    }
+
+    private void parseOpmlFile(Uri fileData) {
+        Activity activity = mNavigator.getActivity();
+        String errorMessage = activity.getString(R.string.error_failed_to_open_file);
+        mSvProvider.get(ExecutorService.class)
+                .execute(() -> {
+                    try {
+                        File file = mSvProvider.get(FileHelper.class)
+                                .createTempFile("Feed.opml", fileData);
+                        OneTimeWorkRequest oneTimeWorkRequest =
+                                new OneTimeWorkRequest.Builder(OpmlParseWorker.class)
+                                        .setInputData(new Data.Builder()
+                                                .putString(ConstantsKey.KEY_FILE_ABSOLUTE_PATH,
+                                                        file.getAbsolutePath())
+                                                .build())
+                                        .build();
+                        mSvProvider.get(WorkManager.class)
+                                .enqueue(oneTimeWorkRequest);
+                    } catch (Throwable throwable) {
+                        mSvProvider.get(ILogger.class)
+                                .e(TAG, errorMessage
+                                        , throwable);
+                    }
+                });
     }
 
     @Override
@@ -308,6 +317,16 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
                             .e(TAG, context.getString(R.string.error_exporting_opml),
                                     throwable)
             ));
+        } else if (id == R.id.menu_import_opml) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                Activity activity = mNavigator.getActivity();
+                String chooserMessage = activity.getString(R.string.menu_import_opml);
+                Intent intent = new Intent();
+                intent.setAction(Intent.ACTION_OPEN_DOCUMENT);
+                intent.setType("*/*");
+                intent = Intent.createChooser(intent, chooserMessage);
+                activity.startActivityForResult(intent, REQUEST_CODE_IMPORT_OPML);
+            }
         }
         return false;
     }
@@ -378,6 +397,21 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
         if (id == R.id.fab) {
             mNavigator.push((args, activity1) ->
                     new NewRssChannelSVDialog());
+        }
+    }
+
+    @Override
+    public void onMenuCreated(Menu menu) {
+        MenuItem importOpml = menu.findItem(R.id.menu_import_opml);
+        importOpml.setVisible(Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT);
+    }
+
+    @Override
+    public void onActivityResult(View currentView, Activity activity, INavigator INavigator, int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_CODE_IMPORT_OPML) {
+            if (resultCode == Activity.RESULT_OK) {
+                parseOpmlFile(data.getData());
+            }
         }
     }
 

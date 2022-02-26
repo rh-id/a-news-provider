@@ -81,6 +81,7 @@
     <string name="download_image_enabled">Download image enabled</string>
     <string name="download_image_disabled">Download image disabled</string>
     <string name="image">Image</string>
+    <string name="menu_import_opml">Import OPML file</string>
 
     <string-array name="array_filter_by">
         <item>None</item>

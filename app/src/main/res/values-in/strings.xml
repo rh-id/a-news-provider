@@ -81,6 +81,7 @@
     <string name="download_image_enabled">Unduh gambar dinyalakan</string>
     <string name="download_image_disabled">Unduh gambar dimatikan</string>
     <string name="image">Gambar</string>
+    <string name="menu_import_opml">Import OPML file</string>
 
     <string-array name="array_filter_by">
         <item>None</item>
