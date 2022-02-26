@@ -81,10 +81,10 @@
     <string name="download_image_enabled">Unduh gambar dinyalakan</string>
     <string name="download_image_disabled">Unduh gambar dimatikan</string>
     <string name="image">Gambar</string>
-    <string name="menu_import_opml">Import OPML file</string>
+    <string name="menu_import_opml">Impor file OPML</string>
 
     <string-array name="array_filter_by">
-        <item>None</item>
-        <item>Unread</item>
+        <item>Tidak ada</item>
+        <item>Belum terbaca</item>
     </string-array>
 </resources>
