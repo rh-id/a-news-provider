@@ -21,3 +21,5 @@ and finally RxAndroid to handle UI use cases.
 <img src="https://github.com/rh-id/a-news-provider/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/1.png" height="512"/>
 <img src="https://github.com/rh-id/a-news-provider/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/2.png" height="512"/>
 
+## Support this project
+![Toss bitcoin](bitcoin://bc1qk9n2kljqyunqvlpyjxd4f4tt2xl0uwt2ak9xu4)
