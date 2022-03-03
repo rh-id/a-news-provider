@@ -1,6 +1,7 @@
 package m.co.rh.id.a_news_provider.component.network;
 
 import android.content.Context;
+import android.os.Build;
 
 import androidx.annotation.Nullable;
 
@@ -47,24 +48,36 @@ public class RssRequest extends Request<RssModel> {
     @Override
     protected Response<RssModel> parseNetworkResponse(NetworkResponse response) {
         try {
-            XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
-            factory.setNamespaceAware(true);
-            XmlPullParser xpp = factory.newPullParser();
-            xpp.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
-            xpp.setInput(new StringReader(new String(response.data)));
-            xpp.nextTag();
-            xpp.require(XmlPullParser.START_TAG, null, "rss");
             RssModel rssModel = null;
-            while (xpp.next() != XmlPullParser.END_TAG) {
-                if (xpp.getEventType() != XmlPullParser.START_TAG) {
-                    continue;
+            try {
+                XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+                factory.setNamespaceAware(true);
+                XmlPullParser xpp = factory.newPullParser();
+                xpp.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
+                xpp.setInput(new StringReader(new String(response.data)));
+                xpp.nextTag();
+                xpp.require(XmlPullParser.START_TAG, null, "rss");
+                while (xpp.next() != XmlPullParser.END_TAG) {
+                    if (xpp.getEventType() != XmlPullParser.START_TAG) {
+                        continue;
+                    }
+                    String name = xpp.getName();
+                    if (name.equals("channel")) {
+                        rssModel = readChannel(xpp);
+                    } else {
+                        skip(xpp);
+                    }
                 }
-                String name = xpp.getName();
-                if (name.equals("channel")) {
-                    rssModel = readChannel(xpp);
-                } else {
-                    skip(xpp);
-                }
+            } catch (XmlPullParserException e) {
+                // TRY parse atom
+                XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+                factory.setNamespaceAware(true);
+                XmlPullParser xpp = factory.newPullParser();
+                xpp.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
+                xpp.setInput(new StringReader(new String(response.data)));
+                xpp.nextTag();
+                xpp.require(XmlPullParser.START_TAG, null, "feed");
+                rssModel = readFeed(xpp);
             }
             mLogger.v(TAG, "Parsed RssModel: " + rssModel);
             if (rssModel == null) {
@@ -140,6 +153,48 @@ public class RssRequest extends Request<RssModel> {
         return new RssModel(rssChannel, rssItemList);
     }
 
+    // Atom XML
+    private RssModel readFeed(XmlPullParser xpp) throws IOException, XmlPullParserException {
+        xpp.require(XmlPullParser.START_TAG, null, "feed");
+        RssChannel rssChannel = new RssChannel();
+        rssChannel.url = getUrl();
+        ArrayList<RssItem> rssItemList = new ArrayList<>();
+        while (xpp.next() != XmlPullParser.END_TAG) {
+            if (xpp.getEventType() != XmlPullParser.START_TAG) {
+                continue;
+            }
+            String name = xpp.getName();
+            if (name.equals("title")) {
+                rssChannel.title = readTitle(xpp);
+                rssChannel.feedName = rssChannel.title;
+            } else if (name.equals("link")) {
+                rssChannel.link = readLinkHref(xpp);
+            } else if (name.equals("entry")) {
+                rssItemList.add(readEntry(xpp));
+            } else {
+                skip(xpp);
+            }
+        }
+        return new RssModel(rssChannel, rssItemList);
+    }
+
+    // Atom XML
+    private String readLinkHref(XmlPullParser xpp) throws IOException, XmlPullParserException {
+        xpp.require(XmlPullParser.START_TAG, null, "link");
+        String url = null;
+        int attrSize = xpp.getAttributeCount();
+        for (int i = 0; i < attrSize; i++) {
+            switch (xpp.getAttributeName(i)) {
+                case "href":
+                    url = xpp.getAttributeValue(i);
+                    break;
+            }
+        }
+        xpp.next();
+        xpp.require(XmlPullParser.END_TAG, null, "link");
+        return url;
+    }
+
     private void readImage(RssChannel rssChannel, XmlPullParser xpp) throws IOException, XmlPullParserException {
         xpp.require(XmlPullParser.START_TAG, null, "image");
         while (xpp.next() != XmlPullParser.END_TAG) {
@@ -153,6 +208,68 @@ public class RssRequest extends Request<RssModel> {
                 skip(xpp);
             }
         }
+    }
+
+    // Atom XML
+    private RssItem readEntry(XmlPullParser xpp) throws IOException, XmlPullParserException {
+        xpp.require(XmlPullParser.START_TAG, null, "entry");
+        RssItem rssItem = new RssItem();
+        while (xpp.next() != XmlPullParser.END_TAG) {
+            if (xpp.getEventType() != XmlPullParser.START_TAG) {
+                continue;
+            }
+            String name = xpp.getName();
+            if (name.equals("title")) {
+                rssItem.title = readTitle(xpp);
+            } else if (name.equals("summary")) {
+                rssItem.description = readSummary(xpp);
+            } else if (name.equals("content")) {
+                rssItem.description = readContent(xpp);
+            } else if (name.equals("link")) {
+                rssItem.link = readLinkHref(xpp);
+            } else if (name.equals("updated")) {
+                rssItem.pubDate = readUpdated(xpp);
+            } else {
+                skip(xpp);
+            }
+        }
+        return rssItem;
+    }
+
+    // Atom XML
+    private String readSummary(XmlPullParser xpp) throws IOException, XmlPullParserException {
+        xpp.require(XmlPullParser.START_TAG, null, "summary");
+        String title = readText(xpp);
+        xpp.require(XmlPullParser.END_TAG, null, "summary");
+        return title;
+    }
+
+    // Atom XML
+    private String readContent(XmlPullParser xpp) throws IOException, XmlPullParserException {
+        xpp.require(XmlPullParser.START_TAG, null, "content");
+        String title = readText(xpp);
+        xpp.require(XmlPullParser.END_TAG, null, "content");
+        return title;
+    }
+
+    // Atom XML
+    private Date readUpdated(XmlPullParser xpp) throws IOException, XmlPullParserException {
+        xpp.require(XmlPullParser.START_TAG, null, "updated");
+        String dateText = readText(xpp);
+        Date pubDate = null;
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX");
+                pubDate = simpleDateFormat.parse(dateText);
+            } else {
+                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+                pubDate = simpleDateFormat.parse(dateText);
+            }
+        } catch (Throwable throwable) {
+            mLogger.d(TAG, "Failed to parse date: " + dateText, throwable);
+        }
+        xpp.require(XmlPullParser.END_TAG, null, "updated");
+        return pubDate;
     }
 
     private RssItem readItem(XmlPullParser xpp) throws IOException, XmlPullParserException {
