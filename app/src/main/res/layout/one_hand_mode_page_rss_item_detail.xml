@@ -9,6 +9,7 @@
         android:id="@+id/container_body"
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:layout_marginBottom="@dimen/text_margin"
         android:orientation="vertical"
         app:layout_constraintBottom_toTopOf="@id/fab_open_link"
         app:layout_constraintEnd_toEndOf="parent"
@@ -58,12 +59,22 @@
     </androidx.appcompat.widget.LinearLayoutCompat>
 
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/fab_open_video"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/text_margin"
+        android:text="@string/open_video"
+        app:icon="@drawable/ic_open_in_browser_white"
+        app:layout_constraintBottom_toTopOf="@id/container_app_bar"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/fab_open_link"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
         android:layout_marginEnd="@dimen/text_margin"
         android:layout_marginRight="@dimen/text_margin"
+        android:layout_marginBottom="@dimen/text_margin"
         android:text="@string/open_link"
         app:icon="@drawable/ic_open_in_browser_white"
         app:layout_constraintBottom_toTopOf="@id/container_app_bar"

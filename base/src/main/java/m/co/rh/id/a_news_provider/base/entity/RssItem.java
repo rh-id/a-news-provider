@@ -38,10 +38,16 @@ public class RssItem implements Serializable {
     public Date pubDate;
 
     /**
-     * media:content URL
+     * media:content URL or enclosure URL
      */
     @ColumnInfo(name = "media_image")
     public String mediaImage;
+
+    /**
+     * media:content URL or enclosure URL
+     */
+    @ColumnInfo(name = "media_video")
+    public String mediaVideo;
 
     @ColumnInfo(name = "is_read")
     public boolean isRead;

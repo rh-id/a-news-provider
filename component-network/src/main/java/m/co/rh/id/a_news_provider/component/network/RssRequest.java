@@ -69,6 +69,7 @@ public class RssRequest extends Request<RssModel> {
                     }
                 }
             } catch (XmlPullParserException e) {
+                mLogger.v(TAG, "Error parsing rss, try parsing atom: " + e.getMessage(), e);
                 // TRY parse atom
                 XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
                 factory.setNamespaceAware(true);
@@ -289,7 +290,19 @@ public class RssRequest extends Request<RssModel> {
             } else if (name.equals("pubDate")) {
                 rssItem.pubDate = readPubDate(xpp);
             } else if (name.equals("media:content")) {
-                rssItem.mediaImage = readMediaImage(xpp);
+                RssMedia rssMedia = readMediaContent(xpp);
+                if (rssMedia.isImage()) {
+                    rssItem.mediaImage = rssMedia.url;
+                } else if (rssMedia.isVideo()) {
+                    rssItem.mediaVideo = rssMedia.url;
+                }
+            } else if (name.equals("enclosure")) {
+                RssMedia rssMedia = readEnclosure(xpp);
+                if (rssMedia.isImage()) {
+                    rssItem.mediaImage = rssMedia.url;
+                } else if (rssMedia.isVideo()) {
+                    rssItem.mediaVideo = rssMedia.url;
+                }
             } else {
                 skip(xpp);
             }
@@ -297,12 +310,12 @@ public class RssRequest extends Request<RssModel> {
         return rssItem;
     }
 
-    private String readMediaImage(XmlPullParser xpp) throws IOException, XmlPullParserException {
+    private RssMedia readMediaContent(XmlPullParser xpp) throws IOException, XmlPullParserException {
         xpp.require(XmlPullParser.START_TAG, null, "media:content");
-        String url = null;
         String mimeType = "";
         String medium = "";
         int attrSize = xpp.getAttributeCount();
+        RssMedia rssMedia = new RssMedia();
         for (int i = 0; i < attrSize; i++) {
             switch (xpp.getAttributeName(i)) {
                 case "type":
@@ -312,31 +325,65 @@ public class RssRequest extends Request<RssModel> {
                     medium = xpp.getAttributeValue(i);
                     break;
                 case "url":
-                    url = xpp.getAttributeValue(i);
+                    rssMedia.url = xpp.getAttributeValue(i);
                     break;
             }
         }
-        boolean isImage = false;
         switch (mimeType) {
             case "image/bmp":
             case "image/gif":
             case "image/png":
             case "image/webp":
             case "image/jpeg":
-                isImage = true;
+                rssMedia.type = RssMedia.TYPE_IMAGE;
                 break;
             case "":
                 if (medium.equals("image")) {
-                    isImage = true;
+                    rssMedia.type = RssMedia.TYPE_IMAGE;
+                } else if (medium.equals("video")) {
+                    rssMedia.type = RssMedia.TYPE_VIDEO;
                 }
                 break;
         }
-        if (!isImage) {
-            url = null;
-        }
         xpp.next();
         xpp.require(XmlPullParser.END_TAG, null, "media:content");
-        return url;
+        return rssMedia;
+    }
+
+    private RssMedia readEnclosure(XmlPullParser xpp) throws IOException, XmlPullParserException {
+        xpp.require(XmlPullParser.START_TAG, null, "enclosure");
+        String mimeType = "";
+        int attrSize = xpp.getAttributeCount();
+        RssMedia rssMedia = new RssMedia();
+        for (int i = 0; i < attrSize; i++) {
+            switch (xpp.getAttributeName(i)) {
+                case "type":
+                    mimeType = xpp.getAttributeValue(i);
+                    break;
+                case "url":
+                    rssMedia.url = xpp.getAttributeValue(i);
+                    break;
+            }
+        }
+        switch (mimeType) {
+            case "image/bmp":
+            case "image/gif":
+            case "image/png":
+            case "image/webp":
+            case "image/jpeg":
+                rssMedia.type = RssMedia.TYPE_IMAGE;
+                break;
+            case "video/mp4":
+            case "video/webm":
+            case "video/ogg":
+            case "video/3gpp":
+            case "video/x-matroska":
+                rssMedia.type = RssMedia.TYPE_VIDEO;
+                break;
+        }
+        xpp.next();
+        xpp.require(XmlPullParser.END_TAG, null, "enclosure");
+        return rssMedia;
     }
 
     private Date readPubDate(XmlPullParser xpp) throws IOException, XmlPullParserException {
@@ -400,9 +447,23 @@ public class RssRequest extends Request<RssModel> {
         }
     }
 
-
     @Override
     protected void deliverResponse(RssModel response) {
         mListener.onResponse(response);
+    }
+
+    private static class RssMedia {
+        static final int TYPE_IMAGE = 1;
+        static final int TYPE_VIDEO = 2;
+        String url;
+        int type;
+
+        boolean isImage() {
+            return type == TYPE_IMAGE;
+        }
+
+        boolean isVideo() {
+            return type == TYPE_VIDEO;
+        }
     }
 }

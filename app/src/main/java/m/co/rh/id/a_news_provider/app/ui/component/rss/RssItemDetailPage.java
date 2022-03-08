@@ -115,6 +115,13 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         }
         Button fabOpenLink = view.findViewById(R.id.fab_open_link);
         fabOpenLink.setOnClickListener(this);
+        Button fabOpenVideo = view.findViewById(R.id.fab_open_video);
+        fabOpenVideo.setOnClickListener(this);
+        if (mRssItem.mediaVideo != null) {
+            fabOpenVideo.setVisibility(View.VISIBLE);
+        } else {
+            fabOpenVideo.setVisibility(View.GONE);
+        }
         mAppBarSV.setTitle(mRssChannel.feedName);
         return view;
     }
@@ -138,6 +145,10 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         if (viewId == R.id.text_title || viewId == R.id.fab_open_link) {
             Activity activity = UiUtils.getActivity(view);
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(mRssItem.link));
+            activity.startActivity(browserIntent);
+        } else if (viewId == R.id.fab_open_video) {
+            Activity activity = UiUtils.getActivity(view);
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(mRssItem.mediaVideo));
             activity.startActivity(browserIntent);
         }
     }

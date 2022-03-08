@@ -82,6 +82,7 @@
     <string name="download_image_disabled">Unduh gambar dimatikan</string>
     <string name="image">Gambar</string>
     <string name="menu_import_opml">Impor file OPML</string>
+    <string name="open_video">Buka video</string>
 
     <string-array name="array_filter_by">
         <item>Tidak ada</item>
