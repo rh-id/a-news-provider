@@ -83,6 +83,11 @@
     <string name="image">Image</string>
     <string name="menu_import_opml">Import OPML file</string>
     <string name="open_video">Open video</string>
+    <string name="buy_developer_a_coffee">Buy developer a coffee</string>
+    <string name="donation_pitch">Support developer, treat a cup of coffee</string>
+    <string name="bitcoin">Bitcoin</string>
+    <string name="donation_other_apps">Other apps by developer: %s</string>
+    <string name="donation_thank_you">Thank you for your support</string>
 
     <string-array name="array_filter_by">
         <item>None</item>

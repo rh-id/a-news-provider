@@ -83,6 +83,11 @@
     <string name="image">Gambar</string>
     <string name="menu_import_opml">Impor file OPML</string>
     <string name="open_video">Buka video</string>
+    <string name="buy_developer_a_coffee">Buy developer a coffee</string>
+    <string name="donation_pitch">Support developer with a cup of coffee</string>
+    <string name="bitcoin">Bitcoin</string>
+    <string name="donation_other_apps">Aplikasi lainnya dari developer: %s</string>
+    <string name="donation_thank_you">Terima kasih atas bantuannya</string>
 
     <string-array name="array_filter_by">
         <item>Tidak ada</item>

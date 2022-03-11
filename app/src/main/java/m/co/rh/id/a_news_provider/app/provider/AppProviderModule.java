@@ -16,6 +16,7 @@ import m.co.rh.id.a_news_provider.app.constants.Routes;
 import m.co.rh.id.a_news_provider.app.provider.event.AppSharedPreferencesEventHandler;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.provider.parser.OpmlParser;
+import m.co.rh.id.a_news_provider.app.ui.page.DonationPage;
 import m.co.rh.id.a_news_provider.app.ui.page.SettingsPage;
 import m.co.rh.id.a_news_provider.app.ui.page.SplashPage;
 import m.co.rh.id.a_news_provider.base.provider.BaseProviderModule;
@@ -68,6 +69,7 @@ public class AppProviderModule implements ProviderModule {
             return new SplashPage();
         });
         navMap.put(Routes.SETTINGS_PAGE, (args, activity) -> new SettingsPage());
+        navMap.put(Routes.DONATION_PAGE, (args, activity) -> new DonationPage());
         NavConfiguration.Builder<Activity, StatefulView> navBuilder =
                 new NavConfiguration.Builder<>(Routes.HOME_PAGE, navMap);
         navBuilder.setSaveStateFile(new File(mApplication.getCacheDir(),

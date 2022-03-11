@@ -118,7 +118,9 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
         }
         View view = activity.getLayoutInflater().inflate(layoutId, container, false);
         View menuSettings = view.findViewById(R.id.menu_settings);
-        menuSettings.setOnClickListener(view12 -> mNavigator.push(Routes.SETTINGS_PAGE));
+        menuSettings.setOnClickListener(this);
+        View menuDonation = view.findViewById(R.id.menu_donation);
+        menuDonation.setOnClickListener(this);
         mDrawerLayout = view.findViewById(R.id.drawer);
         mDrawerLayout.addDrawerListener(this);
         if (mOnNavigationClicked == null) {
@@ -397,6 +399,10 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
         if (id == R.id.fab) {
             mNavigator.push((args, activity1) ->
                     new NewRssChannelSVDialog());
+        } else if (id == R.id.menu_settings) {
+            mNavigator.push(Routes.SETTINGS_PAGE);
+        } else if (id == R.id.menu_donation) {
+            mNavigator.push(Routes.DONATION_PAGE);
         }
     }
 
