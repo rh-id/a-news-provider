@@ -402,7 +402,7 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
         } else if (id == R.id.menu_settings) {
             mNavigator.push(Routes.SETTINGS_PAGE);
         } else if (id == R.id.menu_donation) {
-            mNavigator.push(Routes.DONATION_PAGE);
+            mNavigator.push(Routes.DONATIONS_PAGE);
         }
     }
 

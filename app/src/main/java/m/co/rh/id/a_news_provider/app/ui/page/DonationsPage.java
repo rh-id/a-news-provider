@@ -19,8 +19,8 @@ import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.aprovider.Provider;
 
-public class DonationPage extends StatefulView<Activity> implements View.OnClickListener {
-    private static final String TAG = DonationPage.class.getName();
+public class DonationsPage extends StatefulView<Activity> implements View.OnClickListener {
+    private static final String TAG = DonationsPage.class.getName();
     private static final String DEV_URL = "<a href='https://rh-apps.github.io/'>https://rh-apps.github.io/</a>";
 
     @NavInject
@@ -28,7 +28,7 @@ public class DonationPage extends StatefulView<Activity> implements View.OnClick
 
     @Override
     protected View createView(Activity activity, ViewGroup container) {
-        View rootLayout = activity.getLayoutInflater().inflate(R.layout.page_donation, container, false);
+        View rootLayout = activity.getLayoutInflater().inflate(R.layout.page_donations, container, false);
         Button donateBitcoin = rootLayout.findViewById(R.id.button_donate_bitcoin);
         donateBitcoin.setOnClickListener(this);
         TextView otherApps = rootLayout.findViewById(R.id.text_other_apps);
