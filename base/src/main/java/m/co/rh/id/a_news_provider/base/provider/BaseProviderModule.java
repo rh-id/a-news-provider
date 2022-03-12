@@ -39,16 +39,7 @@ public class BaseProviderModule implements ProviderModule {
 
     @Override
     public void provides(Context context, ProviderRegistry providerRegistry, Provider provider) {
-        // thread pool to be used throughout this app lifecycle
-        providerRegistry.registerAsync(ExecutorService.class, () -> {
-            ThreadPoolExecutor threadPoolExecutor =
-                    new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(),
-                            Integer.MAX_VALUE,
-                            10, TimeUnit.SECONDS, new SynchronousQueue<>());
-            threadPoolExecutor.allowCoreThreadTimeOut(true);
-            threadPoolExecutor.prestartAllCoreThreads();
-            return threadPoolExecutor;
-        });
+        providerRegistry.register(ExecutorService.class, getExecutorService());
         providerRegistry.register(ScheduledExecutorService.class, Executors.newSingleThreadScheduledExecutor());
         providerRegistry.register(Handler.class, new Handler(Looper.getMainLooper()));
         providerRegistry.registerAsync(ILogger.class, () -> {
@@ -78,6 +69,17 @@ public class BaseProviderModule implements ProviderModule {
         providerRegistry.register(FileHelper.class, new FileHelper(provider, context));
         providerRegistry.register(DeviceStatusNotifier.class, getDeviceStatusNotifier(context, provider));
         providerRegistry.registerAsync(AppSharedPreferences.class, () -> new AppSharedPreferences(provider, context));
+    }
+
+    private ExecutorService getExecutorService() {
+        // thread pool to be used throughout this app lifecycle
+        ThreadPoolExecutor threadPoolExecutor =
+                new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(),
+                        Integer.MAX_VALUE,
+                        10, TimeUnit.SECONDS, new SynchronousQueue<>());
+        threadPoolExecutor.allowCoreThreadTimeOut(true);
+        threadPoolExecutor.prestartAllCoreThreads();
+        return threadPoolExecutor;
     }
 
     @NonNull
