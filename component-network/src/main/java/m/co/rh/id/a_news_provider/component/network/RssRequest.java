@@ -337,6 +337,9 @@ public class RssRequest extends Request<RssModel> {
             case "image/jpeg":
                 rssMedia.type = RssMedia.TYPE_IMAGE;
                 break;
+            case "application/x-shockwave-flash":
+                rssMedia.type = RssMedia.TYPE_VIDEO;
+                break;
             case "":
                 if (medium.equals("image")) {
                     rssMedia.type = RssMedia.TYPE_IMAGE;
@@ -378,6 +381,7 @@ public class RssRequest extends Request<RssModel> {
             case "video/ogg":
             case "video/3gpp":
             case "video/x-matroska":
+            case "application/x-shockwave-flash":
                 rssMedia.type = RssMedia.TYPE_VIDEO;
                 break;
         }
