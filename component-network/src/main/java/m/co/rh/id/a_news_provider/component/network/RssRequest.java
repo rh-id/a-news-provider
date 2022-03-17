@@ -296,6 +296,11 @@ public class RssRequest extends Request<RssModel> {
                 } else if (rssMedia.isVideo()) {
                     rssItem.mediaVideo = rssMedia.url;
                 }
+            } else if (name.equals("media:thumbnail")) {
+                RssMedia rssMedia = readMediaThumbnail(xpp);
+                if (rssMedia.isImage()) {
+                    rssItem.mediaImage = rssMedia.url;
+                }
             } else if (name.equals("enclosure")) {
                 RssMedia rssMedia = readEnclosure(xpp);
                 if (rssMedia.isImage()) {
@@ -350,6 +355,23 @@ public class RssRequest extends Request<RssModel> {
         }
         xpp.next();
         xpp.require(XmlPullParser.END_TAG, null, "media:content");
+        return rssMedia;
+    }
+
+    private RssMedia readMediaThumbnail(XmlPullParser xpp) throws IOException, XmlPullParserException {
+        xpp.require(XmlPullParser.START_TAG, null, "media:thumbnail");
+        int attrSize = xpp.getAttributeCount();
+        RssMedia rssMedia = new RssMedia();
+        rssMedia.type = RssMedia.TYPE_IMAGE;
+        for (int i = 0; i < attrSize; i++) {
+            switch (xpp.getAttributeName(i)) {
+                case "url":
+                    rssMedia.url = xpp.getAttributeValue(i);
+                    break;
+            }
+        }
+        xpp.next();
+        xpp.require(XmlPullParser.END_TAG, null, "media:thumbnail");
         return rssMedia;
     }
 
