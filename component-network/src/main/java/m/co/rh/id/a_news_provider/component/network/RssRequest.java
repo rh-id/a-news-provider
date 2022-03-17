@@ -350,6 +350,9 @@ public class RssRequest extends Request<RssModel> {
                     rssMedia.type = RssMedia.TYPE_IMAGE;
                 } else if (medium.equals("video")) {
                     rssMedia.type = RssMedia.TYPE_VIDEO;
+                } else {
+                    // if nothing matches by default it is image
+                    rssMedia.type = RssMedia.TYPE_IMAGE;
                 }
                 break;
         }
