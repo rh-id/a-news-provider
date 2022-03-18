@@ -1,0 +1,9 @@
+Release 1.8.2+50
+
+Features:
+* Add media:thumbnail support, this means app will show image for RSS that have this element.
+
+Fixes:
+* Indonesian language
+* Image not showing in some RSS
+* Update source code dependencies
