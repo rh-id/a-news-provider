@@ -105,23 +105,18 @@ public class RssChangeNotifier {
 
     public void readRssItem(RssItem rssItem) {
         rssItem.isRead = true;
-        mExecutorService.get().execute(() -> {
-            try {
-                mRssDao.get().updateRssItem(rssItem);
-                refreshRssChannelCount();
-            } catch (Throwable throwable) {
-                mLogger.get().e(TAG,
-                        mAppContext.getString(R.string.error_rss_read, rssItem.title
-                        ), throwable);
-            }
-        });
+        updateIsRead(rssItem);
     }
 
     public void unReadRssItem(RssItem rssItem) {
         rssItem.isRead = false;
+        updateIsRead(rssItem);
+    }
+
+    private void updateIsRead(RssItem rssItem) {
         mExecutorService.get().execute(() -> {
             try {
-                mRssDao.get().updateRssItem(rssItem);
+                mRssDao.get().updateRssItemsIsReadByLink(rssItem.isRead, rssItem.link);
                 refreshRssChannelCount();
             } catch (Throwable throwable) {
                 mLogger.get().e(TAG,

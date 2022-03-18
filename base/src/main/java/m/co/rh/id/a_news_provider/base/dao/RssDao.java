@@ -121,4 +121,7 @@ public abstract class RssDao {
 
     @Query("SELECT * FROM rss_item WHERE id = :rssItemId")
     public abstract RssItem findRssItemById(long rssItemId);
+
+    @Query("UPDATE rss_item SET is_read = :isRead WHERE link = :link")
+    public abstract void updateRssItemsIsReadByLink(boolean isRead, String link);
 }
