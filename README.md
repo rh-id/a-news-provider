@@ -7,8 +7,18 @@
 ![Release Build](https://github.com/rh-id/a-news-provider/actions/workflows/android-release.yml/badge.svg)
 ![Emulator Test](https://github.com/rh-id/a-news-provider/actions/workflows/android-emulator-test.yml/badge.svg)
 
+A simple and easy to use RSS aggregator that deliver news to your smartphone
+<ul>
+  <li>Easily add new feed using shortcut</li>
+  <li>Support RSS XML</li>
+  <li>Support Atom XML</li>
+  <li>Support background sync</li>
+  <li>Simple interface to add and read your news</li>
+  <li>Support dark mode and light mode</li>
+  <li>Accessibility friendly with one hand mode</li>
+  <li>Accessibility friendly on screen reader (tested with TalkBack)</li>
+</ul>
 
-A simple RSS feed android application.
 This project is intended for demo app for [a-navigator](https://github.com/rh-id/a-navigator) and [a-provider](https://github.com/rh-id/a-provider) library usage.
 The app still works as production even though it is demo app.
 
