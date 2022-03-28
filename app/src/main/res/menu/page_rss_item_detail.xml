@@ -10,5 +10,10 @@
             android:icon="@drawable/ic_link_black"
             android:title="@string/menu_edit_link"
             app:showAsAction="collapseActionView" />
+        <item
+            android:id="@+id/menu_download_video"
+            android:icon="@drawable/ic_download_black"
+            android:title="@string/menu_download_video"
+            app:showAsAction="collapseActionView" />
     </group>
 </menu>

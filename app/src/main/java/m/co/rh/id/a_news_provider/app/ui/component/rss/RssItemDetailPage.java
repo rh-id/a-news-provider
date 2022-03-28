@@ -1,18 +1,27 @@
 package m.co.rh.id.a_news_provider.app.ui.component.rss;
 
+import android.Manifest;
 import android.app.Activity;
+import android.app.DownloadManager;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Environment;
 import android.text.method.LinkMovementMethod;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.core.text.HtmlCompat;
 
@@ -20,6 +29,7 @@ import com.android.volley.toolbox.ImageLoader;
 import com.android.volley.toolbox.NetworkImageView;
 
 import java.io.Serializable;
+import java.util.concurrent.ExecutorService;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
@@ -36,12 +46,14 @@ import m.co.rh.id.anavigator.NavRoute;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.anavigator.component.INavigator;
+import m.co.rh.id.anavigator.component.NavOnRequestPermissionResult;
 import m.co.rh.id.anavigator.component.RequireComponent;
 import m.co.rh.id.aprovider.Provider;
 
-public class RssItemDetailPage extends StatefulView<Activity> implements RequireComponent<Provider>, View.OnClickListener, Toolbar.OnMenuItemClickListener {
+public class RssItemDetailPage extends StatefulView<Activity> implements RequireComponent<Provider>, NavOnRequestPermissionResult, View.OnClickListener, Toolbar.OnMenuItemClickListener, AppBarSV.OnMenuCreated {
 
     private static final String TAG = RssItemDetailPage.class.getName();
+    private static final int REQUEST_CODE_PERMISSION_WRITE_EXTERNAL_STORAGE = 1;
     @NavInject
     private AppBarSV mAppBarSV;
     @NavInject
@@ -51,6 +63,8 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
     private RssItem mRssItem;
     private RssChannel mRssChannel;
     private transient Provider mSvProvider;
+    private transient ExecutorService mExecutorService;
+    private transient ILogger mLogger;
     private transient ImageLoader mImageLoader;
 
     public RssItemDetailPage() {
@@ -60,6 +74,8 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
     @Override
     public void provideComponent(Provider provider) {
         mSvProvider = provider.get(StatefulViewProvider.class);
+        mExecutorService = mSvProvider.get(ExecutorService.class);
+        mLogger = mSvProvider.get(ILogger.class);
         mImageLoader = mSvProvider.get(ImageLoader.class);
     }
 
@@ -83,6 +99,7 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         View view = activity.getLayoutInflater().inflate(layoutId, container, false);
         ViewGroup containerAppBar = view.findViewById(R.id.container_app_bar);
         mAppBarSV.setMenuItemListener(this);
+        mAppBarSV.setOnMenuCreated(this);
         containerAppBar.addView(mAppBarSV.buildView(activity, container));
         TextView titleText = view.findViewById(R.id.text_title);
         titleText.setText(HtmlCompat
@@ -179,8 +196,59 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
                             );
                         }
                     });
+        } else if (id == R.id.menu_download_video) {
+            Context context = mSvProvider.getContext().getApplicationContext();
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    == PackageManager.PERMISSION_GRANTED) {
+                downloadMediaFile();
+            } else {
+                ActivityCompat.requestPermissions(mNavigator.getActivity(), new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                        REQUEST_CODE_PERMISSION_WRITE_EXTERNAL_STORAGE);
+            }
+
         }
         return false;
+    }
+
+    @Override
+    public void onMenuCreated(Menu menu) {
+        MenuItem downloadVideoMenu = menu.findItem(R.id.menu_download_video);
+        downloadVideoMenu.setVisible(mRssItem.mediaVideo != null);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(View currentView, Activity activity, INavigator INavigator, int requestCode, String[] permissions, int[] grantResults) {
+        if (requestCode == REQUEST_CODE_PERMISSION_WRITE_EXTERNAL_STORAGE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                downloadMediaFile();
+            } else {
+                mLogger.i(TAG, activity.getString(R.string.error_permission_denied));
+            }
+        }
+    }
+
+    private void downloadMediaFile() {
+        Context context = mSvProvider.getContext().getApplicationContext();
+        String url = mRssItem.mediaVideo;
+        String title = mRssItem.title;
+        MimeTypeMap mimeTypeMap = MimeTypeMap.getSingleton();
+        String ext = MimeTypeMap.getFileExtensionFromUrl(url);
+        String mimeType = mimeTypeMap.getMimeTypeFromExtension(ext);
+        String subDir = mRssChannel.feedName + "/" + title + "." + ext;
+        mExecutorService.execute(() -> {
+            try {
+                DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url))
+                        .setTitle(title)
+                        .setMimeType(mimeType)
+                        .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                        .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, subDir);
+                DownloadManager downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
+                downloadManager.enqueue(request);
+                mLogger.i(TAG, context.getString(R.string.begin_downloading));
+            } catch (Exception e) {
+                mLogger.e(TAG, e.getMessage(), e);
+            }
+        });
     }
 
     public static class Args implements Serializable {

@@ -88,6 +88,9 @@
     <string name="bitcoin">Bitcoin</string>
     <string name="donation_other_apps">Aplikasi lainnya dari developer: %s</string>
     <string name="donation_thank_you">Terima kasih atas bantuannya</string>
+    <string name="menu_download_video">Unduh Video</string>
+    <string name="error_permission_denied">Izin ditolak</string>
+    <string name="begin_downloading">Mulai mengunduh</string>
 
     <string-array name="array_filter_by">
         <item>Tidak ada</item>

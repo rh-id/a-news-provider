@@ -88,6 +88,9 @@
     <string name="bitcoin">Bitcoin</string>
     <string name="donation_other_apps">Other apps by developer: %s</string>
     <string name="donation_thank_you">Thank you for your support</string>
+    <string name="menu_download_video">Download Video</string>
+    <string name="error_permission_denied">Permission denied</string>
+    <string name="begin_downloading">Begin downloading</string>
 
     <string-array name="array_filter_by">
         <item>None</item>
