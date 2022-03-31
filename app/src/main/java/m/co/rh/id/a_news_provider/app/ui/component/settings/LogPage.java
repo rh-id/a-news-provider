@@ -120,6 +120,8 @@ public class LogPage extends StatefulView<Activity> implements RequireComponent<
     @Override
     public void dispose(Activity activity) {
         super.dispose(activity);
+        mAppBarSV.dispose(activity);
+        mAppBarSV = null;
         if (mSvProvider != null) {
             mSvProvider.dispose();
             mSvProvider = null;

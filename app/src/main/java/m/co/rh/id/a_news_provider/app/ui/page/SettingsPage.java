@@ -21,6 +21,7 @@ import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.aprovider.Provider;
 
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class SettingsPage extends StatefulView<Activity> {
 
     @NavInject
@@ -73,6 +74,8 @@ public class SettingsPage extends StatefulView<Activity> {
     @Override
     public void dispose(Activity activity) {
         super.dispose(activity);
+        mAppBarSV.dispose(activity);
+        mAppBarSV = null;
         if (mStatefulViews != null && !mStatefulViews.isEmpty()) {
             for (StatefulView statefulView : mStatefulViews) {
                 statefulView.dispose(activity);
