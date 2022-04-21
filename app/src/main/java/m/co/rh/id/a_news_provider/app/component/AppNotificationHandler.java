@@ -48,8 +48,8 @@ public class AppNotificationHandler {
     private final ProviderValue<Handler> mHandler;
     private final ProviderValue<ImageLoader> mImageLoader;
 
-    public AppNotificationHandler(Provider provider, Context context) {
-        mAppContext = context.getApplicationContext();
+    public AppNotificationHandler(Provider provider) {
+        mAppContext = provider.getContext().getApplicationContext();
         mExecutorService = provider.lazyGet(ExecutorService.class);
         mRssChangeNotifier = provider.lazyGet(RssChangeNotifier.class);
         mAndroidNotificationDao = provider.lazyGet(AndroidNotificationDao.class);

@@ -39,9 +39,9 @@ public class AppSharedPreferences {
     private boolean mDownloadImage;
     private String mDownloadImageKey;
 
-    public AppSharedPreferences(Provider provider, Context context) {
+    public AppSharedPreferences(Provider provider) {
         mExecutorService = provider.get(ExecutorService.class);
-        mSharedPreferences = context.getSharedPreferences(
+        mSharedPreferences = provider.getContext().getSharedPreferences(
                 SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE);
         mPeriodicSyncInit = new SerialBehaviorSubject<>();
         mEnablePeriodicSync = new SerialBehaviorSubject<>();

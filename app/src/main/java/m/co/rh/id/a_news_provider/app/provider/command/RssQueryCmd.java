@@ -15,8 +15,8 @@ public class RssQueryCmd {
     private final ExecutorService mExecutorService;
     private final RssDao mRssDao;
 
-    public RssQueryCmd(Provider provider, Context context) {
-        mAppContext = context.getApplicationContext();
+    public RssQueryCmd(Provider provider) {
+        mAppContext = provider.getContext().getApplicationContext();
         mExecutorService = provider.get(ExecutorService.class);
         mRssDao = provider.get(RssDao.class);
     }

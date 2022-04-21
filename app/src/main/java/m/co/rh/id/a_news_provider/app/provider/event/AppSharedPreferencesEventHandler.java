@@ -31,7 +31,7 @@ public class AppSharedPreferencesEventHandler implements ProviderDisposable {
     private CompositeDisposable mCompositeDisposable;
     private AppSharedPreferences mAppSharedPreferences;
 
-    public AppSharedPreferencesEventHandler(Provider provider, Context context) {
+    public AppSharedPreferencesEventHandler(Provider provider) {
         mHandler = provider.lazyGet(Handler.class);
         mExecutorService = provider.get(ExecutorService.class);
         mWorkManager = provider.lazyGet(WorkManager.class);

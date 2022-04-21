@@ -22,8 +22,8 @@ public class EditRssLinkCmd {
     private final RssChangeNotifier mRssChangeNotifier;
     private final BehaviorSubject<String> mUrlValidationBehaviorSubject;
 
-    public EditRssLinkCmd(Provider provider, Context context) {
-        mAppContext = context.getApplicationContext();
+    public EditRssLinkCmd(Provider provider) {
+        mAppContext = provider.getContext().getApplicationContext();
         mExecutorService = provider.get(ExecutorService.class);
         mRssDao = provider.get(RssDao.class);
         mRssChangeNotifier = provider.get(RssChangeNotifier.class);
@@ -49,17 +49,17 @@ public class EditRssLinkCmd {
 
     public Single<String> execute(long rssItemId, final String url) {
         return Single.fromFuture(mExecutorService.submit(() -> {
-            final StringBuilder requestUrl = new StringBuilder(url);
-            if (!url.startsWith("http://") && !url.startsWith("https://")) {
-                requestUrl.insert(0, "https://");
-            }
-            if (validUrl(requestUrl.toString())) {
-                RssItem rssItem = mRssDao.findRssItemById(rssItemId);
-                rssItem.link = url;
-                mRssDao.updateRssItem(rssItem);
-                mRssChangeNotifier.updatedRssItem(rssItem);
-                return url;
-            } else {
+                    final StringBuilder requestUrl = new StringBuilder(url);
+                    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                        requestUrl.insert(0, "https://");
+                    }
+                    if (validUrl(requestUrl.toString())) {
+                        RssItem rssItem = mRssDao.findRssItemById(rssItemId);
+                        rssItem.link = url;
+                        mRssDao.updateRssItem(rssItem);
+                        mRssChangeNotifier.updatedRssItem(rssItem);
+                        return url;
+                    } else {
                         throw new RuntimeException(getValidationError());
                     }
                 })

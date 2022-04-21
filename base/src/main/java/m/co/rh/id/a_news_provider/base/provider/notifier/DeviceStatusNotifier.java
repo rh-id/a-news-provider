@@ -39,8 +39,8 @@ public class DeviceStatusNotifier implements ProviderDisposable, Application.Act
 
     private BehaviorSubject<Boolean> mIsOnlineBehaviorSubject;
 
-    public DeviceStatusNotifier(Provider provider, Context context) {
-        mAppContext = context.getApplicationContext();
+    public DeviceStatusNotifier(Provider provider) {
+        mAppContext = provider.getContext().getApplicationContext();
         mExecutorService = provider.lazyGet(ExecutorService.class);
         mIsOnlineBehaviorSubject = BehaviorSubject.createDefault(false);
         checkOnlineStatus();

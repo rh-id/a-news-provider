@@ -34,8 +34,8 @@ public class NewRssChannelCmd {
     private final BehaviorSubject<RssModel> mRssModelBehaviorSubject;
     private final BehaviorSubject<String> mUrlValidationBehaviorSubject;
 
-    public NewRssChannelCmd(Provider provider, Context context) {
-        mAppContext = context.getApplicationContext();
+    public NewRssChannelCmd(Provider provider) {
+        mAppContext = provider.getContext().getApplicationContext();
         mExecutorService = provider.get(ExecutorService.class);
         mHandler = provider.get(Handler.class);
         mWorkManager = provider.get(WorkManager.class);

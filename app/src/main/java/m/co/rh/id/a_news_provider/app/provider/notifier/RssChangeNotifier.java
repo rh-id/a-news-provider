@@ -39,8 +39,8 @@ public class RssChangeNotifier {
     private final PublishSubject<List<RssModel>> mSyncedRssModelPublishSubject;
     private final PublishSubject<RssItem> mUpdatedRssItemSubject;
 
-    public RssChangeNotifier(Provider provider, Context context) {
-        mAppContext = context.getApplicationContext();
+    public RssChangeNotifier(Provider provider) {
+        mAppContext = provider.getContext().getApplicationContext();
         mLogger = provider.lazyGet(ILogger.class);
         mExecutorService = provider.lazyGet(ExecutorService.class);
         mRssDao = provider.lazyGet(RssDao.class);

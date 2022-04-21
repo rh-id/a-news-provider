@@ -35,8 +35,8 @@ public class OpmlParser {
     private final ProviderValue<FileHelper> mFileHelper;
     private final ProviderValue<RssDao> mRssDao;
 
-    public OpmlParser(Provider provider, Context context) {
-        mAppContext = context.getApplicationContext();
+    public OpmlParser(Provider provider) {
+        mAppContext = provider.getContext().getApplicationContext();
         mLogger = provider.lazyGet(ILogger.class);
         mNewRssChannelCmd = provider.lazyGet(NewRssChannelCmd.class);
         mFileHelper = provider.lazyGet(FileHelper.class);

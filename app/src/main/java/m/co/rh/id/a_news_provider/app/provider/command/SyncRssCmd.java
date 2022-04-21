@@ -31,8 +31,8 @@ public class SyncRssCmd {
     private final RssChangeNotifier mRssChangeNotifier;
     private final DeviceStatusNotifier mDeviceStatusNotifier;
 
-    public SyncRssCmd(Provider provider, Context context) {
-        mAppContext = context.getApplicationContext();
+    public SyncRssCmd(Provider provider) {
+        mAppContext = provider.getContext().getApplicationContext();
         mHandler = provider.get(Handler.class);
         mWorkManager = provider.get(WorkManager.class);
         mExecutorService = provider.get(ExecutorService.class);

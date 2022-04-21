@@ -27,10 +27,10 @@ public class FileHelper {
     private File mLogFile;
     private File mTempFileRoot;
 
-    public FileHelper(Provider provider, Context context) {
-        mAppContext = context.getApplicationContext();
+    public FileHelper(Provider provider) {
+        mAppContext = provider.getContext().getApplicationContext();
         mLogger = provider.lazyGet(ILogger.class);
-        File cacheDir = context.getCacheDir();
+        File cacheDir = mAppContext.getCacheDir();
         mLogFile = new File(cacheDir, "alogger/app.log");
         mTempFileRoot = new File(cacheDir, "/tmp");
         mTempFileRoot.mkdirs();

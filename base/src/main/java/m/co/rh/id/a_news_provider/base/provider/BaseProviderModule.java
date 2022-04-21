@@ -1,6 +1,5 @@
 package m.co.rh.id.a_news_provider.base.provider;
 
-import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 
@@ -38,7 +37,7 @@ public class BaseProviderModule implements ProviderModule {
     private DeviceStatusNotifier mDeviceStatusNotifier;
 
     @Override
-    public void provides(Context context, ProviderRegistry providerRegistry, Provider provider) {
+    public void provides(ProviderRegistry providerRegistry, Provider provider) {
         providerRegistry.register(ExecutorService.class, getExecutorService());
         providerRegistry.register(ScheduledExecutorService.class, Executors.newSingleThreadScheduledExecutor());
         providerRegistry.register(Handler.class, new Handler(Looper.getMainLooper()));
@@ -58,7 +57,7 @@ public class BaseProviderModule implements ProviderModule {
                 defaultLogger.e(TAG, "Error creating file logger", e);
             }
             try {
-                ILogger toastLogger = new ToastLogger(ILogger.INFO, context);
+                ILogger toastLogger = new ToastLogger(ILogger.INFO, provider.getContext());
                 loggerList.add(toastLogger);
             } catch (Throwable throwable) {
                 defaultLogger.e(TAG, "Error creating toast logger", throwable);
@@ -66,9 +65,9 @@ public class BaseProviderModule implements ProviderModule {
 
             return new CompositeLogger(loggerList);
         });
-        providerRegistry.register(FileHelper.class, new FileHelper(provider, context));
-        providerRegistry.register(DeviceStatusNotifier.class, getDeviceStatusNotifier(context, provider));
-        providerRegistry.registerAsync(AppSharedPreferences.class, () -> new AppSharedPreferences(provider, context));
+        providerRegistry.register(FileHelper.class, new FileHelper(provider));
+        providerRegistry.register(DeviceStatusNotifier.class, getDeviceStatusNotifier(provider));
+        providerRegistry.registerAsync(AppSharedPreferences.class, () -> new AppSharedPreferences(provider));
     }
 
     private ExecutorService getExecutorService() {
@@ -83,16 +82,16 @@ public class BaseProviderModule implements ProviderModule {
     }
 
     @NonNull
-    private DeviceStatusNotifier getDeviceStatusNotifier(Context context, Provider provider) {
-        DeviceStatusNotifier deviceStatusNotifier = new DeviceStatusNotifier(provider, context);
-        BaseApplication.of(context).registerActivityLifecycleCallbacks(deviceStatusNotifier);
+    private DeviceStatusNotifier getDeviceStatusNotifier(Provider provider) {
+        DeviceStatusNotifier deviceStatusNotifier = new DeviceStatusNotifier(provider);
+        BaseApplication.of(provider.getContext()).registerActivityLifecycleCallbacks(deviceStatusNotifier);
         mDeviceStatusNotifier = deviceStatusNotifier;
         return deviceStatusNotifier;
     }
 
     @Override
-    public void dispose(Context context, Provider provider) {
-        BaseApplication.of(context).unregisterActivityLifecycleCallbacks(mDeviceStatusNotifier);
+    public void dispose(Provider provider) {
+        BaseApplication.of(provider.getContext()).unregisterActivityLifecycleCallbacks(mDeviceStatusNotifier);
         mDeviceStatusNotifier = null;
         ILogger iLogger = provider.get(ILogger.class);
         ExecutorService executorService = provider.get(ExecutorService.class);

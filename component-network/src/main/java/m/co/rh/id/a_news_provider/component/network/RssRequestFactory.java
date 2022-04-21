@@ -1,7 +1,5 @@
 package m.co.rh.id.a_news_provider.component.network;
 
-import android.content.Context;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -12,16 +10,14 @@ import m.co.rh.id.aprovider.Provider;
 
 public class RssRequestFactory {
     private final Provider mProvider;
-    private final Context mAppContext;
 
-    public RssRequestFactory(Provider provider, Context context) {
+    public RssRequestFactory(Provider provider) {
         mProvider = provider;
-        mAppContext = context.getApplicationContext();
     }
 
     public RssRequest newRssRequest(int method, String url,
                                     @Nullable Response.ErrorListener errorListener,
                                     @NonNull Response.Listener<RssModel> listener) {
-        return new RssRequest(method, url, errorListener, listener, mProvider, mAppContext);
+        return new RssRequest(method, url, errorListener, listener, mProvider);
     }
 }

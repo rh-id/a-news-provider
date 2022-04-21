@@ -1,6 +1,5 @@
 package m.co.rh.id.a_news_provider.component.network.provider;
 
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Build;
 import android.util.LruCache;
@@ -33,8 +32,7 @@ import m.co.rh.id.aprovider.ProviderRegistry;
 public class NetworkProviderModule implements ProviderModule {
 
     @Override
-    public void provides(Context context, ProviderRegistry providerRegistry, Provider provider) {
-        Context appContext = context.getApplicationContext();
+    public void provides(ProviderRegistry providerRegistry, Provider provider) {
         providerRegistry.registerLazy(BaseHttpStack.class, () -> {
             SSLSocketFactory sslSocketFactory = null;
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT_WATCH) {
@@ -45,7 +43,7 @@ public class NetworkProviderModule implements ProviderModule {
             return new HurlStack(null, sslSocketFactory);
         });
         providerRegistry.registerLazy(Network.class, () -> new BasicNetwork(provider.get(BaseHttpStack.class)));
-        providerRegistry.registerLazy(Cache.class, () -> new DiskBasedCache(new File(appContext.getCacheDir(), "volley"),
+        providerRegistry.registerLazy(Cache.class, () -> new DiskBasedCache(new File(provider.getContext().getCacheDir(), "volley"),
                 1024 * 20480));
         providerRegistry.registerLazy(RequestQueue.class, () -> {
             Cache cache = provider.get(Cache.class);
@@ -70,11 +68,11 @@ public class NetworkProviderModule implements ProviderModule {
                                 mCache.put(url, bitmap);
                             }
                         }));
-        providerRegistry.registerLazy(RssRequestFactory.class, () -> new RssRequestFactory(provider, context));
+        providerRegistry.registerLazy(RssRequestFactory.class, () -> new RssRequestFactory(provider));
     }
 
     @Override
-    public void dispose(Context context, Provider provider) {
+    public void dispose(Provider provider) {
         provider.get(RequestQueue.class).stop();
     }
 }

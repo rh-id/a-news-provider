@@ -1,7 +1,6 @@
 package m.co.rh.id.a_news_provider.provider;
 
 import android.app.Application;
-import android.content.Context;
 
 import androidx.work.WorkManager;
 
@@ -33,25 +32,25 @@ public class IntegrationTestAppProviderModule implements ProviderModule {
     }
 
     @Override
-    public void provides(Context context, ProviderRegistry providerRegistry, Provider provider) {
+    public void provides(ProviderRegistry providerRegistry, Provider provider) {
         providerRegistry.registerModule(new BaseProviderModule());
         providerRegistry.registerModule(new DatabaseProviderModule(
                 mDbName));
         providerRegistry.registerModule(new NetworkProviderModule());
-        providerRegistry.registerModule(new CommandProviderModule(provider));
+        providerRegistry.registerModule(new CommandProviderModule());
 
-        providerRegistry.registerLazy(AppNotificationHandler.class, () -> new AppNotificationHandler(provider, context));
-        providerRegistry.registerLazy(WorkManager.class, () -> WorkManager.getInstance(context));
-        providerRegistry.registerLazy(AppSharedPreferencesEventHandler.class, () -> new AppSharedPreferencesEventHandler(provider, context));
+        providerRegistry.registerLazy(AppNotificationHandler.class, () -> new AppNotificationHandler(provider));
+        providerRegistry.registerLazy(WorkManager.class, () -> WorkManager.getInstance(provider.getContext()));
+        providerRegistry.registerLazy(AppSharedPreferencesEventHandler.class, () -> new AppSharedPreferencesEventHandler(provider));
         // for rss
-        providerRegistry.registerLazy(RssChangeNotifier.class, () -> new RssChangeNotifier(provider, context));
-        providerRegistry.registerLazy(OpmlParser.class, () -> new OpmlParser(provider, context));
+        providerRegistry.registerLazy(RssChangeNotifier.class, () -> new RssChangeNotifier(provider));
+        providerRegistry.registerLazy(OpmlParser.class, () -> new OpmlParser(provider));
 
         providerRegistry.registerPool(StatefulViewProvider.class, () -> new StatefulViewProvider(provider));
     }
 
     @Override
-    public void dispose(Context context, Provider provider) {
+    public void dispose(Provider provider) {
         mApplication = null;
     }
 }

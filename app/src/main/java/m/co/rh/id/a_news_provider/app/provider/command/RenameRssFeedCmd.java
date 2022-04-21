@@ -21,8 +21,8 @@ public class RenameRssFeedCmd {
     private PublishSubject<RssChannel> mRssChannelPublishSubject;
     private PublishSubject<String> mNameValidationPublishSubject;
 
-    public RenameRssFeedCmd(Provider provider, Context context) {
-        mAppContext = context.getApplicationContext();
+    public RenameRssFeedCmd(Provider provider) {
+        mAppContext = provider.getContext().getApplicationContext();
         mExecutorService = provider.get(ExecutorService.class);
         mRssDao = provider.get(RssDao.class);
         mRssChangeNotifier = provider.get(RssChangeNotifier.class);

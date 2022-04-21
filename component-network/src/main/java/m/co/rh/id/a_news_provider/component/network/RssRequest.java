@@ -37,10 +37,10 @@ public class RssRequest extends Request<RssModel> {
     private final RssDao mRssDao;
     private final Response.Listener<RssModel> mListener;
 
-    public RssRequest(int method, String url, @Nullable Response.ErrorListener errorListener, Response.Listener<RssModel> listener, Provider provider, Context context) {
+    public RssRequest(int method, String url, @Nullable Response.ErrorListener errorListener, Response.Listener<RssModel> listener, Provider provider) {
         super(method, url, errorListener);
         mListener = listener;
-        mAppContext = context.getApplicationContext();
+        mAppContext = provider.getContext().getApplicationContext();
         mLogger = provider.get(ILogger.class);
         mRssDao = provider.get(RssDao.class);
     }

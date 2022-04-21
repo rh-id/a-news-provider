@@ -1,7 +1,5 @@
 package m.co.rh.id.a_news_provider.base.provider;
 
-import android.content.Context;
-
 import androidx.room.Room;
 
 import m.co.rh.id.a_news_provider.base.AppDatabase;
@@ -28,10 +26,9 @@ public class DatabaseProviderModule implements ProviderModule {
     }
 
     @Override
-    public void provides(Context context, ProviderRegistry providerRegistry, Provider provider) {
-        Context appContext = context.getApplicationContext();
+    public void provides(ProviderRegistry providerRegistry, Provider provider) {
         providerRegistry.registerAsync(AppDatabase.class, () ->
-                Room.databaseBuilder(appContext,
+                Room.databaseBuilder(provider.getContext(),
                         AppDatabase.class, mDbName)
                         .addMigrations(DbMigration.getAll())
                         .build());
@@ -43,7 +40,7 @@ public class DatabaseProviderModule implements ProviderModule {
     }
 
     @Override
-    public void dispose(Context context, Provider provider) {
+    public void dispose(Provider provider) {
         mDbName = null;
     }
 }
