@@ -13,23 +13,20 @@ import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.anavigator.StatefulView;
+import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.anavigator.component.INavigator;
 import m.co.rh.id.anavigator.component.RequireComponent;
-import m.co.rh.id.anavigator.component.RequireNavigator;
 import m.co.rh.id.aprovider.Provider;
 
-public class RssChannelListSV extends StatefulView<Activity> implements RequireNavigator, RequireComponent<Provider> {
+public class RssChannelListSV extends StatefulView<Activity> implements RequireComponent<Provider> {
 
+    @NavInject
     private transient INavigator mNavigator;
+
     private transient Provider mSvProvider;
     private transient RxDisposer mRxDisposer;
     private transient RssChangeNotifier mRssChangeNotifier;
     private transient RssChannelRecyclerViewAdapter mRssChannelRecyclerViewAdapter;
-
-    @Override
-    public void provideNavigator(INavigator navigator) {
-        mNavigator = navigator;
-    }
 
     @Override
     public void provideComponent(Provider provider) {

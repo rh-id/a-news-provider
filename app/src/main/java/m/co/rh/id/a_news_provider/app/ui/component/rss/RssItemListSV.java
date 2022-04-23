@@ -29,15 +29,17 @@ import m.co.rh.id.a_news_provider.app.ui.recyclerview.CustomStaggeredGridLayoutM
 import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.StatefulView;
+import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.anavigator.component.INavigator;
 import m.co.rh.id.anavigator.component.RequireComponent;
-import m.co.rh.id.anavigator.component.RequireNavigator;
 import m.co.rh.id.aprovider.Provider;
 
-public class RssItemListSV extends StatefulView<Activity> implements RequireNavigator, RequireComponent<Provider> {
+public class RssItemListSV extends StatefulView<Activity> implements RequireComponent<Provider> {
     private static final String TAG = RssItemListSV.class.getName();
 
+    @NavInject
     private transient INavigator mNavigator;
+
     private transient Provider mSvProvider;
     private transient AppSharedPreferences mAppSharedPreferences;
     private transient PagedRssItemsCmd mPagedRssItemsCmd;
@@ -45,11 +47,6 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireNavi
     private transient RxDisposer mRxDisposer;
     private transient RecyclerView.OnScrollListener mOnScrollListener;
     private transient RssItemRecyclerViewAdapter mRssItemRecyclerViewAdapter;
-
-    @Override
-    public void provideNavigator(INavigator navigator) {
-        mNavigator = navigator;
-    }
 
     @Override
     public void provideComponent(Provider provider) {
