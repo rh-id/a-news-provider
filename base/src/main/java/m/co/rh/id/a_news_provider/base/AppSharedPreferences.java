@@ -5,9 +5,9 @@ import android.content.SharedPreferences;
 
 import java.util.concurrent.ExecutorService;
 
+import co.rh.id.lib.rx3_utils.subject.SerialBehaviorSubject;
 import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
-import m.co.rh.id.a_news_provider.base.rx.SerialBehaviorSubject;
 import m.co.rh.id.aprovider.Provider;
 
 public class AppSharedPreferences {

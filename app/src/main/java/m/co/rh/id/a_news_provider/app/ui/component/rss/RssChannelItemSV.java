@@ -18,6 +18,8 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import co.rh.id.lib.rx3_utils.subject.SerialBehaviorSubject;
+import co.rh.id.lib.rx3_utils.subject.SerialOptionalBehaviorSubject;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
@@ -29,8 +31,6 @@ import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.util.UiUtils;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
-import m.co.rh.id.a_news_provider.base.rx.OptionalBehaviorSubject;
-import m.co.rh.id.a_news_provider.base.rx.SerialBehaviorSubject;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.component.RequireComponent;
 import m.co.rh.id.aprovider.Provider;
@@ -39,7 +39,7 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
 
     private transient BehaviorSubject<Map.Entry<RssChannel, Integer>> mRssChannelCountSubject;
     private SerialBehaviorSubject<Boolean> mEditModeSubject;
-    private OptionalBehaviorSubject<String> mImageUrlSubject;
+    private SerialOptionalBehaviorSubject<String> mImageUrlSubject;
     private SerialBehaviorSubject<String> mEditNameSubject;
     private transient Provider mSvProvider;
     private transient RssChangeNotifier mRssChangeNotifier;
@@ -50,7 +50,7 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
 
     public RssChannelItemSV() {
         mEditModeSubject = new SerialBehaviorSubject<>(false);
-        mImageUrlSubject = new OptionalBehaviorSubject<>();
+        mImageUrlSubject = new SerialOptionalBehaviorSubject<>();
         mEditNameSubject = new SerialBehaviorSubject<>("");
     }
 

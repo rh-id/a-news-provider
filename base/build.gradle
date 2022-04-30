@@ -49,6 +49,7 @@ dependencies {
     api 'com.github.rh-id:a-provider:v0.0.19'
     api 'com.github.rh-id.a-navigator:a-navigator:v0.0.55'
     api 'com.github.rh-id:a-logger:v0.0.3'
+    api 'com.github.rh-id:rx-utils:v0.0.1'
     api 'io.reactivex.rxjava3:rxandroid:3.0.0'
     api 'io.reactivex.rxjava3:rxjava:3.0.13' // can't update this, minSdk must be 21
     testImplementation 'junit:junit:4.13.2'
