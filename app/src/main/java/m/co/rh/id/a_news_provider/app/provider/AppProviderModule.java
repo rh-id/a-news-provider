@@ -2,6 +2,8 @@ package m.co.rh.id.a_news_provider.app.provider;
 
 import android.app.Activity;
 import android.app.Application;
+import android.os.Handler;
+import android.view.LayoutInflater;
 
 import androidx.work.WorkManager;
 
@@ -9,6 +11,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
+import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.MainActivity;
 import m.co.rh.id.a_news_provider.app.component.AppNotificationHandler;
 import m.co.rh.id.a_news_provider.app.constants.Routes;
@@ -74,6 +77,11 @@ public class AppProviderModule implements ProviderModule {
         navBuilder.setSaveStateFile(new File(mApplication.getCacheDir(),
                 "anavigator/Navigator.state"));
         navBuilder.setRequiredComponent(provider);
+        navBuilder.setMainHandler(provider.get(Handler.class));
+        navBuilder.setLoadingView(
+                LayoutInflater.from(provider.getContext()).inflate(R.layout.page_splash,
+                        null)
+        );
         NavConfiguration<Activity, StatefulView> navConfiguration = navBuilder.build();
         Navigator navigator = new Navigator(MainActivity.class, navConfiguration);
         mNavigator = navigator;
