@@ -1,0 +1,4 @@
+Release 1.9.1+53
+
+Fixes:
+* Memory Optimization
