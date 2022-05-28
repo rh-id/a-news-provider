@@ -38,9 +38,4 @@ public class DatabaseProviderModule implements ProviderModule {
         providerRegistry.registerAsync(AndroidNotificationDao.class, () ->
                 provider.get(AppDatabase.class).androidNotificationDao());
     }
-
-    @Override
-    public void dispose(Provider provider) {
-        mDbName = null;
-    }
 }

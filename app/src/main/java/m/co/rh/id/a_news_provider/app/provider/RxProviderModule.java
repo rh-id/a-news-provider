@@ -11,9 +11,4 @@ public class RxProviderModule implements ProviderModule {
     public void provides(ProviderRegistry providerRegistry, Provider provider) {
         providerRegistry.registerAsync(RxDisposer.class, RxDisposer::new);
     }
-
-    @Override
-    public void dispose(Provider provider) {
-        // leave blank
-    }
 }

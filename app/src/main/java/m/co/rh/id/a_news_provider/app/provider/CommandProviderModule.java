@@ -21,9 +21,4 @@ public class CommandProviderModule implements ProviderModule {
         providerRegistry.registerLazy(RssQueryCmd.class, () -> new RssQueryCmd(provider));
         providerRegistry.registerLazy(EditRssLinkCmd.class, () -> new EditRssLinkCmd(provider));
     }
-
-    @Override
-    public void dispose(Provider provider) {
-        // Leave blank
-    }
 }

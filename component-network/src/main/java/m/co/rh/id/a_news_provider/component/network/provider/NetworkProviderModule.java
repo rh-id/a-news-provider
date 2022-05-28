@@ -21,6 +21,7 @@ import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 
 import m.co.rh.id.a_news_provider.component.network.RssRequestFactory;
+import m.co.rh.id.a_news_provider.component.network.provider.volley.DisposableRequestQueue;
 import m.co.rh.id.a_news_provider.component.network.volley.TlsEnabledSSLSocketFactory;
 import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderModule;
@@ -48,7 +49,7 @@ public class NetworkProviderModule implements ProviderModule {
         providerRegistry.registerLazy(RequestQueue.class, () -> {
             Cache cache = provider.get(Cache.class);
             Network network = provider.get(Network.class);
-            RequestQueue requestQueue = new RequestQueue(cache, network);
+            RequestQueue requestQueue = new DisposableRequestQueue(cache, network);
             requestQueue.start();
             return requestQueue;
         });
@@ -69,10 +70,5 @@ public class NetworkProviderModule implements ProviderModule {
                             }
                         }));
         providerRegistry.registerLazy(RssRequestFactory.class, () -> new RssRequestFactory(provider));
-    }
-
-    @Override
-    public void dispose(Provider provider) {
-        provider.get(RequestQueue.class).stop();
     }
 }

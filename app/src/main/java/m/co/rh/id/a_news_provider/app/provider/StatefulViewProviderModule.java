@@ -14,9 +14,4 @@ public class StatefulViewProviderModule implements ProviderModule {
         providerRegistry.registerModule(new CommandProviderModule());
         providerRegistry.registerModule(new RxProviderModule());
     }
-
-    @Override
-    public void dispose(Provider provider) {
-        // leave blank
-    }
 }
