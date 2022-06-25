@@ -25,6 +25,9 @@ public abstract class RssDao {
     @Query("SELECT * FROM rss_channel WHERE url = :url")
     public abstract RssChannel findRssChannelByUrl(String url);
 
+    @Query("SELECT * FROM rss_item")
+    public abstract List<RssItem> findRssItems();
+
     @Query("SELECT * FROM rss_item WHERE channel_id = :channelId")
     public abstract List<RssItem> findRssItemsByChannelId(long channelId);
 

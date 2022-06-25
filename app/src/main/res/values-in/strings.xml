@@ -91,6 +91,8 @@
     <string name="menu_download_video">Unduh Video</string>
     <string name="error_permission_denied">Izin ditolak</string>
     <string name="begin_downloading">Mulai mengunduh</string>
+    <string name="permission_read_label">RSS Feed provider</string>
+    <string name="permission_read_desc">Allows apps to read feeds and articles</string>
 
     <string-array name="array_filter_by">
         <item>Tidak ada</item>
