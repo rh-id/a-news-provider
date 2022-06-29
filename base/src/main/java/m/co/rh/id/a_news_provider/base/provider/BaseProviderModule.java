@@ -38,9 +38,9 @@ public class BaseProviderModule implements ProviderModule {
 
     @Override
     public void provides(ProviderRegistry providerRegistry, Provider provider) {
-        providerRegistry.register(ExecutorService.class, getExecutorService());
-        providerRegistry.register(ScheduledExecutorService.class, Executors.newSingleThreadScheduledExecutor());
-        providerRegistry.register(Handler.class, new Handler(Looper.getMainLooper()));
+        providerRegistry.register(ExecutorService.class, this::getExecutorService);
+        providerRegistry.register(ScheduledExecutorService.class, Executors::newSingleThreadScheduledExecutor);
+        providerRegistry.register(Handler.class, () -> new Handler(Looper.getMainLooper()));
         providerRegistry.registerAsync(ILogger.class, () -> {
             ILogger defaultLogger = new AndroidLogger(ILogger.ERROR);
             List<ILogger> loggerList = new ArrayList<>();
@@ -65,8 +65,8 @@ public class BaseProviderModule implements ProviderModule {
 
             return new CompositeLogger(loggerList);
         });
-        providerRegistry.register(FileHelper.class, new FileHelper(provider));
-        providerRegistry.register(DeviceStatusNotifier.class, getDeviceStatusNotifier(provider));
+        providerRegistry.register(FileHelper.class, () -> new FileHelper(provider));
+        providerRegistry.register(DeviceStatusNotifier.class, () -> getDeviceStatusNotifier(provider));
         providerRegistry.registerAsync(AppSharedPreferences.class, () -> new AppSharedPreferences(provider));
     }
 

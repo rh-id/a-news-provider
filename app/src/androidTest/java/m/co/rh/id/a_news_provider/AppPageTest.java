@@ -66,7 +66,7 @@ public class AppPageTest {
         testApplication.registerActivityLifecycleCallbacks(navigator);
         testApplication.registerComponentCallbacks(navigator);
         testApplication.setProvider(testProvider);
-        testProvider.get(ProviderRegistry.class).register(INavigator.class, navigator);
+        testProvider.get(ProviderRegistry.class).register(INavigator.class, () -> navigator);
 
         ActivityScenario<MainActivity> mainActivityScenario = ActivityScenario.launch(MainActivity.class);
         onView(withId(R.id.toolbar)).check(matches(isDisplayed()));
@@ -95,7 +95,7 @@ public class AppPageTest {
         testApplication.registerActivityLifecycleCallbacks(navigator);
         testApplication.registerComponentCallbacks(navigator);
         testApplication.setProvider(testProvider);
-        testProvider.get(ProviderRegistry.class).register(INavigator.class, navigator);
+        testProvider.get(ProviderRegistry.class).register(INavigator.class, () -> navigator);
 
         ActivityScenario<MainActivity> mainActivityScenario = ActivityScenario.launch(MainActivity.class);
         onView(withId(R.id.toolbar)).check(matches(isDisplayed()));

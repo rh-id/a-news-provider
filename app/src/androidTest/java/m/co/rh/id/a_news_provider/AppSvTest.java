@@ -55,7 +55,7 @@ public class AppSvTest {
         testApplication.registerActivityLifecycleCallbacks(navigator);
         testApplication.registerComponentCallbacks(navigator);
         testApplication.setProvider(testProvider);
-        testProvider.get(ProviderRegistry.class).register(INavigator.class, navigator);
+        testProvider.get(ProviderRegistry.class).register(INavigator.class, () -> navigator);
 
         ActivityScenario<MainActivity> mainActivityScenario = ActivityScenario.launch(MainActivity.class);
         onView(withText(R.string.log_file))
@@ -83,7 +83,7 @@ public class AppSvTest {
         testApplication.registerActivityLifecycleCallbacks(navigator);
         testApplication.registerComponentCallbacks(navigator);
         testApplication.setProvider(testProvider);
-        testProvider.get(ProviderRegistry.class).register(INavigator.class, navigator);
+        testProvider.get(ProviderRegistry.class).register(INavigator.class, () -> navigator);
 
         ActivityScenario<MainActivity> mainActivityScenario = ActivityScenario.launch(MainActivity.class);
         onView(withText(R.string.licenses))
