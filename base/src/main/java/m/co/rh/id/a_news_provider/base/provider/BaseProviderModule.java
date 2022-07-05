@@ -11,10 +11,9 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import co.rh.id.lib.concurrent_utils.concurrent.executor.WeightedThreadPool;
 import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.a_news_provider.base.BuildConfig;
@@ -72,13 +71,9 @@ public class BaseProviderModule implements ProviderModule {
 
     private ExecutorService getExecutorService() {
         // thread pool to be used throughout this app lifecycle
-        ThreadPoolExecutor threadPoolExecutor =
-                new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(),
-                        Integer.MAX_VALUE,
-                        10, TimeUnit.SECONDS, new SynchronousQueue<>());
-        threadPoolExecutor.allowCoreThreadTimeOut(true);
-        threadPoolExecutor.prestartAllCoreThreads();
-        return threadPoolExecutor;
+        WeightedThreadPool weightedThreadPool = new WeightedThreadPool();
+        weightedThreadPool.setMaxWeight(5);
+        return weightedThreadPool;
     }
 
     @NonNull
