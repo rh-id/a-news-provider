@@ -16,46 +16,55 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <androidx.appcompat.widget.LinearLayoutCompat
-            android:id="@+id/container_content"
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
+            android:layout_height="match_parent">
 
-            <com.google.android.material.textview.MaterialTextView
-                android:id="@+id/text_title"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="@dimen/text_margin"
-                android:textSize="24sp" />
-
-            <ScrollView
+            <androidx.appcompat.widget.LinearLayoutCompat
+                android:id="@+id/container_content"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_margin="@dimen/text_margin">
+                android:orientation="vertical">
 
-                <LinearLayout
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/text_title"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:layout_margin="@dimen/text_margin"
+                    android:textSize="24sp" />
 
-                    <com.android.volley.toolbox.NetworkImageView
-                        android:id="@+id/network_image"
-                        android:layout_width="match_parent"
-                        android:layout_height="200dp"
-                        android:layout_margin="@dimen/text_margin"
-                        android:contentDescription="@string/image" />
+                <ScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_margin="@dimen/text_margin">
 
-                    <com.google.android.material.textview.MaterialTextView
-                        android:id="@+id/text_content"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:textSize="18sp" />
-                </LinearLayout>
-            </ScrollView>
+                        android:orientation="vertical">
 
-        </androidx.appcompat.widget.LinearLayoutCompat>
+                        <com.android.volley.toolbox.NetworkImageView
+                            android:id="@+id/network_image"
+                            android:layout_width="match_parent"
+                            android:layout_height="200dp"
+                            android:layout_margin="@dimen/text_margin"
+                            android:contentDescription="@string/image" />
 
+                        <com.google.android.material.textview.MaterialTextView
+                            android:id="@+id/text_content"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textSize="18sp" />
+                    </LinearLayout>
+                </ScrollView>
+            </androidx.appcompat.widget.LinearLayoutCompat>
+
+            <FrameLayout
+                android:id="@+id/container_swipe_region"
+                android:layout_width="50dp"
+                android:layout_height="match_parent"
+                android:background="@color/transparent" />
+        </FrameLayout>
     </androidx.appcompat.widget.LinearLayoutCompat>
 
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton

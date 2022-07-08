@@ -41,6 +41,7 @@ import m.co.rh.id.a_news_provider.app.util.UiUtils;
 import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
+import m.co.rh.id.a_news_provider.base.ui.SwipeGestureDetector;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.NavRoute;
 import m.co.rh.id.anavigator.StatefulView;
@@ -66,6 +67,7 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
     private transient ExecutorService mExecutorService;
     private transient ILogger mLogger;
     private transient ImageLoader mImageLoader;
+    private transient SwipeGestureDetector mSwipeGestureDetector;
 
     public RssItemDetailPage() {
         mAppBarSV = new AppBarSV(R.menu.page_rss_item_detail);
@@ -77,6 +79,12 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         mExecutorService = mSvProvider.get(ExecutorService.class);
         mLogger = mSvProvider.get(ILogger.class);
         mImageLoader = mSvProvider.get(ImageLoader.class);
+        mSwipeGestureDetector = new SwipeGestureDetector(provider.getContext()) {
+            @Override
+            public void onSwipeRight() {
+                mNavigator.pop();
+            }
+        };
     }
 
     @Override
@@ -97,6 +105,8 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
             layoutId = R.layout.one_hand_mode_page_rss_item_detail;
         }
         View view = activity.getLayoutInflater().inflate(layoutId, container, false);
+        view.findViewById(R.id.container_swipe_region)
+                .setOnTouchListener(mSwipeGestureDetector);
         ViewGroup containerAppBar = view.findViewById(R.id.container_app_bar);
         mAppBarSV.setMenuItemListener(this);
         mAppBarSV.setOnMenuCreated(this);
@@ -154,6 +164,7 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         mAppBarSV = null;
         mRssItem = null;
         mRssChannel = null;
+        mSwipeGestureDetector = null;
     }
 
     @Override

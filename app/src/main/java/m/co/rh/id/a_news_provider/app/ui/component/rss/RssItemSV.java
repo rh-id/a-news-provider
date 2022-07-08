@@ -23,6 +23,7 @@ import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.alogger.ILogger;
+import m.co.rh.id.anavigator.RouteOptions;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.component.INavigator;
 import m.co.rh.id.anavigator.component.RequireComponent;
@@ -141,7 +142,13 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
                                                             .e(TAG, throwable.getMessage(), throwable);
                                                 } else {
                                                     mNavigator.push((args, activity1) -> new RssItemDetailPage(),
-                                                            RssItemDetailPage.Args.withRss(rssItem, rssChannel));
+                                                            RssItemDetailPage.Args.withRss(rssItem, rssChannel), null
+                                                            , RouteOptions.withAnimation(
+                                                                    R.anim.slide_in_right,
+                                                                    R.anim.slide_out_left,
+                                                                    null,
+                                                                    android.R.anim.slide_out_right
+                                                            ));
                                                 }
                                             })
                             ), 48);
