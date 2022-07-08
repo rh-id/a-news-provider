@@ -16,6 +16,7 @@ import com.android.volley.toolbox.NetworkImageView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import co.rh.id.lib.rx3_utils.subject.SerialBehaviorSubject;
@@ -155,36 +156,36 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
                         })
         );
         mRxDisposer.add("rssChannelUiChange", Flowable.combineLatest(
-                Flowable.fromObservable(mRssChannelCountSubject, BackpressureStrategy.BUFFER)
-                        .debounce(100, TimeUnit.MILLISECONDS)
-                        .observeOn(AndroidSchedulers.mainThread()),
-                mRssChangeNotifier.selectedRssChannel()
-                        .debounce(100, TimeUnit.MILLISECONDS)
-                        .observeOn(AndroidSchedulers.mainThread()),
-                (rssChannelCountEntry, rssChannelOptional) -> {
-                    RssChannel rssChannel = rssChannelCountEntry.getKey();
-                    if (rssChannel.title != null) {
-                        textName.setText(rssChannel.feedName);
-                        editName.setText(rssChannel.feedName);
-                    }
-                    if (rssChannel.imageUrl != null) {
-                        mImageUrlSubject.onNext(rssChannel.imageUrl);
-                        networkImageViewIcon.setVisibility(View.VISIBLE);
-                    } else {
-                        mImageUrlSubject.onNext(null);
-                        networkImageViewIcon.setVisibility(View.GONE);
-                    }
-                    textCount.setText(rssChannelCountEntry.getValue().toString());
+                        Flowable.fromObservable(mRssChannelCountSubject, BackpressureStrategy.BUFFER)
+                                .debounce(100, TimeUnit.MILLISECONDS)
+                                .observeOn(AndroidSchedulers.mainThread()),
+                        mRssChangeNotifier.selectedRssChannel()
+                                .debounce(100, TimeUnit.MILLISECONDS)
+                                .observeOn(AndroidSchedulers.mainThread()),
+                        (rssChannelCountEntry, rssChannelOptional) -> {
+                            RssChannel rssChannel = rssChannelCountEntry.getKey();
+                            if (rssChannel.title != null) {
+                                textName.setText(rssChannel.feedName);
+                                editName.setText(rssChannel.feedName);
+                            }
+                            if (rssChannel.imageUrl != null) {
+                                mImageUrlSubject.onNext(rssChannel.imageUrl);
+                                networkImageViewIcon.setVisibility(View.VISIBLE);
+                            } else {
+                                mImageUrlSubject.onNext(null);
+                                networkImageViewIcon.setVisibility(View.GONE);
+                            }
+                            textCount.setText(rssChannelCountEntry.getValue().toString());
 
-                    int selectedColor = UiUtils.getColorFromAttribute(activity, R.attr.colorOnPrimary);
-                    if (rssChannelOptional.isPresent()) {
-                        if (rssChannelOptional.get().id.equals(rssChannelCountEntry.getKey().id)) {
-                            selectedColor = activity.getResources().getColor(R.color.daynight_gray_300_gray_600);
-                        }
-                    }
-                    view.setBackgroundColor(selectedColor);
-                    return true;
-                }).subscribe(aBoolean -> {
+                            int selectedColor = UiUtils.getColorFromAttribute(activity, R.attr.colorOnPrimary);
+                            if (rssChannelOptional.isPresent()) {
+                                if (rssChannelOptional.get().id.equals(rssChannelCountEntry.getKey().id)) {
+                                    selectedColor = activity.getResources().getColor(R.color.daynight_gray_300_gray_600);
+                                }
+                            }
+                            view.setBackgroundColor(selectedColor);
+                            return true;
+                        }).subscribe(aBoolean -> {
                 })
         );
         mRxDisposer.add("setImageUrl",
@@ -205,7 +206,14 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
             if (editMode == null || !editMode) {
                 Map.Entry<RssChannel, Integer> entry = mRssChannelCountSubject.getValue();
                 if (entry != null) {
-                    mRssChangeNotifier.selectRssChannel(entry.getKey());
+                    Optional<RssChannel> rssChannelOptional = mRssChangeNotifier.getSelectedRssChannel();
+                    RssChannel clickedRssChannel = entry.getKey();
+                    if (rssChannelOptional.isPresent()) {
+                        if (clickedRssChannel.id.equals(rssChannelOptional.get().id)) {
+                            clickedRssChannel = null;
+                        }
+                    }
+                    mRssChangeNotifier.selectRssChannel(clickedRssChannel);
                 }
             }
         } else if (viewId == R.id.button_rename) {

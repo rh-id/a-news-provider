@@ -54,7 +54,6 @@ import m.co.rh.id.a_news_provider.app.util.UiUtils;
 import m.co.rh.id.a_news_provider.app.workmanager.ConstantsKey;
 import m.co.rh.id.a_news_provider.app.workmanager.OpmlParseWorker;
 import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
-import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.provider.FileHelper;
 import m.co.rh.id.a_news_provider.base.provider.notifier.DeviceStatusNotifier;
 import m.co.rh.id.alogger.ILogger;
@@ -80,7 +79,6 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
     private RssItemListSV mRssItemListSV;
     @NavInject
     private RssChannelListSV mRssChannelListSV;
-    private RssChannel mSelectedRssChannel;
     private boolean mLastOnlineStatus;
     private transient long mLastBackPressMilis;
 
@@ -154,20 +152,13 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
                                                 .e(TAG, feedSyncError, throwable)
                         )
         );
-        if (mSelectedRssChannel != null) {
-            mRssChangeNotifier
-                    .selectRssChannel(mSelectedRssChannel);
-        }
         mRxDisposer.add("rssChangeNotifier.selectedRssChannel",
                 mRssChangeNotifier
                         .selectedRssChannel()
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(rssChannelOptional -> {
-                            if (rssChannelOptional.isPresent()) {
-                                if (mDrawerLayout.isOpen()) {
-                                    mDrawerLayout.close();
-                                }
-                                mSelectedRssChannel = rssChannelOptional.get();
+                            if (mDrawerLayout.isOpen()) {
+                                mDrawerLayout.close();
                             }
                         })
         );
@@ -274,9 +265,6 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
         mAppBarSV = null;
         mRssItemListSV.dispose(activity);
         mRssItemListSV = null;
-        if (mSelectedRssChannel != null) {
-            mSelectedRssChannel = null;
-        }
         if (mSvProvider != null) {
             mSvProvider.dispose();
             mSvProvider = null;
@@ -428,7 +416,6 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
         objectOutput.writeBoolean(mIsDrawerOpen);
         objectOutput.writeObject(mRssItemListSV);
         objectOutput.writeObject(mRssChannelListSV);
-        objectOutput.writeObject(mSelectedRssChannel);
         objectOutput.writeBoolean(mLastOnlineStatus);
     }
 
@@ -439,7 +426,6 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
         mIsDrawerOpen = objectInput.readBoolean();
         mRssItemListSV = (RssItemListSV) objectInput.readObject();
         mRssChannelListSV = (RssChannelListSV) objectInput.readObject();
-        mSelectedRssChannel = (RssChannel) objectInput.readObject();
         mLastOnlineStatus = objectInput.readBoolean();
     }
 }

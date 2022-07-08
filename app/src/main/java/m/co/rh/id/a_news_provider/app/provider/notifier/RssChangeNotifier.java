@@ -181,4 +181,8 @@ public class RssChangeNotifier {
     public Flowable<RssItem> getUpdatedRssItem() {
         return Flowable.fromObservable(mUpdatedRssItemSubject, BackpressureStrategy.BUFFER);
     }
+
+    public Optional<RssChannel> getSelectedRssChannel() {
+        return mSelectedRssChannelBehaviourSubject.getValue();
+    }
 }
