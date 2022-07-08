@@ -1,0 +1,20 @@
+Release 1.9.4+56
+
+IMPORTANT Fixes :
+* Deadlock issue
+
+Improvements:
+* You can now swipe right from the left side of article page to dismiss article
+* When selected feed is tapped it will "un-select" that feed
+
+
+Release 1.9.3+55
+
+Fixes:
+* Android SDK memory leak
+
+
+Release 1.9.2+54
+
+Fixes:
+* Memory Optimization
