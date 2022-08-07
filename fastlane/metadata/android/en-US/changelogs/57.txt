@@ -1,0 +1,4 @@
+Release 1.9.5+57
+
+Fixes:
+* Occasionally hang on app start
