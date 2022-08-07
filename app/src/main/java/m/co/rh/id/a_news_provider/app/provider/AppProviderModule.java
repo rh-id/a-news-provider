@@ -7,7 +7,6 @@ import android.view.LayoutInflater;
 
 import androidx.work.WorkManager;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -74,8 +73,6 @@ public class AppProviderModule implements ProviderModule {
         navMap.put(Routes.DONATIONS_PAGE, (args, activity) -> new DonationsPage());
         NavConfiguration.Builder<Activity, StatefulView> navBuilder =
                 new NavConfiguration.Builder<>(Routes.HOME_PAGE, navMap);
-        navBuilder.setSaveStateFile(new File(mApplication.getCacheDir(),
-                "anavigator/Navigator.state"));
         navBuilder.setRequiredComponent(provider);
         navBuilder.setMainHandler(provider.get(Handler.class));
         navBuilder.setLoadingView(
