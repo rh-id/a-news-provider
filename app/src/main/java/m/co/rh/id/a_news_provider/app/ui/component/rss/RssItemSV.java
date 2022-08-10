@@ -43,6 +43,7 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
     private transient RssQueryCmd mRssQueryCmd;
 
     private SerialBehaviorSubject<RssItem> mRssItemSubject;
+    private transient Runnable mGetRssChannelByIdAndOpenDetail;
 
     private DateFormat mDateFormat;
 
@@ -65,6 +66,30 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
         if (mRssItemSubject == null) {
             mRssItemSubject = new SerialBehaviorSubject<>(new RssItem());
         }
+        mGetRssChannelByIdAndOpenDetail = () -> {
+            RssItem rssItem = mRssItemSubject.getValue();
+            mRxDisposer
+                    .add("onClick_getRssChannelById",
+                            mRssQueryCmd
+                                    .getRssChannelById(rssItem.channelId)
+                                    .subscribe((rssChannel, throwable) -> {
+                                        if (throwable != null) {
+                                            mSvProvider.get(ILogger.class)
+                                                    .e(TAG, throwable.getMessage(), throwable);
+                                        } else {
+                                            mNavigator.push((args, activity1) -> new RssItemDetailPage(),
+                                                    RssItemDetailPage.Args.withRss(rssItem, rssChannel), null
+                                                    , RouteOptions.withAnimation(
+                                                            R.anim.slide_in_right,
+                                                            R.anim.slide_out_left,
+                                                            null,
+                                                            android.R.anim.slide_out_right
+                                                    ));
+                                        }
+                                    })
+                    );
+            mHandler.removeCallbacks(mGetRssChannelByIdAndOpenDetail);
+        };
     }
 
     @Override
@@ -110,6 +135,8 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
     @Override
     public void dispose(Activity activity) {
         super.dispose(activity);
+        mHandler.removeCallbacks(mGetRssChannelByIdAndOpenDetail);
+        mGetRssChannelByIdAndOpenDetail = null;
         if (mSvProvider != null) {
             mSvProvider.dispose();
             mSvProvider = null;
@@ -132,26 +159,7 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
              Update: Still jank sometimes when opening the detail, adjusting the delay to 3 frames.
              */
             mHandler
-                    .postDelayed(() -> mRxDisposer
-                            .add("onClick_getRssChannelById",
-                                    mRssQueryCmd
-                                            .getRssChannelById(rssItem.channelId)
-                                            .subscribe((rssChannel, throwable) -> {
-                                                if (throwable != null) {
-                                                    mSvProvider.get(ILogger.class)
-                                                            .e(TAG, throwable.getMessage(), throwable);
-                                                } else {
-                                                    mNavigator.push((args, activity1) -> new RssItemDetailPage(),
-                                                            RssItemDetailPage.Args.withRss(rssItem, rssChannel), null
-                                                            , RouteOptions.withAnimation(
-                                                                    R.anim.slide_in_right,
-                                                                    R.anim.slide_out_left,
-                                                                    null,
-                                                                    android.R.anim.slide_out_right
-                                                            ));
-                                                }
-                                            })
-                            ), 48);
+                    .postDelayed(mGetRssChannelByIdAndOpenDetail, 48);
         }
     }
 
