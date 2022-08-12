@@ -1,0 +1,4 @@
+Release 1.9.6+58
+
+Fixes:
+* Memory leak
