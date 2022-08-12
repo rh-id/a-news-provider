@@ -135,12 +135,11 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
     @Override
     public void dispose(Activity activity) {
         super.dispose(activity);
-        mHandler.removeCallbacks(mGetRssChannelByIdAndOpenDetail);
-        mGetRssChannelByIdAndOpenDetail = null;
         if (mSvProvider != null) {
             mSvProvider.dispose();
             mSvProvider = null;
         }
+        mGetRssChannelByIdAndOpenDetail = null;
     }
 
     @Override

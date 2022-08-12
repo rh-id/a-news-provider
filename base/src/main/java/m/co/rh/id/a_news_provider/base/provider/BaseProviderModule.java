@@ -39,7 +39,7 @@ public class BaseProviderModule implements ProviderModule {
     public void provides(ProviderRegistry providerRegistry, Provider provider) {
         providerRegistry.register(ExecutorService.class, this::getExecutorService);
         providerRegistry.register(ScheduledExecutorService.class, Executors::newSingleThreadScheduledExecutor);
-        providerRegistry.register(Handler.class, () -> new Handler(Looper.getMainLooper()));
+        providerRegistry.register(Handler.class, () -> new DisposableHandler(Looper.getMainLooper()));
         providerRegistry.registerAsync(ILogger.class, () -> {
             ILogger defaultLogger = new AndroidLogger(ILogger.ERROR);
             List<ILogger> loggerList = new ArrayList<>();
