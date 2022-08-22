@@ -4,6 +4,8 @@ public class Routes {
     public static final String HOME_PAGE = "/";
     public static final String SETTINGS_PAGE = "/settings";
     public static final String DONATIONS_PAGE = "/donations";
+    public static final String RSS_ITEM_DETAIL_PAGE = "/rss/item/detail";
 
-    private Routes(){}
+    private Routes() {
+    }
 }

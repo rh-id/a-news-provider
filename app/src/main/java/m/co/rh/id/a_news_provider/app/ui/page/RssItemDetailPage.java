@@ -1,4 +1,4 @@
-package m.co.rh.id.a_news_provider.app.ui.component.rss;
+package m.co.rh.id.a_news_provider.app.ui.page;
 
 import android.Manifest;
 import android.app.Activity;
@@ -37,6 +37,7 @@ import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.RssQueryCmd;
 import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
+import m.co.rh.id.a_news_provider.app.ui.component.rss.EditRssLinkSVDialog;
 import m.co.rh.id.a_news_provider.app.util.UiUtils;
 import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;

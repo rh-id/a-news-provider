@@ -18,6 +18,7 @@ import m.co.rh.id.a_news_provider.app.provider.event.AppSharedPreferencesEventHa
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.provider.parser.OpmlParser;
 import m.co.rh.id.a_news_provider.app.ui.page.DonationsPage;
+import m.co.rh.id.a_news_provider.app.ui.page.RssItemDetailPage;
 import m.co.rh.id.a_news_provider.app.ui.page.SettingsPage;
 import m.co.rh.id.a_news_provider.app.ui.page.SplashPage;
 import m.co.rh.id.a_news_provider.base.provider.BaseProviderModule;
@@ -71,6 +72,7 @@ public class AppProviderModule implements ProviderModule {
         });
         navMap.put(Routes.SETTINGS_PAGE, (args, activity) -> new SettingsPage());
         navMap.put(Routes.DONATIONS_PAGE, (args, activity) -> new DonationsPage());
+        navMap.put(Routes.RSS_ITEM_DETAIL_PAGE, (args, activity) -> new RssItemDetailPage());
         NavConfiguration.Builder<Activity, StatefulView> navBuilder =
                 new NavConfiguration.Builder<>(Routes.HOME_PAGE, navMap);
         navBuilder.setRequiredComponent(provider);

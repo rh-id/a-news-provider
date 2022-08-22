@@ -17,10 +17,12 @@ import java.text.SimpleDateFormat;
 import co.rh.id.lib.rx3_utils.subject.SerialBehaviorSubject;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import m.co.rh.id.a_news_provider.R;
+import m.co.rh.id.a_news_provider.app.constants.Routes;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.RssQueryCmd;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
+import m.co.rh.id.a_news_provider.app.ui.page.RssItemDetailPage;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.RouteOptions;
@@ -44,6 +46,7 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
 
     private SerialBehaviorSubject<RssItem> mRssItemSubject;
     private transient Runnable mGetRssChannelByIdAndOpenDetail;
+    private transient RouteOptions mGetRssChannelByIdAndOpenDetail_routeOptions;
 
     private DateFormat mDateFormat;
 
@@ -66,6 +69,12 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
         if (mRssItemSubject == null) {
             mRssItemSubject = new SerialBehaviorSubject<>(new RssItem());
         }
+        mGetRssChannelByIdAndOpenDetail_routeOptions = RouteOptions.withAnimation(
+                R.anim.slide_in_right,
+                R.anim.slide_out_left,
+                null,
+                android.R.anim.slide_out_right
+        );
         mGetRssChannelByIdAndOpenDetail = () -> {
             RssItem rssItem = mRssItemSubject.getValue();
             mRxDisposer
@@ -77,14 +86,9 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
                                             mSvProvider.get(ILogger.class)
                                                     .e(TAG, throwable.getMessage(), throwable);
                                         } else {
-                                            mNavigator.push((args, activity1) -> new RssItemDetailPage(),
+                                            mNavigator.push(Routes.RSS_ITEM_DETAIL_PAGE,
                                                     RssItemDetailPage.Args.withRss(rssItem, rssChannel), null
-                                                    , RouteOptions.withAnimation(
-                                                            R.anim.slide_in_right,
-                                                            R.anim.slide_out_left,
-                                                            null,
-                                                            android.R.anim.slide_out_right
-                                                    ));
+                                                    , mGetRssChannelByIdAndOpenDetail_routeOptions);
                                         }
                                     })
                     );
@@ -140,6 +144,7 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
             mSvProvider = null;
         }
         mGetRssChannelByIdAndOpenDetail = null;
+        mGetRssChannelByIdAndOpenDetail_routeOptions = null;
     }
 
     @Override
