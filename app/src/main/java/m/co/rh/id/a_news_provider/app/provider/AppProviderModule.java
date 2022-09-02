@@ -18,6 +18,7 @@ import m.co.rh.id.a_news_provider.app.provider.event.AppSharedPreferencesEventHa
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.provider.parser.OpmlParser;
 import m.co.rh.id.a_news_provider.app.ui.page.DonationsPage;
+import m.co.rh.id.a_news_provider.app.ui.page.HomePage;
 import m.co.rh.id.a_news_provider.app.ui.page.RssItemDetailPage;
 import m.co.rh.id.a_news_provider.app.ui.page.SettingsPage;
 import m.co.rh.id.a_news_provider.app.ui.page.SplashPage;
@@ -64,17 +65,13 @@ public class AppProviderModule implements ProviderModule {
 
     private Navigator getNavigator(Provider provider) {
         Map<String, StatefulViewFactory<Activity, StatefulView>> navMap = new HashMap<>();
-        navMap.put(Routes.HOME_PAGE, (args, activity) -> {
-            if (args instanceof StatefulView) {
-                return (StatefulView) args;
-            }
-            return new SplashPage();
-        });
+        navMap.put(Routes.SPLASH_PAGE, (args, activity) -> new SplashPage(Routes.HOME_PAGE));
+        navMap.put(Routes.HOME_PAGE, (args, activity) -> new HomePage());
         navMap.put(Routes.SETTINGS_PAGE, (args, activity) -> new SettingsPage());
         navMap.put(Routes.DONATIONS_PAGE, (args, activity) -> new DonationsPage());
         navMap.put(Routes.RSS_ITEM_DETAIL_PAGE, (args, activity) -> new RssItemDetailPage());
         NavConfiguration.Builder<Activity, StatefulView> navBuilder =
-                new NavConfiguration.Builder<>(Routes.HOME_PAGE, navMap);
+                new NavConfiguration.Builder<>(Routes.SPLASH_PAGE, navMap);
         navBuilder.setRequiredComponent(provider);
         navBuilder.setMainHandler(provider.get(Handler.class));
         navBuilder.setLoadingView(
