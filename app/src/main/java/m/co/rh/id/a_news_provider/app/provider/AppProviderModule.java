@@ -5,9 +5,9 @@ import android.app.Application;
 import android.os.Handler;
 import android.view.LayoutInflater;
 
+import androidx.collection.ArrayMap;
 import androidx.work.WorkManager;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import m.co.rh.id.a_news_provider.R;
@@ -64,7 +64,7 @@ public class AppProviderModule implements ProviderModule {
     }
 
     private Navigator getNavigator(Provider provider) {
-        Map<String, StatefulViewFactory<Activity, StatefulView>> navMap = new HashMap<>();
+        Map<String, StatefulViewFactory<Activity, StatefulView>> navMap = new ArrayMap<>();
         navMap.put(Routes.SPLASH_PAGE, (args, activity) -> new SplashPage(Routes.HOME_PAGE));
         navMap.put(Routes.HOME_PAGE, (args, activity) -> new HomePage());
         navMap.put(Routes.SETTINGS_PAGE, (args, activity) -> new SettingsPage());
