@@ -24,6 +24,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.core.text.HtmlCompat;
+import androidx.core.view.ViewCompat;
 
 import com.android.volley.toolbox.ImageLoader;
 import com.android.volley.toolbox.NetworkImageView;
@@ -113,6 +114,7 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         mAppBarSV.setOnMenuCreated(this);
         containerAppBar.addView(mAppBarSV.buildView(activity, container));
         TextView titleText = view.findViewById(R.id.text_title);
+        ViewCompat.setTransitionName(titleText, "title_" + mRssItem.id);
         titleText.setText(HtmlCompat
                 .fromHtml(mRssItem.title, HtmlCompat.FROM_HTML_MODE_COMPACT));
         titleText.setOnClickListener(this);

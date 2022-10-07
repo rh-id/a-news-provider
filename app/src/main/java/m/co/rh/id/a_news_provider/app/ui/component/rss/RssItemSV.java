@@ -3,6 +3,7 @@ package m.co.rh.id.a_news_provider.app.ui.component.rss;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Typeface;
+import android.os.Build;
 import android.os.Handler;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,6 +11,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.core.text.HtmlCompat;
+import androidx.core.view.ViewCompat;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -69,12 +71,18 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
         if (mRssItemSubject == null) {
             mRssItemSubject = new SerialBehaviorSubject<>(new RssItem());
         }
-        mGetRssChannelByIdAndOpenDetail_routeOptions = RouteOptions.withAnimation(
-                R.anim.slide_in_right,
-                R.anim.slide_out_left,
-                null,
-                android.R.anim.slide_out_right
-        );
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            mGetRssChannelByIdAndOpenDetail_routeOptions = RouteOptions.withTransition(R.transition.page_rss_item_detail_enter,
+                    R.transition.page_rss_item_detail_exit);
+        } else {
+            mGetRssChannelByIdAndOpenDetail_routeOptions = RouteOptions.withAnimation(
+                    R.anim.slide_in_right,
+                    R.anim.slide_out_left,
+                    null,
+                    android.R.anim.slide_out_right
+            );
+        }
+
         mGetRssChannelByIdAndOpenDetail = () -> {
             RssItem rssItem = mRssItemSubject.getValue();
             mRxDisposer
@@ -107,6 +115,7 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
                 mRssItemSubject.getSubject()
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(rssItem -> {
+                            ViewCompat.setTransitionName(textTitle, "title_" + rssItem.id);
                             if (rssItem.pubDate != null) {
                                 textDate.setText(mDateFormat.format(rssItem.pubDate));
                             } else if (rssItem.createdDateTime != null) {
