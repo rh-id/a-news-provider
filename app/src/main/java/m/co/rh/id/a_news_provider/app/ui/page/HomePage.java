@@ -33,6 +33,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Single;
@@ -180,20 +181,23 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
                         ));
         mRxDisposer.add("deviceStatusNotifier.onlineStatus",
                 mSvProvider.get(DeviceStatusNotifier.class)
-                        .onlineStatus().subscribe(isOnline -> {
-                    if (!isOnline) {
-                        // only show when there are changes on online status
-                        if (mLastOnlineStatus != isOnline) {
-                            Snackbar.make(container,
-                                    R.string.device_status_offline,
-                                    Snackbar.LENGTH_SHORT)
-                                    .setBackgroundTint(Color.RED)
-                                    .setTextColor(Color.WHITE)
-                                    .show();
-                        }
-                    }
-                    mLastOnlineStatus = isOnline;
-                }));
+                        .onlineStatus()
+                        .debounce(3, TimeUnit.SECONDS)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(isOnline -> {
+                            if (!isOnline) {
+                                // only show when there are changes on online status
+                                if (mLastOnlineStatus != isOnline) {
+                                    Snackbar.make(container,
+                                                    R.string.device_status_offline,
+                                                    Snackbar.LENGTH_SHORT)
+                                            .setBackgroundTint(Color.RED)
+                                            .setTextColor(Color.WHITE)
+                                            .show();
+                                }
+                            }
+                            mLastOnlineStatus = isOnline;
+                        }));
         ViewGroup containerChannelList = view.findViewById(R.id.container_list_channel);
         containerChannelList.addView(mRssChannelListSV.buildView(activity, containerChannelList));
 
