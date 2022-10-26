@@ -178,6 +178,6 @@ public class PagedRssItemsCmd {
     }
 
     private void resetPage() {
-        mLimit = 20;
+        mLimit = 1000;
     }
 }
