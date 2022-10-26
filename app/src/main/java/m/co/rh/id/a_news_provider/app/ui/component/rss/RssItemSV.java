@@ -126,11 +126,11 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
                                         .fromHtml(rssItem.title, HtmlCompat.FROM_HTML_MODE_COMPACT));
                             }
                             if (rssItem.isRead) {
-                                textDate.setTypeface(null, Typeface.NORMAL);
-                                textTitle.setTypeface(null, Typeface.NORMAL);
+                                textDate.setTypeface(Typeface.DEFAULT);
+                                textTitle.setTypeface(Typeface.DEFAULT);
                             } else {
-                                textDate.setTypeface(null, Typeface.BOLD);
-                                textTitle.setTypeface(null, Typeface.BOLD);
+                                textDate.setTypeface(Typeface.DEFAULT_BOLD);
+                                textTitle.setTypeface(Typeface.DEFAULT_BOLD);
                             }
                         })
         );
