@@ -1,0 +1,7 @@
+Release 1.9.9+61
+
+Fixes:
+* Optimize memory
+* Update page to 1000 record
+* Add delay for online status
+* Fix text date and text title typeface setting
