@@ -48,7 +48,7 @@ dependencies {
 
     api 'androidx.annotation:annotation:1.3.0'
     api 'com.github.rh-id:a-provider:v0.0.23'
-    api 'com.github.rh-id.a-navigator:a-navigator:v0.0.62'
+    api 'com.github.rh-id.a-navigator:a-navigator:v0.0.65'
     api 'com.github.rh-id:a-logger:v0.0.3'
     api 'com.github.rh-id:rx-utils:v0.0.1'
     api 'io.reactivex.rxjava3:rxandroid:3.0.0'
