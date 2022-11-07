@@ -15,15 +15,19 @@ import androidx.core.view.ViewCompat;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.concurrent.ExecutorService;
 
 import co.rh.id.lib.rx3_utils.subject.SerialBehaviorSubject;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.constants.Routes;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.RssQueryCmd;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
+import m.co.rh.id.a_news_provider.app.ui.model.RssItemModel;
 import m.co.rh.id.a_news_provider.app.ui.page.RssItemDetailPage;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.alogger.ILogger;
@@ -42,6 +46,7 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
     private transient INavigator mNavigator;
     private transient Provider mSvProvider;
     private transient Handler mHandler;
+    private transient ExecutorService mExecutorService;
     private transient RxDisposer mRxDisposer;
     private transient RssChangeNotifier mRssChangeNotifier;
     private transient RssQueryCmd mRssQueryCmd;
@@ -49,10 +54,12 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
     private SerialBehaviorSubject<RssItem> mRssItemSubject;
     private transient Runnable mGetRssChannelByIdAndOpenDetail;
     private transient RouteOptions mGetRssChannelByIdAndOpenDetail_routeOptions;
+    private transient Observable<RssItemModel> mRssItemModelObservable;
 
     private DateFormat mDateFormat;
 
     public RssItemSV() {
+        mRssItemSubject = new SerialBehaviorSubject<>();
         mDateFormat = new SimpleDateFormat("E, d MMM yyyy");
     }
 
@@ -65,12 +72,26 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
     public void provideComponent(Provider provider) {
         mSvProvider = provider.get(StatefulViewProvider.class);
         mHandler = mSvProvider.get(Handler.class);
+        mExecutorService = mSvProvider.get(ExecutorService.class);
         mRxDisposer = mSvProvider.get(RxDisposer.class);
         mRssChangeNotifier = mSvProvider.get(RssChangeNotifier.class);
         mRssQueryCmd = mSvProvider.get(RssQueryCmd.class);
-        if (mRssItemSubject == null) {
-            mRssItemSubject = new SerialBehaviorSubject<>(new RssItem());
-        }
+        mRssItemModelObservable = mRssItemSubject.getSubject().map(
+                rssItem -> {
+                    RssItemModel rssItemModel = new RssItemModel();
+                    rssItemModel.id = rssItem.id;
+                    if (rssItem.pubDate != null) {
+                        rssItemModel.pubDate = mDateFormat.format(rssItem.pubDate);
+                    } else if (rssItem.createdDateTime != null) {
+                        rssItemModel.pubDate = mDateFormat.format(rssItem.createdDateTime);
+                    }
+                    rssItemModel.title = HtmlCompat
+                            .fromHtml(rssItem.title, HtmlCompat.FROM_HTML_MODE_COMPACT);
+                    rssItemModel.isRead = rssItem.isRead;
+
+                    return rssItemModel;
+                }
+        );
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             mGetRssChannelByIdAndOpenDetail_routeOptions = RouteOptions.withTransition(R.transition.page_rss_item_detail_enter,
                     R.transition.page_rss_item_detail_exit);
@@ -112,20 +133,14 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
         TextView textDate = view.findViewById(R.id.text_date);
         TextView textTitle = view.findViewById(R.id.text_title);
         mRxDisposer.add("mRssItemSubject",
-                mRssItemSubject.getSubject()
+                mRssItemModelObservable
+                        .subscribeOn(Schedulers.from(mExecutorService))
                         .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(rssItem -> {
-                            ViewCompat.setTransitionName(textTitle, "title_" + rssItem.id);
-                            if (rssItem.pubDate != null) {
-                                textDate.setText(mDateFormat.format(rssItem.pubDate));
-                            } else if (rssItem.createdDateTime != null) {
-                                textDate.setText(mDateFormat.format(rssItem.createdDateTime));
-                            }
-                            if (rssItem.title != null) {
-                                textTitle.setText(HtmlCompat
-                                        .fromHtml(rssItem.title, HtmlCompat.FROM_HTML_MODE_COMPACT));
-                            }
-                            if (rssItem.isRead) {
+                        .subscribe(rssItemModel -> {
+                            ViewCompat.setTransitionName(textTitle, "title_" + rssItemModel.id);
+                            textDate.setText(rssItemModel.pubDate);
+                            textTitle.setText(rssItemModel.title);
+                            if (rssItemModel.isRead) {
                                 textDate.setTypeface(Typeface.DEFAULT);
                                 textTitle.setTypeface(Typeface.DEFAULT);
                             } else {
@@ -154,6 +169,7 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
         }
         mGetRssChannelByIdAndOpenDetail = null;
         mGetRssChannelByIdAndOpenDetail_routeOptions = null;
+        mRssItemModelObservable = null;
     }
 
     @Override
