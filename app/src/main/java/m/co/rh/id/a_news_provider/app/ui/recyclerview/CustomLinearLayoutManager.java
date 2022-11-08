@@ -23,9 +23,4 @@ public class CustomLinearLayoutManager extends LinearLayoutManager {
     public CustomLinearLayoutManager(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
     }
-
-    @Override
-    public boolean supportsPredictiveItemAnimations() {
-        return false;
-    }
 }

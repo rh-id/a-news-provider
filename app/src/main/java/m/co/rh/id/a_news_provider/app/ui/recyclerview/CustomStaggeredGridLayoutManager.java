@@ -14,9 +14,4 @@ public class CustomStaggeredGridLayoutManager extends StaggeredGridLayoutManager
     public CustomStaggeredGridLayoutManager(int spanCount, int orientation) {
         super(spanCount, orientation);
     }
-
-    @Override
-    public boolean supportsPredictiveItemAnimations() {
-        return false;
-    }
 }
