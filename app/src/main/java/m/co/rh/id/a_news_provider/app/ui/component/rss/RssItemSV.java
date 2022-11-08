@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.graphics.Typeface;
 import android.os.Build;
-import android.os.Handler;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -45,14 +44,12 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
 
     private transient INavigator mNavigator;
     private transient Provider mSvProvider;
-    private transient Handler mHandler;
     private transient ExecutorService mExecutorService;
     private transient RxDisposer mRxDisposer;
     private transient RssChangeNotifier mRssChangeNotifier;
     private transient RssQueryCmd mRssQueryCmd;
 
     private SerialBehaviorSubject<RssItem> mRssItemSubject;
-    private transient Runnable mGetRssChannelByIdAndOpenDetail;
     private transient RouteOptions mGetRssChannelByIdAndOpenDetail_routeOptions;
     private transient Observable<RssItemModel> mRssItemModelObservable;
 
@@ -71,7 +68,6 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
     @Override
     public void provideComponent(Provider provider) {
         mSvProvider = provider.get(StatefulViewProvider.class);
-        mHandler = mSvProvider.get(Handler.class);
         mExecutorService = mSvProvider.get(ExecutorService.class);
         mRxDisposer = mSvProvider.get(RxDisposer.class);
         mRssChangeNotifier = mSvProvider.get(RssChangeNotifier.class);
@@ -103,26 +99,6 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
                     android.R.anim.slide_out_right
             );
         }
-
-        mGetRssChannelByIdAndOpenDetail = () -> {
-            RssItem rssItem = mRssItemSubject.getValue();
-            mRxDisposer
-                    .add("onClick_getRssChannelById",
-                            mRssQueryCmd
-                                    .getRssChannelById(rssItem.channelId)
-                                    .subscribe((rssChannel, throwable) -> {
-                                        if (throwable != null) {
-                                            mSvProvider.get(ILogger.class)
-                                                    .e(TAG, throwable.getMessage(), throwable);
-                                        } else {
-                                            mNavigator.push(Routes.RSS_ITEM_DETAIL_PAGE,
-                                                    RssItemDetailPage.Args.withRss(rssItem, rssChannel), null
-                                                    , mGetRssChannelByIdAndOpenDetail_routeOptions);
-                                        }
-                                    })
-                    );
-            mHandler.removeCallbacks(mGetRssChannelByIdAndOpenDetail);
-        };
     }
 
     @Override
@@ -167,7 +143,6 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
             mSvProvider.dispose();
             mSvProvider = null;
         }
-        mGetRssChannelByIdAndOpenDetail = null;
         mGetRssChannelByIdAndOpenDetail_routeOptions = null;
         mRssItemModelObservable = null;
     }
@@ -182,13 +157,21 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
                         .readRssItem(rssItem);
                 mRssItemSubject.onNext(rssItem);
             }
-            /*
-             Strange issue here, bold text seemed to cause animation jank when transition to new page,
-             fixed by delaying navigation on to next frame (assuming 60FPS so around 16 milis).
-             Update: Still jank sometimes when opening the detail, adjusting the delay to 3 frames.
-             */
-            mHandler
-                    .postDelayed(mGetRssChannelByIdAndOpenDetail, 48);
+            mRxDisposer
+                    .add("onClick_getRssChannelById",
+                            mRssQueryCmd
+                                    .getRssChannelById(rssItem.channelId)
+                                    .subscribe((rssChannel, throwable) -> {
+                                        if (throwable != null) {
+                                            mSvProvider.get(ILogger.class)
+                                                    .e(TAG, throwable.getMessage(), throwable);
+                                        } else {
+                                            mNavigator.push(Routes.RSS_ITEM_DETAIL_PAGE,
+                                                    RssItemDetailPage.Args.withRss(rssItem, rssChannel), null
+                                                    , mGetRssChannelByIdAndOpenDetail_routeOptions);
+                                        }
+                                    })
+                    );
         }
     }
 
