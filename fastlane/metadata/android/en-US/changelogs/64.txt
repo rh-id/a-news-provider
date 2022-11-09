@@ -1,0 +1,4 @@
+Release 1.9.12+64
+
+Fixes:
+* RSS item sometimes blank
