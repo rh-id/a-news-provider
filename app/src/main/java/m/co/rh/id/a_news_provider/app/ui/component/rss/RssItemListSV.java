@@ -9,7 +9,9 @@ import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
 import com.tokopedia.showcase.ShowCaseBuilder;
 import com.tokopedia.showcase.ShowCaseDialog;
@@ -24,8 +26,6 @@ import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.PagedRssItemsCmd;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
-import m.co.rh.id.a_news_provider.app.ui.recyclerview.CustomLinearLayoutManager;
-import m.co.rh.id.a_news_provider.app.ui.recyclerview.CustomStaggeredGridLayoutManager;
 import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.StatefulView;
@@ -79,9 +79,9 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
         recyclerView.addOnScrollListener(mOnScrollListener);
         RecyclerView.LayoutManager layoutManager;
         if (activity.getResources().getBoolean(R.bool.is_landscape)) {
-            layoutManager = new CustomStaggeredGridLayoutManager(2, RecyclerView.VERTICAL);
+            layoutManager = new StaggeredGridLayoutManager(2, RecyclerView.VERTICAL);
         } else {
-            layoutManager = new CustomLinearLayoutManager(activity);
+            layoutManager = new LinearLayoutManager(activity);
         }
         recyclerView.setLayoutManager(layoutManager);
         Spinner spinnerFilterBy = view.findViewById(R.id.spinner_filter_by);
