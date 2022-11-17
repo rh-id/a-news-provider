@@ -70,15 +70,28 @@ public class RssRequest extends Request<RssModel> {
                 }
             } catch (XmlPullParserException e) {
                 mLogger.v(TAG, "Error parsing rss, try parsing atom: " + e.getMessage(), e);
-                // TRY parse atom
-                XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
-                factory.setNamespaceAware(true);
-                XmlPullParser xpp = factory.newPullParser();
-                xpp.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
-                xpp.setInput(new StringReader(new String(response.data)));
-                xpp.nextTag();
-                xpp.require(XmlPullParser.START_TAG, null, "feed");
-                rssModel = readFeed(xpp);
+                try {
+                    // TRY parse atom
+                    XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+                    factory.setNamespaceAware(true);
+                    XmlPullParser xpp = factory.newPullParser();
+                    xpp.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
+                    xpp.setInput(new StringReader(new String(response.data)));
+                    xpp.nextTag();
+                    xpp.require(XmlPullParser.START_TAG, null, "feed");
+                    rssModel = readFeed(xpp);
+                } catch (XmlPullParserException e1) {
+                    mLogger.v(TAG, "Error parsing atom, try parsing rdf: " + e.getMessage(), e);
+                    // TRY parse rdf
+                    XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+                    factory.setNamespaceAware(true);
+                    XmlPullParser xpp = factory.newPullParser();
+                    xpp.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
+                    xpp.setInput(new StringReader(new String(response.data)));
+                    xpp.nextTag();
+                    xpp.require(XmlPullParser.START_TAG, null, "rdf:RDF");
+                    rssModel = readRdf(xpp);
+                }
             }
             mLogger.v(TAG, "Parsed RssModel: " + rssModel);
             if (rssModel == null) {
@@ -145,6 +158,43 @@ public class RssRequest extends Request<RssModel> {
                 rssChannel.link = readLink(xpp);
             } else if (name.equals("image")) {
                 readImage(rssChannel, xpp);
+            } else if (name.equals("item")) {
+                rssItemList.add(readItem(xpp));
+            } else {
+                skip(xpp);
+            }
+        }
+        return new RssModel(rssChannel, rssItemList);
+    }
+
+    // RDF XML
+    private RssModel readRdf(XmlPullParser xpp) throws IOException, XmlPullParserException {
+        xpp.require(XmlPullParser.START_TAG, null, "rdf:RDF");
+        RssChannel rssChannel = new RssChannel();
+        rssChannel.url = getUrl();
+        ArrayList<RssItem> rssItemList = new ArrayList<>();
+        while (xpp.next() != XmlPullParser.END_TAG) {
+            if (xpp.getEventType() != XmlPullParser.START_TAG) {
+                continue;
+            }
+            String name = xpp.getName();
+            if (name.equals("channel")) {
+                while (xpp.next() != XmlPullParser.END_TAG) {
+                    if (xpp.getEventType() != XmlPullParser.START_TAG) {
+                        continue;
+                    }
+                    String channelXppName = xpp.getName();
+                    if (channelXppName.equals("title")) {
+                        rssChannel.title = readTitle(xpp);
+                        rssChannel.feedName = rssChannel.title;
+                    } else if (channelXppName.equals("link")) {
+                        rssChannel.link = readLink(xpp);
+                    } else if (channelXppName.equals("description")) {
+                        rssChannel.description = readDescription(xpp);
+                    } else {
+                        skip(xpp);
+                    }
+                }
             } else if (name.equals("item")) {
                 rssItemList.add(readItem(xpp));
             } else {
