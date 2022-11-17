@@ -1,0 +1,4 @@
+Release 1.10.0+65
+
+Feature:
+* Add RDF support (RSS 0.9)
