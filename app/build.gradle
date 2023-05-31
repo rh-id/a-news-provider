@@ -14,7 +14,7 @@ if (System.getenv("SIGNING_KEY") != null) {
 }
 
 android {
-    compileSdkVersion 31
+    compileSdk 33
     buildToolsVersion "30.0.3"
 
     signingConfigs {
@@ -69,20 +69,20 @@ android {
 }
 
 dependencies {
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.5'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.3'
 
     implementation project(path: ':base')
     implementation project(path: ':component-network')
 
-    implementation 'com.google.android.material:material:1.6.1'
+    implementation 'com.google.android.material:material:1.9.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation 'androidx.drawerlayout:drawerlayout:1.1.1'
+    implementation 'androidx.drawerlayout:drawerlayout:1.2.0'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
-    implementation 'androidx.recyclerview:recyclerview:1.2.1'
+    implementation 'androidx.recyclerview:recyclerview:1.3.0'
     implementation 'com.squareup.leakcanary:plumber-android:2.9.1'
     implementation 'com.github.rh-id:AndroidShowCase:v0.0.1'
 
-    def work_version = "2.7.1"
+    def work_version = "2.8.1"
     implementation "androidx.work:work-runtime:$work_version"
 
     def multidex_version = "2.0.1"
@@ -90,8 +90,8 @@ dependencies {
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'org.mockito:mockito-core:3.12.4'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.3'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 
 }
 
