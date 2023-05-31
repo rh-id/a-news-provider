@@ -62,8 +62,9 @@ android {
     buildFeatures {
         viewBinding false
     }
-    lintOptions {
-        ignore("UseCompatLoadingForDrawables")
+    namespace 'm.co.rh.id.a_news_provider'
+    lint {
+        ignore 'UseCompatLoadingForDrawables'
     }
 }
 

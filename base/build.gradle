@@ -35,6 +35,7 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    namespace 'm.co.rh.id.a_news_provider.base'
 }
 
 dependencies {
