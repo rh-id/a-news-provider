@@ -28,7 +28,7 @@ android {
     defaultConfig {
         applicationId "m.co.rh.id.a_news_provider"
         minSdkVersion 16
-        targetSdkVersion 31
+        targetSdk 33
         versionCode 66
         versionName "1.10.1"
         vectorDrawables.useSupportLibrary true
