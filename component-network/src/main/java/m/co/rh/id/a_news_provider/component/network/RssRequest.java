@@ -81,7 +81,7 @@ public class RssRequest extends Request<RssModel> {
                     xpp.require(XmlPullParser.START_TAG, null, "feed");
                     rssModel = readFeed(xpp);
                 } catch (XmlPullParserException e1) {
-                    mLogger.v(TAG, "Error parsing atom, try parsing rdf: " + e.getMessage(), e);
+                    mLogger.v(TAG, "Error parsing atom, try parsing rdf: " + e1.getMessage(), e1);
                     // TRY parse rdf
                     XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
                     factory.setNamespaceAware(true);
