@@ -1,0 +1,4 @@
+Release 1.11.1+68
+
+Features:
+* Add POST_NOTIFICATIONS permission for Android 13
