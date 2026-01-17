@@ -29,8 +29,8 @@ public class DonationsPage extends StatefulView<Activity> implements View.OnClic
     @Override
     protected View createView(Activity activity, ViewGroup container) {
         View rootLayout = activity.getLayoutInflater().inflate(R.layout.page_donations, container, false);
-        Button donateBitcoin = rootLayout.findViewById(R.id.button_donate_bitcoin);
-        donateBitcoin.setOnClickListener(this);
+        Button donate = rootLayout.findViewById(R.id.button_donate);
+        donate.setOnClickListener(this);
         TextView otherApps = rootLayout.findViewById(R.id.text_other_apps);
         String otherAppMsg = activity.getString(R.string.donation_other_apps, DEV_URL);
         otherApps.setText(HtmlCompat.fromHtml(otherAppMsg, HtmlCompat.FROM_HTML_MODE_LEGACY));
@@ -41,14 +41,14 @@ public class DonationsPage extends StatefulView<Activity> implements View.OnClic
     @Override
     public void onClick(View view) {
         int id = view.getId();
-        if (id == R.id.button_donate_bitcoin) {
-            Uri webpage = Uri.parse("bitcoin://bc1qk9n2kljqyunqvlpyjxd4f4tt2xl0uwt2ak9xu4");
+        if (id == R.id.button_donate) {
+            Uri webpage = Uri.parse("https://teer.id/rh-id");
             Intent webIntent = new Intent(Intent.ACTION_VIEW, webpage);
             Context context = view.getContext();
             try {
                 context.startActivity(webIntent);
             } catch (ActivityNotFoundException activityNotFoundException) {
-                webpage = Uri.parse("https://www.blockchain.com/btc/address/bc1qk9n2kljqyunqvlpyjxd4f4tt2xl0uwt2ak9xu4");
+                webpage = Uri.parse("https://teer.id/rh-id");
                 webIntent = new Intent(Intent.ACTION_VIEW, webpage);
                 context.startActivity(webIntent);
             }
