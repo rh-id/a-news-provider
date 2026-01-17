@@ -1,23 +1,24 @@
 name: Android Release APKs
 
 on:
- push:
-  tags:
-   - v*
-   
+  push:
+    tags:
+      - v*
+
 jobs:
   release-apk:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v6
       - name: set up JDK
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v5
         with:
           java-version: 17
           distribution: 'adopt'
-          cache: gradle
-      - name: Make Gradle executable
-        run: chmod +x ./gradlew
+
+      - name: Gradle cache
+        uses: gradle/actions/setup-gradle@v5
+
       - name: Build with Gradle
         run: ./gradlew build
         env:
