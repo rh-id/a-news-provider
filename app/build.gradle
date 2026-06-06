@@ -31,7 +31,6 @@ android {
         versionCode 69
         versionName "1.11.2"
         vectorDrawables.useSupportLibrary true
-        multiDexEnabled = true
 
         testInstrumentationRunner "m.co.rh.id.a_news_provider.test.AppAndroidJunit4Runner"
 
@@ -81,9 +80,6 @@ dependencies {
 
     def work_version = "2.10.5"
     implementation "androidx.work:work-runtime:$work_version"
-
-    def multidex_version = "2.0.1"
-    implementation "androidx.multidex:multidex:$multidex_version"
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'org.mockito:mockito-core:5.21.0'
