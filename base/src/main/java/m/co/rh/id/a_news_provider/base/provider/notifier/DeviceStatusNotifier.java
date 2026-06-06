@@ -2,14 +2,10 @@ package m.co.rh.id.a_news_provider.base.provider.notifier;
 
 import android.app.Activity;
 import android.app.Application;
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
-import android.net.NetworkInfo;
 import android.net.NetworkRequest;
 import android.os.Build;
 import android.os.Bundle;
@@ -17,98 +13,107 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.util.concurrent.ExecutorService;
-
 import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderDisposable;
-import m.co.rh.id.aprovider.ProviderValue;
 
-/**
- * Hub to handle status of device
- */
+@SuppressWarnings("deprecation")
 public class DeviceStatusNotifier implements ProviderDisposable, Application.ActivityLifecycleCallbacks {
     private Context mAppContext;
-    private ProviderValue<ExecutorService> mExecutorService;
-
-    // network related
-    private BroadcastReceiver mNetworkActionBroadcastReceiver;
     private ConnectivityManager.NetworkCallback mNetworkCallback;
-
     private BehaviorSubject<Boolean> mIsOnlineBehaviorSubject;
 
     public DeviceStatusNotifier(Provider provider) {
         mAppContext = provider.getContext().getApplicationContext();
-        mExecutorService = provider.lazyGet(ExecutorService.class);
         mIsOnlineBehaviorSubject = BehaviorSubject.createDefault(false);
         checkOnlineStatus();
     }
 
     private void registerNetworkStatus() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-            mNetworkActionBroadcastReceiver = new BroadcastReceiver() {
+        ConnectivityManager connectivityManager =
+                (ConnectivityManager) mAppContext.getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            mNetworkCallback = new ConnectivityManager.NetworkCallback() {
                 @Override
-                public void onReceive(Context context, Intent intent) {
-                    checkOnlineStatus();
+                public void onAvailable(@NonNull Network network) {
+                    super.onAvailable(network);
+                }
+
+                @Override
+                public void onLost(@NonNull Network network) {
+                    mIsOnlineBehaviorSubject.onNext(false);
+                }
+
+                @Override
+                public void onCapabilitiesChanged(@NonNull Network network,
+                        @NonNull NetworkCapabilities networkCapabilities) {
+                    boolean isConnected = hasInternetCapability(networkCapabilities);
+                    mIsOnlineBehaviorSubject.onNext(isConnected);
                 }
             };
-            mAppContext.registerReceiver(mNetworkActionBroadcastReceiver, filter);
+            connectivityManager.registerDefaultNetworkCallback(mNetworkCallback);
         } else {
             NetworkRequest.Builder builder = new NetworkRequest.Builder();
             builder.addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
-            builder.addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR);
-            builder.addTransportType(NetworkCapabilities.TRANSPORT_WIFI);
-            builder.addTransportType(NetworkCapabilities.TRANSPORT_VPN);
 
-            mNetworkCallback =
-                    new ConnectivityManager.NetworkCallback() {
+            mNetworkCallback = new ConnectivityManager.NetworkCallback() {
+                @Override
+                public void onAvailable(@NonNull Network network) {
+                    checkOnlineStatus();
+                }
 
-                        @Override
-                        public void onAvailable(Network network) {
-                            super.onAvailable(network);
-                            checkOnlineStatus();
-                        }
+                @Override
+                public void onLost(@NonNull Network network) {
+                    mIsOnlineBehaviorSubject.onNext(false);
+                }
 
-                        @Override
-                        public void onLost(Network network) {
-                            super.onLost(network);
-                            checkOnlineStatus();
-                        }
-
-                    };
-            ConnectivityManager connectivityManager =
-                    (ConnectivityManager) mAppContext
-                            .getSystemService(Context.CONNECTIVITY_SERVICE);
+                @Override
+                public void onCapabilitiesChanged(@NonNull Network network,
+                        @NonNull NetworkCapabilities networkCapabilities) {
+                    boolean isConnected = hasInternetCapability(networkCapabilities);
+                    mIsOnlineBehaviorSubject.onNext(isConnected);
+                }
+            };
             connectivityManager.registerNetworkCallback(builder.build(), mNetworkCallback);
         }
     }
 
+    private boolean hasInternetCapability(NetworkCapabilities capabilities) {
+        boolean hasInternet = capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            return hasInternet && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+        }
+        return hasInternet;
+    }
+
     private void disposeNetworkStatus() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            mAppContext.unregisterReceiver(mNetworkActionBroadcastReceiver);
-        } else {
+        if (mNetworkCallback != null) {
             ConnectivityManager connectivityManager =
-                    (ConnectivityManager) mAppContext
-                            .getSystemService(Context.CONNECTIVITY_SERVICE);
+                    (ConnectivityManager) mAppContext.getSystemService(Context.CONNECTIVITY_SERVICE);
             connectivityManager.unregisterNetworkCallback(mNetworkCallback);
         }
     }
 
     private void checkOnlineStatus() {
-        mExecutorService.get().execute(() -> {
-            ConnectivityManager cm =
-                    (ConnectivityManager) mAppContext.getSystemService(Context.CONNECTIVITY_SERVICE);
-
-            NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-            boolean isConnected = activeNetwork != null &&
-                    activeNetwork.isConnectedOrConnecting();
+        ConnectivityManager cm =
+                (ConnectivityManager) mAppContext.getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Network activeNetwork = cm.getActiveNetwork();
+            NetworkCapabilities capabilities = activeNetwork != null
+                    ? cm.getNetworkCapabilities(activeNetwork) : null;
+            boolean isConnected = capabilities != null
+                    && hasInternetCapability(capabilities);
             mIsOnlineBehaviorSubject.onNext(isConnected);
-        });
+        } else {
+            android.net.NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+            boolean isConnected = activeNetwork != null
+                    && activeNetwork.isConnectedOrConnecting();
+            mIsOnlineBehaviorSubject.onNext(isConnected);
+        }
     }
-
 
     public Flowable<Boolean> onlineStatus() {
         return Flowable.fromObservable(mIsOnlineBehaviorSubject, BackpressureStrategy.BUFFER);
@@ -120,12 +125,10 @@ public class DeviceStatusNotifier implements ProviderDisposable, Application.Act
 
     @Override
     public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle bundle) {
-        // leave blank
     }
 
     @Override
     public void onActivityStarted(@NonNull Activity activity) {
-        // leave blank
     }
 
     @Override
@@ -141,25 +144,20 @@ public class DeviceStatusNotifier implements ProviderDisposable, Application.Act
 
     @Override
     public void onActivityStopped(@NonNull Activity activity) {
-        // leave blank
     }
 
     @Override
     public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle bundle) {
-        // leave blank
     }
 
     @Override
     public void onActivityDestroyed(@NonNull Activity activity) {
-        // leave blank
     }
 
     @Override
     public void dispose(Context context) {
         disposeNetworkStatus();
-        mExecutorService = null;
         mAppContext = null;
-        mNetworkActionBroadcastReceiver = null;
         mNetworkCallback = null;
         if (mIsOnlineBehaviorSubject != null) {
             mIsOnlineBehaviorSubject.onComplete();

@@ -3,6 +3,8 @@ package m.co.rh.id.a_news_provider.app.workmanager;
 import android.content.Context;
 
 import androidx.annotation.NonNull;
+import androidx.work.Constraints;
+import androidx.work.NetworkType;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
 import androidx.work.Worker;
@@ -22,8 +24,12 @@ public class PeriodicRssSyncWorker extends Worker {
     public Result doWork() {
         Provider provider = BaseApplication.of(getApplicationContext()).getProvider();
         WorkManager workManager = provider.get(WorkManager.class);
+        Constraints constraints = new Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build();
         OneTimeWorkRequest rssSyncWorkRequest =
                 new OneTimeWorkRequest.Builder(RssSyncWorker.class)
+                        .setConstraints(constraints)
                         .build();
         OneTimeWorkRequest rssSyncShowNotificationWorkRequest =
                 new OneTimeWorkRequest.Builder(RssSyncNotificationWorker.class)

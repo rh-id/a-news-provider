@@ -24,9 +24,9 @@
     <string name="error_feed_sync_failed">Sinkronisasi feed gagal</string>
     <string name="error_rss_read">Gagal membaca : %s</string>
     <string name="error_rss_channel_update">Gagal perbarui saluran : %s</string>
-    <string name="feed_new_pending_online">Feed akan ditambah ketika online</string>
     <string name="feed_sync_pending_online">Feed akan disinkron ketika online</string>
     <string name="device_status_offline">Kamu sekarang offline</string>
+    <string name="device_status_online">Kamu sekarang online</string>
     <string name="settings">Pengaturan</string>
     <string name="licenses">Lisensi</string>
     <string name="sync_every_x_hour">Sinkronisasi setiap %d jam</string>

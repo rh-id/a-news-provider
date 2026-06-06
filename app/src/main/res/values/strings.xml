@@ -24,9 +24,9 @@
     <string name="error_feed_sync_failed">Feed sync failed</string>
     <string name="error_rss_read">Failed to read : %s</string>
     <string name="error_rss_channel_update">Failed updating channel : %s</string>
-    <string name="feed_new_pending_online">Feed will be added once device online</string>
     <string name="feed_sync_pending_online">Feed will be sync once device online</string>
     <string name="device_status_offline">You are offline</string>
+    <string name="device_status_online">You are back online</string>
     <string name="settings">Settings</string>
     <string name="licenses">Licenses</string>
     <string name="sync_every_x_hour">Sync every %d hour(s)</string>

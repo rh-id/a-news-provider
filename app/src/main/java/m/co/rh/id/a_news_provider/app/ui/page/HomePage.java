@@ -80,7 +80,7 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
     private RssItemListSV mRssItemListSV;
     @NavInject
     private RssChannelListSV mRssChannelListSV;
-    private boolean mLastOnlineStatus;
+    private Boolean mLastOnlineStatus;
     private transient long mLastBackPressMilis;
 
     // component
@@ -182,22 +182,28 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
         mRxDisposer.add("deviceStatusNotifier.onlineStatus",
                 mSvProvider.get(DeviceStatusNotifier.class)
                         .onlineStatus()
-                        .debounce(3, TimeUnit.SECONDS)
+                        .distinctUntilChanged()
+                        .debounce(1, TimeUnit.SECONDS)
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(isOnline -> {
                             if (!isOnline) {
-                                // only show when there are changes on online status
-                                if (mLastOnlineStatus != isOnline) {
-                                    Snackbar.make(container,
-                                                    R.string.device_status_offline,
-                                                    Snackbar.LENGTH_SHORT)
-                                            .setBackgroundTint(Color.RED)
-                                            .setTextColor(Color.WHITE)
-                                            .show();
-                                }
+                                Snackbar.make(container,
+                                                R.string.device_status_offline,
+                                                Snackbar.LENGTH_LONG)
+                                        .setBackgroundTint(Color.RED)
+                                        .setTextColor(Color.WHITE)
+                                        .show();
+                            } else if (mLastOnlineStatus != null && !mLastOnlineStatus) {
+                                Snackbar.make(container,
+                                                R.string.device_status_online,
+                                                Snackbar.LENGTH_SHORT)
+                                        .setBackgroundTint(Color.parseColor("#4CAF50"))
+                                        .setTextColor(Color.WHITE)
+                                        .show();
                             }
                             mLastOnlineStatus = isOnline;
-                        }));
+                        },
+                        throwable -> {}));
         ViewGroup containerChannelList = view.findViewById(R.id.container_list_channel);
         containerChannelList.addView(mRssChannelListSV.buildView(activity, containerChannelList));
 
@@ -420,7 +426,7 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
         objectOutput.writeBoolean(mIsDrawerOpen);
         objectOutput.writeObject(mRssItemListSV);
         objectOutput.writeObject(mRssChannelListSV);
-        objectOutput.writeBoolean(mLastOnlineStatus);
+        objectOutput.writeBoolean(mLastOnlineStatus != null && mLastOnlineStatus);
     }
 
     @Override
