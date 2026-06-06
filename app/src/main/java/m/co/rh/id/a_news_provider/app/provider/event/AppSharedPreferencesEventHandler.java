@@ -1,7 +1,6 @@
 package m.co.rh.id.a_news_provider.app.provider.event;
 
 import android.content.Context;
-import android.os.Handler;
 
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.work.Constraints;
@@ -13,6 +12,7 @@ import androidx.work.WorkManager;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import m.co.rh.id.a_news_provider.app.workmanager.ConstantsWork;
@@ -24,7 +24,6 @@ import m.co.rh.id.aprovider.ProviderDisposable;
 import m.co.rh.id.aprovider.ProviderValue;
 
 public class AppSharedPreferencesEventHandler implements ProviderDisposable {
-    private ProviderValue<Handler> mHandler;
     private ExecutorService mExecutorService;
     private ProviderValue<WorkManager> mWorkManager;
     private ProviderValue<INavigator> mNavigator;
@@ -32,7 +31,6 @@ public class AppSharedPreferencesEventHandler implements ProviderDisposable {
     private AppSharedPreferences mAppSharedPreferences;
 
     public AppSharedPreferencesEventHandler(Provider provider) {
-        mHandler = provider.lazyGet(Handler.class);
         mExecutorService = provider.get(ExecutorService.class);
         mWorkManager = provider.lazyGet(WorkManager.class);
         mNavigator = provider.lazyGet(INavigator.class);
@@ -63,16 +61,14 @@ public class AppSharedPreferencesEventHandler implements ProviderDisposable {
                 .subscribe(aBoolean -> initPeriodicSync())
         );
         mCompositeDisposable.add(mAppSharedPreferences.getSelectedThemeFlow()
-                .observeOn(Schedulers.from(mExecutorService))
-                .subscribe(integer -> mHandler.get().post(() ->
-                        AppCompatDelegate.setDefaultNightMode(integer))));
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(AppCompatDelegate::setDefaultNightMode));
         mCompositeDisposable.add(mAppSharedPreferences.getIsOneHandModeFlow()
                 .skip(1)
-                .observeOn(Schedulers.from(mExecutorService))
-                .subscribe(aBoolean -> mHandler.get().post(() -> {
-                    // refresh all route after one hand mode changed
-                    mNavigator.get().reBuildAllRoute();
-                }))
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(aBoolean ->
+                        mNavigator.get().reBuildAllRoute()
+                )
         );
     }
 

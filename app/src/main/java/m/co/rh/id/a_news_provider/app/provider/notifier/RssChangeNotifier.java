@@ -18,6 +18,7 @@ import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
+import m.co.rh.id.a_news_provider.base.model.ChannelUnreadCount;
 import m.co.rh.id.a_news_provider.base.model.RssModel;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.aprovider.Provider;
@@ -61,8 +62,14 @@ public class RssChangeNotifier {
                 if (rssChannelList != null && !rssChannelList.isEmpty()) {
                     Optional<RssChannel> selectedRssChannel = mSelectedRssChannelBehaviourSubject.getValue();
                     boolean selectedRssStillExist = false;
+                    List<ChannelUnreadCount> unreadCounts = mRssDao.get().countUnReadRssItemsByChannel();
+                    HashMap<Long, Integer> countMap = new HashMap<>();
+                    for (ChannelUnreadCount cuc : unreadCounts) {
+                        countMap.put(cuc.channel_id, cuc.cnt);
+                    }
                     for (RssChannel rssChannel : rssChannelList) {
-                        mapResult.put(rssChannel, mRssDao.get().countUnReadRssItems(rssChannel.id));
+                        Integer count = countMap.get(rssChannel.id);
+                        mapResult.put(rssChannel, count != null ? count : 0);
                         if (!selectedRssStillExist) {
                             if (selectedRssChannel != null && selectedRssChannel.isPresent()) {
                                 if (rssChannel.id.equals(selectedRssChannel.get().id)) {

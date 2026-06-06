@@ -8,6 +8,7 @@ import java.util.concurrent.ExecutorService;
 import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
@@ -48,7 +49,7 @@ public class EditRssLinkCmd {
     }
 
     public Single<String> execute(long rssItemId, final String url) {
-        return Single.fromFuture(mExecutorService.submit(() -> {
+        return Single.fromCallable(() -> {
                     final StringBuilder requestUrl = new StringBuilder(url);
                     if (!url.startsWith("http://") && !url.startsWith("https://")) {
                         requestUrl.insert(0, "https://");
@@ -63,7 +64,7 @@ public class EditRssLinkCmd {
                         throw new RuntimeException(getValidationError());
                     }
                 })
-        );
+                .subscribeOn(Schedulers.from(mExecutorService));
     }
 
     // validation message

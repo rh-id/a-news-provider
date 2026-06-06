@@ -18,8 +18,10 @@ import org.xmlpull.v1.XmlPullParserFactory;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Date;
 import java.util.List;
 
@@ -48,13 +50,14 @@ public class RssRequest extends Request<RssModel> {
     @Override
     protected Response<RssModel> parseNetworkResponse(NetworkResponse response) {
         try {
+            String responseString = decodeResponse(response);
             RssModel rssModel = null;
             try {
                 XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
                 factory.setNamespaceAware(true);
                 XmlPullParser xpp = factory.newPullParser();
                 xpp.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
-                xpp.setInput(new StringReader(new String(response.data)));
+                xpp.setInput(new StringReader(responseString));
                 xpp.nextTag();
                 xpp.require(XmlPullParser.START_TAG, null, "rss");
                 while (xpp.next() != XmlPullParser.END_TAG) {
@@ -71,23 +74,21 @@ public class RssRequest extends Request<RssModel> {
             } catch (XmlPullParserException e) {
                 mLogger.v(TAG, "Error parsing rss, try parsing atom: " + e.getMessage(), e);
                 try {
-                    // TRY parse atom
                     XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
                     factory.setNamespaceAware(true);
                     XmlPullParser xpp = factory.newPullParser();
                     xpp.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
-                    xpp.setInput(new StringReader(new String(response.data)));
+                    xpp.setInput(new StringReader(responseString));
                     xpp.nextTag();
                     xpp.require(XmlPullParser.START_TAG, null, "feed");
                     rssModel = readFeed(xpp);
                 } catch (XmlPullParserException e1) {
                     mLogger.v(TAG, "Error parsing atom, try parsing rdf: " + e1.getMessage(), e1);
-                    // TRY parse rdf
                     XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
                     factory.setNamespaceAware(true);
                     XmlPullParser xpp = factory.newPullParser();
                     xpp.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
-                    xpp.setInput(new StringReader(new String(response.data)));
+                    xpp.setInput(new StringReader(responseString));
                     xpp.nextTag();
                     xpp.require(XmlPullParser.START_TAG, null, "rdf:RDF");
                     rssModel = readRdf(xpp);
@@ -116,14 +117,17 @@ public class RssRequest extends Request<RssModel> {
                 // if the link is the same, import the previous isRead
                 if (rssItemList != null && !rssItemList.isEmpty() &&
                         rssItemsFromModel != null && !rssItemsFromModel.isEmpty()) {
+                    HashMap<String, Boolean> linkReadMap = new HashMap<>();
+                    for (RssItem rssItem : rssItemList) {
+                        if (rssItem.link != null && !rssItem.link.isEmpty()) {
+                            linkReadMap.put(rssItem.link, rssItem.isRead);
+                        }
+                    }
                     for (RssItem rssItemFromModel : rssItemsFromModel) {
-                        String modelLink = rssItemFromModel.link;
-                        if (modelLink != null && !modelLink.isEmpty()) {
-                            for (RssItem rssItem : rssItemList) {
-                                if (modelLink.equals(rssItem.link)) {
-                                    rssItemFromModel.isRead = rssItem.isRead;
-                                    break;
-                                }
+                        if (rssItemFromModel.link != null && !rssItemFromModel.link.isEmpty()) {
+                            Boolean isRead = linkReadMap.get(rssItemFromModel.link);
+                            if (isRead != null) {
+                                rssItemFromModel.isRead = isRead;
                             }
                         }
                     }
@@ -308,16 +312,33 @@ public class RssRequest extends Request<RssModel> {
         xpp.require(XmlPullParser.START_TAG, null, "updated");
         String dateText = readText(xpp);
         Date pubDate = null;
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX");
+        String[] formats;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            formats = new String[]{
+                "yyyy-MM-dd'T'HH:mm:ssXXX",
+                "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",
+                "yyyy-MM-dd'T'HH:mm:ssZ",
+                "yyyy-MM-dd'T'HH:mm:ss",
+                "yyyy-MM-dd"
+            };
+        } else {
+            formats = new String[]{
+                "yyyy-MM-dd'T'HH:mm:ss'Z'",
+                "yyyy-MM-dd'T'HH:mm:ssZ",
+                "yyyy-MM-dd'T'HH:mm:ss",
+                "yyyy-MM-dd"
+            };
+        }
+        for (String format : formats) {
+            try {
+                SimpleDateFormat simpleDateFormat = new SimpleDateFormat(format);
                 pubDate = simpleDateFormat.parse(dateText);
-            } else {
-                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-                pubDate = simpleDateFormat.parse(dateText);
+                if (pubDate != null) break;
+            } catch (Throwable throwable) {
             }
-        } catch (Throwable throwable) {
-            mLogger.d(TAG, "Failed to parse date: " + dateText, throwable);
+        }
+        if (pubDate == null) {
+            mLogger.d(TAG, "Failed to parse date: " + dateText);
         }
         xpp.require(XmlPullParser.END_TAG, null, "updated");
         return pubDate;
@@ -469,11 +490,27 @@ public class RssRequest extends Request<RssModel> {
         xpp.require(XmlPullParser.START_TAG, null, "pubDate");
         String dateText = readText(xpp);
         Date pubDate = null;
-        try {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
-            pubDate = simpleDateFormat.parse(dateText);
-        } catch (Throwable throwable) {
-            mLogger.d(TAG, "Failed to parse date: " + dateText, throwable);
+        String[] formats = {
+            "EEE, d MMM yyyy HH:mm:ss Z",
+            "EEE, d MMM yyyy HH:mm:ss z",
+            "EEE, d MMM yyyy HH:mm Z",
+            "EEE, d MMM yyyy HH:mm:ss",
+            "d MMM yyyy HH:mm:ss Z",
+            "yyyy-MM-dd'T'HH:mm:ssXXX",
+            "yyyy-MM-dd'T'HH:mm:ssZ",
+            "yyyy-MM-dd'T'HH:mm:ss",
+            "yyyy-MM-dd"
+        };
+        for (String format : formats) {
+            try {
+                SimpleDateFormat simpleDateFormat = new SimpleDateFormat(format);
+                pubDate = simpleDateFormat.parse(dateText);
+                if (pubDate != null) break;
+            } catch (Throwable throwable) {
+            }
+        }
+        if (pubDate == null) {
+            mLogger.d(TAG, "Failed to parse date: " + dateText);
         }
         xpp.require(XmlPullParser.END_TAG, null, "pubDate");
         return pubDate;
@@ -507,6 +544,15 @@ public class RssRequest extends Request<RssModel> {
             xpp.nextTag();
         }
         return result;
+    }
+
+    private String decodeResponse(NetworkResponse response) {
+        String charset = HttpHeaderParser.parseCharset(response.headers);
+        try {
+            return new String(response.data, charset);
+        } catch (UnsupportedEncodingException e) {
+            return new String(response.data, java.nio.charset.StandardCharsets.UTF_8);
+        }
     }
 
     private void skip(XmlPullParser xpp) throws XmlPullParserException, IOException {

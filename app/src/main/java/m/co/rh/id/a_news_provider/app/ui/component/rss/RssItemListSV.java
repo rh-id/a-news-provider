@@ -107,7 +107,7 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
                         .debounce(100, TimeUnit.MILLISECONDS)
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(rssItems -> {
-                                    mRssItemRecyclerViewAdapter.notifyDataSetChanged();
+                                    mRssItemRecyclerViewAdapter.notifyItemsChanged();
                                     if (!rssItems.isEmpty()) {
                                         if (!mAppSharedPreferences.isShowCaseRssItemList()) {
                                             mHandler

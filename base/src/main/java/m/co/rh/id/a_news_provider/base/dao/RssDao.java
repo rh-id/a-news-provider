@@ -12,6 +12,7 @@ import java.util.List;
 
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
+import m.co.rh.id.a_news_provider.base.model.ChannelUnreadCount;
 
 @Dao
 public abstract class RssDao {
@@ -124,4 +125,7 @@ public abstract class RssDao {
 
     @Query("UPDATE rss_item SET is_read = :isRead WHERE link = :link")
     public abstract void updateRssItemsIsReadByLink(boolean isRead, String link);
+
+    @Query("SELECT channel_id, COUNT(id) as cnt FROM rss_item WHERE is_read = 0 GROUP BY channel_id")
+    public abstract List<ChannelUnreadCount> countUnReadRssItemsByChannel();
 }

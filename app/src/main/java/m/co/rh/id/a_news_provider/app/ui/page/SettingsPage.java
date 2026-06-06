@@ -21,7 +21,6 @@ import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.aprovider.Provider;
 
-@SuppressWarnings({"rawtypes", "unchecked"})
 public class SettingsPage extends StatefulView<Activity> {
 
     @NavInject
@@ -29,7 +28,7 @@ public class SettingsPage extends StatefulView<Activity> {
     @NavInject
     private AppBarSV mAppBarSV;
     @NavInject
-    private ArrayList<StatefulView> mStatefulViews;
+    private ArrayList<StatefulView<Activity>> mStatefulViews;
 
     public SettingsPage() {
         mAppBarSV = new AppBarSV();
@@ -62,7 +61,7 @@ public class SettingsPage extends StatefulView<Activity> {
         ViewGroup containerAppBar = view.findViewById(R.id.container_app_bar);
         containerAppBar.addView(mAppBarSV.buildView(activity, container));
         ViewGroup content = view.findViewById(R.id.content);
-        for (StatefulView statefulView : mStatefulViews) {
+        for (StatefulView<Activity> statefulView : mStatefulViews) {
             LinearLayout.LayoutParams lparams = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -77,7 +76,7 @@ public class SettingsPage extends StatefulView<Activity> {
         mAppBarSV.dispose(activity);
         mAppBarSV = null;
         if (mStatefulViews != null && !mStatefulViews.isEmpty()) {
-            for (StatefulView statefulView : mStatefulViews) {
+            for (StatefulView<Activity> statefulView : mStatefulViews) {
                 statefulView.dispose(activity);
             }
             mStatefulViews.clear();

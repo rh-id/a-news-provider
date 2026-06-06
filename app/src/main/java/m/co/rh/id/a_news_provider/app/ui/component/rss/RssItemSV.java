@@ -12,7 +12,6 @@ import android.widget.Toast;
 import androidx.core.text.HtmlCompat;
 import androidx.core.view.ViewCompat;
 
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.concurrent.ExecutorService;
 
@@ -53,11 +52,8 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
     private transient RouteOptions mGetRssChannelByIdAndOpenDetail_routeOptions;
     private transient Observable<RssItemModel> mRssItemModelObservable;
 
-    private DateFormat mDateFormat;
-
     public RssItemSV() {
         mRssItemSubject = new SerialBehaviorSubject<>();
-        mDateFormat = new SimpleDateFormat("E, d MMM yyyy");
     }
 
     @Override
@@ -76,10 +72,11 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
                 rssItem -> {
                     RssItemModel rssItemModel = new RssItemModel();
                     rssItemModel.id = rssItem.id;
+                    SimpleDateFormat dateFormat = new SimpleDateFormat("E, d MMM yyyy");
                     if (rssItem.pubDate != null) {
-                        rssItemModel.pubDate = mDateFormat.format(rssItem.pubDate);
+                        rssItemModel.pubDate = dateFormat.format(rssItem.pubDate);
                     } else if (rssItem.createdDateTime != null) {
-                        rssItemModel.pubDate = mDateFormat.format(rssItem.createdDateTime);
+                        rssItemModel.pubDate = dateFormat.format(rssItem.createdDateTime);
                     }
                     rssItemModel.title = HtmlCompat
                             .fromHtml(rssItem.title, HtmlCompat.FROM_HTML_MODE_COMPACT);
@@ -161,6 +158,7 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
                     .add("onClick_getRssChannelById",
                             mRssQueryCmd
                                     .getRssChannelById(rssItem.channelId)
+                                    .observeOn(AndroidSchedulers.mainThread())
                                     .subscribe((rssChannel, throwable) -> {
                                         if (throwable != null) {
                                             mSvProvider.get(ILogger.class)

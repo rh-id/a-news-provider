@@ -1,7 +1,6 @@
 package m.co.rh.id.a_news_provider.component.network.provider;
 
 import android.graphics.Bitmap;
-import android.os.Build;
 import android.util.LruCache;
 
 import androidx.annotation.Nullable;
@@ -17,12 +16,8 @@ import com.android.volley.toolbox.ImageLoader;
 
 import java.io.File;
 
-import javax.net.SocketFactory;
-import javax.net.ssl.SSLSocketFactory;
-
 import m.co.rh.id.a_news_provider.component.network.RssRequestFactory;
 import m.co.rh.id.a_news_provider.component.network.provider.volley.DisposableRequestQueue;
-import m.co.rh.id.a_news_provider.component.network.volley.TlsEnabledSSLSocketFactory;
 import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderModule;
 import m.co.rh.id.aprovider.ProviderRegistry;
@@ -34,15 +29,7 @@ public class NetworkProviderModule implements ProviderModule {
 
     @Override
     public void provides(ProviderRegistry providerRegistry, Provider provider) {
-        providerRegistry.registerLazy(BaseHttpStack.class, () -> {
-            SSLSocketFactory sslSocketFactory = null;
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT_WATCH) {
-                SocketFactory socketFactory = SSLSocketFactory.getDefault();
-                sslSocketFactory =
-                        new TlsEnabledSSLSocketFactory((SSLSocketFactory) socketFactory);
-            }
-            return new HurlStack(null, sslSocketFactory);
-        });
+        providerRegistry.registerLazy(BaseHttpStack.class, () -> new HurlStack());
         providerRegistry.registerLazy(Network.class, () -> new BasicNetwork(provider.get(BaseHttpStack.class)));
         providerRegistry.registerLazy(Cache.class, () -> new DiskBasedCache(new File(provider.getContext().getCacheDir(), "volley"),
                 1024 * 20480));

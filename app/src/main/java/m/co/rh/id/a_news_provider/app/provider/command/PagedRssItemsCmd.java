@@ -16,14 +16,17 @@ import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
+import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.aprovider.Provider;
 
 public class PagedRssItemsCmd {
+    private static final String TAG = PagedRssItemsCmd.class.getName();
     public static final int FILTER_BY_NONE = 0;
     public static final int FILTER_BY_UNREAD = 1;
 
     private final ExecutorService mExecutorService;
     private final RssDao mRssDao;
+    private final ILogger mLogger;
     private final BehaviorSubject<ArrayList<RssItem>> mRssItemsSubject;
     private final BehaviorSubject<Boolean> mIsLoadingSubject;
     private Optional<RssChannel> mSelectedRssChannel;
@@ -34,6 +37,7 @@ public class PagedRssItemsCmd {
     public PagedRssItemsCmd(Provider provider) {
         mExecutorService = provider.get(ExecutorService.class);
         mRssDao = provider.get(RssDao.class);
+        mLogger = provider.get(ILogger.class);
         mRssItemsSubject = BehaviorSubject.createDefault(new ArrayList<>());
         mSelectedRssChannel = Optional.empty();
         mFilterTypeSubject = BehaviorSubject.createDefault(Optional.of(FILTER_BY_UNREAD));
@@ -68,7 +72,7 @@ public class PagedRssItemsCmd {
                                 try {
                                     mRssItemsSubject.onNext(loadRssItems());
                                 } catch (Throwable throwable) {
-                                    mRssItemsSubject.onError(throwable);
+                                    mLogger.e(TAG, throwable.getMessage(), throwable);
                                 } finally {
                                     mIsLoadingSubject.onNext(false);
                                 }
@@ -103,7 +107,7 @@ public class PagedRssItemsCmd {
                 mRssItemsSubject.onNext(
                         loadRssItems());
             } catch (Throwable throwable) {
-                mRssItemsSubject.onError(throwable);
+                mLogger.e(TAG, throwable.getMessage(), throwable);
             } finally {
                 mIsLoadingSubject.onNext(false);
             }

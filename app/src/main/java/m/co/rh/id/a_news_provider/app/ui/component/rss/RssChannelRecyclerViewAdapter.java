@@ -23,6 +23,7 @@ public class RssChannelRecyclerViewAdapter extends RecyclerView.Adapter<Recycler
     private static final int VIEW_TYPE_CHANNEL_ITEM = 0;
     private static final int VIEW_TYPE_EMPTY_TEXT = 1;
     private Map<RssChannel, Integer> mRssChannelCountMap;
+    private List<Map.Entry<RssChannel, Integer>> mEntryList;
     private INavigator mNavigator;
     private StatefulView mParentSv;
     private List<StatefulView> mCreatedSv;
@@ -31,6 +32,7 @@ public class RssChannelRecyclerViewAdapter extends RecyclerView.Adapter<Recycler
         mNavigator = navigator;
         mParentSv = parent;
         mCreatedSv = new ArrayList<>();
+        mEntryList = new ArrayList<>();
     }
 
     @NonNull
@@ -53,16 +55,8 @@ public class RssChannelRecyclerViewAdapter extends RecyclerView.Adapter<Recycler
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-        if (holder instanceof RssChannelViewHolder) {
-            int i = 0;
-            Map.Entry<RssChannel, Integer> currentEntry = null;
-            for (Map.Entry<RssChannel, Integer> entry : mRssChannelCountMap.entrySet()) {
-                if (i == position) {
-                    currentEntry = entry;
-                    break;
-                }
-                i++;
-            }
+        if (holder instanceof RssChannelViewHolder && position < mEntryList.size()) {
+            Map.Entry<RssChannel, Integer> currentEntry = mEntryList.get(position);
             ((RssChannelViewHolder) holder).setRssChannelCount(currentEntry);
         }
     }
@@ -92,6 +86,10 @@ public class RssChannelRecyclerViewAdapter extends RecyclerView.Adapter<Recycler
 
     public void setItems(Map<RssChannel, Integer> rssChannelCountMap) {
         mRssChannelCountMap = rssChannelCountMap;
+        mEntryList = new ArrayList<>();
+        if (rssChannelCountMap != null) {
+            mEntryList.addAll(rssChannelCountMap.entrySet());
+        }
         notifyDataSetChanged();
     }
 

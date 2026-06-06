@@ -25,12 +25,14 @@ public class RssItemRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerVie
     private final INavigator mNavigator;
     private final StatefulView mParentStatefulView;
     private final List<StatefulView> mCreatedSvs;
+    private int mLastItemCount;
 
     public RssItemRecyclerViewAdapter(PagedRssItemsCmd pagedRssItemsCmd, INavigator navigator, StatefulView parentStatefulView) {
         mPagedRssItemsCmd = pagedRssItemsCmd;
         mNavigator = navigator;
         mParentStatefulView = parentStatefulView;
         mCreatedSvs = new ArrayList<>();
+        mLastItemCount = 0;
     }
 
     @NonNull
@@ -87,6 +89,25 @@ public class RssItemRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerVie
             return true;
         }
         return mPagedRssItemsCmd.getAllRssItems().size() == 0;
+    }
+
+    public void notifyItemsChanged() {
+        int newCount = mPagedRssItemsCmd.getAllRssItems().size();
+        int oldCount = mLastItemCount;
+        mLastItemCount = newCount;
+        if (oldCount == 0 && newCount > 0) {
+            notifyDataSetChanged();
+        } else if (newCount == 0 && oldCount > 0) {
+            notifyDataSetChanged();
+        } else if (newCount > oldCount) {
+            notifyItemRangeInserted(oldCount, newCount - oldCount);
+            notifyItemRangeChanged(0, oldCount);
+        } else if (newCount < oldCount) {
+            notifyItemRangeRemoved(newCount, oldCount - newCount);
+            notifyItemRangeChanged(0, newCount);
+        } else {
+            notifyItemRangeChanged(0, newCount);
+        }
     }
 
     protected static class RssItemViewHolder extends RecyclerView.ViewHolder {

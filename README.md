@@ -95,7 +95,7 @@ The `fastlane/` directory contains metadata for the Android app (images, descrip
 
 *   `app/`: Main application module containing UI, Commands, and DI configuration.
 *   `base/`: Common components, Database entities (Room), and base application logic.
-*   `component-network/`: Network related components (Retrofit/OkHttp) for fetching feeds.
+*   `component-network/`: Network related components (Volley) for fetching feeds.
 *   `fastlane/`: Store metadata and potential automation scripts.
 *   `.github/`: GitHub Actions workflow configurations.
 
