@@ -9,6 +9,7 @@ import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
 import android.text.method.LinkMovementMethod;
 import android.view.Menu;
@@ -212,10 +213,15 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
                     });
         } else if (id == R.id.menu_download_video) {
             Context context = mSvProvider.getContext().getApplicationContext();
-            if (ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // API 29+: scoped storage — DownloadManager needs no permission
+                downloadMediaFile();
+            } else if (ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE)
                     == PackageManager.PERMISSION_GRANTED) {
+                // API 21-28: permission already granted
                 downloadMediaFile();
             } else {
+                // API 21-28: request permission before downloading
                 ActivityCompat.requestPermissions(mNavigator.getActivity(), new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
                         REQUEST_CODE_PERMISSION_WRITE_EXTERNAL_STORAGE);
             }
