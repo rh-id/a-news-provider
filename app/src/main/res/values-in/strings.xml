@@ -40,6 +40,8 @@
     <string name="dark_mode">Mode Gelap</string>
     <string name="theme_setting">Pengaturan Tema</string>
     <string name="url">Url</string>
+    <string name="copy">Salin</string>
+    <string name="copied_to_clipboard">Disalin ke clipboard</string>
     <string name="log_file">Log File</string>
     <string name="share_log_file">Bagi log file</string>
     <string name="error_sharing_log_file">Error membagikan log file</string>
@@ -67,6 +69,7 @@
     <string name="mark_as_read">Tandai sebagai terbaca</string>
     <string name="mark_as_unread">Tandai sebagai belum terbaca</string>
     <string name="menu_edit_link">Edit Link</string>
+    <string name="menu_copy_link">Salin Link</string>
     <string name="save_and_open">Simpan dan Buka</string>
     <string name="cancel">Batal</string>
     <string name="save">Simpan</string>

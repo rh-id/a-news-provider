@@ -19,6 +19,7 @@ import android.view.ViewGroup;
 import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
@@ -211,6 +212,13 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
                             );
                         }
                     });
+        } else if (id == R.id.menu_copy_link) {
+            Context context = mSvProvider.getContext();
+            String link = mRssItem.link;
+            boolean copied = UiUtils.copyToClipboard(context, context.getString(R.string.menu_copy_link), link);
+            Toast.makeText(context,
+                    copied ? R.string.copied_to_clipboard : android.R.string.cancel,
+                    Toast.LENGTH_SHORT).show();
         } else if (id == R.id.menu_download_video) {
             Context context = mSvProvider.getContext().getApplicationContext();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {

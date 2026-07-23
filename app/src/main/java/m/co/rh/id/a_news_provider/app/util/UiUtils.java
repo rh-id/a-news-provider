@@ -1,6 +1,8 @@
 package m.co.rh.id.a_news_provider.app.util;
 
 import android.app.Activity;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
@@ -43,6 +45,24 @@ public class UiUtils {
         TypedValue typedValue = new TypedValue();
         theme.resolveAttribute(attribute, typedValue, true);
         return typedValue.data;
+    }
+
+    /**
+     * Copies the given text to the system clipboard.
+     *
+     * @param context any context
+     * @param label   human-readable label describing what is being copied
+     * @param text    the text to place on the clipboard
+     * @return {@code true} if the text was copied, {@code false} if the clipboard
+     * service was unavailable
+     */
+    public static boolean copyToClipboard(Context context, CharSequence label, CharSequence text) {
+        ClipboardManager clipboard = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+        if (clipboard == null) {
+            return false;
+        }
+        clipboard.setPrimaryClip(ClipData.newPlainText(label, text));
+        return true;
     }
 
     private UiUtils() {
