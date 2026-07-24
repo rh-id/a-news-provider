@@ -1,0 +1,9 @@
+Version 1.13.0+71
+
+Fonctionnalités :
+* Ajout du menu « Copier le lien » à la page de détail de l\'élément RSS
+* Ajout de 8 nouvelles langues (allemand, estonien, français, islandais, italien, norvégien bokmål, norvégien nynorsk, romanche)
+
+Corrections :
+* Ciblage d\'Android 17 (SDK 37)
+* Correction du téléchargement vidéo cassé sur Android 13+ (API 33+)

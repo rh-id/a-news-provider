@@ -1,0 +1,9 @@
+Release 1.13.0+71
+
+Features:
+* Add Copy Link menu to RSS item detail page
+* Add 8 new languages (German, Estonian, French, Icelandic, Italian, Norwegian Bokmål, Norwegian Nynorsk, Romansh)
+
+Fixes:
+* Target Android 17 (SDK 37)
+* Fix broken Download Video on Android 13+ (API 33+)

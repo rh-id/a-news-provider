@@ -1,0 +1,9 @@
+Rilis 1.13.0+71
+
+Fitur:
+* Tambah menu Salin Tautan ke halaman detail item RSS
+* Tambah 8 bahasa baru (Jerman, Estonia, Prancis, Islandia, Italia, Norwegia Bokmål, Norwegia Nynorsk, Romansh)
+
+Perbaikan:
+* Target Android 17 (SDK 37)
+* Perbaiki Unduh Video yang rusak di Android 13+ (API 33+)

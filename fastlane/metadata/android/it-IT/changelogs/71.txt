@@ -1,0 +1,9 @@
+Rilascio 1.13.0+71
+
+Funzionalità:
+* Aggiunto menu «Copia link» alla pagina di dettaglio dell\'elemento RSS
+* Aggiunte 8 nuove lingue (tedesco, estone, francese, islandese, italiano, norvegese bokmål, norvegese nynorsk, romancio)
+
+Correzioni:
+* Target Android 17 (SDK 37)
+* Corretto il download video non funzionante su Android 13+ (API 33+)

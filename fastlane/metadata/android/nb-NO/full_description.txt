@@ -1,0 +1,11 @@
+En enkel og brukervennlig RSS-aggregator som leverer nyheter til smarttelefonen din
+<ul>
+  <li>Legg enkelt til en ny strøm via en snarvei</li>
+  <li>Støtter RSS XML</li>
+  <li>Støtter Atom XML</li>
+  <li>Støtter synkronisering i bakgrunnen</li>
+  <li>Enkelt grensesnitt for å legge til og lese nyhetene dine</li>
+  <li>Støtter mørk og lys modus</li>
+  <li>Tilgjengelig med enhåndsbetjening</li>
+  <li>Tilgjengelig for skjermlesere (testet med TalkBack)</li>
+</ul>

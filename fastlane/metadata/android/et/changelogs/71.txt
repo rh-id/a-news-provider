@@ -1,0 +1,9 @@
+Väljalase 1.13.0+71
+
+Funktsioonid:
+* Lisatud „Kopeeri link“ menüü RSS-elemendi üksikasjalehele
+* Lisatud 8 uut keelt (saksa, eesti, prantsuse, islandi, itaalia, norra bokmål, norra nynorsk, retoromaani)
+
+Parandused:
+* Siht Android 17 (SDK 37)
+* Parandatud katkine Video allalaadimine Android 13+ (API 33+)

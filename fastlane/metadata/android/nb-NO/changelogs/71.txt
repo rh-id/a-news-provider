@@ -1,0 +1,9 @@
+Utgivelse 1.13.0+71
+
+Funksjoner:
+* Lagt til «Kopier lenke»-meny på detaljesiden for RSS-element
+* Lagt til 8 nye språk (tysk, estisk, fransk, islandsk, italiensk, norsk bokmål, norsk nynorsk, retoromansk)
+
+Rettelser:
+* Mål på Android 17 (SDK 37)
+* Fikset ødelagt Last ned video på Android 13+ (API 33+)

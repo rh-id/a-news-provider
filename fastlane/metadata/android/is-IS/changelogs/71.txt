@@ -1,0 +1,9 @@
+Útgáfa 1.13.0+71
+
+Eiginleikar:
+* Bætt við „Afrita hlekk“ valmynd á upplýsingasíðu RSS-hlutar
+* Bætt við 8 nýjum tungumálum (þýska, eistneska, franska, íslenska, ítalska, norska bokmål, norska nynorsk, rómönsku)
+
+Villuleiðréttingar:
+* Markmið Android 17 (SDK 37)
+* Lagaður bilaður Hala niður myndband á Android 13+ (API 33+)

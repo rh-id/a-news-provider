@@ -1,0 +1,9 @@
+Versiun 1.13.0+71
+
+Funcziuns:
+* Agiuntà in menu «Copiar la colliaziun» sin la pagina da detagls da l'element RSS
+* Agiuntà 8 novas linguas (tudestg, estonic, franzos, islandais, talian, norvegais bokmål, norvegais nynorsk, rumantsch)
+
+Corecziuns:
+* Target Android 17 (SDK 37)
+* Remedià il problem cun Telechargiar Video sin Android 13+ (API 33+)
