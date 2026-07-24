@@ -1,0 +1,11 @@
+Un agrégateur RSS simple et facile à utiliser qui délivre l\'actualité sur votre smartphone
+<ul>
+  <li>Ajoutez facilement un nouveau flux via un raccourci</li>
+  <li>Prise en charge du XML RSS</li>
+  <li>Prise en charge du XML Atom</li>
+  <li>Prise en charge de la synchronisation en arrière-plan</li>
+  <li>Interface simple pour ajouter et lire vos actualités</li>
+  <li>Prise en charge du mode sombre et du mode clair</li>
+  <li>Accessibilité avec le mode à une main</li>
+  <li>Accessibilité avec les lecteurs d\'écran (testé avec TalkBack)</li>
+</ul>

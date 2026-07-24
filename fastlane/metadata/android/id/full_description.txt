@@ -1,0 +1,11 @@
+Agregator RSS yang sederhana dan mudah digunakan untuk mengantarkan berita ke ponsel Anda
+<ul>
+  <li>Mudah menambah feed baru menggunakan pintasan</li>
+  <li>Mendukung RSS XML</li>
+  <li>Mendukung Atom XML</li>
+  <li>Mendukung sinkronisasi latar belakang</li>
+  <li>Antarmuka sederhana untuk menambah dan membaca berita Anda</li>
+  <li>Mendukung mode gelap dan mode terang</li>
+  <li>Ramah aksesibilitas dengan mode satu tangan</li>
+  <li>Ramah aksesibilitas pada pembaca layar (diuji dengan TalkBack)</li>
+</ul>

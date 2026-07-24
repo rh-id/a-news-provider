@@ -1,0 +1,14 @@
+Útgáfa 1.12.0+70
+
+Villuleiðréttingar:
+* Nútímatækni við netgreiningu með NetworkCapabilities API (skipt úr úreltum API)
+* Skipt úr ScrollView fyrir RecyclerView á annálssíðu til að koma í veg fyrir að viðmót frjósi
+* Leystar margar villur og fjarlægður dauður kóði
+* Fjarlægð ónotuð multidex-kerfiskróa
+* Bætt við netskorðun fyrir RSS-bakgrunnssamstillingu
+* Bætt við „aftur á netsnú“ snákbar-tilkynningu
+
+Undir húddinu:
+* Flutt frá AGP 8.13.2 í 9.2.1, Gradle 8.14.3 í 9.4.1
+* Fjarlægðar óþarfar SSL/TLS-sökkulvélar
+* Fjarlægður dauður BroadcastReceiver-kóðaleið

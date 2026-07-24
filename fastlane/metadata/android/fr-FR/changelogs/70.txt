@@ -1,0 +1,14 @@
+Version 1.12.0+70
+
+Corrections :
+* Modernisation de la détection réseau avec l\'API NetworkCapabilities (remplacement des API obsolètes)
+* Remplacement de ScrollView par RecyclerView sur la page de journal pour éviter le gel de l\'interface
+* Résolution de plusieurs bogues et suppression du code mort
+* Suppression de la dépendance multidex inutilisée
+* Ajout d\'une contrainte réseau à la synchronisation RSS en arrière-plan
+* Ajout d\'une notification snackbar « de nouveau en ligne »
+
+Sous le capot :
+* Migration d\'AGP 8.13.2 vers 9.2.1, Gradle 8.14.3 vers 9.4.1
+* Suppression des fabriques de sockets SSL/TLS redondantes
+* Suppression du chemin de code BroadcastReceiver mort

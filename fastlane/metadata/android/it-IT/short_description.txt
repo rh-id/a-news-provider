@@ -1,0 +1,1 @@
+Un aggregatore RSS semplice che recapita le notizie sul tuo smartphone

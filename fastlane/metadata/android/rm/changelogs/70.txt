@@ -1,0 +1,14 @@
+Versiun 1.12.0+70
+
+Corecziuns:
+* Modernisà la detecziun da rait cun l'API NetworkCapabilities (replazzà APIs obsoletas)
+* Remplazzà ScrollView cun RecyclerView sin la pagina da log per prevegnir ch'l'interfatscha sa schloventia
+* Resolvidà plirs bugs e allontanà code mort
+* Allontanà la dependenza multidex betg utilisada
+* Agiuntà ina restricsiun da rait per la sincronisaziun RSS en il fund
+* Agiuntà ina infurmaziun snackbar «puspè online»
+
+Sut il cholier:
+* Migrà AGP 8.13.2 a 9.2.1, Gradle 8.14.3 a 9.4.1
+* Allontanà las fabritgas da socket SSL/TLS redundantas
+* Allontanà la via da code BroadcastReceiver morta

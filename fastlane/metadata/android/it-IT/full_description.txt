@@ -1,0 +1,11 @@
+Un aggregatore RSS semplice e facile da usare che recapita le notizie sul tuo smartphone
+<ul>
+  <li>Aggiungi facilmente un nuovo feed tramite scorciatoia</li>
+  <li>Supporta XML RSS</li>
+  <li>Supporta XML Atom</li>
+  <li>Supporta la sincronizzazione in background</li>
+  <li>Interfaccia semplice per aggiungere e leggere le tue notizie</li>
+  <li>Supporta la modalità scura e la modalità chiara</li>
+  <li>Accessibilità con modalità a una mano</li>
+  <li>Accessibilità con lettore di schermo (testato con TalkBack)</li>
+</ul>

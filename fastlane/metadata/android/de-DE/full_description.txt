@@ -1,0 +1,11 @@
+Ein einfacher und leicht zu bedienender RSS-Aggregator, der Nachrichten auf Ihr Smartphone liefert
+<ul>
+  <li>Neuen Feed einfach über eine Verknüpfung hinzufügen</li>
+  <li>Unterstützt RSS-XML</li>
+  <li>Unterstützt Atom-XML</li>
+  <li>Unterstützt Hintergrund-Synchronisierung</li>
+  <li>Einfache Oberfläche zum Hinzufügen und Lesen Ihrer Nachrichten</li>
+  <li>Unterstützt dunklen und hellen Modus</li>
+  <li>Barrierefrei durch Einhand-Modus</li>
+  <li>Barrierefrei bei Bildschirmlesegeräten (getestet mit TalkBack)</li>
+</ul>

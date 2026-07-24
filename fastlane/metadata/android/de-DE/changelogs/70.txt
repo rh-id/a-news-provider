@@ -1,0 +1,14 @@
+Release 1.12.0+70
+
+Fehlerbehebungen:
+* Netzwerkerkennung mit NetworkCapabilities-API modernisiert (veraltete APIs ersetzt)
+* ScrollView in der Log-Seite durch RecyclerView ersetzt, um UI-Einfrieren zu verhindern
+* Mehrere Fehler behoben und toten Code entfernt
+* Ungenutzte Multidex-Abhängigkeit entfernt
+* Netzwerkeinschränkung zur RSS-Hintergrundsynchronisierung hinzugefügt
+* „Wieder online"-Snackbar-Benachrichtigung hinzugefügt
+
+Unter der Haube:
+* Migration von AGP 8.13.2 auf 9.2.1, Gradle 8.14.3 auf 9.4.1
+* Redundante SSL/TLS-Socket-Factories entfernt
+* Toten BroadcastReceiver-Codepfad entfernt

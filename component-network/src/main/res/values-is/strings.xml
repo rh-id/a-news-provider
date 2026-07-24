@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="unable_to_parse">Tókst ekki að þátta %s</string>
+</resources>

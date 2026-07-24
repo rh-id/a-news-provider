@@ -1,0 +1,14 @@
+Rilis 1.12.0+70
+
+Perbaikan:
+* Memodernisasi deteksi jaringan dengan API NetworkCapabilities (mengganti API yang usang)
+* Mengganti ScrollView dengan RecyclerView di halaman Log untuk mencegah UI membeku
+* Memperbaiki beberapa bug dan merapikan kode mati
+* Menghapus dependensi multidex yang tidak digunakan
+* Menambahkan batasan jaringan untuk sinkronisasi RSS latar belakang
+* Menambahkan notifikasi snackbar "kembali online"
+
+Di balik layar:
+* Migrasi AGP 8.13.2 ke 9.2.1, Gradle 8.14.3 ke 9.4.1
+* Menghapus SSL/TLS socket factory yang berlebihan
+* Menghapus jalur kode BroadcastReceiver yang mati

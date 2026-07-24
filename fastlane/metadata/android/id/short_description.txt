@@ -1,0 +1,1 @@
+Agregator RSS yang sederhana untuk mengantarkan berita ke ponsel Anda

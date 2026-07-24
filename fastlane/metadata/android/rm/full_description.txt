@@ -1,0 +1,11 @@
+In aggregator RSS simpel e facila d'utilisar che delivra novitads sin tes smartphone
+<ul>
+  <li>Agiuntar simplamain in nov feed via ina scursanida</li>
+  <li>Sustegna RSS XML</li>
+  <li>Sustegna Atom XML</li>
+  <li>Sustegna la sincronisaziun en il fund</li>
+  <li>Interfatscha simpla per agiuntar e leger tias novitads</li>
+  <li>Sustegna il modus stgir e cler</li>
+  <li>Accessibel cun il modus d'ina maun</li>
+  <li>Accessibel cun lecturs d'ecran (testà cun TalkBack)</li>
+</ul>

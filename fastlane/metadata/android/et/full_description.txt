@@ -1,0 +1,11 @@
+Lihtne ja hõlpsasti kasutatav RSS-agregaat, mis toimetab uudised teie nutiseadmesse
+<ul>
+  <li>Lisa hõlpsasti uus voog otsetee kaudu</li>
+  <li>Toetab RSS-XML-i</li>
+  <li>Toetab Atom-XML-i</li>
+  <li>Toetab taustsünkroonimist</li>
+  <li>Lihtne liides uudiste lisamiseks ja lugemiseks</li>
+  <li>Toetab tumedat ja heledat režiimi</li>
+  <li>Hõlbustus ühekäerežiimiga</li>
+  <li>Hõlbustus ekraanilugejatele (testitud TalkBackiga)</li>
+</ul>

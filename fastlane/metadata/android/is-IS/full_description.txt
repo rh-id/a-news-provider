@@ -1,0 +1,11 @@
+Einfaldur og auðveldur RSS-safnari sem skilar fréttum á símann þinn
+<ul>
+  <li>Bættu auðveldlega við nýjum straum með flýtivísi</li>
+  <li>Styður RSS XML</li>
+  <li>Styður Atom XML</li>
+  <li>Styður samstillingu í bakgrunni</li>
+  <li>Einfalt viðmót til að bæta við og lesa fréttir þínar</li>
+  <li>Styður dökka og ljósa stillingu</li>
+  <li>Auðveld aðgengi með einhendarstillingu</li>
+  <li>Auðveld aðgengi á skjálesurum (prófað með TalkBack)</li>
+</ul>
