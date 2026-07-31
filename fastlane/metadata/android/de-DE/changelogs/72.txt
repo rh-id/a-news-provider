@@ -1,0 +1,9 @@
+Release 1.13.1+72
+
+Fehlerbehebungen:
+* Pufferlesefehler beim OPML-Import behoben
+* Benachrichtigungsfehler in der Benutzeroberfläche beim Hinzufügen von RSS-Feeds behoben
+* 15-Sekunden-Zeitüberschreitung für Hintergrund-RSS-Synchronisierungsarbeiter hinzugefügt
+
+Leistung:
+* Datenbankindex für RSS-Elemente nach Kanal-ID für schnellere Abfragen hinzugefügt

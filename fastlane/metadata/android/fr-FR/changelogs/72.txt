@@ -1,0 +1,9 @@
+Version 1.13.1+72
+
+Corrections :
+* Correction d'un problème de lecture du tampon lors de l'importation OPML
+* Correction de la notification d'erreur de l'interface utilisateur lors de l'ajout d'un flux RSS
+* Ajout d'un délai d'expiration de 15 secondes pour la synchronisation RSS en arrière-plan
+
+Performances :
+* Ajout d'un index de base de données sur les éléments RSS par ID de chaîne pour des requêtes plus rapides

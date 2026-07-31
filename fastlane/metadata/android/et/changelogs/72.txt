@@ -1,0 +1,9 @@
+Versioon 1.13.1+72
+
+Parandused:
+* Parandatud puhvri lugemise probleem OPML-i importimisel
+* Parandatud kasutajaliidese teavitus RSS-voo lisamise veast
+* Lisatud 15-sekundiline aegumine taustal töötavatele RSS-i sünkimistöödele
+
+Jõudlus:
+* Lisatud andmebaasi indeks RSS-üksustele kanali ID järgi kiiremate päringute jaoks

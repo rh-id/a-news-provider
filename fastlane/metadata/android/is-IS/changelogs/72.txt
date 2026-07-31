@@ -1,0 +1,9 @@
+Útgáfa 1.13.1+72
+
+Lagað:
+* Lagfært minnislesvillu við innflutning á OPML skrám
+* Lagfært villutilkynningu í viðmóti þegar ekki tekst að bæta við RSS vefstraumi
+* Bætt við 15 sekúndna tímamörkum á RSS samstillingu í bakgrunni
+
+Afköst:
+* Bætt við gagnagrunnsvísun á RSS liðum eftir rásar-ID fyrir hraðari fyrirspurnir

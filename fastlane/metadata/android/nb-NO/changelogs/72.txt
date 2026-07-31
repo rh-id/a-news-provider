@@ -1,0 +1,9 @@
+Utgivelse 1.13.1+72
+
+Feilrettinger:
+* Rettet feil ved feilaktig bufferlesing under OPML-import
+* Rettet feil i brukergrensesnittets feilmelding ved tillegg av RSS-strøm
+* Legg til 15 sekunders tidsavbrudd for bakgrunnsbehandling av RSS-synkronisering
+
+Ytelse:
+* Legg til databaseindeks for RSS-elementer etter kanal-ID for raskere spørringer

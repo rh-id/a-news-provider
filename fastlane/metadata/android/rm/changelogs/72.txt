@@ -1,0 +1,9 @@
+Ediziun 1.13.1+72
+
+Correcziuns:
+* Correct in problem da leger il buffer durant l'importaziun da OPML
+* Correct la notificaziun d'errur da l'interfaziun d'utilisader tar l'agiunta d'un canal RSS
+* Agiunt in temp da spetga da 15 secundas per la sincronisaziun RSS en il fund dal maletg
+
+Prestaziun:
+* Agiunt in index da la banca da datas sin ils elements RSS tenor ID dal canal per dumandas pli rapidas

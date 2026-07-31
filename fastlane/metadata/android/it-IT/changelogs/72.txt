@@ -1,0 +1,9 @@
+Rilascio 1.13.1+72
+
+Correzioni:
+* Corretto un problema di lettura del buffer durante l'importazione OPML
+* Corretta la notifica di errore dell'interfaccia utente durante l'aggiunta di un feed RSS
+* Aggiunto un timeout di 15 secondi ai processi di sincronizzazione RSS in background
+
+Prestazioni:
+* Aggiunto indice di database sugli elementi RSS per ID canale per query più veloci

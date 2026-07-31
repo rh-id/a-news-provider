@@ -1,0 +1,9 @@
+Rilis 1.13.1+72
+
+Perbaikan:
+* Perbaiki masalah pembacaan buffer saat impor OPML
+* Perbaiki notifikasi UI saat gagal menambah umpan RSS
+* Tambahkan batas waktu 15 detik pada pekerja sinkronisasi RSS di latar belakang
+
+Kinerja:
+* Tambahkan indeks basis data pada item RSS berdasarkan ID saluran untuk kueri lebih cepat
