@@ -107,7 +107,7 @@ public class RssChangeNotifier {
     public void newRssModelError(Throwable throwable) {
         mLogger.get().e(TAG, mAppContext.getString(R.string.error_feed_add),
                 throwable);
-        mAddedRssModelPublishSubject.onErrorReturnItem(Optional.empty());
+        mAddedRssModelPublishSubject.onNext(Optional.empty());
     }
 
     public void readRssItem(RssItem rssItem) {

@@ -13,6 +13,7 @@ import com.android.volley.toolbox.RequestFuture;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
@@ -51,7 +52,7 @@ public class RssSyncWorker extends Worker {
         List<RssModel> rssModels = new ArrayList<>();
         for (RequestFuture<RssModel> requestFuture : requestFutureList) {
             try {
-                rssModels.add(requestFuture.get());
+                rssModels.add(requestFuture.get(15, TimeUnit.SECONDS));
             } catch (Throwable throwable) {
                 provider.get(ILogger.class)
                         .d(TAG, getApplicationContext()

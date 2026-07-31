@@ -2,6 +2,7 @@ package m.co.rh.id.a_news_provider.base.entity;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.Index;
 import androidx.room.PrimaryKey;
 import androidx.room.TypeConverters;
 
@@ -10,7 +11,9 @@ import java.util.Date;
 
 import m.co.rh.id.a_news_provider.base.room.converter.Converter;
 
-@Entity(tableName = "rss_item")
+@Entity(tableName = "rss_item",
+        indices = {@Index(value = {"channel_id"})}
+)
 public class RssItem implements Serializable {
     @PrimaryKey(autoGenerate = true)
     public Long id;

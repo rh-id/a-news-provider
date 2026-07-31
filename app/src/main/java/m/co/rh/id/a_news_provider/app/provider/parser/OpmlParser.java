@@ -93,7 +93,7 @@ public class OpmlParser {
             char[] buff = new char[2048];
             int b = bufferedReader.read(buff);
             while (b != -1) {
-                stringBuilder.append(buff);
+                stringBuilder.append(buff, 0, b);
                 b = bufferedReader.read(buff);
             }
         } catch (Throwable throwable) {

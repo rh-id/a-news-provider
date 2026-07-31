@@ -11,6 +11,8 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.RequestFuture;
 
+import java.util.concurrent.TimeUnit;
+
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
@@ -40,7 +42,7 @@ public class NewRssWorker extends Worker {
                 newRssRequest(Request.Method.GET, url, requestFuture, requestFuture);
         requestQueue.add(rssRequest);
         try {
-            RssModel rssModel = requestFuture.get();
+            RssModel rssModel = requestFuture.get(15, TimeUnit.SECONDS);
             rssChangeNotifier.liveNewRssModel(rssModel);
         } catch (Throwable t) {
             if (t.getCause() instanceof ParseError) {
