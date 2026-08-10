@@ -13,13 +13,17 @@ A simple and easy to use RSS aggregator that deliver news to your smartphone.
 **For Users:**
 <ul>
   <li>Easily add new feed using shortcut</li>
+  <li>Add a feed by sharing a link from your browser or other apps</li>
   <li>Support RSS XML</li>
   <li>Support Atom XML</li>
+  <li>Import and export feeds via OPML</li>
+  <li>Download media (video and images) attached to feed items</li>
   <li>Support background sync</li>
   <li>Simple interface to add and read your news</li>
   <li>Support dark mode and light mode</li>
   <li>Accessibility friendly with one hand mode</li>
   <li>Accessibility friendly on screen reader (tested with TalkBack)</li>
+  <li>Available in 10 languages: English, Indonesian, German, Estonian, French, Icelandic, Italian, Norwegian (Bokmål & Nynorsk), and Romansh</li>
 </ul>
 
 This project is intended for demo app for [a-navigator](https://github.com/rh-id/a-navigator) and [a-provider](https://github.com/rh-id/a-provider) library usage.
@@ -86,6 +90,9 @@ The project uses GitHub Actions for CI/CD:
     *   Triggered when a tag starting with `v*` is pushed.
     *   Builds Debug and Release APKs.
     *   Creates a GitHub Release and attaches the APKs and changelog.
+*   **Android Emulator Test (`android-emulator-test.yml`):**
+    *   Triggered on push/pull request to `master`.
+    *   Runs instrumented (`connectedCheck`) tests on an emulator matrix (API levels 23 and 29).
 
 ### Fastlane
 
