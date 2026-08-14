@@ -6,6 +6,7 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
+import android.net.NetworkInfo;
 import android.net.NetworkRequest;
 import android.os.Build;
 import android.os.Bundle;
@@ -108,7 +109,7 @@ public class DeviceStatusNotifier implements ProviderDisposable, Application.Act
                     && hasInternetCapability(capabilities);
             mIsOnlineBehaviorSubject.onNext(isConnected);
         } else {
-            android.net.NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+            NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
             boolean isConnected = activeNetwork != null
                     && activeNetwork.isConnectedOrConnecting();
             mIsOnlineBehaviorSubject.onNext(isConnected);

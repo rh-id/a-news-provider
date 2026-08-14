@@ -19,6 +19,7 @@ import org.xmlpull.v1.XmlPullParserFactory;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -551,7 +552,7 @@ public class RssRequest extends Request<RssModel> {
         try {
             return new String(response.data, charset);
         } catch (UnsupportedEncodingException e) {
-            return new String(response.data, java.nio.charset.StandardCharsets.UTF_8);
+            return new String(response.data, StandardCharsets.UTF_8);
         }
     }
 

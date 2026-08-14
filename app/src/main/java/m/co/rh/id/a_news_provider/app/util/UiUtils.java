@@ -11,12 +11,13 @@ import android.net.Uri;
 import android.util.TypedValue;
 import android.view.View;
 
+import androidx.core.content.FileProvider;
+
 import java.io.File;
 
 public class UiUtils {
     public static void shareFile(Context context, File file, String chooserMessage) {
-        Uri fileUri = androidx.core.content.
-                FileProvider.getUriForFile(
+        Uri fileUri = FileProvider.getUriForFile(
                 context,
                 "m.co.rh.id.a_news_provider.fileprovider",
                 file);
