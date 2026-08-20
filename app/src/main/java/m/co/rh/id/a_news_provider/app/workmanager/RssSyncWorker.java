@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import m.co.rh.id.a_news_provider.R;
+import m.co.rh.id.a_news_provider.app.provider.repository.RssRepository;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
@@ -37,6 +38,7 @@ public class RssSyncWorker extends Worker {
     public Result doWork() {
         Provider provider = BaseApplication.of(getApplicationContext()).getProvider();
         RssDao rssDao = provider.get(RssDao.class);
+        RssRepository rssRepository = provider.get(RssRepository.class);
         RssRequestFactory rssRequestFactory = provider.get(RssRequestFactory.class);
         RequestQueue requestQueue = provider.get(RequestQueue.class);
         List<RssChannel> rssChannelList = rssDao.loadAllRssChannel();
@@ -52,7 +54,9 @@ public class RssSyncWorker extends Worker {
         List<RssModel> rssModels = new ArrayList<>();
         for (RequestFuture<RssModel> requestFuture : requestFutureList) {
             try {
-                rssModels.add(requestFuture.get(15, TimeUnit.SECONDS));
+                RssModel rssModel = requestFuture.get(15, TimeUnit.SECONDS);
+                RssModel persisted = rssRepository.persist(rssModel);
+                rssModels.add(persisted);
             } catch (Throwable throwable) {
                 provider.get(ILogger.class)
                         .d(TAG, getApplicationContext()

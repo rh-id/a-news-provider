@@ -17,6 +17,7 @@ import com.android.volley.toolbox.ImageLoader;
 import java.io.File;
 
 import m.co.rh.id.a_news_provider.component.network.RssRequestFactory;
+import m.co.rh.id.a_news_provider.component.network.parser.RssFeedParser;
 import m.co.rh.id.a_news_provider.component.network.provider.volley.DisposableRequestQueue;
 import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderModule;
@@ -57,5 +58,6 @@ public class NetworkProviderModule implements ProviderModule {
                             }
                         }));
         providerRegistry.registerLazy(RssRequestFactory.class, () -> new RssRequestFactory(provider));
+        providerRegistry.registerLazy(RssFeedParser.class, () -> new RssFeedParser(provider));
     }
 }

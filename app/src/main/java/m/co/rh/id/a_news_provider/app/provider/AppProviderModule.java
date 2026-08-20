@@ -17,6 +17,7 @@ import m.co.rh.id.a_news_provider.app.constants.Routes;
 import m.co.rh.id.a_news_provider.app.provider.event.AppSharedPreferencesEventHandler;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.provider.parser.OpmlParser;
+import m.co.rh.id.a_news_provider.app.provider.repository.RssRepository;
 import m.co.rh.id.a_news_provider.app.ui.page.DonationsPage;
 import m.co.rh.id.a_news_provider.app.ui.page.HomePage;
 import m.co.rh.id.a_news_provider.app.ui.page.RssItemDetailPage;
@@ -56,6 +57,7 @@ public class AppProviderModule implements ProviderModule {
         // for rss
         providerRegistry.registerAsync(RssChangeNotifier.class, () -> new RssChangeNotifier(provider));
         providerRegistry.registerLazy(OpmlParser.class, () -> new OpmlParser(provider));
+        providerRegistry.registerLazy(RssRepository.class, () -> new RssRepository(provider));
 
         providerRegistry.registerPool(StatefulViewProvider.class, () -> new StatefulViewProvider(provider));
 

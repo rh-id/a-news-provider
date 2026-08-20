@@ -14,6 +14,7 @@ import com.android.volley.toolbox.RequestFuture;
 import java.util.concurrent.TimeUnit;
 
 import m.co.rh.id.a_news_provider.R;
+import m.co.rh.id.a_news_provider.app.provider.repository.RssRepository;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.a_news_provider.base.model.RssModel;
@@ -35,6 +36,7 @@ public class NewRssWorker extends Worker {
         Context appContext = getApplicationContext();
         Provider provider = BaseApplication.of(getApplicationContext()).getProvider();
         RssChangeNotifier rssChangeNotifier = provider.get(RssChangeNotifier.class);
+        RssRepository rssRepository = provider.get(RssRepository.class);
         RequestQueue requestQueue = provider.get(RequestQueue.class);
         RequestFuture<RssModel> requestFuture = RequestFuture.newFuture();
         RssRequest rssRequest = provider.
@@ -43,7 +45,8 @@ public class NewRssWorker extends Worker {
         requestQueue.add(rssRequest);
         try {
             RssModel rssModel = requestFuture.get(15, TimeUnit.SECONDS);
-            rssChangeNotifier.liveNewRssModel(rssModel);
+            RssModel persisted = rssRepository.persist(rssModel);
+            rssChangeNotifier.liveNewRssModel(persisted);
         } catch (Throwable t) {
             if (t.getCause() instanceof ParseError) {
                 rssChangeNotifier.newRssModelError(new RuntimeException(
