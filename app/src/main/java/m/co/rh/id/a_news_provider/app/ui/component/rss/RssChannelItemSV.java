@@ -3,13 +3,17 @@ package m.co.rh.id.a_news_provider.app.ui.component.rss;
 import android.app.Activity;
 import android.content.Context;
 import android.text.Editable;
+import android.text.method.LinkMovementMethod;
 import android.text.TextWatcher;
+import android.text.util.Linkify;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AlertDialog;
 
 import com.android.volley.toolbox.ImageLoader;
 import com.android.volley.toolbox.NetworkImageView;
@@ -238,11 +242,24 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
             mEditModeSubject.onNext(!mEditModeSubject.getValue());
         } else if (viewId == R.id.button_link) {
             Context context = view.getContext();
+            String url = mRssChannelCountSubject.getValue().getKey().url;
             MaterialAlertDialogBuilder materialAlertDialogBuilder = new MaterialAlertDialogBuilder(context);
-            materialAlertDialogBuilder.setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss());
             materialAlertDialogBuilder.setTitle(context.getString(R.string.url).toUpperCase());
-            materialAlertDialogBuilder.setMessage(mRssChannelCountSubject.getValue().getKey().url);
-            materialAlertDialogBuilder.create().show();
+            materialAlertDialogBuilder.setMessage(url);
+            materialAlertDialogBuilder.setNegativeButton(R.string.copy, (dialog, which) -> {
+                boolean copied = UiUtils.copyToClipboard(context, context.getString(R.string.copy), url);
+                Toast.makeText(context,
+                        copied ? R.string.copied_to_clipboard : android.R.string.cancel,
+                        Toast.LENGTH_SHORT).show();
+            });
+            materialAlertDialogBuilder.setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss());
+            AlertDialog dialog = materialAlertDialogBuilder.create();
+            dialog.show();
+            TextView message = dialog.findViewById(android.R.id.message);
+            if (message != null) {
+                Linkify.addLinks(message, Linkify.WEB_URLS);
+                message.setMovementMethod(LinkMovementMethod.getInstance());
+            }
         }
     }
 
