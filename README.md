@@ -24,6 +24,9 @@ A simple and easy to use RSS aggregator that deliver news to your smartphone.
   <li>Accessibility friendly with one hand mode</li>
   <li>Accessibility friendly on screen reader (tested with TalkBack)</li>
   <li>Available in 10 languages: English, Indonesian, German, Estonian, French, Icelandic, Italian, Norwegian (Bokmål & Nynorsk), and Romansh</li>
+  <li>Support editing feed item link</li>
+  <li>Copy feed link to clipboard</li>
+  <li>Support Android 5.0 (API 21) and above</li>
 </ul>
 
 This project is intended for demo app for [a-navigator](https://github.com/rh-id/a-navigator) and [a-provider](https://github.com/rh-id/a-provider) library usage.
@@ -52,7 +55,7 @@ Business logic is encapsulated using the **Command Pattern**. This decouples the
 ### Reactive Programming
 
 *   **RxJava/RxAndroid:** Used heavily for asynchronous operations and event handling.
-*   **Notifiers:** Components like `RssChangeNotifier` use Rx subjects to emit updates to the UI when data changes.
+*   **Notifiers:** Components like `RssChangeNotifier` and `RssChannelStateNotifier` use Rx subjects to emit updates to the UI when data changes, while `RssRepository` persists feed data to the local database.
 
 ## Logic Flow
 
@@ -78,6 +81,19 @@ graph TD
 6.  **UI Update:** The UI, listening to the `Notifier` via RxJava, updates the display.
 
 ## Development & CI/CD
+
+### Building Locally
+
+This project is a standard multi-module Gradle project with modules: `app`, `base`, and `component-network`.
+
+**Requirements:**
+- JDK 17
+- Android SDK (compileSdk 37)
+
+**Commands:**
+- `./gradlew build` - Build the project and run unit tests
+- `./gradlew test` - Run unit tests only
+- `./gradlew connectedCheck` - Run instrumented tests (requires emulator or connected device)
 
 ### GitHub Workflows
 
