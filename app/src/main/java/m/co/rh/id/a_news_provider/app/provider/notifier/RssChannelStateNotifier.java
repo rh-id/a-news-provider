@@ -197,6 +197,26 @@ public class RssChannelStateNotifier implements ProviderDisposable {
         }
     }
 
+    /**
+     * Safely completes a BehaviorSubject during teardown.
+     * Catches Throwable to prevent dispose() from crashing due to unexpected synchronous throws.
+     * Note: RejectedExecutionException from executor shutdown is caught by RxJava and routed
+     * to the global error handler (installed in MainApplication/TestApplication), not thrown here.
+     * This is defense-in-depth for any other unexpected errors during subject completion.
+     */
+    private <T> void safeComplete(BehaviorSubject<T> subject) {
+        try {
+            subject.onComplete();
+        } catch (Throwable t) {
+            // Log but don't throw - dispose is terminal lifecycle, must complete cleanly
+            try {
+                mLogger.w(TAG, "Failed to complete subject during dispose", t);
+            } catch (Throwable ignored) {
+                // Logging might fail if already partially disposed; ignore and continue
+            }
+        }
+    }
+
     @Override
     public void dispose(Context context) {
         // Terminal lifecycle - set flag first
@@ -204,7 +224,11 @@ public class RssChannelStateNotifier implements ProviderDisposable {
         // Dispose all subscriptions (late adds auto-disposed)
         mCompositeDisposable.dispose();
         // Complete the subjects to signal completion to any observers
-        mSelectedRssChannelBehaviourSubject.onComplete();
-        mRssChannelUnReadCountMapBehaviourSubject.onComplete();
+        // Only attempt completion if executor is still alive; otherwise skip to avoid RejectedExecutionException
+        // which RxJava would route to the global error handler
+        if (!mExecutorService.isShutdown()) {
+            safeComplete(mSelectedRssChannelBehaviourSubject);
+            safeComplete(mRssChannelUnReadCountMapBehaviourSubject);
+        }
     }
 }
