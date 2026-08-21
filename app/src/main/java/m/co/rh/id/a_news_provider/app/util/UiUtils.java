@@ -13,7 +13,14 @@ import android.view.View;
 
 import androidx.core.content.FileProvider;
 
+import com.tokopedia.showcase.ShowCaseBuilder;
+import com.tokopedia.showcase.ShowCaseDialog;
+import com.tokopedia.showcase.ShowCaseObject;
+
 import java.io.File;
+import java.util.ArrayList;
+
+import m.co.rh.id.a_news_provider.R;
 
 public class UiUtils {
     public static void shareFile(Context context, File file, String chooserMessage) {
@@ -64,6 +71,38 @@ public class UiUtils {
         }
         clipboard.setPrimaryClip(ClipData.newPlainText(label, text));
         return true;
+    }
+
+    /**
+     * Show RSS channel list showcase dialog.
+     *
+     * @param activity   The activity to show the showcase on
+     * @param drawerView The drawer view containing the target view
+     */
+    public static void showRssChannelListShowCase(Activity activity, View drawerView) {
+        int textColor = R.color.white;
+        ShowCaseDialog showCaseDialog = new ShowCaseBuilder()
+                .textColorRes(textColor)
+                .titleTextColorRes(textColor)
+                .shadowColorRes(R.color.shadow)
+                .titleTextSizeRes(R.dimen.text_nav_menu)
+                .spacingRes(R.dimen.spacing_normal)
+                .backgroundContentColorRes(R.color.orange_600)
+                .circleIndicatorBackgroundDrawableRes(R.drawable.selector_circle_green)
+                .prevStringRes(R.string.previous)
+                .nextStringRes(R.string.next)
+                .finishStringRes(R.string.finish)
+                .useCircleIndicator(false)
+                .clickable(true)
+                .build();
+        String title = activity.getString(R.string.title_showcase_rss_channel_list);
+        String description = activity.getString(R.string.showcase_rss_channel_list);
+        ArrayList<ShowCaseObject> showCaseList = new ArrayList<>();
+        showCaseList.add(new ShowCaseObject(
+                drawerView.findViewById(R.id.container_list_channel),
+                title,
+                description));
+        showCaseDialog.show(activity, null, showCaseList);
     }
 
     private UiUtils() {

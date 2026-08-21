@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
-import android.net.Uri;
 import android.os.Build;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -14,49 +13,36 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.ContextCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
-import androidx.work.Data;
-import androidx.work.OneTimeWorkRequest;
-import androidx.work.WorkManager;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
-import com.tokopedia.showcase.ShowCaseBuilder;
-import com.tokopedia.showcase.ShowCaseDialog;
-import com.tokopedia.showcase.ShowCaseObject;
 
 import java.io.Externalizable;
-import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.ArrayList;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.core.Single;
-import io.reactivex.rxjava3.schedulers.Schedulers;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.constants.Routes;
 import m.co.rh.id.a_news_provider.app.constants.Shortcuts;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
+import m.co.rh.id.a_news_provider.app.provider.command.OpmlCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.RssQueryCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.SyncRssCmd;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChannelStateNotifier;
-import m.co.rh.id.a_news_provider.app.provider.parser.OpmlParser;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.NewRssChannelSVDialog;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.RssChannelListSV;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.RssItemListSV;
 import m.co.rh.id.a_news_provider.app.util.UiUtils;
-import m.co.rh.id.a_news_provider.app.workmanager.ConstantsKey;
-import m.co.rh.id.a_news_provider.app.workmanager.OpmlParseWorker;
 import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
-import m.co.rh.id.a_news_provider.base.provider.FileHelper;
 import m.co.rh.id.a_news_provider.base.provider.notifier.DeviceStatusNotifier;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.StatefulView;
@@ -70,6 +56,8 @@ import m.co.rh.id.aprovider.Provider;
 public class HomePage extends StatefulView<Activity> implements Externalizable, RequireComponent<Provider>, NavOnBackPressed<Activity>, Toolbar.OnMenuItemClickListener, SwipeRefreshLayout.OnRefreshListener, DrawerLayout.DrawerListener, View.OnClickListener, AppBarSV.OnMenuCreated, NavOnActivityResult<Activity> {
     private static final String TAG = HomePage.class.getName();
     private static final int REQUEST_CODE_IMPORT_OPML = 1;
+    private static final long BACK_PRESS_EXIT_TIMEOUT_MILLIS = 1000L;
+    private static final int ONLINE_STATUS_DEBOUNCE_SECONDS = 1;
 
     @NavInject
     private transient INavigator mNavigator;
@@ -91,6 +79,7 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
     private transient RssChangeNotifier mRssChangeNotifier;
     private transient RssChannelStateNotifier mRssChannelStateNotifier;
     private transient SyncRssCmd mSyncRssCmd;
+    private transient OpmlCmd mOpmlCmd;
 
     // View related
     private transient DrawerLayout mDrawerLayout;
@@ -110,15 +99,31 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
         mRssChangeNotifier = mSvProvider.get(RssChangeNotifier.class);
         mRssChannelStateNotifier = mSvProvider.get(RssChannelStateNotifier.class);
         mSyncRssCmd = mSvProvider.get(SyncRssCmd.class);
+        mOpmlCmd = mSvProvider.get(OpmlCmd.class);
     }
 
     @Override
     protected View createView(Activity activity, ViewGroup container) {
+        View view = inflateLayout(activity, container);
+        setupDrawer(view);
+        setupAppBar(view, activity);
+        SwipeRefreshLayout swipeRefreshLayout = setupSwipeRefresh(view);
+        subscribeEvents(container, swipeRefreshLayout);
+        attachChildViews(view, activity, container);
+        FloatingActionButton fab = view.findViewById(R.id.fab);
+        handleLaunchIntent(activity, fab);
+        return view;
+    }
+
+    private View inflateLayout(Activity activity, ViewGroup container) {
         int layoutId = R.layout.page_home;
         if (mAppSharedPreferences.isOneHandMode()) {
             layoutId = R.layout.one_hand_mode_page_home;
         }
-        View view = activity.getLayoutInflater().inflate(layoutId, container, false);
+        return activity.getLayoutInflater().inflate(layoutId, container, false);
+    }
+
+    private void setupDrawer(View view) {
         View menuSettings = view.findViewById(R.id.menu_settings);
         menuSettings.setOnClickListener(this);
         View menuDonation = view.findViewById(R.id.menu_donation);
@@ -132,21 +137,35 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
                 }
             };
         }
+        if (mIsDrawerOpen) {
+            mDrawerLayout.open();
+        }
+    }
+
+    private void setupAppBar(View view, Activity activity) {
         mAppBarSV.setMenuItemListener(this);
         mAppBarSV.setOnMenuCreated(this);
         mAppBarSV.setTitle(activity.getString(R.string.home));
         mAppBarSV.setNavigationOnClick(mOnNavigationClicked);
-        if (mIsDrawerOpen) {
-            mDrawerLayout.open();
-        }
-        String feedSyncSuccess = activity.getString(R.string.feed_sync_success);
-        String feedSyncError = activity.getString(R.string.error_feed_sync_failed);
+    }
+
+    private SwipeRefreshLayout setupSwipeRefresh(View view) {
+        SwipeRefreshLayout swipeRefreshLayout = view.findViewById(R.id.container_swipe_refresh);
+        swipeRefreshLayout.setOnRefreshListener(this);
+        return swipeRefreshLayout;
+    }
+
+    private void subscribeEvents(ViewGroup container, SwipeRefreshLayout swipeRefreshLayout) {
+        Context context = mSvProvider.getContext();
+        String feedSyncSuccess = context.getString(R.string.feed_sync_success);
+        String feedSyncError = context.getString(R.string.error_feed_sync_failed);
+
         mRxDisposer.add("syncRssCmd.syncedRss",
                 mSyncRssCmd.syncedRss()
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(rssModels -> {
                                     if (!rssModels.isEmpty()) {
-                                        Toast.makeText(mSvProvider.getContext(),
+                                        Toast.makeText(context,
                                                 feedSyncSuccess
                                                 , Toast.LENGTH_LONG).show();
                                     }
@@ -156,6 +175,7 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
                                                 .e(TAG, feedSyncError, throwable)
                         )
         );
+
         mRxDisposer.add("rssChannelStateNotifier.selectedRssChannel",
                 mRssChannelStateNotifier
                         .selectedRssChannel()
@@ -166,6 +186,7 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
                             }
                         })
         );
+
         mRxDisposer.add("rssChangeNotifier.newRssModel",
                 mRssChangeNotifier
                         .liveNewRssModel()
@@ -175,18 +196,18 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
                                         .ifPresent(rssModel ->
                                                 mSvProvider.get(ILogger.class)
                                                         .i(TAG,
-                                                                mSvProvider.getContext()
-                                                                        .getString(
-                                                                                R.string.feed_added,
-                                                                                rssModel
-                                                                                        .getRssChannel()
-                                                                                        .feedName)))
+                                                                context.getString(
+                                                                        R.string.feed_added,
+                                                                        rssModel
+                                                                                .getRssChannel()
+                                                                                .feedName)))
                         ));
+
         mRxDisposer.add("deviceStatusNotifier.onlineStatus",
                 mSvProvider.get(DeviceStatusNotifier.class)
                         .onlineStatus()
                         .distinctUntilChanged()
-                        .debounce(1, TimeUnit.SECONDS)
+                        .debounce(ONLINE_STATUS_DEBOUNCE_SECONDS, TimeUnit.SECONDS)
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(isOnline -> {
                             if (!isOnline) {
@@ -200,13 +221,24 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
                                 Snackbar.make(container,
                                                 R.string.device_status_online,
                                                 Snackbar.LENGTH_SHORT)
-                                        .setBackgroundTint(Color.parseColor("#4CAF50"))
+                                        .setBackgroundTint(ContextCompat.getColor(context, R.color.green_500))
                                         .setTextColor(Color.WHITE)
                                         .show();
                             }
                             mLastOnlineStatus = isOnline;
                         },
                         throwable -> {}));
+
+        if (mRssItemListSV.getLoadingFlow() != null) {
+            mRxDisposer.add("mRssItemListSV.isLoading",
+                    mRssItemListSV.getLoadingFlow()
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe(swipeRefreshLayout::setRefreshing)
+            );
+        }
+    }
+
+    private void attachChildViews(View view, Activity activity, ViewGroup container) {
         ViewGroup containerChannelList = view.findViewById(R.id.container_list_channel);
         containerChannelList.addView(mRssChannelListSV.buildView(activity, containerChannelList));
 
@@ -218,56 +250,21 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
 
         FloatingActionButton fab = view.findViewById(R.id.fab);
         fab.setOnClickListener(this);
-        SwipeRefreshLayout swipeRefreshLayout = view.findViewById(R.id.container_swipe_refresh);
-        swipeRefreshLayout.setOnRefreshListener(this);
-        if (mRssItemListSV.getLoadingFlow() != null) {
-            mRxDisposer.add("mRssItemListSV.isLoading",
-                    mRssItemListSV.getLoadingFlow()
-                            .observeOn(AndroidSchedulers.mainThread())
-                            .subscribe(swipeRefreshLayout::setRefreshing)
-            );
-        }
+    }
 
-        // Handle shortcut
+    private void handleLaunchIntent(Activity activity, FloatingActionButton fab) {
         Intent intent = activity.getIntent();
         String intentAction = intent.getAction();
         if (Shortcuts.NEW_RSS_CHANNEL_ACTION.equals(intentAction)) {
             fab.performClick();
         } else if (Intent.ACTION_SEND.equals(intentAction)) {
-            String sharedText = activity.getIntent()
-                    .getStringExtra(Intent.EXTRA_TEXT);
+            String sharedText = intent.getStringExtra(Intent.EXTRA_TEXT);
             mNavigator.push((args, activity1) ->
                     new NewRssChannelSVDialog(), NewRssChannelSVDialog.
                     Args.newArgs(sharedText));
         } else if (Intent.ACTION_VIEW.equals(intentAction)) {
-            parseOpmlFile(intent.getData());
+            mOpmlCmd.importOpml(intent.getData());
         }
-        return view;
-    }
-
-    private void parseOpmlFile(Uri fileData) {
-        Activity activity = mNavigator.getActivity();
-        String errorMessage = activity.getString(R.string.error_failed_to_open_file);
-        mSvProvider.get(ExecutorService.class)
-                .execute(() -> {
-                    try {
-                        File file = mSvProvider.get(FileHelper.class)
-                                .createTempFile("Feed.opml", fileData);
-                        OneTimeWorkRequest oneTimeWorkRequest =
-                                new OneTimeWorkRequest.Builder(OpmlParseWorker.class)
-                                        .setInputData(new Data.Builder()
-                                                .putString(ConstantsKey.KEY_FILE_ABSOLUTE_PATH,
-                                                        file.getAbsolutePath())
-                                                .build())
-                                        .build();
-                        mSvProvider.get(WorkManager.class)
-                                .enqueue(oneTimeWorkRequest);
-                    } catch (Throwable throwable) {
-                        mSvProvider.get(ILogger.class)
-                                .e(TAG, errorMessage
-                                        , throwable);
-                    }
-                });
     }
 
     @Override
@@ -292,7 +289,7 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
             mDrawerLayout.close();
         } else {
             long currentMilis = System.currentTimeMillis();
-            if ((currentMilis - mLastBackPressMilis) < 1000) {
+            if ((currentMilis - mLastBackPressMilis) < BACK_PRESS_EXIT_TIMEOUT_MILLIS) {
                 navigator.finishActivity(null);
             } else {
                 mLastBackPressMilis = currentMilis;
@@ -310,16 +307,12 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
             return true;
         } else if (id == R.id.menu_export_opml) {
             Context context = mSvProvider.getContext();
-            Single<File> fileSingle =
-                    Single.fromCallable(() -> mSvProvider.get(OpmlParser.class).exportOpml())
-                            .subscribeOn(Schedulers.from(mSvProvider.get(ExecutorService.class)))
-                            .observeOn(AndroidSchedulers.mainThread());
-            mRxDisposer.add("asyncExportOpml", fileSingle.subscribe(
-                    file -> UiUtils.shareFile(context, file, context.getString(R.string.share_opml)),
-                    throwable -> mSvProvider.get(ILogger.class)
-                            .e(TAG, context.getString(R.string.error_exporting_opml),
-                                    throwable)
-            ));
+            mRxDisposer.add("asyncExportOpml", mOpmlCmd.exportOpml()
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(file -> UiUtils.shareFile(context, file, context.getString(R.string.share_opml)),
+                            throwable -> mSvProvider.get(ILogger.class)
+                                    .e(TAG, context.getString(R.string.error_exporting_opml),
+                                            throwable)));
         } else if (id == R.id.menu_import_opml) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                 Activity activity = mNavigator.getActivity();
@@ -354,30 +347,8 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
                                     .observeOn(AndroidSchedulers.mainThread())
                                     .subscribe((integer, throwable) -> {
                                         if (throwable == null && integer > 0) {
-                                            int textColor = R.color.white;
                                             Activity activity = mNavigator.getActivity();
-                                            ShowCaseDialog showCaseDialog = new ShowCaseBuilder()
-                                                    .textColorRes(textColor)
-                                                    .titleTextColorRes(textColor)
-                                                    .shadowColorRes(R.color.shadow)
-                                                    .titleTextSizeRes(R.dimen.text_nav_menu)
-                                                    .spacingRes(R.dimen.spacing_normal)
-                                                    .backgroundContentColorRes(R.color.orange_600)
-                                                    .circleIndicatorBackgroundDrawableRes(R.drawable.selector_circle_green)
-                                                    .prevStringRes(R.string.previous)
-                                                    .nextStringRes(R.string.next)
-                                                    .finishStringRes(R.string.finish)
-                                                    .useCircleIndicator(false)
-                                                    .clickable(true)
-                                                    .build();
-                                            String title = activity.getString(R.string.title_showcase_rss_channel_list);
-                                            String description = activity.getString(R.string.showcase_rss_channel_list);
-                                            ArrayList<ShowCaseObject> showCaseList = new ArrayList<>();
-                                            showCaseList.add(new ShowCaseObject(
-                                                    drawerView.findViewById(R.id.container_list_channel),
-                                                    title,
-                                                    description));
-                                            showCaseDialog.show(activity, null, showCaseList);
+                                            UiUtils.showRssChannelListShowCase(activity, drawerView);
                                             mAppSharedPreferences.setShowCaseRssChannelList(true);
                                         }
                                     }));
@@ -417,7 +388,7 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
     public void onActivityResult(View currentView, Activity activity, INavigator INavigator, int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_CODE_IMPORT_OPML) {
             if (resultCode == Activity.RESULT_OK) {
-                parseOpmlFile(data.getData());
+                mOpmlCmd.importOpml(data.getData());
             }
         }
     }
