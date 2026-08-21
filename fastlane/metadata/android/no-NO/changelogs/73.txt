@@ -1,0 +1,7 @@
+Utgivelse 1.14.0+73
+
+Funksjoner:
+* Nettadressen til strømmen i kanallenk-dialogen kan nå trykkes på for å åpne i nettleser og kopieres til utklippstavlen
+
+Feilrettinger:
+* Fikset et sjeldent krasj i prosessen ved avslutting av appen, forårsaket av ikke-leverbare Rx-unntak

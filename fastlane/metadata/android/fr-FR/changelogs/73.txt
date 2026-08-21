@@ -1,0 +1,7 @@
+Version 1.14.0+73
+
+Fonctionnalités :
+* L'URL du flux dans la boîte de dialogue du lien du canal est désormais tactile pour s'ouvrir dans le navigateur et peut être copiée dans le presse-papiers
+
+Corrections :
+* Correction d'un plantage rare du processus à la fermeture de l'application, causé par des exceptions Rx non distribuables

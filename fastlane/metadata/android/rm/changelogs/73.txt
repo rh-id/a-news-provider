@@ -1,0 +1,7 @@
+Ediziun 1.14.0+73
+
+Funcziuns:
+* L'URL dal feed en il dialog dal link dal chanal è ussa tutgabel per avrir en il browser e copiabel en l'archiv provisoric
+
+Corecziuns:
+* Rasà in rar crash dal process tar la serrar da l'app, chaschunà d'excepziuns Rx betg consegnablas

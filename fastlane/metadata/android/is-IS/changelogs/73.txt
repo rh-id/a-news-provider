@@ -1,0 +1,7 @@
+Útgáfa 1.14.0+73
+
+Eiginleikar:
+* Vefslóð straums í tenglaglugga rásar er nú ýtanleg til að opna í vafra og afritanleg á klippispjald
+
+Villuleiðréttingar:
+* Lagað hrun ferlis sem gerist sjaldan við lok forrits, orsakað af óafhentanlegum Rx-frávikum

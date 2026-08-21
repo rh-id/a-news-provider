@@ -1,0 +1,7 @@
+Rilascio 1.14.0+73
+
+Funzionalità:
+* L'URL del feed nella finestra di dialogo del link del canale è ora toccabile per aprirsi nel browser e copiabile negli appunti
+
+Correzioni:
+* Corretto un raro crash del processo alla chiusura dell'app, causato da eccezioni Rx non consegnabili

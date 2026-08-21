@@ -1,0 +1,7 @@
+Release 1.14.0+73
+
+Funktionen:
+* Feed-URL im Kanal-Link-Dialog ist jetzt antippbar, um sie im Browser zu öffnen, und lässt sich in die Zwischenablage kopieren
+
+Fehlerbehebungen:
+* Seltener Prozessabsturz beim Beenden der App behoben, verursacht durch nicht zustellbare Rx-Ausnahmen

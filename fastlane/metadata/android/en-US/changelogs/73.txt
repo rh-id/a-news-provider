@@ -1,0 +1,7 @@
+Release 1.14.0+73
+
+Features:
+* Make feed URL in channel link dialog tappable to open in browser and copyable to clipboard
+
+Fixes:
+* Fix rare process crash during app teardown caused by undeliverable Rx exceptions

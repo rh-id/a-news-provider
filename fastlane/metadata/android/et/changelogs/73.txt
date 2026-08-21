@@ -1,0 +1,7 @@
+Versioon 1.14.0+73
+
+Funktsioonid:
+* Kanali lingi dialoogis olev voo URL on nüüd puututav, et avada brauseris, ja kopeeritav lõikelauale
+
+Parandused:
+* Parandati harv protsessi krahhi rakendi sulgemisel, mida põhjustasid kohaletoimetamatud Rx-i erindid

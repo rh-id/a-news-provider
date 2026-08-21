@@ -1,0 +1,7 @@
+Rilis 1.14.0+73
+
+Fitur:
+* URL feed pada dialog tautan channel kini bisa diketuk untuk dibuka di browser dan disalin ke papan klip
+
+Perbaikan:
+* Memperbaiki crash proses yang jarang terjadi saat aplikasi ditutup, akibat exception Rx yang tidak terkirim
