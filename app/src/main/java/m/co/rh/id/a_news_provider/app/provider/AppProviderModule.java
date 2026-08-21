@@ -16,6 +16,7 @@ import m.co.rh.id.a_news_provider.app.component.AppNotificationHandler;
 import m.co.rh.id.a_news_provider.app.constants.Routes;
 import m.co.rh.id.a_news_provider.app.provider.event.AppSharedPreferencesEventHandler;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
+import m.co.rh.id.a_news_provider.app.provider.notifier.RssChannelStateNotifier;
 import m.co.rh.id.a_news_provider.app.provider.parser.OpmlParser;
 import m.co.rh.id.a_news_provider.app.provider.repository.RssRepository;
 import m.co.rh.id.a_news_provider.app.ui.page.DonationsPage;
@@ -55,7 +56,8 @@ public class AppProviderModule implements ProviderModule {
         providerRegistry.registerAsync(WorkManager.class, () -> WorkManager.getInstance(provider.getContext()));
         providerRegistry.registerAsync(AppSharedPreferencesEventHandler.class, () -> new AppSharedPreferencesEventHandler(provider));
         // for rss
-        providerRegistry.registerAsync(RssChangeNotifier.class, () -> new RssChangeNotifier(provider));
+        providerRegistry.registerLazy(RssChangeNotifier.class, RssChangeNotifier::new);
+        providerRegistry.registerAsync(RssChannelStateNotifier.class, () -> new RssChannelStateNotifier(provider));
         providerRegistry.registerLazy(OpmlParser.class, () -> new OpmlParser(provider));
         providerRegistry.registerLazy(RssRepository.class, () -> new RssRepository(provider));
 

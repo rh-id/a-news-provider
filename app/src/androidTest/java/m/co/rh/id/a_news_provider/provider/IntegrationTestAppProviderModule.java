@@ -9,7 +9,9 @@ import m.co.rh.id.a_news_provider.app.provider.CommandProviderModule;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.event.AppSharedPreferencesEventHandler;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
+import m.co.rh.id.a_news_provider.app.provider.notifier.RssChannelStateNotifier;
 import m.co.rh.id.a_news_provider.app.provider.parser.OpmlParser;
+import m.co.rh.id.a_news_provider.app.provider.repository.RssRepository;
 import m.co.rh.id.a_news_provider.base.provider.BaseProviderModule;
 import m.co.rh.id.a_news_provider.base.provider.DatabaseProviderModule;
 import m.co.rh.id.a_news_provider.component.network.provider.NetworkProviderModule;
@@ -43,7 +45,9 @@ public class IntegrationTestAppProviderModule implements ProviderModule {
         providerRegistry.registerLazy(WorkManager.class, () -> WorkManager.getInstance(provider.getContext()));
         providerRegistry.registerLazy(AppSharedPreferencesEventHandler.class, () -> new AppSharedPreferencesEventHandler(provider));
         // for rss
-        providerRegistry.registerLazy(RssChangeNotifier.class, () -> new RssChangeNotifier(provider));
+        providerRegistry.registerLazy(RssChangeNotifier.class, () -> new RssChangeNotifier());
+        providerRegistry.registerLazy(RssChannelStateNotifier.class, () -> new RssChannelStateNotifier(provider));
+        providerRegistry.registerLazy(RssRepository.class, () -> new RssRepository(provider));
         providerRegistry.registerLazy(OpmlParser.class, () -> new OpmlParser(provider));
 
         providerRegistry.registerPool(StatefulViewProvider.class, () -> new StatefulViewProvider(provider));

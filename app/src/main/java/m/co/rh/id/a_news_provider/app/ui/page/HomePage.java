@@ -45,6 +45,7 @@ import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.RssQueryCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.SyncRssCmd;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
+import m.co.rh.id.a_news_provider.app.provider.notifier.RssChannelStateNotifier;
 import m.co.rh.id.a_news_provider.app.provider.parser.OpmlParser;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
@@ -88,6 +89,7 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
     private transient RxDisposer mRxDisposer;
     private transient AppSharedPreferences mAppSharedPreferences;
     private transient RssChangeNotifier mRssChangeNotifier;
+    private transient RssChannelStateNotifier mRssChannelStateNotifier;
     private transient SyncRssCmd mSyncRssCmd;
 
     // View related
@@ -106,6 +108,7 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
         mRxDisposer = mSvProvider.get(RxDisposer.class);
         mAppSharedPreferences = mSvProvider.get(AppSharedPreferences.class);
         mRssChangeNotifier = mSvProvider.get(RssChangeNotifier.class);
+        mRssChannelStateNotifier = mSvProvider.get(RssChannelStateNotifier.class);
         mSyncRssCmd = mSvProvider.get(SyncRssCmd.class);
     }
 
@@ -153,8 +156,8 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
                                                 .e(TAG, feedSyncError, throwable)
                         )
         );
-        mRxDisposer.add("rssChangeNotifier.selectedRssChannel",
-                mRssChangeNotifier
+        mRxDisposer.add("rssChannelStateNotifier.selectedRssChannel",
+                mRssChannelStateNotifier
                         .selectedRssChannel()
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(rssChannelOptional -> {

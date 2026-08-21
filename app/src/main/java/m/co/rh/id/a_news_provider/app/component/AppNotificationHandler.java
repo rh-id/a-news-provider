@@ -22,7 +22,7 @@ import java.util.function.Consumer;
 
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.MainActivity;
-import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
+import m.co.rh.id.a_news_provider.app.provider.notifier.RssChannelStateNotifier;
 import m.co.rh.id.a_news_provider.app.receiver.NotificationDeleteReceiver;
 import m.co.rh.id.a_news_provider.base.dao.AndroidNotificationDao;
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
@@ -42,7 +42,7 @@ public class AppNotificationHandler {
 
     private final Context mAppContext;
     private final ProviderValue<ExecutorService> mExecutorService;
-    private final ProviderValue<RssChangeNotifier> mRssChangeNotifier;
+    private final ProviderValue<RssChannelStateNotifier> mRssChannelStateNotifier;
     private final ProviderValue<AndroidNotificationDao> mAndroidNotificationDao;
     private final ProviderValue<RssDao> mRssDao;
     private final ProviderValue<Handler> mHandler;
@@ -51,7 +51,7 @@ public class AppNotificationHandler {
     public AppNotificationHandler(Provider provider) {
         mAppContext = provider.getContext().getApplicationContext();
         mExecutorService = provider.lazyGet(ExecutorService.class);
-        mRssChangeNotifier = provider.lazyGet(RssChangeNotifier.class);
+        mRssChannelStateNotifier = provider.lazyGet(RssChannelStateNotifier.class);
         mAndroidNotificationDao = provider.lazyGet(AndroidNotificationDao.class);
         mRssDao = provider.lazyGet(RssDao.class);
         mHandler = provider.lazyGet(Handler.class);
@@ -178,7 +178,7 @@ public class AppNotificationHandler {
                 if (androidNotification != null && androidNotification.groupKey.equals(GROUP_KEY_RSS_SYNC)) {
                     RssChannel rssChannel = mRssDao.get().findRssChannelById(androidNotification.refId);
                     if (rssChannel != null) {
-                        mRssChangeNotifier.get().selectRssChannel(rssChannel);
+                        mRssChannelStateNotifier.get().selectRssChannel(rssChannel);
                     }
                     mAndroidNotificationDao.get().delete(androidNotification);
                 }

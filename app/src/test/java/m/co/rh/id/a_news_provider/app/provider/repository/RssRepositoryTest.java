@@ -3,13 +3,20 @@ package m.co.rh.id.a_news_provider.app.provider.repository;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
+import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
+import m.co.rh.id.a_news_provider.base.model.ChannelUnreadCount;
 
 import static org.junit.Assert.*;
 
-public class RssRepositoryReadStateTest {
+/**
+ * Unit tests for RssRepository covering persistence read-state merging and unread-count map building.
+ */
+public class RssRepositoryTest {
 
     @Test
     public void testApplyReadStateMatchingLinksCarryOver() {
@@ -263,5 +270,163 @@ public class RssRepositoryReadStateTest {
 
         assertTrue("Exact case match should update isRead", parsedItem1.isRead);
         assertFalse("Different case should not match", parsedItem2.isRead);
+    }
+
+    @Test
+    public void testBuildUnreadCountMapWithNullChannels() {
+        List<RssChannel> channels = null;
+        List<ChannelUnreadCount> unreadCounts = new ArrayList<>();
+        
+        Map<RssChannel, Integer> result = RssRepository.buildUnreadCountMap(channels, unreadCounts);
+        
+        assertTrue("Result should be empty map", result.isEmpty());
+    }
+
+    @Test
+    public void testBuildUnreadCountMapWithEmptyChannels() {
+        List<RssChannel> channels = new ArrayList<>();
+        List<ChannelUnreadCount> unreadCounts = new ArrayList<>();
+        
+        Map<RssChannel, Integer> result = RssRepository.buildUnreadCountMap(channels, unreadCounts);
+        
+        assertTrue("Result should be empty map", result.isEmpty());
+    }
+
+    @Test
+    public void testBuildUnreadCountMapWithChannelsNoCounts() {
+        List<RssChannel> channels = new ArrayList<>();
+        
+        RssChannel channel1 = new RssChannel();
+        channel1.id = 1L;
+        channel1.feedName = "Channel 1";
+        channels.add(channel1);
+        
+        RssChannel channel2 = new RssChannel();
+        channel2.id = 2L;
+        channel2.feedName = "Channel 2";
+        channels.add(channel2);
+        
+        List<ChannelUnreadCount> unreadCounts = new ArrayList<>();
+        
+        Map<RssChannel, Integer> result = RssRepository.buildUnreadCountMap(channels, unreadCounts);
+        
+        assertEquals("Should have 2 channels", 2, result.size());
+        assertEquals("Channel 1 should have 0 unread", Integer.valueOf(0), result.get(channel1));
+        assertEquals("Channel 2 should have 0 unread", Integer.valueOf(0), result.get(channel2));
+    }
+
+    @Test
+    public void testBuildUnreadCountMapWithCounts() {
+        List<RssChannel> channels = new ArrayList<>();
+        
+        RssChannel channel1 = new RssChannel();
+        channel1.id = 1L;
+        channel1.feedName = "Channel 1";
+        channels.add(channel1);
+        
+        RssChannel channel2 = new RssChannel();
+        channel2.id = 2L;
+        channel2.feedName = "Channel 2";
+        channels.add(channel2);
+        
+        RssChannel channel3 = new RssChannel();
+        channel3.id = 3L;
+        channel3.feedName = "Channel 3";
+        channels.add(channel3);
+        
+        List<ChannelUnreadCount> unreadCounts = new ArrayList<>();
+        
+        ChannelUnreadCount count1 = new ChannelUnreadCount();
+        count1.channel_id = 1L;
+        count1.cnt = 5;
+        unreadCounts.add(count1);
+        
+        ChannelUnreadCount count2 = new ChannelUnreadCount();
+        count2.channel_id = 3L;
+        count2.cnt = 10;
+        unreadCounts.add(count2);
+        
+        Map<RssChannel, Integer> result = RssRepository.buildUnreadCountMap(channels, unreadCounts);
+        
+        assertEquals("Should have 3 channels", 3, result.size());
+        assertEquals("Channel 1 should have 5 unread", Integer.valueOf(5), result.get(channel1));
+        assertEquals("Channel 2 should have 0 unread", Integer.valueOf(0), result.get(channel2));
+        assertEquals("Channel 3 should have 10 unread", Integer.valueOf(10), result.get(channel3));
+    }
+
+    @Test
+    public void testBuildUnreadCountMapPreservesOrder() {
+        List<RssChannel> channels = new ArrayList<>();
+        
+        RssChannel channel1 = new RssChannel();
+        channel1.id = 3L;
+        channel1.feedName = "Channel 3";
+        channels.add(channel1);
+        
+        RssChannel channel2 = new RssChannel();
+        channel2.id = 1L;
+        channel2.feedName = "Channel 1";
+        channels.add(channel2);
+        
+        RssChannel channel3 = new RssChannel();
+        channel3.id = 2L;
+        channel3.feedName = "Channel 2";
+        channels.add(channel3);
+        
+        List<ChannelUnreadCount> unreadCounts = new ArrayList<>();
+        
+        ChannelUnreadCount count1 = new ChannelUnreadCount();
+        count1.channel_id = 1L;
+        count1.cnt = 5;
+        unreadCounts.add(count1);
+        
+        ChannelUnreadCount count2 = new ChannelUnreadCount();
+        count2.channel_id = 2L;
+        count2.cnt = 10;
+        unreadCounts.add(count2);
+        
+        Map<RssChannel, Integer> result = RssRepository.buildUnreadCountMap(channels, unreadCounts);
+        
+        assertTrue("Result should be LinkedHashMap", result instanceof LinkedHashMap);
+        
+        // Verify order is preserved
+        Object[] keys = result.keySet().toArray();
+        assertSame("First channel should be channel1", channel1, keys[0]);
+        assertSame("Second channel should be channel2", channel2, keys[1]);
+        assertSame("Third channel should be channel3", channel3, keys[2]);
+    }
+
+    @Test
+    public void testBuildUnreadCountMapWithNullUnreadCounts() {
+        List<RssChannel> channels = new ArrayList<>();
+        
+        RssChannel channel1 = new RssChannel();
+        channel1.id = 1L;
+        channel1.feedName = "Channel 1";
+        channels.add(channel1);
+        
+        List<ChannelUnreadCount> unreadCounts = null;
+        
+        Map<RssChannel, Integer> result = RssRepository.buildUnreadCountMap(channels, unreadCounts);
+        
+        assertEquals("Should have 1 channel", 1, result.size());
+        assertEquals("Channel 1 should have 0 unread", Integer.valueOf(0), result.get(channel1));
+    }
+
+    @Test
+    public void testBuildUnreadCountMapWithEmptyUnreadCounts() {
+        List<RssChannel> channels = new ArrayList<>();
+        
+        RssChannel channel1 = new RssChannel();
+        channel1.id = 1L;
+        channel1.feedName = "Channel 1";
+        channels.add(channel1);
+        
+        List<ChannelUnreadCount> unreadCounts = new ArrayList<>();
+        
+        Map<RssChannel, Integer> result = RssRepository.buildUnreadCountMap(channels, unreadCounts);
+        
+        assertEquals("Should have 1 channel", 1, result.size());
+        assertEquals("Channel 1 should have 0 unread", Integer.valueOf(0), result.get(channel1));
     }
 }

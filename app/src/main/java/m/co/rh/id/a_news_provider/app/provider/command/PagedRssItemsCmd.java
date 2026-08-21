@@ -13,6 +13,7 @@ import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
+import m.co.rh.id.a_news_provider.app.provider.notifier.RssChannelStateNotifier;
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
@@ -29,6 +30,7 @@ public class PagedRssItemsCmd {
     private final ILogger mLogger;
     private final BehaviorSubject<ArrayList<RssItem>> mRssItemsSubject;
     private final BehaviorSubject<Boolean> mIsLoadingSubject;
+    private final RssChannelStateNotifier mRssChannelStateNotifier;
     private Optional<RssChannel> mSelectedRssChannel;
     private final Flowable<ArrayList<RssItem>> mRssItems;
     private int mLimit;
@@ -43,12 +45,13 @@ public class PagedRssItemsCmd {
         mFilterTypeSubject = BehaviorSubject.createDefault(Optional.of(FILTER_BY_UNREAD));
         mIsLoadingSubject = BehaviorSubject.createDefault(true);
         RssChangeNotifier rssChangeNotifier = provider.get(RssChangeNotifier.class);
+        mRssChannelStateNotifier = provider.get(RssChannelStateNotifier.class);
         mRssItems =
                 Flowable.combineLatest(
                         rssChangeNotifier.liveNewRssModel()
                                 .startWithItem(Optional.empty())
                                 .observeOn(Schedulers.from(mExecutorService)),
-                        rssChangeNotifier.selectedRssChannel()
+                        mRssChannelStateNotifier.selectedRssChannel()
                                 .observeOn(Schedulers.from(mExecutorService)),
                         (rssModel, rssChannelOptional) -> {
                             if (rssChannelOptional.isPresent()) {

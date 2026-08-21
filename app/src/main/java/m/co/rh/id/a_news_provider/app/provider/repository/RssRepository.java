@@ -2,11 +2,14 @@ package m.co.rh.id.a_news_provider.app.provider.repository;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
+import m.co.rh.id.a_news_provider.base.model.ChannelUnreadCount;
 import m.co.rh.id.a_news_provider.base.model.RssModel;
 import m.co.rh.id.aprovider.Provider;
 
@@ -90,5 +93,67 @@ public class RssRepository {
                 }
             }
         }
+    }
+
+    /**
+     * Updates the isRead status of an RSS item in the database.
+     * This method must be called on a background thread.
+     *
+     * @param rssItem the RSS item to update
+     */
+    public void updateRssItemIsRead(RssItem rssItem) {
+        mRssDao.updateRssItemsIsReadByLink(rssItem.isRead, rssItem.link);
+    }
+
+    /**
+     * Deletes an RSS channel from the database.
+     * This method must be called on a background thread.
+     *
+     * @param rssChannel the RSS channel to delete
+     */
+    public void deleteRssChannel(RssChannel rssChannel) {
+        mRssDao.deleteRssChannel(rssChannel);
+    }
+
+    /**
+     * Retrieves a map of RSS channels to their unread item counts.
+     * This method must be called on a background thread.
+     *
+     * @return a LinkedHashMap preserving channel order, with zero-filled counts for channels with no unread items
+     */
+    public Map<RssChannel, Integer> getChannelUnreadCountMap() {
+        return buildUnreadCountMap(mRssDao.loadAllRssChannel(), mRssDao.countUnReadRssItemsByChannel());
+    }
+
+    /**
+     * Package-visible helper for testing - builds a map of channels to their unread counts.
+     * Merges the channel list with unread count data, preserving order and zero-filling missing counts.
+     *
+     * @param channels the list of RSS channels
+     * @param unreadCounts the list of unread count data
+     * @return a LinkedHashMap mapping channels to their unread counts
+     */
+    static Map<RssChannel, Integer> buildUnreadCountMap(List<RssChannel> channels, List<ChannelUnreadCount> unreadCounts) {
+        Map<RssChannel, Integer> mapResult = new LinkedHashMap<>();
+        
+        if (channels == null || channels.isEmpty()) {
+            return mapResult;
+        }
+
+        // Build a map of channel_id to count for quick lookup
+        HashMap<Long, Integer> countMap = new HashMap<>();
+        if (unreadCounts != null) {
+            for (ChannelUnreadCount cuc : unreadCounts) {
+                countMap.put(cuc.channel_id, cuc.cnt);
+            }
+        }
+
+        // Merge channels with counts, preserving order
+        for (RssChannel rssChannel : channels) {
+            Integer count = countMap.get(rssChannel.id);
+            mapResult.put(rssChannel, count != null ? count : 0);
+        }
+
+        return mapResult;
     }
 }

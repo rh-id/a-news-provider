@@ -27,8 +27,9 @@ import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
+import m.co.rh.id.a_news_provider.app.provider.command.DeleteRssChannelCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.RenameRssFeedCmd;
-import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
+import m.co.rh.id.a_news_provider.app.provider.notifier.RssChannelStateNotifier;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.util.UiUtils;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
@@ -43,9 +44,10 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
     private SerialOptionalBehaviorSubject<String> mImageUrlSubject;
     private SerialBehaviorSubject<String> mEditNameSubject;
     private transient Provider mSvProvider;
-    private transient RssChangeNotifier mRssChangeNotifier;
+    private transient RssChannelStateNotifier mRssChannelStateNotifier;
     private transient RxDisposer mRxDisposer;
     private transient RenameRssFeedCmd mRenameRssFeedCmd;
+    private transient DeleteRssChannelCmd mDeleteRssChannelCmd;
 
     private transient TextWatcher mNameTextWatcher;
 
@@ -58,9 +60,10 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
     @Override
     public void provideComponent(Provider provider) {
         mSvProvider = provider.get(StatefulViewProvider.class);
-        mRssChangeNotifier = mSvProvider.get(RssChangeNotifier.class);
+        mRssChannelStateNotifier = mSvProvider.get(RssChannelStateNotifier.class);
         mRxDisposer = mSvProvider.get(RxDisposer.class);
         mRenameRssFeedCmd = mSvProvider.get(RenameRssFeedCmd.class);
+        mDeleteRssChannelCmd = mSvProvider.get(DeleteRssChannelCmd.class);
         if (mRssChannelCountSubject == null) {
             mRssChannelCountSubject = BehaviorSubject.create();
         }
@@ -159,7 +162,7 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
                         Flowable.fromObservable(mRssChannelCountSubject, BackpressureStrategy.BUFFER)
                                 .debounce(100, TimeUnit.MILLISECONDS)
                                 .observeOn(AndroidSchedulers.mainThread()),
-                        mRssChangeNotifier.selectedRssChannel()
+                        mRssChannelStateNotifier.selectedRssChannel()
                                 .debounce(100, TimeUnit.MILLISECONDS)
                                 .observeOn(AndroidSchedulers.mainThread()),
                         (rssChannelCountEntry, rssChannelOptional) -> {
@@ -206,14 +209,14 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
             if (editMode == null || !editMode) {
                 Map.Entry<RssChannel, Integer> entry = mRssChannelCountSubject.getValue();
                 if (entry != null) {
-                    Optional<RssChannel> rssChannelOptional = mRssChangeNotifier.getSelectedRssChannel();
+                    Optional<RssChannel> rssChannelOptional = mRssChannelStateNotifier.getSelectedRssChannel();
                     RssChannel clickedRssChannel = entry.getKey();
                     if (rssChannelOptional.isPresent()) {
                         if (clickedRssChannel.id.equals(rssChannelOptional.get().id)) {
                             clickedRssChannel = null;
                         }
                     }
-                    mRssChangeNotifier.selectRssChannel(clickedRssChannel);
+                    mRssChannelStateNotifier.selectRssChannel(clickedRssChannel);
                 }
             }
         } else if (viewId == R.id.button_rename) {
@@ -228,7 +231,7 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
         } else if (viewId == R.id.button_delete) {
             Map.Entry<RssChannel, Integer> rssChannelCount = mRssChannelCountSubject.getValue();
             if (rssChannelCount != null) {
-                mRssChangeNotifier.deleteRssChannel(rssChannelCount.getKey());
+                mDeleteRssChannelCmd.execute(rssChannelCount.getKey());
             }
             mEditModeSubject.onNext(!mEditModeSubject.getValue());
         } else if (viewId == R.id.button_cancel) {
@@ -264,7 +267,7 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
             mRssChannelCountSubject.onComplete();
             mRssChannelCountSubject = null;
         }
-        mRssChangeNotifier = null;
+        mRssChannelStateNotifier = null;
     }
 
     public void setRssChannelCount(Map.Entry<RssChannel, Integer> rssChannelCount) {

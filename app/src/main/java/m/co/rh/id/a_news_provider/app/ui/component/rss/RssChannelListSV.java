@@ -10,7 +10,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
-import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
+import m.co.rh.id.a_news_provider.app.provider.notifier.RssChannelStateNotifier;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.annotation.NavInject;
@@ -25,14 +25,14 @@ public class RssChannelListSV extends StatefulView<Activity> implements RequireC
 
     private transient Provider mSvProvider;
     private transient RxDisposer mRxDisposer;
-    private transient RssChangeNotifier mRssChangeNotifier;
+    private transient RssChannelStateNotifier mRssChannelStateNotifier;
     private transient RssChannelRecyclerViewAdapter mRssChannelRecyclerViewAdapter;
 
     @Override
     public void provideComponent(Provider provider) {
         mSvProvider = provider.get(StatefulViewProvider.class);
         mRxDisposer = mSvProvider.get(RxDisposer.class);
-        mRssChangeNotifier = mSvProvider.get(RssChangeNotifier.class);
+        mRssChannelStateNotifier = mSvProvider.get(RssChannelStateNotifier.class);
         mRssChannelRecyclerViewAdapter = new RssChannelRecyclerViewAdapter(mNavigator, this);
     }
 
@@ -43,7 +43,7 @@ public class RssChannelListSV extends StatefulView<Activity> implements RequireC
         recyclerView.setAdapter(mRssChannelRecyclerViewAdapter);
         recyclerView.addItemDecoration(new DividerItemDecoration(activity, DividerItemDecoration.VERTICAL));
         mRxDisposer.add("rssChannelUnReadCount",
-                mRssChangeNotifier.rssChannelUnReadCount()
+                mRssChannelStateNotifier.rssChannelUnReadCount()
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(mRssChannelRecyclerViewAdapter::setItems)
         );

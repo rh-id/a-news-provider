@@ -1,195 +1,130 @@
 package m.co.rh.id.a_news_provider.app.provider.notifier;
 
 
-import android.content.Context;
-
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
 
 import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
-import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import io.reactivex.rxjava3.subjects.PublishSubject;
-import m.co.rh.id.a_news_provider.R;
-import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
-import m.co.rh.id.a_news_provider.base.model.ChannelUnreadCount;
 import m.co.rh.id.a_news_provider.base.model.RssModel;
-import m.co.rh.id.alogger.ILogger;
-import m.co.rh.id.aprovider.Provider;
-import m.co.rh.id.aprovider.ProviderValue;
 
 /**
- * A hub to handle RSS selection, updates, deletion, and changes and to notify accordingly
+ * A hub for RSS change events. Emits events when RSS models are added, synced, or updated.
  */
 public class RssChangeNotifier {
-    private static final String TAG = RssChangeNotifier.class.getName();
-    private final Context mAppContext;
-    private final ProviderValue<ILogger> mLogger;
-    private final ProviderValue<ExecutorService> mExecutorService;
-    private final ProviderValue<RssDao> mRssDao;
     private final PublishSubject<Optional<RssModel>> mAddedRssModelPublishSubject;
     private final PublishSubject<Optional<RssChannel>> mUpdatedRssChannelPublishSubject;
-    private final BehaviorSubject<Optional<RssChannel>> mSelectedRssChannelBehaviourSubject;
-    private final BehaviorSubject<Map<RssChannel, Integer>> mRssChannelUnReadCountMapBehaviourSubject;
     private final PublishSubject<List<RssModel>> mSyncedRssModelPublishSubject;
     private final PublishSubject<RssItem> mUpdatedRssItemSubject;
+    private final PublishSubject<Optional<RssChannel>> mDeletedRssChannelPublishSubject;
 
-    public RssChangeNotifier(Provider provider) {
-        mAppContext = provider.getContext().getApplicationContext();
-        mLogger = provider.lazyGet(ILogger.class);
-        mExecutorService = provider.lazyGet(ExecutorService.class);
-        mRssDao = provider.lazyGet(RssDao.class);
+    public RssChangeNotifier() {
         mAddedRssModelPublishSubject = PublishSubject.create();
         mUpdatedRssChannelPublishSubject = PublishSubject.create();
-        mSelectedRssChannelBehaviourSubject = BehaviorSubject.createDefault(Optional.empty());
-        mRssChannelUnReadCountMapBehaviourSubject = BehaviorSubject.createDefault(new HashMap<>());
         mSyncedRssModelPublishSubject = PublishSubject.create();
         mUpdatedRssItemSubject = PublishSubject.create();
-        refreshRssChannelCount();
+        mDeletedRssChannelPublishSubject = PublishSubject.create();
     }
 
-    private void refreshRssChannelCount() {
-        mExecutorService.get().execute(() -> {
-            try {
-                Map<RssChannel, Integer> mapResult = new LinkedHashMap<>();
-                List<RssChannel> rssChannelList = mRssDao.get().loadAllRssChannel();
-                if (rssChannelList != null && !rssChannelList.isEmpty()) {
-                    Optional<RssChannel> selectedRssChannel = mSelectedRssChannelBehaviourSubject.getValue();
-                    boolean selectedRssStillExist = false;
-                    List<ChannelUnreadCount> unreadCounts = mRssDao.get().countUnReadRssItemsByChannel();
-                    HashMap<Long, Integer> countMap = new HashMap<>();
-                    for (ChannelUnreadCount cuc : unreadCounts) {
-                        countMap.put(cuc.channel_id, cuc.cnt);
-                    }
-                    for (RssChannel rssChannel : rssChannelList) {
-                        Integer count = countMap.get(rssChannel.id);
-                        mapResult.put(rssChannel, count != null ? count : 0);
-                        if (!selectedRssStillExist) {
-                            if (selectedRssChannel != null && selectedRssChannel.isPresent()) {
-                                if (rssChannel.id.equals(selectedRssChannel.get().id)) {
-                                    selectedRssStillExist = true;
-                                }
-                            }
-                        }
-                    }
-                    if (!selectedRssStillExist) {
-                        mSelectedRssChannelBehaviourSubject.onNext(Optional.empty());
-                    }
-                }
-                mRssChannelUnReadCountMapBehaviourSubject.onNext(mapResult);
-            } catch (Throwable t) {
-                mRssChannelUnReadCountMapBehaviourSubject.onError(t);
-            }
-        });
-    }
-
-    // notify that these RSS have been synced
-    public void liveSyncedRssModel(List<RssModel> rssModels) {
-        mSyncedRssModelPublishSubject.onNext(rssModels);
-        refreshRssChannelCount();
-    }
-
+    /**
+     * Emits a new RSS model that was successfully added.
+     *
+     * @param rssModel the new RSS model
+     */
     public void liveNewRssModel(RssModel rssModel) {
         mAddedRssModelPublishSubject.onNext(Optional.ofNullable(rssModel));
-        if (!mAddedRssModelPublishSubject.hasObservers()) {
-            mLogger.get().i(TAG, mAppContext.getString(R.string.feed_added, rssModel
-                    .getRssChannel().feedName));
-        }
-        refreshRssChannelCount();
     }
 
+    /**
+     * Emits an error when adding a new RSS model fails.
+     *
+     * @param throwable the error
+     */
     public void newRssModelError(Throwable throwable) {
-        mLogger.get().e(TAG, mAppContext.getString(R.string.error_feed_add),
-                throwable);
         mAddedRssModelPublishSubject.onNext(Optional.empty());
     }
 
-    public void readRssItem(RssItem rssItem) {
-        rssItem.isRead = true;
-        updateIsRead(rssItem);
+    /**
+     * Emits RSS models that were synced.
+     *
+     * @param rssModels the synced RSS models
+     */
+    public void liveSyncedRssModel(List<RssModel> rssModels) {
+        mSyncedRssModelPublishSubject.onNext(rssModels);
     }
 
-    public void unReadRssItem(RssItem rssItem) {
-        rssItem.isRead = false;
-        updateIsRead(rssItem);
-    }
-
-    private void updateIsRead(RssItem rssItem) {
-        mExecutorService.get().execute(() -> {
-            try {
-                mRssDao.get().updateRssItemsIsReadByLink(rssItem.isRead, rssItem.link);
-                refreshRssChannelCount();
-            } catch (Throwable throwable) {
-                mLogger.get().e(TAG,
-                        mAppContext.getString(R.string.error_rss_read, rssItem.title
-                        ), throwable);
-            }
-        });
-    }
-
-    public void selectRssChannel(RssChannel rssChannel) {
-        mSelectedRssChannelBehaviourSubject.onNext(Optional.ofNullable(rssChannel));
-    }
-
-    public void deleteRssChannel(RssChannel rssChannel) {
-        mExecutorService.get().execute(() -> {
-            mRssDao.get().deleteRssChannel(rssChannel);
-            refreshRssChannelCount();
-        });
-    }
-
-
+    /**
+     * Emits an RSS channel update event.
+     *
+     * @param rssChannel the updated channel
+     */
     public void updatedRssChannel(RssChannel rssChannel) {
-        mExecutorService.get().execute(() -> {
-            try {
-                mUpdatedRssChannelPublishSubject.onNext(Optional.ofNullable(rssChannel));
-                refreshRssChannelCount();
-
-                // if selected channel updated, re-push the selected rss channel to update
-                Optional<RssChannel> selectedChannel = mSelectedRssChannelBehaviourSubject.getValue();
-                if (selectedChannel != null && selectedChannel.isPresent()) {
-                    if (selectedChannel.get().id.equals(rssChannel.id)) {
-                        selectRssChannel(rssChannel);
-                    }
-                }
-            } catch (Throwable throwable) {
-                mLogger.get().e(TAG, mAppContext.getString(R.string.error_rss_channel_update,
-                        rssChannel.feedName), throwable);
-            }
-        });
+        mUpdatedRssChannelPublishSubject.onNext(Optional.ofNullable(rssChannel));
     }
 
+    /**
+     * Emits an RSS item update event.
+     *
+     * @param rssItem the updated item
+     */
     public void updatedRssItem(RssItem rssItem) {
         mUpdatedRssItemSubject.onNext(rssItem);
     }
 
+    /**
+     * Emits an RSS channel deletion event.
+     *
+     * @param rssChannel the deleted channel
+     */
+    public void deletedRssChannel(RssChannel rssChannel) {
+        mDeletedRssChannelPublishSubject.onNext(Optional.ofNullable(rssChannel));
+    }
+
+    /**
+     * Provides a Flowable stream of new RSS model events.
+     *
+     * @return Flowable that emits optional RSS models
+     */
     public Flowable<Optional<RssModel>> liveNewRssModel() {
         return Flowable.fromObservable(mAddedRssModelPublishSubject, BackpressureStrategy.BUFFER);
     }
 
-    public Flowable<Optional<RssChannel>> selectedRssChannel() {
-        return Flowable.fromObservable(mSelectedRssChannelBehaviourSubject, BackpressureStrategy.BUFFER);
+    /**
+     * Provides a Flowable stream of updated RSS channel events.
+     *
+     * @return Flowable that emits optional updated RSS channels
+     */
+    public Flowable<Optional<RssChannel>> updatedRssChannel() {
+        return Flowable.fromObservable(mUpdatedRssChannelPublishSubject, BackpressureStrategy.BUFFER);
     }
 
-    public Flowable<Map<RssChannel, Integer>> rssChannelUnReadCount() {
-        return Flowable.fromObservable(mRssChannelUnReadCountMapBehaviourSubject, BackpressureStrategy.BUFFER);
-    }
-
+    /**
+     * Provides a Flowable stream of synced RSS model events.
+     *
+     * @return Flowable that emits lists of synced RSS models
+     */
     public Flowable<List<RssModel>> liveSyncedRssModel() {
         return Flowable.fromObservable(mSyncedRssModelPublishSubject, BackpressureStrategy.BUFFER);
     }
 
+    /**
+     * Provides a Flowable stream of updated RSS item events.
+     *
+     * @return Flowable that emits updated RSS items
+     */
     public Flowable<RssItem> getUpdatedRssItem() {
         return Flowable.fromObservable(mUpdatedRssItemSubject, BackpressureStrategy.BUFFER);
     }
 
-    public Optional<RssChannel> getSelectedRssChannel() {
-        return mSelectedRssChannelBehaviourSubject.getValue();
+    /**
+     * Provides a Flowable stream of deleted RSS channel events.
+     *
+     * @return Flowable that emits optional deleted RSS channels
+     */
+    public Flowable<Optional<RssChannel>> deletedRssChannel() {
+        return Flowable.fromObservable(mDeletedRssChannelPublishSubject, BackpressureStrategy.BUFFER);
     }
 }

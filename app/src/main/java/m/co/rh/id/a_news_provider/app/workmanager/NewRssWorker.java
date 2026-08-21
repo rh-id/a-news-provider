@@ -20,6 +20,7 @@ import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.a_news_provider.base.model.RssModel;
 import m.co.rh.id.a_news_provider.component.network.RssRequest;
 import m.co.rh.id.a_news_provider.component.network.RssRequestFactory;
+import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.aprovider.Provider;
 
 public class NewRssWorker extends Worker {
@@ -38,6 +39,7 @@ public class NewRssWorker extends Worker {
         RssChangeNotifier rssChangeNotifier = provider.get(RssChangeNotifier.class);
         RssRepository rssRepository = provider.get(RssRepository.class);
         RequestQueue requestQueue = provider.get(RequestQueue.class);
+        ILogger logger = provider.get(ILogger.class);
         RequestFuture<RssModel> requestFuture = RequestFuture.newFuture();
         RssRequest rssRequest = provider.
                 get(RssRequestFactory.class).
@@ -47,7 +49,12 @@ public class NewRssWorker extends Worker {
             RssModel rssModel = requestFuture.get(15, TimeUnit.SECONDS);
             RssModel persisted = rssRepository.persist(rssModel);
             rssChangeNotifier.liveNewRssModel(persisted);
+
+            // User-facing log (now unconditional)
+            logger.i(TAG, appContext.getString(R.string.feed_added, persisted.getRssChannel().feedName));
         } catch (Throwable t) {
+            logger.e(TAG, appContext.getString(R.string.error_feed_add), t);
+            
             if (t.getCause() instanceof ParseError) {
                 rssChangeNotifier.newRssModelError(new RuntimeException(
                         appContext.getString(R.string.error_parse_data_from,

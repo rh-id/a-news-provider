@@ -23,6 +23,7 @@ import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.constants.Routes;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.RssQueryCmd;
+import m.co.rh.id.a_news_provider.app.provider.command.UpdateRssItemIsReadCmd;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.ui.model.RssItemModel;
@@ -47,6 +48,7 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
     private transient RxDisposer mRxDisposer;
     private transient RssChangeNotifier mRssChangeNotifier;
     private transient RssQueryCmd mRssQueryCmd;
+    private transient UpdateRssItemIsReadCmd mUpdateRssItemIsReadCmd;
 
     private SerialBehaviorSubject<RssItem> mRssItemSubject;
     private transient RouteOptions mGetRssChannelByIdAndOpenDetail_routeOptions;
@@ -68,6 +70,7 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
         mRxDisposer = mSvProvider.get(RxDisposer.class);
         mRssChangeNotifier = mSvProvider.get(RssChangeNotifier.class);
         mRssQueryCmd = mSvProvider.get(RssQueryCmd.class);
+        mUpdateRssItemIsReadCmd = mSvProvider.get(UpdateRssItemIsReadCmd.class);
         mRssItemModelObservable = mRssItemSubject.getSubject().map(
                 rssItem -> {
                     RssItemModel rssItemModel = new RssItemModel();
@@ -150,8 +153,7 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
         if (id == R.id.root_layout) {
             RssItem rssItem = mRssItemSubject.getValue();
             if (!rssItem.isRead) {
-                mRssChangeNotifier
-                        .readRssItem(rssItem);
+                mUpdateRssItemIsReadCmd.execute(rssItem, true);
                 mRssItemSubject.onNext(rssItem);
             }
             mRxDisposer
@@ -184,14 +186,12 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
             Context context = mSvProvider.getContext();
             RssItem rssItem = mRssItemSubject.getValue();
             if (!rssItem.isRead) {
-                mRssChangeNotifier
-                        .readRssItem(rssItem);
+                mUpdateRssItemIsReadCmd.execute(rssItem, true);
                 mRssItemSubject.onNext(rssItem);
                 Toast.makeText(context, context.getString(R.string.mark_as_read), Toast.LENGTH_SHORT)
                         .show();
             } else {
-                mRssChangeNotifier
-                        .unReadRssItem(rssItem);
+                mUpdateRssItemIsReadCmd.execute(rssItem, false);
                 mRssItemSubject.onNext(rssItem);
                 Toast.makeText(context, context.getString(R.string.mark_as_unread), Toast.LENGTH_SHORT)
                         .show();
