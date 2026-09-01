@@ -6,6 +6,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.ImageButton;
 import android.widget.Spinner;
 
 import androidx.annotation.NonNull;
@@ -25,6 +26,7 @@ import io.reactivex.rxjava3.core.Flowable;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.PagedRssItemsCmd;
+import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
 import m.co.rh.id.alogger.ILogger;
@@ -69,6 +71,24 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
                 }
             };
         }
+        mRxDisposer.add("mPagedRssItemsCmd.itemsMarkedRead",
+                mSvProvider.get(RssChangeNotifier.class).getItemsMarkedRead()
+                        .subscribe(channelId -> mPagedRssItemsCmd.reload(),
+                                throwable ->
+                                        mSvProvider.get(ILogger.class).e(TAG,
+                                                mSvProvider.getContext()
+                                                        .getString(R.string.error_message, throwable.getMessage())))
+        );
+        mRxDisposer.add("mRssChangeNotifier.updatedRssItem.favoriteFilter",
+                mSvProvider.get(RssChangeNotifier.class).getUpdatedRssItem()
+                        .subscribe(rssItem -> {
+                            if (mPagedRssItemsCmd.getFilterType()
+                                    .orElse(PagedRssItemsCmd.FILTER_BY_NONE)
+                                    == PagedRssItemsCmd.FILTER_BY_FAVORITE) {
+                                mPagedRssItemsCmd.reload();
+                            }
+                        })
+        );
     }
 
     @Override
@@ -102,6 +122,40 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
                 mPagedRssItemsCmd.setFilterType(null);
             }
         });
+        ImageButton buttonSortOrder = view.findViewById(R.id.button_sort_order);
+        buttonSortOrder.setOnClickListener(v -> {
+            Integer sortOrder = mPagedRssItemsCmd.getSortOrder();
+            boolean isNewest = sortOrder == null || sortOrder == PagedRssItemsCmd.SORT_ORDER_NEWEST;
+            mPagedRssItemsCmd.setSortOrder(isNewest ?
+                    PagedRssItemsCmd.SORT_ORDER_OLDEST : PagedRssItemsCmd.SORT_ORDER_NEWEST);
+        });
+        mRxDisposer.add("mPagedRssItemsCmd.sortOrder",
+                mPagedRssItemsCmd.getSortOrderFlow()
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(sortOrderOptional -> {
+                                    Integer sortOrder = sortOrderOptional.orElse(PagedRssItemsCmd.SORT_ORDER_NEWEST);
+                                    if (sortOrder == PagedRssItemsCmd.SORT_ORDER_OLDEST) {
+                                        buttonSortOrder.setImageResource(R.drawable.ic_sort_asc_white);
+                                        buttonSortOrder.setContentDescription(
+                                                activity.getString(R.string.sort_oldest_first));
+                                    } else {
+                                        buttonSortOrder.setImageResource(R.drawable.ic_sort_desc_white);
+                                        buttonSortOrder.setContentDescription(
+                                                activity.getString(R.string.sort_newest_first));
+                                    }
+                                },
+                                throwable ->
+                                        mSvProvider.get(ILogger.class).e(TAG,
+                                                mSvProvider.getContext()
+                                                        .getString(R.string.error_message, throwable.getMessage()))
+                        )
+        );
+        Integer currentSortOrder = mPagedRssItemsCmd.getSortOrder();
+        boolean isNewest = currentSortOrder == null || currentSortOrder == PagedRssItemsCmd.SORT_ORDER_NEWEST;
+        buttonSortOrder.setImageResource(isNewest ?
+                R.drawable.ic_sort_desc_white : R.drawable.ic_sort_asc_white);
+        buttonSortOrder.setContentDescription(activity.getString(isNewest ?
+                R.string.sort_newest_first : R.string.sort_oldest_first));
         mRxDisposer.add("mPagedRssItemsCmd.getRssItems",
                 mPagedRssItemsCmd.getRssItems()
                         .debounce(100, TimeUnit.MILLISECONDS)

@@ -9,6 +9,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/text_margin"
+        android:gravity="center_vertical"
         android:orientation="horizontal">
 
         <com.google.android.material.textview.MaterialTextView
@@ -21,10 +22,18 @@
 
         <androidx.appcompat.widget.AppCompatSpinner
             android:id="@+id/spinner_filter_by"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/text_margin"
-            android:layout_marginLeft="@dimen/text_margin" />
+            android:layout_weight="1" />
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/button_sort_order"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/sort_newest_first"
+            app:srcCompat="@drawable/ic_sort_desc_white" />
     </androidx.appcompat.widget.LinearLayoutCompat>
 
     <androidx.recyclerview.widget.RecyclerView
