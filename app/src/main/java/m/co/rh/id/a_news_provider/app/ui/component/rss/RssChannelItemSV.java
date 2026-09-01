@@ -32,6 +32,7 @@ import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.DeleteRssChannelCmd;
+import m.co.rh.id.a_news_provider.app.provider.command.MarkAllReadCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.RenameRssFeedCmd;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChannelStateNotifier;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
@@ -52,6 +53,7 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
     private transient RxDisposer mRxDisposer;
     private transient RenameRssFeedCmd mRenameRssFeedCmd;
     private transient DeleteRssChannelCmd mDeleteRssChannelCmd;
+    private transient MarkAllReadCmd mMarkAllReadCmd;
 
     private transient TextWatcher mNameTextWatcher;
 
@@ -68,6 +70,7 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
         mRxDisposer = mSvProvider.get(RxDisposer.class);
         mRenameRssFeedCmd = mSvProvider.get(RenameRssFeedCmd.class);
         mDeleteRssChannelCmd = mSvProvider.get(DeleteRssChannelCmd.class);
+        mMarkAllReadCmd = mSvProvider.get(MarkAllReadCmd.class);
         if (mRssChannelCountSubject == null) {
             mRssChannelCountSubject = BehaviorSubject.create();
         }
@@ -104,6 +107,7 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
         Button buttonDelete = view.findViewById(R.id.button_delete);
         Button buttonCancel = view.findViewById(R.id.button_cancel);
         Button buttonLink = view.findViewById(R.id.button_link);
+        Button buttonMarkAllRead = view.findViewById(R.id.button_mark_all_read);
 
         view.setOnClickListener(this);
         view.setLongClickable(true);
@@ -113,6 +117,7 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
         buttonDelete.setOnClickListener(this);
         buttonCancel.setOnClickListener(this);
         buttonLink.setOnClickListener(this);
+        buttonMarkAllRead.setOnClickListener(this);
         mRxDisposer.add("mRenameRssFeedCmd.getNameValidation",
                 mRenameRssFeedCmd.liveNameValidation()
                         .observeOn(AndroidSchedulers.mainThread())
@@ -150,6 +155,7 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
                                 buttonDelete.setVisibility(View.VISIBLE);
                                 buttonCancel.setVisibility(View.VISIBLE);
                                 buttonLink.setVisibility(View.VISIBLE);
+                                buttonMarkAllRead.setVisibility(View.VISIBLE);
                             } else {
                                 networkImageViewIcon.setVisibility(View.VISIBLE);
                                 textName.setVisibility(View.VISIBLE);
@@ -159,6 +165,7 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
                                 buttonDelete.setVisibility(View.GONE);
                                 buttonCancel.setVisibility(View.GONE);
                                 buttonLink.setVisibility(View.GONE);
+                                buttonMarkAllRead.setVisibility(View.GONE);
                             }
                         })
         );
@@ -236,6 +243,12 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
             Map.Entry<RssChannel, Integer> rssChannelCount = mRssChannelCountSubject.getValue();
             if (rssChannelCount != null) {
                 mDeleteRssChannelCmd.execute(rssChannelCount.getKey());
+            }
+            mEditModeSubject.onNext(!mEditModeSubject.getValue());
+        } else if (viewId == R.id.button_mark_all_read) {
+            Map.Entry<RssChannel, Integer> rssChannelCount = mRssChannelCountSubject.getValue();
+            if (rssChannelCount != null) {
+                mMarkAllReadCmd.execute(rssChannelCount.getKey().id);
             }
             mEditModeSubject.onNext(!mEditModeSubject.getValue());
         } else if (viewId == R.id.button_cancel) {

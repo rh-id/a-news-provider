@@ -31,6 +31,7 @@ import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.constants.Routes;
 import m.co.rh.id.a_news_provider.app.constants.Shortcuts;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
+import m.co.rh.id.a_news_provider.app.provider.command.MarkAllReadCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.OpmlCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.RssQueryCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.SyncRssCmd;
@@ -80,6 +81,7 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
     private transient RssChannelStateNotifier mRssChannelStateNotifier;
     private transient SyncRssCmd mSyncRssCmd;
     private transient OpmlCmd mOpmlCmd;
+    private transient MarkAllReadCmd mMarkAllReadCmd;
 
     // View related
     private transient DrawerLayout mDrawerLayout;
@@ -100,6 +102,7 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
         mRssChannelStateNotifier = mSvProvider.get(RssChannelStateNotifier.class);
         mSyncRssCmd = mSvProvider.get(SyncRssCmd.class);
         mOpmlCmd = mSvProvider.get(OpmlCmd.class);
+        mMarkAllReadCmd = mSvProvider.get(MarkAllReadCmd.class);
     }
 
     @Override
@@ -203,6 +206,20 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
                                                                                 .feedName)))
                         ));
 
+        mRxDisposer.add("rssChangeNotifier.itemsMarkedRead.toast",
+                mRssChangeNotifier.getItemsMarkedRead()
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(rssChannelOptional ->
+                                        Toast.makeText(context,
+                                                context.getString(R.string.marked_all_as_read)
+                                                , Toast.LENGTH_SHORT).show(),
+                                throwable ->
+                                        mSvProvider.get(ILogger.class)
+                                                .e(TAG, context.getString(
+                                                        R.string.error_message, throwable.getMessage()), throwable)
+                        )
+        );
+
         mRxDisposer.add("deviceStatusNotifier.onlineStatus",
                 mSvProvider.get(DeviceStatusNotifier.class)
                         .onlineStatus()
@@ -304,6 +321,9 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
         int id = item.getItemId();
         if (id == R.id.menu_sync_feed) {
             mSyncRssCmd.execute();
+            return true;
+        } else if (id == R.id.menu_mark_all_read) {
+            mMarkAllReadCmd.execute(null);
             return true;
         } else if (id == R.id.menu_export_opml) {
             Context context = mSvProvider.getContext();

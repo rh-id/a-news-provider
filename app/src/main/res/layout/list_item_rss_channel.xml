@@ -45,7 +45,7 @@
         android:layout_height="wrap_content"
         android:text="@string/rename"
         android:textSize="11sp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/button_mark_all_read"
         app:layout_constraintEnd_toStartOf="@id/button_delete"
         app:layout_constraintStart_toStartOf="@id/input_text_name"
         app:layout_constraintTop_toBottomOf="@id/input_text_name" />
@@ -59,7 +59,7 @@
         android:text="@string/delete"
         android:textSize="11sp"
         app:backgroundTint="@color/red"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/button_mark_all_read"
         app:layout_constraintEnd_toEndOf="@id/button_cancel"
         app:layout_constraintStart_toEndOf="@id/button_rename"
         app:layout_constraintTop_toBottomOf="@id/input_text_name" />
@@ -72,10 +72,22 @@
         android:layout_marginLeft="10dp"
         android:text="@android:string/cancel"
         android:textSize="11sp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/button_mark_all_read"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/button_delete"
         app:layout_constraintTop_toBottomOf="@id/input_text_name" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/button_mark_all_read"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="@string/menu_mark_all_read"
+        android:textSize="11sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@id/input_text_name"
+        app:layout_constraintTop_toBottomOf="@id/button_rename" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/button_link"
