@@ -108,7 +108,7 @@ The project uses GitHub Actions for CI/CD:
     *   Creates a GitHub Release and attaches the APKs and changelog.
 *   **Android Emulator Test (`android-emulator-test.yml`):**
     *   Triggered on push/pull request to `master`.
-    *   Runs instrumented (`connectedCheck`) tests on an emulator matrix (API levels 23 and 29).
+    *   Runs instrumented (`connectedCheck`) tests on an emulator matrix (API levels 23, 26, 31, and 36).
 
 ### Fastlane
 
