@@ -55,6 +55,9 @@ public class RssItem implements Serializable {
     @ColumnInfo(name = "is_read")
     public boolean isRead;
 
+    @ColumnInfo(name = "is_favorite", defaultValue = "0")
+    public boolean isFavorite;
+
     @TypeConverters({Converter.class})
     @ColumnInfo(name = "created_date_time")
     public Date createdDateTime;
@@ -74,6 +77,7 @@ public class RssItem implements Serializable {
                 ", pubDate=" + pubDate +
                 ", mediaImage='" + mediaImage + '\'' +
                 ", isRead=" + isRead +
+                ", isFavorite=" + isFavorite +
                 ", createdDateTime=" + createdDateTime +
                 ", updatedDateTime=" + updatedDateTime +
                 '}';

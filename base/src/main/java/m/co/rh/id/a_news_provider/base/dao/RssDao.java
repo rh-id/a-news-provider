@@ -29,18 +29,6 @@ public abstract class RssDao {
     @Query("SELECT * FROM rss_item WHERE channel_id = :channelId")
     public abstract List<RssItem> findRssItemsByChannelId(long channelId);
 
-    @Query("SELECT * FROM rss_item WHERE channel_id = :channelId AND is_read = :isRead ORDER BY pub_date DESC,created_date_time DESC LIMIT :limit")
-    public abstract List<RssItem> findRssItemsByChannelIdAndIsReadWithLimit(long channelId, int isRead, int limit);
-
-    @Query("SELECT * FROM rss_item WHERE channel_id = :channelId ORDER BY pub_date DESC,created_date_time DESC LIMIT :limit")
-    public abstract List<RssItem> findRssItemsByChannelIdWithLimit(long channelId, int limit);
-
-    @Query("SELECT * FROM rss_item ORDER BY pub_date DESC,created_date_time DESC LIMIT :limit")
-    public abstract List<RssItem> loadRssItemsWithLimit(int limit);
-
-    @Query("SELECT * FROM rss_item WHERE is_read = :isRead ORDER BY pub_date DESC,created_date_time DESC LIMIT :limit")
-    public abstract List<RssItem> findRssItemsByIsReadWithLimit(int isRead, int limit);
-
     @Query("SELECT COUNT(id) FROM rss_item")
     public abstract int countRssItem();
 
@@ -128,4 +116,68 @@ public abstract class RssDao {
 
     @Query("SELECT channel_id, COUNT(id) as cnt FROM rss_item WHERE is_read = 0 GROUP BY channel_id")
     public abstract List<ChannelUnreadCount> countUnReadRssItemsByChannel();
+
+    /**
+     * Finds rss items filtered by optional channel, read and favorite state,
+     * ordered by newest first and limited to the given count.
+     * This method must be called on a background thread.
+     *
+     * @param channelId   optional channel id filter, null to include all channels
+     * @param isRead      optional read-state filter, null to include read and unread items
+     * @param isFavorite  optional favorite filter, null to include favorite and non-favorite items
+     * @param limit       maximum number of items to return
+     * @return list of rss items matching the filters, newest first
+     */
+    @Query("SELECT * FROM rss_item WHERE (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) ORDER BY COALESCE(pub_date, created_date_time) DESC, created_date_time DESC LIMIT :limit")
+    public abstract List<RssItem> findRssItemsWithLimit(Long channelId, Integer isRead, Integer isFavorite, int limit);
+
+    /**
+     * Finds rss items filtered by optional channel, read and favorite state,
+     * ordered by oldest first and limited to the given count.
+     * This method must be called on a background thread.
+     *
+     * @param channelId   optional channel id filter, null to include all channels
+     * @param isRead      optional read-state filter, null to include read and unread items
+     * @param isFavorite  optional favorite filter, null to include favorite and non-favorite items
+     * @param limit       maximum number of items to return
+     * @return list of rss items matching the filters, oldest first
+     */
+    @Query("SELECT * FROM rss_item WHERE (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) ORDER BY COALESCE(pub_date, created_date_time) ASC, created_date_time ASC LIMIT :limit")
+    public abstract List<RssItem> findRssItemsWithLimitAsc(Long channelId, Integer isRead, Integer isFavorite, int limit);
+
+    /**
+     * Marks all rss items as read.
+     * This method must be called on a background thread.
+     */
+    @Query("UPDATE rss_item SET is_read = 1 WHERE is_read = 0")
+    public abstract void markAllRssItemsRead();
+
+    /**
+     * Marks all rss items of the given channel as read.
+     * This method must be called on a background thread.
+     *
+     * @param channelId the channel id of the items to mark as read
+     */
+    @Query("UPDATE rss_item SET is_read = 1 WHERE channel_id = :channelId AND is_read = 0")
+    public abstract void markRssItemsReadByChannelId(long channelId);
+
+    /**
+     * Updates the favorite state of rss items matching the given link.
+     * This method must be called on a background thread.
+     *
+     * @param isFavorite the favorite state to set
+     * @param link       the link of the rss items to update
+     */
+    @Query("UPDATE rss_item SET is_favorite = :isFavorite WHERE link = :link")
+    public abstract void updateRssItemsIsFavoriteByLink(boolean isFavorite, String link);
+
+    /**
+     * Finds all rss items matching the given link, regardless of channel.
+     * This method must be called on a background thread.
+     *
+     * @param link the link of the rss items to find
+     * @return list of rss items matching the given link
+     */
+    @Query("SELECT * FROM rss_item WHERE link = :link")
+    public abstract List<RssItem> findRssItemsByLink(String link);
 }

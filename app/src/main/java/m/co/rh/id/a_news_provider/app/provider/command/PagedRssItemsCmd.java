@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
-import java.util.function.Supplier;
 
 import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
@@ -24,6 +23,10 @@ public class PagedRssItemsCmd {
     private static final String TAG = PagedRssItemsCmd.class.getName();
     public static final int FILTER_BY_NONE = 0;
     public static final int FILTER_BY_UNREAD = 1;
+    public static final int FILTER_BY_READ = 2;
+    public static final int FILTER_BY_FAVORITE = 3;
+    public static final int SORT_ORDER_NEWEST = 0;
+    public static final int SORT_ORDER_OLDEST = 1;
 
     private final ExecutorService mExecutorService;
     private final RssDao mRssDao;
@@ -35,6 +38,7 @@ public class PagedRssItemsCmd {
     private final Flowable<ArrayList<RssItem>> mRssItems;
     private int mLimit;
     private BehaviorSubject<Optional<Integer>> mFilterTypeSubject;
+    private final BehaviorSubject<Optional<Integer>> mSortOrderSubject;
 
     public PagedRssItemsCmd(Provider provider) {
         mExecutorService = provider.get(ExecutorService.class);
@@ -43,6 +47,7 @@ public class PagedRssItemsCmd {
         mRssItemsSubject = BehaviorSubject.createDefault(new ArrayList<>());
         mSelectedRssChannel = Optional.empty();
         mFilterTypeSubject = BehaviorSubject.createDefault(Optional.of(FILTER_BY_UNREAD));
+        mSortOrderSubject = BehaviorSubject.createDefault(Optional.of(SORT_ORDER_NEWEST));
         mIsLoadingSubject = BehaviorSubject.createDefault(true);
         RssChangeNotifier rssChangeNotifier = provider.get(RssChangeNotifier.class);
         mRssChannelStateNotifier = provider.get(RssChannelStateNotifier.class);
@@ -119,36 +124,33 @@ public class PagedRssItemsCmd {
 
     @NonNull
     private ArrayList<RssItem> loadRssItems() {
-        Supplier<List<RssItem>> listSupplier;
+        Long channelId = mSelectedRssChannel.isPresent() ? mSelectedRssChannel.get().id : null;
+        Integer isRead = null;
+        Integer isFavorite = null;
         Integer filterType = getFilterTypeValue();
-        if (!mSelectedRssChannel.isPresent()) {
-            listSupplier = () -> mRssDao
-                    .loadRssItemsWithLimit(mLimit);
-            if (filterType != null) {
-                switch (filterType) {
-                    case FILTER_BY_UNREAD:
-                        listSupplier = () -> mRssDao
-                                .findRssItemsByIsReadWithLimit(0, mLimit);
-                        break;
-                }
-            }
-        } else {
-            listSupplier = () -> mRssDao
-                    .findRssItemsByChannelIdWithLimit(mSelectedRssChannel.get().id, mLimit);
-            if (filterType != null) {
-                switch (filterType) {
-                    case FILTER_BY_UNREAD:
-                        listSupplier = () -> mRssDao
-                                .findRssItemsByChannelIdAndIsReadWithLimit(
-                                        mSelectedRssChannel.get().id, 0, mLimit);
-                        break;
-                }
+        if (filterType != null) {
+            switch (filterType) {
+                case FILTER_BY_UNREAD:
+                    isRead = 0;
+                    break;
+                case FILTER_BY_READ:
+                    isRead = 1;
+                    break;
+                case FILTER_BY_FAVORITE:
+                    isFavorite = 1;
+                    break;
+                default:
+                    break; // FILTER_BY_NONE
             }
         }
-        List<RssItem> rssItemList = listSupplier.get();
+        Integer sortOrder = getSortOrderValue();
+        boolean asc = sortOrder != null && sortOrder == SORT_ORDER_OLDEST;
+        List<RssItem> list = asc
+                ? mRssDao.findRssItemsWithLimitAsc(channelId, isRead, isFavorite, mLimit)
+                : mRssDao.findRssItemsWithLimit(channelId, isRead, isFavorite, mLimit);
         ArrayList<RssItem> rssItemArrayList = new ArrayList<>();
-        if (rssItemList != null && !rssItemList.isEmpty()) {
-            rssItemArrayList.addAll(rssItemList);
+        if (list != null && !list.isEmpty()) {
+            rssItemArrayList.addAll(list);
         }
         return rssItemArrayList;
     }
@@ -182,6 +184,44 @@ public class PagedRssItemsCmd {
     private Integer getFilterTypeValue() {
         Optional<Integer> filterTypeOpt = mFilterTypeSubject.getValue();
         return filterTypeOpt.orElse(null);
+    }
+
+    /**
+     * Sets the sort order of the rss items, then reloads the list from the beginning.
+     *
+     * @param sortOrder the sort order to set, null to reset to newest first
+     */
+    public void setSortOrder(Integer sortOrder) {
+        if (sortOrder == null) {
+            mSortOrderSubject.onNext(Optional.of(SORT_ORDER_NEWEST));
+        } else {
+            mSortOrderSubject.onNext(Optional.of(sortOrder));
+        }
+        reload();
+    }
+
+    /**
+     * Returns the current sort order.
+     *
+     * @return the current sort order, or null if none is set
+     */
+    public Integer getSortOrder() {
+        Optional<Integer> sortOrderOpt = mSortOrderSubject.getValue();
+        return sortOrderOpt.orElse(null);
+    }
+
+    /**
+     * Provides a Flowable stream of sort order changes.
+     *
+     * @return Flowable that emits optional sort orders
+     */
+    public Flowable<Optional<Integer>> getSortOrderFlow() {
+        return Flowable.fromObservable(mSortOrderSubject, BackpressureStrategy.BUFFER);
+    }
+
+    private Integer getSortOrderValue() {
+        Optional<Integer> sortOrderOpt = mSortOrderSubject.getValue();
+        return sortOrderOpt.orElse(null);
     }
 
     private void resetPage() {
