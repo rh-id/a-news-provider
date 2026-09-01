@@ -74,7 +74,8 @@ jobs:
           target: default
           arch: x86_64
           force-avd-creation: false
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          # API 36: cold boot (-no-snapshot) to test whether the cached snapshot from the stop/start heap hack causes the missing window focus
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none ${{ matrix.api-level == 36 && '-no-snapshot' || '-no-snapshot-save' }}
           disable-animations: true
           script: |
             adb shell getprop dalvik.vm.heapgrowthlimit
