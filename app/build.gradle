@@ -28,8 +28,8 @@ android {
         applicationId "m.co.rh.id.a_news_provider"
         minSdkVersion 21
         targetSdk 37
-        versionCode 73
-        versionName "1.14.0"
+        versionCode 74
+        versionName "1.15.0"
         vectorDrawables.useSupportLibrary true
 
         testInstrumentationRunner "m.co.rh.id.a_news_provider.test.AppAndroidJunit4Runner"

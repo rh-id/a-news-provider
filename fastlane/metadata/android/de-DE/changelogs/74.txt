@@ -1,0 +1,10 @@
+Release 1.15.0+74
+
+Funktionen:
+* Feed-Einträge als Favoriten markieren; der Favoriten-Status wird über Kanäle hinweg synchronisiert, die denselben Artikellink haben, und bleibt bei Feed-Updates erhalten
+* Die Eintragsliste nach Alle / Ungelesen / Gelesen / Favoriten filtern
+* Einträge mit einem neuen Sortier-Schalter nach Neueste oder Älteste sortieren
+* Alle Einträge über die Symbolleiste des Startbildschirms als gelesen markieren oder pro Kanal über die Kanal-Bearbeitungszeile
+
+Fehlerbehebungen:
+* Das Bearbeiten eines Feed-Eintrags-Links speichert jetzt den normalisierten https-Link und öffnet ihn erst nach erfolgreichem Speichern im Browser

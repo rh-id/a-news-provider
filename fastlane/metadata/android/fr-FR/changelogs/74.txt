@@ -1,0 +1,10 @@
+Version 1.15.0+74
+
+Fonctionnalités :
+* Marquer des éléments du flux comme favoris ; l'état de favori est synchronisé entre les canaux partageant le même lien d'article et est conservé lors des mises à jour du flux
+* Filtrer la liste des éléments par Tous / Non lu / Lu / Favoris
+* Trier les éléments par les plus récents ou les plus anciens avec un nouveau bouton de bascule de tri
+* Marquer tous les éléments comme lus depuis la barre d'outils de l'écran d'accueil, ou par canal depuis la ligne de modification du canal
+
+Corrections :
+* La modification du lien d'un élément du flux enregistre désormais le lien https normalisé et ne l'ouvre dans le navigateur qu'une fois l'enregistrement réussi

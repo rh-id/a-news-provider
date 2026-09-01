@@ -1,0 +1,10 @@
+Rilascio 1.15.0+74
+
+Funzionalità:
+* Contrassegna gli elementi del feed come preferiti; lo stato dei preferiti si sincronizza tra i canali che condividono lo stesso link dell'articolo e viene mantenuto durante gli aggiornamenti del feed
+* Filtra l'elenco degli elementi per Tutti / Non letto / Letto / Preferiti
+* Ordina gli elementi per i più recenti o i più vecchi con il nuovo pulsante di ordinamento
+* Segna tutti gli elementi come letti dalla barra degli strumenti della schermata principale, o per canale dalla riga di modifica del canale
+
+Correzioni:
+* La modifica del link di un elemento del feed ora salva il link https normalizzato e lo apre nel browser solo dopo che il salvataggio è riuscito

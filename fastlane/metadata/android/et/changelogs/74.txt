@@ -1,0 +1,10 @@
+Versioon 1.15.0+74
+
+Funktsioonid:
+* Voo elemente saab lemmikuks märkida; lemmiku olek sünkroonitakse üle kanalite, mis jagavad sama artikli linki, ja säilib voo uuenduste käigus
+* Filtreeri elemendiloendit Kõik / Lugemata / Loetud / Lemmikud järgi
+* Sordi elemendid uusima või vanima järgi uue sortimisnupuga
+* Märgi kõik elemendid loetuks avaekraani tööriistaribalt või kanali kaupa kanali muutmisereal
+
+Parandused:
+* Voo elemendi lingi muutmine salvestab nüüd normaliseeritud https-linki ja avab selle brauseris alles pärast edukat salvestamist

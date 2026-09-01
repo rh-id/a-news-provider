@@ -1,0 +1,10 @@
+Rilis 1.15.0+74
+
+Fitur:
+* Tandai item feed sebagai favorit; status favorit tersinkronisasi antar channel yang berbagi tautan artikel yang sama dan tetap tersimpan saat feed diperbarui
+* Filter daftar item berdasarkan Semua / Belum terbaca / Terbaca / Favorit
+* Urutkan item dari yang terbaru atau terlama dengan tombol pengalih urutan baru
+* Tandai semua item sebagai terbaca dari bilah alat layar utama, atau per channel dari baris edit channel
+
+Perbaikan:
+* Mengedit tautan item feed kini menyimpan tautan https yang dinormalisasi dan membukanya di browser hanya setelah penyimpanan berhasil

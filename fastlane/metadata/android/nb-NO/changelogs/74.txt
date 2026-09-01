@@ -1,0 +1,10 @@
+Utgivelse 1.15.0+74
+
+Funksjoner:
+* Merk strømelementer som favoritter; favorittstatusen synkroniseres på tvers av kanaler som deler samme artikkelenke, og beholdes ved strømoppdateringer
+* Filtrer elementlisten etter Alle / Ulest / Lest / Favoritter
+* Sorter elementer etter nyeste eller eldste med en ny veksleknapp for sortering
+* Merk alle elementer som lest fra verktøylinjen på startskjermen, eller per kanal fra redigeringsraden i kanalen
+
+Feilrettinger:
+* Redigering av lenken til et strømelement lagrer nå den normaliserte https-lenken og åpner den i nettleseren først etter at lagringen er vellykket

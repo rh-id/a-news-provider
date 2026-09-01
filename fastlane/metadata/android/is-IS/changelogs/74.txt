@@ -1,0 +1,10 @@
+Útgáfa 1.15.0+74
+
+Eiginleikar:
+* Merkja hluti straumsins sem eftirlæti; eftirlætishamurinn samstillist milli rása sem deila sama tengli greinarinnar og varðveitist við uppfærslur straumsins
+* Sía hlutalistann eftir Allt / Ólesið / Lesið / Eftirlæti
+* Raða hlutum nýjast fyrst eða elst fyrst með nýjum hnappi til að skipta um röðun
+* Merkja alla hluti sem lesið úr verkfærastiku heimaskjás, eða fyrir hverja rás úr breytingalínu rásar
+
+Villuleiðréttingar:
+* Breyting á tengli straumshlutar vistar nú staðlaða https-tengilinn og opnar hann í vafranum fyrst eftir að vistun heppnast

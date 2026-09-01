@@ -1,0 +1,10 @@
+Ediziun 1.15.0+74
+
+Funcziuns:
+* Marcar elements dal feed sco favurits; il stadi da favurit vegn sincronisà tranter chanals che partan la medema link da l'artitgel e resta conservà tar actualisaziuns dal feed
+* Filtrar la glista dals elements tenor Tut / Nunlegì / Legì / Favurits
+* Uslizar ils elements tenor il pli nov u il pli vegl cun in nov buttun d'uslizzi
+* Marcar tut ils elements sco legì ord la barra d'utensils da l'ecran principal u per chanal ord la lingia d'ediziun dal chanal
+
+Corecziuns:
+* L'editar la link d'in element dal feed memorisescha ussa la link https normalisada e l'avra en il browser pir suenter che la memorisaziun reussescha
