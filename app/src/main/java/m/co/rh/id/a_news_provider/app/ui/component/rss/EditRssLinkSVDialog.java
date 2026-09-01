@@ -1,6 +1,7 @@
 package m.co.rh.id.a_news_provider.app.ui.component.rss;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
 import android.text.Editable;
@@ -129,14 +130,15 @@ public class EditRssLinkSVDialog extends StatefulViewDialog<Activity> implements
         } else if (id == R.id.button_save) {
             saveUrl();
         } else if (id == R.id.button_save_and_open) {
-            saveUrl();
-            Activity activity = UiUtils.getActivity(view);
-            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(mUrlSubject.getValue()));
-            activity.startActivity(browserIntent);
+            saveUrl(UiUtils.getActivity(view), true);
         }
     }
 
     private void saveUrl() {
+        saveUrl(null, false);
+    }
+
+    private void saveUrl(Activity activity, boolean openAfterSave) {
         if (isValid()) {
             Args args = getArgs();
             mRxDisposer
@@ -146,6 +148,8 @@ public class EditRssLinkSVDialog extends StatefulViewDialog<Activity> implements
                                     .subscribe((s, throwable) -> {
                                         if (throwable != null) {
                                             mSvProvider.get(ILogger.class).e(TAG, throwable.getMessage(), throwable);
+                                        } else if (openAfterSave) {
+                                            openUrl(activity, s);
                                         } else {
                                             mSvProvider.get(ILogger.class).i(TAG,
                                                     mSvProvider.getContext().getString(R.string.success_save_link));
@@ -156,6 +160,15 @@ public class EditRssLinkSVDialog extends StatefulViewDialog<Activity> implements
         } else {
             String validation = mEditRssLinkCmd.getValidationError();
             mSvProvider.get(ILogger.class).i(TAG, validation);
+        }
+    }
+
+    private void openUrl(Activity activity, String url) {
+        try {
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            activity.startActivity(browserIntent);
+        } catch (ActivityNotFoundException activityNotFoundException) {
+            mSvProvider.get(ILogger.class).e(TAG, activityNotFoundException.getMessage(), activityNotFoundException);
         }
     }
 

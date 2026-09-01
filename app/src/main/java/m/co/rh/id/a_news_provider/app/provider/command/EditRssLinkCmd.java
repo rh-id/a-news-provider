@@ -56,10 +56,10 @@ public class EditRssLinkCmd {
                     }
                     if (validUrl(requestUrl.toString())) {
                         RssItem rssItem = mRssDao.findRssItemById(rssItemId);
-                        rssItem.link = url;
+                        rssItem.link = requestUrl.toString();
                         mRssDao.updateRssItem(rssItem);
                         mRssChangeNotifier.updatedRssItem(rssItem);
-                        return url;
+                        return requestUrl.toString();
                     } else {
                         throw new RuntimeException(getValidationError());
                     }
