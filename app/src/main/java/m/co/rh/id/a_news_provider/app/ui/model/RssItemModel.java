@@ -5,5 +5,6 @@ public class RssItemModel {
     public CharSequence title;
     public CharSequence description;
     public boolean isRead;
+    public boolean isFavorite;
     public Long id;
 }

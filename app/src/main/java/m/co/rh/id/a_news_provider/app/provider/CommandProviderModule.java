@@ -2,12 +2,14 @@ package m.co.rh.id.a_news_provider.app.provider;
 
 import m.co.rh.id.a_news_provider.app.provider.command.DeleteRssChannelCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.EditRssLinkCmd;
+import m.co.rh.id.a_news_provider.app.provider.command.MarkAllReadCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.NewRssChannelCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.OpmlCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.PagedRssItemsCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.RenameRssFeedCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.RssQueryCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.SyncRssCmd;
+import m.co.rh.id.a_news_provider.app.provider.command.UpdateRssItemIsFavoriteCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.UpdateRssItemIsReadCmd;
 import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderModule;
@@ -24,7 +26,9 @@ public class CommandProviderModule implements ProviderModule {
         providerRegistry.registerLazy(RssQueryCmd.class, () -> new RssQueryCmd(provider));
         providerRegistry.registerLazy(EditRssLinkCmd.class, () -> new EditRssLinkCmd(provider));
         providerRegistry.registerLazy(UpdateRssItemIsReadCmd.class, () -> new UpdateRssItemIsReadCmd(provider));
+        providerRegistry.registerLazy(UpdateRssItemIsFavoriteCmd.class, () -> new UpdateRssItemIsFavoriteCmd(provider));
         providerRegistry.registerLazy(DeleteRssChannelCmd.class, () -> new DeleteRssChannelCmd(provider));
         providerRegistry.registerLazy(OpmlCmd.class, () -> new OpmlCmd(provider));
+        providerRegistry.registerLazy(MarkAllReadCmd.class, () -> new MarkAllReadCmd(provider));
     }
 }

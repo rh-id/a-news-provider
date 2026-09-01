@@ -6,6 +6,11 @@
 
     <group>
         <item
+            android:id="@+id/menu_toggle_favorite"
+            android:icon="@drawable/ic_star_outline_white"
+            android:title="@string/menu_toggle_favorite"
+            app:showAsAction="ifRoom" />
+        <item
             android:id="@+id/menu_edit_link"
             android:icon="@drawable/ic_link_black"
             android:title="@string/menu_edit_link"

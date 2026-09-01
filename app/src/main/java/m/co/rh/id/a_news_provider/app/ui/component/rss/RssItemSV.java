@@ -6,6 +6,7 @@ import android.graphics.Typeface;
 import android.os.Build;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,6 +24,7 @@ import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.constants.Routes;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.RssQueryCmd;
+import m.co.rh.id.a_news_provider.app.provider.command.UpdateRssItemIsFavoriteCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.UpdateRssItemIsReadCmd;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
@@ -49,6 +51,7 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
     private transient RssChangeNotifier mRssChangeNotifier;
     private transient RssQueryCmd mRssQueryCmd;
     private transient UpdateRssItemIsReadCmd mUpdateRssItemIsReadCmd;
+    private transient UpdateRssItemIsFavoriteCmd mUpdateRssItemIsFavoriteCmd;
 
     private SerialBehaviorSubject<RssItem> mRssItemSubject;
     private transient RouteOptions mGetRssChannelByIdAndOpenDetail_routeOptions;
@@ -71,6 +74,7 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
         mRssChangeNotifier = mSvProvider.get(RssChangeNotifier.class);
         mRssQueryCmd = mSvProvider.get(RssQueryCmd.class);
         mUpdateRssItemIsReadCmd = mSvProvider.get(UpdateRssItemIsReadCmd.class);
+        mUpdateRssItemIsFavoriteCmd = mSvProvider.get(UpdateRssItemIsFavoriteCmd.class);
         mRssItemModelObservable = mRssItemSubject.getSubject().map(
                 rssItem -> {
                     RssItemModel rssItemModel = new RssItemModel();
@@ -84,6 +88,7 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
                     rssItemModel.title = HtmlCompat
                             .fromHtml(rssItem.title, HtmlCompat.FROM_HTML_MODE_COMPACT);
                     rssItemModel.isRead = rssItem.isRead;
+                    rssItemModel.isFavorite = rssItem.isFavorite;
 
                     return rssItemModel;
                 }
@@ -108,6 +113,16 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
         view.setOnLongClickListener(this);
         TextView textDate = view.findViewById(R.id.text_date);
         TextView textTitle = view.findViewById(R.id.text_title);
+        ImageButton buttonFavorite = view.findViewById(R.id.button_favorite);
+        buttonFavorite.setOnClickListener(v -> {
+            RssItem rssItem = mRssItemSubject.getValue();
+            if (rssItem == null) {
+                return;
+            }
+            boolean newVal = !rssItem.isFavorite;
+            mUpdateRssItemIsFavoriteCmd.execute(rssItem, newVal);
+            mRssItemSubject.onNext(rssItem);
+        });
         mRxDisposer.add("mRssItemSubject",
                 mRssItemModelObservable
                         .subscribeOn(Schedulers.from(mExecutorService))
@@ -123,13 +138,18 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
                                 textDate.setTypeface(Typeface.DEFAULT_BOLD);
                                 textTitle.setTypeface(Typeface.DEFAULT_BOLD);
                             }
+                            buttonFavorite.setImageResource(rssItemModel.isFavorite ?
+                                    R.drawable.ic_star_filled_orange : R.drawable.ic_star_outline_gray);
+                            buttonFavorite.setContentDescription(
+                                    mSvProvider.getContext().getString(rssItemModel.isFavorite ?
+                                            R.string.favorite_added : R.string.favorite_removed));
                         })
         );
         mRxDisposer.add("createView_onRssItemUpdated",
                 mRssChangeNotifier.getUpdatedRssItem()
                         .subscribe(rssItem -> {
                             RssItem currentRssItem = mRssItemSubject.getValue();
-                            if (rssItem.id.equals(currentRssItem.id)) {
+                            if (currentRssItem != null && rssItem.id.equals(currentRssItem.id)) {
                                 mRssItemSubject.onNext(rssItem);
                             }
                         }));

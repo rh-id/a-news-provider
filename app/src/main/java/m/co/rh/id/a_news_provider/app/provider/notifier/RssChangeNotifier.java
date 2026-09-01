@@ -12,7 +12,8 @@ import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.a_news_provider.base.model.RssModel;
 
 /**
- * A hub for RSS change events. Emits events when RSS models are added, synced, or updated.
+ * A hub for RSS change events. Emits events when RSS models are added, synced, or updated,
+ * and when RSS items are marked as read.
  */
 public class RssChangeNotifier {
     private final PublishSubject<Optional<RssModel>> mAddedRssModelPublishSubject;
@@ -20,6 +21,7 @@ public class RssChangeNotifier {
     private final PublishSubject<List<RssModel>> mSyncedRssModelPublishSubject;
     private final PublishSubject<RssItem> mUpdatedRssItemSubject;
     private final PublishSubject<Optional<RssChannel>> mDeletedRssChannelPublishSubject;
+    private final PublishSubject<Optional<Long>> mItemsMarkedReadSubject;
 
     public RssChangeNotifier() {
         mAddedRssModelPublishSubject = PublishSubject.create();
@@ -27,6 +29,7 @@ public class RssChangeNotifier {
         mSyncedRssModelPublishSubject = PublishSubject.create();
         mUpdatedRssItemSubject = PublishSubject.create();
         mDeletedRssChannelPublishSubject = PublishSubject.create();
+        mItemsMarkedReadSubject = PublishSubject.create();
     }
 
     /**
@@ -84,6 +87,15 @@ public class RssChangeNotifier {
     }
 
     /**
+     * Emits an items marked as read event.
+     *
+     * @param channelId the channel id of the marked items, null for all channels
+     */
+    public void itemsMarkedRead(Long channelId) {
+        mItemsMarkedReadSubject.onNext(Optional.ofNullable(channelId));
+    }
+
+    /**
      * Provides a Flowable stream of new RSS model events.
      *
      * @return Flowable that emits optional RSS models
@@ -126,5 +138,14 @@ public class RssChangeNotifier {
      */
     public Flowable<Optional<RssChannel>> deletedRssChannel() {
         return Flowable.fromObservable(mDeletedRssChannelPublishSubject, BackpressureStrategy.BUFFER);
+    }
+
+    /**
+     * Provides a Flowable stream of items marked as read events.
+     *
+     * @return Flowable that emits the optional channel id of the marked items, empty for all channels
+     */
+    public Flowable<Optional<Long>> getItemsMarkedRead() {
+        return Flowable.fromObservable(mItemsMarkedReadSubject, BackpressureStrategy.BUFFER);
     }
 }

@@ -39,6 +39,9 @@ import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.RssQueryCmd;
+import m.co.rh.id.a_news_provider.app.provider.command.UpdateRssItemIsFavoriteCmd;
+import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
+import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.EditRssLinkSVDialog;
 import m.co.rh.id.a_news_provider.app.util.UiUtils;
@@ -72,6 +75,9 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
     private transient ILogger mLogger;
     private transient ImageLoader mImageLoader;
     private transient SwipeGestureDetector mSwipeGestureDetector;
+    private transient RxDisposer mRxDisposer;
+    private transient UpdateRssItemIsFavoriteCmd mUpdateRssItemIsFavoriteCmd;
+    private transient MenuItem mToggleFavoriteMenuItem;
 
     public RssItemDetailPage() {
         mAppBarSV = new AppBarSV(R.menu.page_rss_item_detail);
@@ -83,6 +89,8 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         mExecutorService = mSvProvider.get(ExecutorService.class);
         mLogger = mSvProvider.get(ILogger.class);
         mImageLoader = mSvProvider.get(ImageLoader.class);
+        mRxDisposer = mSvProvider.get(RxDisposer.class);
+        mUpdateRssItemIsFavoriteCmd = mSvProvider.get(UpdateRssItemIsFavoriteCmd.class);
         mSwipeGestureDetector = new SwipeGestureDetector(provider.getContext()) {
             @Override
             public void onSwipeRight() {
@@ -115,6 +123,16 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         mAppBarSV.setMenuItemListener(this);
         mAppBarSV.setOnMenuCreated(this);
         containerAppBar.addView(mAppBarSV.buildView(activity, container));
+        mRxDisposer.add("rssChangeNotifier.updatedRssItem.favoriteIcon",
+                mSvProvider.get(RssChangeNotifier.class).getUpdatedRssItem()
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(rssItem -> {
+                            if (mRssItem != null && rssItem.id.equals(mRssItem.id)
+                                    && rssItem.isFavorite != mRssItem.isFavorite) {
+                                mRssItem.isFavorite = rssItem.isFavorite;
+                                updateFavoriteIcon(mRssItem.isFavorite);
+                            }
+                        }));
         TextView titleText = view.findViewById(R.id.text_title);
         ViewCompat.setTransitionName(titleText, "title_" + mRssItem.id);
         titleText.setText(HtmlCompat
@@ -170,6 +188,9 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         mRssItem = null;
         mRssChannel = null;
         mSwipeGestureDetector = null;
+        mRxDisposer = null;
+        mUpdateRssItemIsFavoriteCmd = null;
+        mToggleFavoriteMenuItem = null;
     }
 
     @Override
@@ -219,6 +240,14 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
             Toast.makeText(context,
                     copied ? R.string.copied_to_clipboard : android.R.string.cancel,
                     Toast.LENGTH_SHORT).show();
+        } else if (id == R.id.menu_toggle_favorite) {
+            Context context = mSvProvider.getContext();
+            boolean newIsFavorite = !mRssItem.isFavorite;
+            mUpdateRssItemIsFavoriteCmd.execute(mRssItem, newIsFavorite);
+            updateFavoriteIcon(newIsFavorite);
+            Toast.makeText(context,
+                    newIsFavorite ? R.string.favorite_added : R.string.favorite_removed,
+                    Toast.LENGTH_SHORT).show();
         } else if (id == R.id.menu_download_video) {
             Context context = mSvProvider.getContext().getApplicationContext();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -242,6 +271,9 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
     public void onMenuCreated(Menu menu) {
         MenuItem downloadVideoMenu = menu.findItem(R.id.menu_download_video);
         downloadVideoMenu.setVisible(mRssItem.mediaVideo != null);
+        mToggleFavoriteMenuItem = menu.findItem(R.id.menu_toggle_favorite);
+        mToggleFavoriteMenuItem.setIcon(mRssItem.isFavorite ?
+                R.drawable.ic_star_filled_white : R.drawable.ic_star_outline_white);
     }
 
     @Override
@@ -252,6 +284,18 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
             } else {
                 mLogger.i(TAG, activity.getString(R.string.error_permission_denied));
             }
+        }
+    }
+
+    /**
+     * Swaps the favorite menu icon to reflect the given favorite state.
+     *
+     * @param isFavorite the favorite state to reflect
+     */
+    private void updateFavoriteIcon(boolean isFavorite) {
+        if (mToggleFavoriteMenuItem != null) {
+            mToggleFavoriteMenuItem.setIcon(isFavorite ?
+                    R.drawable.ic_star_filled_white : R.drawable.ic_star_outline_white);
         }
     }
 

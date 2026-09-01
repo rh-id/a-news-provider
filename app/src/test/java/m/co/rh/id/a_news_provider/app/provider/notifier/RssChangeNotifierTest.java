@@ -256,6 +256,30 @@ public class RssChangeNotifierTest {
     }
 
     @Test
+    public void testItemsMarkedReadEmitsNull() {
+        RssChangeNotifier notifier = new RssChangeNotifier();
+
+        TestSubscriber<Optional<Long>> testSubscriber = notifier.getItemsMarkedRead().test();
+
+        notifier.itemsMarkedRead(null);
+
+        testSubscriber.assertValueCount(1);
+        assertEquals(Optional.empty(), testSubscriber.values().get(0));
+    }
+
+    @Test
+    public void testItemsMarkedReadEmitsChannelId() {
+        RssChangeNotifier notifier = new RssChangeNotifier();
+
+        TestSubscriber<Optional<Long>> testSubscriber = notifier.getItemsMarkedRead().test();
+
+        notifier.itemsMarkedRead(1L);
+
+        testSubscriber.assertValueCount(1);
+        assertEquals(Long.valueOf(1L), testSubscriber.values().get(0).orElse(null));
+    }
+
+    @Test
     public void testConstructorCreatesDeletedSubject() throws Exception {
         RssChangeNotifier notifier = new RssChangeNotifier();
 

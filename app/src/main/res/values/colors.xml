@@ -9,6 +9,7 @@
     <color name="orange_600">#F4511E</color>
     <color name="green_500">#4CAF50</color>
     <color name="gray_300">#E0E0E0</color>
+    <color name="gray_500">#9E9E9E</color>
     <color name="gray_600">#757575</color>
     <color name="gray_700">#616161</color>
     <color name="gray_900">#212121</color>
