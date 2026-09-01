@@ -92,11 +92,20 @@
     <string name="donation_other_apps">Andre apper fra utvikleren: %s</string>
     <string name="donation_thank_you">Takk for støtten</string>
     <string name="menu_download_video">Last ned video</string>
-    <string name="error_permission_denied">Tillatelse avslått</string>
+    <string name="error_permission_denied">Tillatelse nektet</string>
     <string name="begin_downloading">Starter nedlasting</string>
+    <string name="menu_mark_all_read">Merk alle som lest</string>
+    <string name="marked_all_as_read">Alle elementer merket som lest</string>
+    <string name="sort_newest_first">Nyeste først</string>
+    <string name="sort_oldest_first">Eldste først</string>
+    <string name="menu_toggle_favorite">Aktiver/deaktiver favoritt</string>
+    <string name="favorite_added">Lagt til i favoritter</string>
+    <string name="favorite_removed">Fjernet fra favoritter</string>
 
     <string-array name="array_filter_by">
-        <item>Ingen</item>
+        <item>Alle</item>
         <item>Ulest</item>
+        <item>Lest</item>
+        <item>Favoritter</item>
     </string-array>
 </resources>

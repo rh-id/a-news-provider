@@ -94,9 +94,18 @@
     <string name="menu_download_video">Télécharger la vidéo</string>
     <string name="error_permission_denied">Autorisation refusée</string>
     <string name="begin_downloading">Début du téléchargement</string>
+    <string name="menu_mark_all_read">Tout marquer comme lu</string>
+    <string name="marked_all_as_read">Tous les éléments marqués comme lus</string>
+    <string name="sort_newest_first">Les plus récents en premier</string>
+    <string name="sort_oldest_first">Les plus anciens en premier</string>
+    <string name="menu_toggle_favorite">Ajouter/retirer des favoris</string>
+    <string name="favorite_added">Ajouté aux favoris</string>
+    <string name="favorite_removed">Retiré des favoris</string>
 
     <string-array name="array_filter_by">
-        <item>Aucun</item>
+        <item>Tous</item>
         <item>Non lu</item>
+        <item>Lu</item>
+        <item>Favoris</item>
     </string-array>
 </resources>

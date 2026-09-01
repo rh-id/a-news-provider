@@ -94,9 +94,18 @@
     <string name="menu_download_video">Video herunterladen</string>
     <string name="error_permission_denied">Berechtigung verweigert</string>
     <string name="begin_downloading">Download wird gestartet</string>
+    <string name="menu_mark_all_read">Alle als gelesen markieren</string>
+    <string name="marked_all_as_read">Alle Einträge als gelesen markiert</string>
+    <string name="sort_newest_first">Neueste zuerst</string>
+    <string name="sort_oldest_first">Älteste zuerst</string>
+    <string name="menu_toggle_favorite">Zu Favoriten hinzufügen/entfernen</string>
+    <string name="favorite_added">Zu Favoriten hinzugefügt</string>
+    <string name="favorite_removed">Aus Favoriten entfernt</string>
 
     <string-array name="array_filter_by">
-        <item>Keine</item>
+        <item>Alle</item>
         <item>Ungelesen</item>
+        <item>Gelesen</item>
+        <item>Favoriten</item>
     </string-array>
 </resources>

@@ -77,7 +77,7 @@
     <string name="title_edit_link">Breyta tengli</string>
     <string name="title_showcase_rss_channel_list">Straumalisti</string>
     <string name="showcase_rss_channel_list">Ýttu og haltu til að breyta nafni straums eða eyða honum; þú getur líka séð tengil þessa straums</string>
-    <string name="title_showcase_rss_item_list">Fréttaþinn listinn þinn</string>
+    <string name="title_showcase_rss_item_list">Fréttalistinn þinn</string>
     <string name="showcase_rss_item_list">Ýttu til að opna smáatriði, eða ýttu og haltu á ólesinni frétt til að merkja hana sem lesna, eða á lesinni frétt til að merkja hana sem ólesna</string>
     <string name="title_download_image">Sækja mynd</string>
     <string name="menu_subtitle_download_image">Virkja/afvirkja niðurhal mynda</string>
@@ -87,16 +87,25 @@
     <string name="menu_import_opml">Flytja inn OPML-skrá</string>
     <string name="open_video">Opna myndskeið</string>
     <string name="buy_developer_a_coffee">Kaupa forritara kaffi</string>
-    <string name="donation_pitch">Styddu forritarann, bauð honum bolla af kaffi</string>
+    <string name="donation_pitch">Styddu forritarann og bjóð honum í kaffi</string>
     <string name="trakteer">Trakteer</string>
-    <string name="donation_other_apps">Aðrar forrit frá forritara: %s</string>
+    <string name="donation_other_apps">Önnur forrit frá forritara: %s</string>
     <string name="donation_thank_you">Þakka þér fyrir stuðninginn</string>
     <string name="menu_download_video">Sækja myndskeið</string>
     <string name="error_permission_denied">Heimild hafnað</string>
     <string name="begin_downloading">Byrja að sækja</string>
+    <string name="menu_mark_all_read">Merkja allt sem lesið</string>
+    <string name="marked_all_as_read">Öll atriði merkt sem lesin</string>
+    <string name="sort_newest_first">Nýjast fyrst</string>
+    <string name="sort_oldest_first">Elst fyrst</string>
+    <string name="menu_toggle_favorite">Bæta í eftirlæti/fjarlægja</string>
+    <string name="favorite_added">Bætt í eftirlæti</string>
+    <string name="favorite_removed">Fjarlægt úr eftirlæti</string>
 
     <string-array name="array_filter_by">
-        <item>Engin</item>
+        <item>Allt</item>
         <item>Ólesið</item>
+        <item>Lesið</item>
+        <item>Eftirlæti</item>
     </string-array>
 </resources>

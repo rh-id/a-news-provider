@@ -30,7 +30,7 @@
     <string name="settings">Parameters</string>
     <string name="licenses">Licenzas</string>
     <string name="sync_every_x_hour">Sincronisar mintga %d ura(s)</string>
-    <string name="notification_rss_sync_channel_name">Infurmaziun da sincronisaziun da feeds</string>
+    <string name="notification_rss_sync_channel_name">Communicaziun da sincronisaziun da feeds</string>
     <string name="notification_rss_sync_channel_description">Infurmescha cura ch\'il feed è sincronisà</string>
     <string name="notification_rss_sync_title">%s actualisà!</string>
     <string name="notification_rss_sync_content">%d element(s) nunlegì(s)</string>
@@ -55,16 +55,16 @@
     <string name="menu_export_opml">Exporter mes feed</string>
     <string name="error_exporting_opml">Errur cun exporter il feed</string>
     <string name="share_opml">Cundivider il feed</string>
-    <string name="menu_one_hand_mode">Modus d\'ina maun da l\'app</string>
-    <string name="menu_subtitle_one_hand_mode">Activar il layout integrà d\'ina maun da l\'app per ina simpla utilisaziun</string>
+    <string name="menu_one_hand_mode">Modus d\'in maun da l\'app</string>
+    <string name="menu_subtitle_one_hand_mode">Activar il layout integrà d\'in maun da l\'app per ina simpla utilisaziun</string>
     <string name="clear_log_file">Svuidar il dossier da log</string>
     <string name="log_file_deleted">Dossier da log stizzà</string>
     <string name="open_link">Avrir la colliaziun</string>
     <string name="main_menu">Menu principal</string>
     <string name="back_to_previous_page">Enavos a la pagina precedenta</string>
     <string name="sync_feed_period_in_hour">Interval da sincronisaziun dal feed en uras</string>
-    <string name="one_hand_mode_activated">Modus d\'ina maun activà</string>
-    <string name="one_hand_mode_deactivated">Modus d\'ina maun deactivà</string>
+    <string name="one_hand_mode_activated">Modus d\'in maun activà</string>
+    <string name="one_hand_mode_deactivated">Modus d\'in maun deactivà</string>
     <string name="http_not_allowed">HTTP betg permess, fa diever da HTTPS</string>
     <string name="mark_as_read">Marcar sco legì</string>
     <string name="mark_as_unread">Marcar sco nunlegì</string>
@@ -94,9 +94,18 @@
     <string name="menu_download_video">Telechargiar il video</string>
     <string name="error_permission_denied">Autorisaziun refusada</string>
     <string name="begin_downloading">Cumenzar la telechargiada</string>
+    <string name="menu_mark_all_read">Marcar tut sco legì</string>
+    <string name="marked_all_as_read">Tut ils elements marcads sco legids</string>
+    <string name="sort_newest_first">Il pli nov l\'emprim</string>
+    <string name="sort_oldest_first">Il pli vegl l\'emprim</string>
+    <string name="menu_toggle_favorite">Activar/deactivar il favurit</string>
+    <string name="favorite_added">Agiuntà als favurits</string>
+    <string name="favorite_removed">Allontanà dals favurits</string>
 
     <string-array name="array_filter_by">
-        <item>Nagina</item>
+        <item>Tut</item>
         <item>Nunlegì</item>
+        <item>Legì</item>
+        <item>Favurits</item>
     </string-array>
 </resources>

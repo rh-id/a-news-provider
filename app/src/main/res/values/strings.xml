@@ -2,6 +2,8 @@
     <string name="app_name">News Provider</string>
     <string name="home">Home</string>
     <string name="menu_sync_feed">Sync Feed</string>
+    <string name="menu_mark_all_read">Mark all read</string>
+    <string name="marked_all_as_read">All items marked as read</string>
     <string name="toast_back_press_exit">Press BACK again to exit</string>
     <string name="new_feed">New feed</string>
     <string name="hint_feed_url">Feed URL</string>
@@ -94,9 +96,16 @@
     <string name="menu_download_video">Download Video</string>
     <string name="error_permission_denied">Permission denied</string>
     <string name="begin_downloading">Begin downloading</string>
+    <string name="sort_newest_first">Sorted by newest first</string>
+    <string name="sort_oldest_first">Sorted by oldest first</string>
+    <string name="menu_toggle_favorite">Toggle favorite</string>
+    <string name="favorite_added">Added to favorites</string>
+    <string name="favorite_removed">Removed from favorites</string>
 
     <string-array name="array_filter_by">
-        <item>None</item>
+        <item>All</item>
         <item>Unread</item>
+        <item>Read</item>
+        <item>Favorites</item>
     </string-array>
 </resources>

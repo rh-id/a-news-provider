@@ -23,8 +23,8 @@
     <string name="feed_sync_success">Sinkronisasi feed sukses</string>
     <string name="error_feed_sync_failed">Sinkronisasi feed gagal</string>
     <string name="error_rss_read">Gagal membaca : %s</string>
-    <string name="error_rss_channel_update">Gagal perbarui saluran : %s</string>
-    <string name="feed_sync_pending_online">Feed akan disinkron ketika online</string>
+    <string name="error_rss_channel_update">Gagal memperbarui saluran: %s</string>
+    <string name="feed_sync_pending_online">Feed akan disinkronkan ketika online</string>
     <string name="device_status_offline">Kamu sekarang offline</string>
     <string name="device_status_online">Kamu sekarang online</string>
     <string name="settings">Pengaturan</string>
@@ -33,7 +33,7 @@
     <string name="notification_rss_sync_channel_name">Notifikasi sinkronisasi feed</string>
     <string name="notification_rss_sync_channel_description">Memberi notifikasi ketika sinkronisasi feed selesai</string>
     <string name="notification_rss_sync_title">%s telah diperbarui !</string>
-    <string name="notification_rss_sync_content">%d barang tidak terbaca</string>
+    <string name="notification_rss_sync_content">%d item belum terbaca</string>
     <string name="notification_rss_sync_content_summary">Ada %d pembaruan</string>
     <string name="follow_system">Ikuti sistem</string>
     <string name="light_mode">Mode Terang</string>
@@ -80,7 +80,7 @@
     <string name="title_showcase_rss_item_list">Daftar berita kamu</string>
     <string name="showcase_rss_item_list">Ketuk untuk membuka detil, atau ketuk dan tahan berita yang belum terbaca untuk menandakannya sebagai terbaca, atau ketuk dan tahan berita terbaca untuk menandakan sebagai belum terbaca</string>
     <string name="title_download_image">Unduh Gambar</string>
-    <string name="menu_subtitle_download_image">Enable/Disable image download</string>
+    <string name="menu_subtitle_download_image">Aktifkan/nonaktifkan pengunduhan gambar</string>
     <string name="download_image_enabled">Unduh gambar dinyalakan</string>
     <string name="download_image_disabled">Unduh gambar dimatikan</string>
     <string name="image">Gambar</string>
@@ -90,13 +90,22 @@
     <string name="donation_pitch">Dukung developer, traktir dengan secangkir kopi</string>
     <string name="trakteer">Trakteer</string>
     <string name="donation_other_apps">Aplikasi lainnya dari developer: %s</string>
-    <string name="donation_thank_you">Terima kasih atas bantuannya</string>
+    <string name="donation_thank_you">Terima kasih atas dukungannya</string>
     <string name="menu_download_video">Unduh Video</string>
     <string name="error_permission_denied">Izin ditolak</string>
     <string name="begin_downloading">Mulai mengunduh</string>
+    <string name="menu_mark_all_read">Tandai semua sebagai terbaca</string>
+    <string name="marked_all_as_read">Semua item ditandai sebagai terbaca</string>
+    <string name="sort_newest_first">Diurutkan dari yang terbaru</string>
+    <string name="sort_oldest_first">Diurutkan dari yang terlama</string>
+    <string name="menu_toggle_favorite">Tambah/hapus favorit</string>
+    <string name="favorite_added">Ditambahkan ke favorit</string>
+    <string name="favorite_removed">Dihapus dari favorit</string>
 
     <string-array name="array_filter_by">
-        <item>Tidak ada</item>
+        <item>Semua</item>
         <item>Belum terbaca</item>
+        <item>Terbaca</item>
+        <item>Favorit</item>
     </string-array>
 </resources>

@@ -45,7 +45,7 @@
     <string name="log_file">Logifail</string>
     <string name="share_log_file">Jaga logifaili</string>
     <string name="error_sharing_log_file">Viga logifaili jagamisel</string>
-    <string name="error_failed_to_sync_some_rss">Mõne RSS-voogu sünkroonimine ebaõnnestus</string>
+    <string name="error_failed_to_sync_some_rss">Mõnede RSS-voogude sünkroonimine ebaõnnestus</string>
     <string name="version">Versioon:</string>
     <string name="filter_by">Filtreeri:</string>
     <string name="error_failed_to_open_file">Faili avamine ebaõnnestus</string>
@@ -94,9 +94,18 @@
     <string name="menu_download_video">Laadi video alla</string>
     <string name="error_permission_denied">Õigus keelatud</string>
     <string name="begin_downloading">Allalaadimine algab</string>
+    <string name="menu_mark_all_read">Märgi kõik loetuks</string>
+    <string name="marked_all_as_read">Kõik üksused märgitud loetuks</string>
+    <string name="sort_newest_first">Uusimad esimesena</string>
+    <string name="sort_oldest_first">Vanimad esimesena</string>
+    <string name="menu_toggle_favorite">Lisa või eemalda lemmik</string>
+    <string name="favorite_added">Lisatud lemmikutesse</string>
+    <string name="favorite_removed">Eemaldatud lemmikutest</string>
 
     <string-array name="array_filter_by">
-        <item>Puudub</item>
+        <item>Kõik</item>
         <item>Lugemata</item>
+        <item>Loetud</item>
+        <item>Lemmikud</item>
     </string-array>
 </resources>

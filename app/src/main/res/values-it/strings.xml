@@ -6,7 +6,7 @@
     <string name="new_feed">Nuovo feed</string>
     <string name="hint_feed_url">URL del feed</string>
     <string name="add">Aggiungi</string>
-    <string name="no_record">Nessun record</string>
+    <string name="no_record">Nessun elemento</string>
     <string name="error_message">\"Errore: %s\"</string>
     <string name="invalid_url">URL non valido</string>
     <string name="url_is_required">L\'URL è obbligatorio</string>
@@ -94,9 +94,18 @@
     <string name="menu_download_video">Scarica video</string>
     <string name="error_permission_denied">Autorizzazione negata</string>
     <string name="begin_downloading">Avvio del download</string>
+    <string name="menu_mark_all_read">Segna tutto come letto</string>
+    <string name="marked_all_as_read">Tutti gli elementi segnati come letti</string>
+    <string name="sort_newest_first">Prima i più recenti</string>
+    <string name="sort_oldest_first">Prima i più vecchi</string>
+    <string name="menu_toggle_favorite">Attiva/disattiva preferito</string>
+    <string name="favorite_added">Aggiunto ai preferiti</string>
+    <string name="favorite_removed">Rimosso dai preferiti</string>
 
     <string-array name="array_filter_by">
-        <item>Nessuno</item>
+        <item>Tutti</item>
         <item>Non letto</item>
+        <item>Letto</item>
+        <item>Preferiti</item>
     </string-array>
 </resources>

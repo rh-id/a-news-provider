@@ -87,16 +87,25 @@
     <string name="menu_import_opml">Importer OPML-fil</string>
     <string name="open_video">Opna video</string>
     <string name="buy_developer_a_coffee">Kjøp ein kaffe til utviklaren</string>
-    <string name="donation_pitch">Støtt utviklaren, invitér på ein kaffe</string>
+    <string name="donation_pitch">Støtt utviklaren, inviter på ein kaffe</string>
     <string name="trakteer">Trakteer</string>
     <string name="donation_other_apps">Andre appar frå utviklaren: %s</string>
     <string name="donation_thank_you">Takk for støtta</string>
     <string name="menu_download_video">Last ned video</string>
-    <string name="error_permission_denied">Løyve avslått</string>
+    <string name="error_permission_denied">Løyve nekta</string>
     <string name="begin_downloading">Startar nedlasting</string>
+    <string name="menu_mark_all_read">Merk alt som lesen</string>
+    <string name="marked_all_as_read">Alle element merkte som lesne</string>
+    <string name="sort_newest_first">Nyaste først</string>
+    <string name="sort_oldest_first">Eldste først</string>
+    <string name="menu_toggle_favorite">Aktiver/deaktiver favoritt</string>
+    <string name="favorite_added">Lagt til i favorittar</string>
+    <string name="favorite_removed">Fjerna frå favorittar</string>
 
     <string-array name="array_filter_by">
-        <item>Ingen</item>
+        <item>Alle</item>
         <item>Ulesen</item>
+        <item>Lesen</item>
+        <item>Favorittar</item>
     </string-array>
 </resources>
