@@ -1,0 +1,5 @@
+Release 1.11.2+69
+
+Features:
+* Update to support to Android 16
+* Update min Android 4.1 to Android 5.0

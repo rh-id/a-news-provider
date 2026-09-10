@@ -1,0 +1,10 @@
+Release 1.15.0+74
+
+Features:
+* Star feed items as favorites; the favorite state syncs across channels sharing the same article link and is kept through feed updates
+* Filter the item list by All / Unread / Read / Favorites
+* Sort items by newest or oldest with a new sort toggle button
+* Mark all items as read from the home screen toolbar, or per channel from the channel edit row
+
+Fixes:
+* Editing a feed item link now saves the normalized https link and opens it in the browser only after the save succeeds

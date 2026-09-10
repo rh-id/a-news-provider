@@ -1,0 +1,11 @@
+New Features:
+* Now Feed name displayed when opening RSS item
+* The date now shows publication date of the RSS item
+* Feed list now display icon
+* Add capabilities to filter Unread RSS item
+
+Fixes:
+* RSS channel not properly ordered
+* Feed list issue didn't update when sync
+* Feed list sorted by feed name
+* When feed is deleted, not updating selection

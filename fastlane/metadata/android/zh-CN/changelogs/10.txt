@@ -1,0 +1,4 @@
+Release 1.2.2+10
+
+Fixes:
+* Fix one hand mode collapsing height & home page

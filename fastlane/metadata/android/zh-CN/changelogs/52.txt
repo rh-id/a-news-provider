@@ -1,0 +1,7 @@
+Release 1.9.0+52
+
+Features:
+* New menu to download video on news detail page
+
+Fixes:
+* Minor memory leaks

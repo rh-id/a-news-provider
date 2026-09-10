@@ -1,0 +1,2 @@
+Fixes:
+* Fix filter by didn't get all records

@@ -31,7 +31,7 @@ A simple and easy to use RSS aggregator that deliver news to your smartphone.
   <li>Accessibility friendly on screen reader (tested with TalkBack)</li>
   <li>View the in-app log file (share and clear supported)</li>
   <li>Open-source licenses screen</li>
-  <li>Available in 10 languages: English, Indonesian, German, Estonian, French, Icelandic, Italian, Norwegian (Bokmål &amp; Nynorsk), and Romansh</li>
+  <li>Available in 11 languages: English, Indonesian, German, Estonian, French, Icelandic, Italian, Chinese (Simplified), Norwegian (Bokmål &amp; Nynorsk), and Romansh</li>
   <li>Support Android 5.0 (API 21) and above</li>
 </ul>
 

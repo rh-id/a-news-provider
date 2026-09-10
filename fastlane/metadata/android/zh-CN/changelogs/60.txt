@@ -1,0 +1,5 @@
+Release 1.9.8+60
+
+Improvement:
+* Optimize memory
+* New transition animation when opening RSS item

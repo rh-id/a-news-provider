@@ -1,0 +1,4 @@
+Release 1.3.0+20
+
+Fixes:
+* Major optimization and internal refactoring

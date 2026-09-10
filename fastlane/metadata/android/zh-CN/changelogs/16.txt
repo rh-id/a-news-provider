@@ -1,0 +1,4 @@
+Release 1.2.8+16
+
+Fixes:
+* Memory & performance improvements

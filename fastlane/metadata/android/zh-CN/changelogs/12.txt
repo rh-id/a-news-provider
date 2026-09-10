@@ -1,0 +1,8 @@
+Release 1.2.4+12
+
+Fixes:
+* App crash due to malformed RSS
+* adjust log level
+
+Features:
+* Improve performance

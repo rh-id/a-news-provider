@@ -1,0 +1,7 @@
+Release 1.1.3+7
+
+Fixes:
+* Old android devices crashing
+* Unable to get RSS from URL on android 16-19
+* Various UI fixes
+* Update android target to 12

@@ -1,0 +1,7 @@
+Release 1.7.0+47
+
+Feature:
+* Support Atom XML feed
+
+Fix:
+* Indonesian language

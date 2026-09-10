@@ -1,0 +1,4 @@
+Release 1.8.0+48
+
+Feature:
+* Add support for RSS that contains video reference. you can now open video URL provided from RSS

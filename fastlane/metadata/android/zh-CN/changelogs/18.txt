@@ -1,0 +1,4 @@
+Release 1.2.10+18
+
+Fixes:
+* Export feed crash

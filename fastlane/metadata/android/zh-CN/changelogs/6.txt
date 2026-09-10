@@ -1,0 +1,7 @@
+Release 1.1.2+6
+
+Feature:
+* Notification display feed icon
+
+Fixes:
+* Notification not showing count and summary properly

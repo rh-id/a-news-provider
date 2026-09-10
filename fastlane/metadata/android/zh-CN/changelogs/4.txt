@@ -1,0 +1,8 @@
+Release 1.1.0+4
+
+Features:
+* You can now open OPML file to import all the feed
+* You can export your feed to OPML file to be shared to others
+
+Fixes:
+* Feed icons too big

@@ -1,0 +1,4 @@
+Release 1.5.4+42
+
+Improvement:
+* Update news list UI

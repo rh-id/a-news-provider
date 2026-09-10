@@ -1,0 +1,9 @@
+Release 1.13.1+72
+
+Fixes:
+* Fix OPML import buffer parsing issue
+* Fix RSS feed addition error UI notification
+* Add 15-second timeout to background RSS sync workers
+
+Performance:
+* Add database index on RSS items by channel ID for faster querying

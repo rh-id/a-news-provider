@@ -1,0 +1,10 @@
+Release 1.2.3+11
+
+Fixes:
+* removed unused code in log page
+* properly dispose resources and print log when application crashes
+
+Features:
+* Add locale indonesia
+* Able to clear log file at Log page
+* Optimize and upgrade codes

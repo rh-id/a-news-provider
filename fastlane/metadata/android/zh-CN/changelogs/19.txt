@@ -1,0 +1,8 @@
+Release 1.2.11+19
+
+Fixes:
+* Sorting of news
+* HTML text on title
+
+Feature:
+* Add floating action button to open link in browser

@@ -1,0 +1,7 @@
+Release 1.2.0+8
+
+Fixes:
+* Various UI fixes
+
+Features:
+* Add one hand mode layout

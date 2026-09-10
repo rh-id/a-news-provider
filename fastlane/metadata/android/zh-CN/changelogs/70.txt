@@ -1,0 +1,14 @@
+Release 1.12.0+70
+
+Fixes:
+* Modernize network detection with NetworkCapabilities API (replace deprecated APIs)
+* Replace ScrollView with RecyclerView in Log page to prevent UI freeze
+* Resolve multiple bugs and refactor dead code
+* Remove unused multidex dependency
+* Add network constraint to background RSS sync
+* Add "back online" snackbar notification
+
+Under the hood:
+* Migrate AGP 8.13.2 to 9.2.1, Gradle 8.14.3 to 9.4.1
+* Remove redundant SSL/TLS socket factories
+* Remove dead BroadcastReceiver code path

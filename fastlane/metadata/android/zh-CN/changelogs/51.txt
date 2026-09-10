@@ -1,0 +1,5 @@
+Release 1.8.3+51
+
+Fixes:
+* Mark read/unread logic by link/URL.
+if same URL exist in other item, that item will be marked as read/unread as well.

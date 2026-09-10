@@ -1,0 +1,4 @@
+Release 1.2.1+9
+
+Fixes:
+* Fix one hand mode on Android 11

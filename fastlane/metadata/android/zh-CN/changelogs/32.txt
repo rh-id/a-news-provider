@@ -1,0 +1,5 @@
+Release 1.3.12+32
+
+Fixes:
+* Animation jank on Android 11
+* Notification record not deleted

@@ -1,0 +1,21 @@
+Release 1.4.2+35
+
+Fixes:
+* App sometimes crash for no reason
+
+
+------ 1.4.1+34 Highlights ------
+
+Fixes:
+* Fix animation jank when clicking news
+
+
+------ 1.4.0 Highlights ------
+Fixes:
+* Simplified date format on news list
+* Update log level to avoid annoying background sync error toast message
+* Optimize memory usage
+
+Feature:
+* Long press unread news to mark it as read
+* Long press read news to mark it as unread
