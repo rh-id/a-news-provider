@@ -23,7 +23,7 @@ GitHub: https://github.com/rh-id/a-news-provider (repo root package `m.co.rh.id.
 - `:component-network` — library; Volley `RssRequest` + RSS 2.0/Atom/RDF (RSS 1.0) feed parsers (supports `media:content`, `media:thumbnail`, `enclosure`).
 
 ## Key Features (user-facing)
-RSS 2.0/Atom/RDF support, OPML import/export, media images/videos (video download via system DownloadManager to `Downloads/<feedName>/`), favorites + All/Unread/Read/Favorites filters, newest/oldest sort, mark-all-read, periodic background sync (1-24h, default 6h), per-channel grouped sync notifications, 10 languages, themes (system/light/dark), one-hand mode, in-app log viewer, licenses screen. Supports Android 5.0+.
+RSS 2.0/Atom/RDF support, OPML import/export, media images/videos (video download via system DownloadManager to `Downloads/<feedName>/`), favorites + All/Unread/Read/Favorites filters, newest/oldest sort, mark-all-read, periodic background sync (1-24h, default 6h), per-channel grouped sync notifications, 11 languages (incl. Simplified Chinese since v1.15.0), themes (system/light/dark), one-hand mode, in-app log viewer, licenses screen. Supports Android 5.0+.
 
 ## Supported Feed Parsing
 Root tag dispatch: `rss` → RSS 2.0, `feed` → Atom, `rdf:RDF` → RDF/RSS 1.0. Dates parsed best-effort from RFC-822 and ISO-8601 formats (`RssDateParser`).

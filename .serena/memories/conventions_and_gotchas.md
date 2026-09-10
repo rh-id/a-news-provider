@@ -14,6 +14,13 @@
 - Per-page state/subscriptions must be disposed via the page's scoped `StatefulViewProvider` / `RxDisposer` — never leak subscriptions past page pop.
 - Background jobs = WorkManager workers with unique names registered in `ConstantsWork`; input data keys in `ConstantsKey`. Sync work uses `NetworkType.CONNECTED` constraint and `ExistingWorkPolicy.KEEP`.
 
+## Localization Conventions (added with Chinese, commit 6f44c33)
+- Translated strings files must have the EXACT same `<string name>` keys as `values/strings.xml` (same count/order) and preserve every `%s`/`%d`/`%n$s` placeholder — build breaks or crashes otherwise.
+- `app_name` stays "News Provider" untranslated in locale files (matches 9/10 existing locales; only Indonesian translates it).
+- Full-width Chinese quotes “” need no XML escaping (unlike English `\"Error: %s\"`).
+- No `<resourceConfigurations>` filter and no `localeConfig.xml` exist — new `values-<locale>` dirs are picked up automatically, no Gradle/manifest changes needed.
+- Adding a locale = strings in `app` + `component-network` + fastlane dir; store dir naming may differ from resource dir (`values-zh` vs `zh-CN`, see `fastlane_and_release` memory).
+
 ## Gotchas
 - **WorkManager default initializer is removed** (manifest `tools:node="remove"` on InitializationProvider) — `MainApplication` provides the config manually. Don't re-add default init.
 - `MainApplication` installs a crash handler that disposes the whole Provider before delegating — keep provider disposal idempotent.
