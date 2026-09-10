@@ -33,7 +33,8 @@
             android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/sort_newest_first"
-            app:srcCompat="@drawable/ic_sort_desc_white" />
+            app:srcCompat="@drawable/ic_sort_desc_white"
+            app:tint="@color/daynight_black_white" />
     </androidx.appcompat.widget.LinearLayoutCompat>
 
     <androidx.recyclerview.widget.RecyclerView
