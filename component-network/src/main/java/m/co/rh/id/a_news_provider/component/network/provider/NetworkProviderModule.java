@@ -19,6 +19,7 @@ import java.io.File;
 import m.co.rh.id.a_news_provider.component.network.RssRequestFactory;
 import m.co.rh.id.a_news_provider.component.network.parser.RssFeedParser;
 import m.co.rh.id.a_news_provider.component.network.provider.volley.DisposableRequestQueue;
+import m.co.rh.id.a_news_provider.component.network.ssl.ExtendedTrustManager;
 import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderModule;
 import m.co.rh.id.aprovider.ProviderRegistry;
@@ -30,7 +31,7 @@ public class NetworkProviderModule implements ProviderModule {
 
     @Override
     public void provides(ProviderRegistry providerRegistry, Provider provider) {
-        providerRegistry.registerLazy(BaseHttpStack.class, () -> new HurlStack());
+        providerRegistry.registerLazy(BaseHttpStack.class, () -> new HurlStack(null, ExtendedTrustManager.createSslSocketFactory(provider.getContext())));
         providerRegistry.registerLazy(Network.class, () -> new BasicNetwork(provider.get(BaseHttpStack.class)));
         providerRegistry.registerLazy(Cache.class, () -> new DiskBasedCache(new File(provider.getContext().getCacheDir(), "volley"),
                 1024 * 20480));
