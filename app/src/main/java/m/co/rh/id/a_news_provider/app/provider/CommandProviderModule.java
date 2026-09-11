@@ -8,6 +8,7 @@ import m.co.rh.id.a_news_provider.app.provider.command.OpmlCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.PagedRssItemsCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.RenameRssFeedCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.RssQueryCmd;
+import m.co.rh.id.a_news_provider.app.provider.command.SearchRssItemsCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.SyncRssCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.UpdateRssItemIsFavoriteCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.UpdateRssItemIsReadCmd;
@@ -30,5 +31,6 @@ public class CommandProviderModule implements ProviderModule {
         providerRegistry.registerLazy(DeleteRssChannelCmd.class, () -> new DeleteRssChannelCmd(provider));
         providerRegistry.registerLazy(OpmlCmd.class, () -> new OpmlCmd(provider));
         providerRegistry.registerLazy(MarkAllReadCmd.class, () -> new MarkAllReadCmd(provider));
+        providerRegistry.registerLazy(SearchRssItemsCmd.class, () -> new SearchRssItemsCmd(provider));
     }
 }

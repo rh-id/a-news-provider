@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import m.co.rh.id.a_news_provider.R;
-import m.co.rh.id.a_news_provider.app.provider.command.PagedRssItemsCmd;
 import m.co.rh.id.a_news_provider.app.util.UiUtils;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.anavigator.StatefulView;
@@ -21,14 +20,14 @@ import m.co.rh.id.anavigator.component.INavigator;
 public class RssItemRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final int VIEW_TYPE_NEWS_ITEM = 0;
     private static final int VIEW_TYPE_EMPTY_TEXT = 1;
-    private final PagedRssItemsCmd mPagedRssItemsCmd;
+    private final RssItemsProvider mRssItemsProvider;
     private final INavigator mNavigator;
     private final StatefulView mParentStatefulView;
     private final List<StatefulView> mCreatedSvs;
     private int mLastItemCount;
 
-    public RssItemRecyclerViewAdapter(PagedRssItemsCmd pagedRssItemsCmd, INavigator navigator, StatefulView parentStatefulView) {
-        mPagedRssItemsCmd = pagedRssItemsCmd;
+    public RssItemRecyclerViewAdapter(RssItemsProvider rssItemsProvider, INavigator navigator, StatefulView parentStatefulView) {
+        mRssItemsProvider = rssItemsProvider;
         mNavigator = navigator;
         mParentStatefulView = parentStatefulView;
         mCreatedSvs = new ArrayList<>();
@@ -54,7 +53,7 @@ public class RssItemRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerVie
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         if (holder instanceof RssItemViewHolder) {
-            ArrayList<RssItem> rssItems = mPagedRssItemsCmd.getAllRssItems();
+            ArrayList<RssItem> rssItems = mRssItemsProvider.getAllRssItems();
             ((RssItemViewHolder) holder).setRssItem(rssItems.get(position));
         }
     }
@@ -64,7 +63,7 @@ public class RssItemRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerVie
         if (isEmpty()) {
             return 1;
         }
-        return mPagedRssItemsCmd.getAllRssItems().size();
+        return mRssItemsProvider.getAllRssItems().size();
     }
 
     @Override
@@ -85,14 +84,14 @@ public class RssItemRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerVie
     }
 
     private boolean isEmpty() {
-        if (mPagedRssItemsCmd == null) {
+        if (mRssItemsProvider == null) {
             return true;
         }
-        return mPagedRssItemsCmd.getAllRssItems().size() == 0;
+        return mRssItemsProvider.getAllRssItems().isEmpty();
     }
 
     public void notifyItemsChanged() {
-        int newCount = mPagedRssItemsCmd.getAllRssItems().size();
+        int newCount = mRssItemsProvider.getAllRssItems().size();
         int oldCount = mLastItemCount;
         mLastItemCount = newCount;
         if (oldCount == 0 && newCount > 0) {

@@ -101,6 +101,8 @@
     <string name="menu_toggle_favorite">Ajouter/retirer des favoris</string>
     <string name="favorite_added">Ajouté aux favoris</string>
     <string name="favorite_removed">Retiré des favoris</string>
+    <string name="menu_search">Rechercher</string>
+    <string name="search_hint">Rechercher des articles…</string>
 
     <string-array name="array_filter_by">
         <item>Tous</item>

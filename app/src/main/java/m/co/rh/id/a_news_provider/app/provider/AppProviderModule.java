@@ -22,6 +22,7 @@ import m.co.rh.id.a_news_provider.app.provider.repository.RssRepository;
 import m.co.rh.id.a_news_provider.app.ui.page.DonationsPage;
 import m.co.rh.id.a_news_provider.app.ui.page.HomePage;
 import m.co.rh.id.a_news_provider.app.ui.page.RssItemDetailPage;
+import m.co.rh.id.a_news_provider.app.ui.page.SearchRssPage;
 import m.co.rh.id.a_news_provider.app.ui.page.SettingsPage;
 import m.co.rh.id.a_news_provider.app.ui.page.SplashPage;
 import m.co.rh.id.a_news_provider.base.provider.BaseProviderModule;
@@ -74,6 +75,7 @@ public class AppProviderModule implements ProviderModule {
         navMap.put(Routes.SETTINGS_PAGE, (args, activity) -> new SettingsPage());
         navMap.put(Routes.DONATIONS_PAGE, (args, activity) -> new DonationsPage());
         navMap.put(Routes.RSS_ITEM_DETAIL_PAGE, (args, activity) -> new RssItemDetailPage());
+        navMap.put(Routes.SEARCH_RSS_PAGE, (args, activity) -> new SearchRssPage());
         NavConfiguration.Builder<Activity, StatefulView> navBuilder =
                 new NavConfiguration.Builder<>(Routes.SPLASH_PAGE, navMap);
         navBuilder.setRequiredComponent(provider);

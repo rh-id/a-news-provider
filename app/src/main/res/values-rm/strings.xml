@@ -101,6 +101,8 @@
     <string name="menu_toggle_favorite">Activar/deactivar il favurit</string>
     <string name="favorite_added">Agiuntà als favurits</string>
     <string name="favorite_removed">Allontanà dals favurits</string>
+    <string name="menu_search">Tschertgar</string>
+    <string name="search_hint">Tschertgar artitgels…</string>
 
     <string-array name="array_filter_by">
         <item>Tut</item>

@@ -24,6 +24,7 @@ import java.util.Map;
 import m.co.rh.id.a_news_provider.app.MainActivity;
 import m.co.rh.id.a_news_provider.app.constants.Routes;
 import m.co.rh.id.a_news_provider.app.ui.page.HomePage;
+import m.co.rh.id.a_news_provider.app.ui.page.SearchRssPage;
 import m.co.rh.id.a_news_provider.app.ui.page.SettingsPage;
 import m.co.rh.id.a_news_provider.provider.IntegrationTestAppProviderModule;
 import m.co.rh.id.a_news_provider.test.TestApplication;
@@ -100,6 +101,35 @@ public class AppPageTest {
         ActivityScenario<MainActivity> mainActivityScenario = ActivityScenario.launch(MainActivity.class);
         onView(withId(R.id.toolbar)).check(matches(isDisplayed()));
         onView(withText(R.string.settings))
+                .check(matches(withParent(withId(R.id.toolbar))));
+        mainActivityScenario.close();
+        testProvider.dispose();
+        testApplication.unregisterActivityLifecycleCallbacks(navigator);
+        testApplication.unregisterComponentCallbacks(navigator);
+        testApplication.deleteDatabase(dbName);
+    }
+
+    // simple test to just ensure search page didn't crash
+    @Test
+    public void searchPage_displayed() {
+        String dbName = "searchPage_displayed";
+        TestApplication testApplication = (TestApplication) InstrumentationRegistry.getInstrumentation().getTargetContext().getApplicationContext();
+        Provider testProvider = Provider.createProvider(testApplication, new IntegrationTestAppProviderModule(testApplication, dbName));
+        Map<String, StatefulViewFactory<Activity, StatefulView>> navMap = new HashMap<>();
+        navMap.put(Routes.SEARCH_RSS_PAGE, (args, activity) -> new SearchRssPage());
+        NavConfiguration.Builder<Activity, StatefulView> navBuilder =
+                new NavConfiguration.Builder<>(Routes.SEARCH_RSS_PAGE, navMap);
+        navBuilder.setRequiredComponent(testProvider);
+        NavConfiguration<Activity, StatefulView> navConfiguration = navBuilder.build();
+        Navigator navigator = new Navigator(MainActivity.class, navConfiguration);
+        testApplication.registerActivityLifecycleCallbacks(navigator);
+        testApplication.registerComponentCallbacks(navigator);
+        testApplication.setProvider(testProvider);
+        testProvider.get(ProviderRegistry.class).register(INavigator.class, () -> navigator);
+
+        ActivityScenario<MainActivity> mainActivityScenario = ActivityScenario.launch(MainActivity.class);
+        onView(withId(R.id.toolbar)).check(matches(isDisplayed()));
+        onView(withText(R.string.menu_search))
                 .check(matches(withParent(withId(R.id.toolbar))));
         mainActivityScenario.close();
         testProvider.dispose();

@@ -1,12 +1,16 @@
 package m.co.rh.id.a_news_provider.app.ui.component.rss;
 
 import android.app.Activity;
-import android.os.Handler;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ProgressBar;
 import android.widget.Spinner;
 
 import androidx.annotation.NonNull;
@@ -14,22 +18,16 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
-import com.tokopedia.showcase.ShowCaseBuilder;
-import com.tokopedia.showcase.ShowCaseDialog;
-import com.tokopedia.showcase.ShowCaseObject;
-
-import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.subjects.PublishSubject;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.BaseRssItemsCmd;
-import m.co.rh.id.a_news_provider.app.provider.command.PagedRssItemsCmd;
+import m.co.rh.id.a_news_provider.app.provider.command.SearchRssItemsCmd;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
-import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.annotation.NavInject;
@@ -37,44 +35,51 @@ import m.co.rh.id.anavigator.component.INavigator;
 import m.co.rh.id.anavigator.component.RequireComponent;
 import m.co.rh.id.aprovider.Provider;
 
-public class RssItemListSV extends StatefulView<Activity> implements RequireComponent<Provider> {
-    private static final String TAG = RssItemListSV.class.getName();
+public class SearchRssItemListSV extends StatefulView<Activity> implements RequireComponent<Provider> {
+    private static final String TAG = SearchRssItemListSV.class.getName();
+    private static final long SEARCH_DEBOUNCE_MILLIS = 300L;
 
     @NavInject
     private transient INavigator mNavigator;
 
+    private String mQuery;
     private transient Provider mSvProvider;
-    private transient AppSharedPreferences mAppSharedPreferences;
-    private transient PagedRssItemsCmd mPagedRssItemsCmd;
-    private transient Handler mHandler;
+    private transient SearchRssItemsCmd mSearchRssItemsCmd;
     private transient RxDisposer mRxDisposer;
     private transient RecyclerView.OnScrollListener mOnScrollListener;
     private transient RssItemRecyclerViewAdapter mRssItemRecyclerViewAdapter;
+    private transient PublishSubject<String> mQuerySubject;
+    private transient boolean mIsUpdateQueryText;
+
+    public SearchRssItemListSV() {
+        mQuery = "";
+        mQuerySubject = PublishSubject.create();
+    }
 
     @Override
     public void provideComponent(Provider provider) {
         mSvProvider = provider.get(StatefulViewProvider.class);
-        mAppSharedPreferences = mSvProvider.get(AppSharedPreferences.class);
-        mPagedRssItemsCmd = mSvProvider.get(PagedRssItemsCmd.class);
-        mPagedRssItemsCmd.load();
-        mHandler = mSvProvider.get(Handler.class);
+        mSearchRssItemsCmd = mSvProvider.get(SearchRssItemsCmd.class);
+        if (mQuery != null && !mQuery.isEmpty()) {
+            mSearchRssItemsCmd.setQuery(mQuery);
+        }
         mRxDisposer = mSvProvider.get(RxDisposer.class);
         mRssItemRecyclerViewAdapter = new RssItemRecyclerViewAdapter(
-                mPagedRssItemsCmd, mNavigator, this);
+                mSearchRssItemsCmd, mNavigator, this);
         if (mOnScrollListener == null) {
             mOnScrollListener = new RecyclerView.OnScrollListener() {
                 @Override
                 public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
                     if (!recyclerView.canScrollVertically(1) &&
                             newState == RecyclerView.SCROLL_STATE_IDLE) {
-                        mPagedRssItemsCmd.loadNextPage();
+                        mSearchRssItemsCmd.loadNextPage();
                     }
                 }
             };
         }
-        mRxDisposer.add("mPagedRssItemsCmd.itemsMarkedRead",
+        mRxDisposer.add("mSearchRssItemsCmd.itemsMarkedRead",
                 mSvProvider.get(RssChangeNotifier.class).getItemsMarkedRead()
-                        .subscribe(channelId -> mPagedRssItemsCmd.reload(),
+                        .subscribe(channelId -> mSearchRssItemsCmd.reload(),
                                 throwable ->
                                         mSvProvider.get(ILogger.class).e(TAG,
                                                 mSvProvider.getContext()
@@ -83,10 +88,10 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
         mRxDisposer.add("mRssChangeNotifier.updatedRssItem.favoriteFilter",
                 mSvProvider.get(RssChangeNotifier.class).getUpdatedRssItem()
                         .subscribe(rssItem -> {
-                            if (mPagedRssItemsCmd.getFilterType()
+                            if (mSearchRssItemsCmd.getFilterType()
                                     .orElse(BaseRssItemsCmd.FILTER_BY_NONE)
                                     == BaseRssItemsCmd.FILTER_BY_FAVORITE) {
-                                mPagedRssItemsCmd.reload();
+                                mSearchRssItemsCmd.reload();
                             }
                         })
         );
@@ -94,7 +99,7 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
 
     @Override
     protected View createView(Activity activity, ViewGroup container) {
-        View view = activity.getLayoutInflater().inflate(R.layout.list_rss_item, container, false);
+        View view = activity.getLayoutInflater().inflate(R.layout.list_search_rss, container, false);
         RecyclerView recyclerView = view.findViewById(R.id.recyclerView);
         recyclerView.setAdapter(mRssItemRecyclerViewAdapter);
         recyclerView.addOnScrollListener(mOnScrollListener);
@@ -110,28 +115,28 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
                 R.array.array_filter_by, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerFilterBy.setAdapter(adapter);
-        mPagedRssItemsCmd.getFilterType()
+        mSearchRssItemsCmd.getFilterType()
                 .ifPresent(spinnerFilterBy::setSelection);
         spinnerFilterBy.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                mPagedRssItemsCmd.setFilterType(position);
+                mSearchRssItemsCmd.setFilterType(position);
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
-                mPagedRssItemsCmd.setFilterType(null);
+                mSearchRssItemsCmd.setFilterType(null);
             }
         });
         ImageButton buttonSortOrder = view.findViewById(R.id.button_sort_order);
         buttonSortOrder.setOnClickListener(v -> {
-            Integer sortOrder = mPagedRssItemsCmd.getSortOrder();
+            Integer sortOrder = mSearchRssItemsCmd.getSortOrder();
             boolean isNewest = sortOrder == null || sortOrder == BaseRssItemsCmd.SORT_ORDER_NEWEST;
-            mPagedRssItemsCmd.setSortOrder(isNewest ?
+            mSearchRssItemsCmd.setSortOrder(isNewest ?
                     BaseRssItemsCmd.SORT_ORDER_OLDEST : BaseRssItemsCmd.SORT_ORDER_NEWEST);
         });
-        mRxDisposer.add("mPagedRssItemsCmd.sortOrder",
-                mPagedRssItemsCmd.getSortOrderFlow()
+        mRxDisposer.add("mSearchRssItemsCmd.sortOrder",
+                mSearchRssItemsCmd.getSortOrderFlow()
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(sortOrderOptional -> {
                                     Integer sortOrder = sortOrderOptional.orElse(BaseRssItemsCmd.SORT_ORDER_NEWEST);
@@ -151,57 +156,83 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
                                                         .getString(R.string.error_message, throwable.getMessage()))
                         )
         );
-        Integer currentSortOrder = mPagedRssItemsCmd.getSortOrder();
+        Integer currentSortOrder = mSearchRssItemsCmd.getSortOrder();
         boolean isNewest = currentSortOrder == null || currentSortOrder == BaseRssItemsCmd.SORT_ORDER_NEWEST;
         buttonSortOrder.setImageResource(isNewest ?
                 R.drawable.ic_sort_desc_white : R.drawable.ic_sort_asc_white);
         buttonSortOrder.setContentDescription(activity.getString(isNewest ?
                 R.string.sort_newest_first : R.string.sort_oldest_first));
-        mRxDisposer.add("mPagedRssItemsCmd.getRssItems",
-                mPagedRssItemsCmd.getRssItems()
-                        .debounce(100, TimeUnit.MILLISECONDS)
+        ProgressBar progressBarLoading = view.findViewById(R.id.progress_bar_loading);
+        mRxDisposer.add("mSearchRssItemsCmd.isLoading",
+                mSearchRssItemsCmd.getLoadingFlow()
                         .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(rssItems -> {
-                                    mRssItemRecyclerViewAdapter.notifyItemsChanged();
-                                    if (!rssItems.isEmpty()) {
-                                        if (!mAppSharedPreferences.isShowCaseRssItemList()) {
-                                            mHandler
-                                                    .postDelayed(() -> {
-                                                        int textColor = R.color.white;
-                                                        ShowCaseDialog showCaseDialog = new ShowCaseBuilder()
-                                                                .textColorRes(textColor)
-                                                                .titleTextColorRes(textColor)
-                                                                .shadowColorRes(R.color.daynight_transparent_white_black)
-                                                                .titleTextSizeRes(R.dimen.text_nav_menu)
-                                                                .spacingRes(R.dimen.spacing_normal)
-                                                                .backgroundContentColorRes(R.color.orange_600)
-                                                                .circleIndicatorBackgroundDrawableRes(R.drawable.selector_circle_green)
-                                                                .prevStringRes(R.string.previous)
-                                                                .nextStringRes(R.string.next)
-                                                                .finishStringRes(R.string.finish)
-                                                                .useCircleIndicator(false)
-                                                                .clickable(true)
-                                                                .build();
-                                                        String title = activity.getString(R.string.title_showcase_rss_item_list);
-                                                        String description = activity.getString(R.string.showcase_rss_item_list);
-                                                        ArrayList<ShowCaseObject> showCaseList = new ArrayList<>();
-                                                        showCaseList.add(new ShowCaseObject(
-                                                                recyclerView.getChildAt(0),
-                                                                title,
-                                                                description));
-                                                        showCaseDialog.show(activity, null, showCaseList);
-                                                    }, 1000);
-                                            mAppSharedPreferences.setShowCaseRssItemList(true);
-                                        }
-                                    }
-                                },
+                        .subscribe(isLoading -> {
+                            if (isLoading) {
+                                progressBarLoading.setVisibility(View.VISIBLE);
+                            } else {
+                                progressBarLoading.setVisibility(View.GONE);
+                            }
+                        })
+        );
+        mRxDisposer.add("mSearchRssItemsCmd.getResults",
+                mSearchRssItemsCmd.getResults()
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(rssItems -> mRssItemRecyclerViewAdapter.notifyItemsChanged(),
                                 throwable ->
                                         mSvProvider.get(ILogger.class).e(TAG,
                                                 mSvProvider.getContext()
-                                                        .getString(R.string.error_message, throwable.getMessage()))
-                        )
+                                                        .getString(R.string.error_message, throwable.getMessage())))
+        );
+        EditText editTextSearch = view.findViewById(R.id.edit_text_search);
+        String currentQuery = mSearchRssItemsCmd.getQuery();
+        if (currentQuery != null && !currentQuery.isEmpty()) {
+            mIsUpdateQueryText = true;
+            editTextSearch.setText(currentQuery);
+            editTextSearch.setSelection(currentQuery.length());
+            mIsUpdateQueryText = false;
+        }
+        editTextSearch.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                updateQuery(v.getText().toString());
+                return true;
+            }
+            return false;
+        });
+        editTextSearch.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                // Leave blank
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                // Leave blank
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (mIsUpdateQueryText) {
+                    return;
+                }
+                mQuerySubject.onNext(s.toString());
+            }
+        });
+        mRxDisposer.add("mQuerySubject.debounce",
+                mQuerySubject
+                        .debounce(SEARCH_DEBOUNCE_MILLIS, TimeUnit.MILLISECONDS)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(this::updateQuery,
+                                throwable ->
+                                        mSvProvider.get(ILogger.class).e(TAG,
+                                                mSvProvider.getContext()
+                                                        .getString(R.string.error_message, throwable.getMessage())))
         );
         return view;
+    }
+
+    private void updateQuery(String query) {
+        mQuery = query;
+        mSearchRssItemsCmd.setQuery(query);
     }
 
     @Override
@@ -218,13 +249,8 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
     }
 
     public void refresh() {
-        if (mPagedRssItemsCmd != null) {
-            mPagedRssItemsCmd.reload();
+        if (mSearchRssItemsCmd != null) {
+            mSearchRssItemsCmd.reload();
         }
-    }
-
-    public Flowable<Boolean> getLoadingFlow() {
-        if (mPagedRssItemsCmd == null) return null;
-        return mPagedRssItemsCmd.getLoadingFlow();
     }
 }

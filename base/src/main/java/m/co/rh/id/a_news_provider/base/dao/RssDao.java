@@ -146,6 +146,40 @@ public abstract class RssDao {
     public abstract List<RssItem> findRssItemsWithLimitAsc(Long channelId, Integer isRead, Integer isFavorite, int limit);
 
     /**
+     * Searches rss items matching the given query against title and description,
+     * filtered by optional channel, read and favorite state,
+     * ordered by newest first and limited to the given count.
+     * The query must be pre-escaped for LIKE wildcards by the caller.
+     * This method must be called on a background thread.
+     *
+     * @param query       pre-escaped search query matched against title and description
+     * @param channelId   optional channel id filter, null to include all channels
+     * @param isRead      optional read-state filter, null to include read and unread items
+     * @param isFavorite  optional favorite filter, null to include favorite and non-favorite items
+     * @param limit       maximum number of items to return
+     * @return list of rss items matching the query, newest first
+     */
+    @Query("SELECT * FROM rss_item WHERE (title LIKE '%' || :query || '%' ESCAPE '\\' OR description LIKE '%' || :query || '%' ESCAPE '\\') AND (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) ORDER BY COALESCE(pub_date, created_date_time) DESC, created_date_time DESC LIMIT :limit")
+    public abstract List<RssItem> searchRssItemsWithLimit(String query, Long channelId, Integer isRead, Integer isFavorite, int limit);
+
+    /**
+     * Searches rss items matching the given query against title and description,
+     * filtered by optional channel, read and favorite state,
+     * ordered by oldest first and limited to the given count.
+     * The query must be pre-escaped for LIKE wildcards by the caller.
+     * This method must be called on a background thread.
+     *
+     * @param query       pre-escaped search query matched against title and description
+     * @param channelId   optional channel id filter, null to include all channels
+     * @param isRead      optional read-state filter, null to include read and unread items
+     * @param isFavorite  optional favorite filter, null to include favorite and non-favorite items
+     * @param limit       maximum number of items to return
+     * @return list of rss items matching the query, oldest first
+     */
+    @Query("SELECT * FROM rss_item WHERE (title LIKE '%' || :query || '%' ESCAPE '\\' OR description LIKE '%' || :query || '%' ESCAPE '\\') AND (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) ORDER BY COALESCE(pub_date, created_date_time) ASC, created_date_time ASC LIMIT :limit")
+    public abstract List<RssItem> searchRssItemsWithLimitAsc(String query, Long channelId, Integer isRead, Integer isFavorite, int limit);
+
+    /**
      * Marks all rss items as read.
      * This method must be called on a background thread.
      */

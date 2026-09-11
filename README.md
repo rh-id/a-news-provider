@@ -18,6 +18,7 @@ A simple and easy to use RSS aggregator that deliver news to your smartphone.
   <li>Support RSS 2.0, Atom, and RDF (RSS 1.0) feed formats, including <code>media:content</code>, <code>media:thumbnail</code>, and <code>enclosure</code> elements for attached images and videos</li>
   <li>Download attached videos to <code>Downloads/&lt;feedName&gt;/</code> via the system download manager; attached images are displayed in the item detail when the "download image" setting is enabled</li>
   <li>Star items as favorites and filter the list by All / Unread / Read / Favorites</li>
+  <li>Search all feed items by title or description from the home screen search menu</li>
   <li>Sort items by newest or oldest, and mark all items as read (globally or per channel)</li>
   <li>Configurable periodic background sync with a 1-24 hours interval (default: every 6 hours, can be toggled off)</li>
   <li>Per-channel grouped sync notifications with unread counts (requires the Notifications permission on Android 13+)</li>

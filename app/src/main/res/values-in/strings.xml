@@ -101,6 +101,8 @@
     <string name="menu_toggle_favorite">Tambah/hapus favorit</string>
     <string name="favorite_added">Ditambahkan ke favorit</string>
     <string name="favorite_removed">Dihapus dari favorit</string>
+    <string name="menu_search">Cari</string>
+    <string name="search_hint">Cari artikel…</string>
 
     <string-array name="array_filter_by">
         <item>Semua</item>

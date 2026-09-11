@@ -101,6 +101,8 @@
     <string name="menu_toggle_favorite">Bæta í eftirlæti/fjarlægja</string>
     <string name="favorite_added">Bætt í eftirlæti</string>
     <string name="favorite_removed">Fjarlægt úr eftirlæti</string>
+    <string name="menu_search">Leita</string>
+    <string name="search_hint">Leita að greinum…</string>
 
     <string-array name="array_filter_by">
         <item>Allt</item>

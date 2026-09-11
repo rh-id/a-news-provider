@@ -20,10 +20,6 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
@@ -54,7 +50,7 @@ import m.co.rh.id.anavigator.component.NavOnBackPressed;
 import m.co.rh.id.anavigator.component.RequireComponent;
 import m.co.rh.id.aprovider.Provider;
 
-public class HomePage extends StatefulView<Activity> implements Externalizable, RequireComponent<Provider>, NavOnBackPressed<Activity>, Toolbar.OnMenuItemClickListener, SwipeRefreshLayout.OnRefreshListener, DrawerLayout.DrawerListener, View.OnClickListener, AppBarSV.OnMenuCreated, NavOnActivityResult<Activity> {
+public class HomePage extends StatefulView<Activity> implements RequireComponent<Provider>, NavOnBackPressed<Activity>, Toolbar.OnMenuItemClickListener, SwipeRefreshLayout.OnRefreshListener, DrawerLayout.DrawerListener, View.OnClickListener, AppBarSV.OnMenuCreated, NavOnActivityResult<Activity> {
     private static final String TAG = HomePage.class.getName();
     private static final int REQUEST_CODE_IMPORT_OPML = 1;
     private static final long BACK_PRESS_EXIT_TIMEOUT_MILLIS = 1000L;
@@ -325,6 +321,9 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
         } else if (id == R.id.menu_mark_all_read) {
             mMarkAllReadCmd.execute(null);
             return true;
+        } else if (id == R.id.menu_search) {
+            mNavigator.push(Routes.SEARCH_RSS_PAGE);
+            return true;
         } else if (id == R.id.menu_export_opml) {
             Context context = mSvProvider.getContext();
             mRxDisposer.add("asyncExportOpml", mOpmlCmd.exportOpml()
@@ -411,25 +410,5 @@ public class HomePage extends StatefulView<Activity> implements Externalizable, 
                 mOpmlCmd.importOpml(data.getData());
             }
         }
-    }
-
-    @Override
-    public void writeExternal(ObjectOutput objectOutput) throws IOException {
-        super.writeExternal(objectOutput);
-        objectOutput.writeObject(mAppBarSV);
-        objectOutput.writeBoolean(mIsDrawerOpen);
-        objectOutput.writeObject(mRssItemListSV);
-        objectOutput.writeObject(mRssChannelListSV);
-        objectOutput.writeBoolean(mLastOnlineStatus != null && mLastOnlineStatus);
-    }
-
-    @Override
-    public void readExternal(ObjectInput objectInput) throws ClassNotFoundException, IOException {
-        super.readExternal(objectInput);
-        mAppBarSV = (AppBarSV) objectInput.readObject();
-        mIsDrawerOpen = objectInput.readBoolean();
-        mRssItemListSV = (RssItemListSV) objectInput.readObject();
-        mRssChannelListSV = (RssChannelListSV) objectInput.readObject();
-        mLastOnlineStatus = objectInput.readBoolean();
     }
 }
