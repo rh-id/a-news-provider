@@ -10,7 +10,7 @@ GitHub: https://github.com/rh-id/a-news-provider (repo root package `m.co.rh.id.
 ## Tech Stack
 - **Language:** Pure Java 17 (NO Kotlin anywhere). Core library desugaring enabled (`desugar_jdk_libs:2.1.5`).
 - **Build:** Gradle 9.4.1 wrapper, Android Gradle Plugin 9.2.1, Groovy DSL. JitPack repo for `com.github.rh-id:*` artifacts.
-- **Android:** compileSdk 37, targetSdk 37, minSdk 21. versionCode 74, versionName 1.15.0 (as of v1.15.0 release).
+- **Android:** compileSdk 37, targetSdk 37, minSdk 21. versionCode 75, versionName 2.0.0 (upcoming v2.0.0 release, not yet tagged).
 - **Async:** RxJava 3 (rxjava 3.1.12 PINNED for minSdk 21 compatibility) + rxandroid 3.0.2.
 - **Persistence:** Room 2.7.2 (wired via `annotationProcessor`, NOT kapt/ksp), DB `a-news-provider.db` version 8 with migrations 1→8.
 - **Networking:** Volley 1.2.1 (RequestQueue + 20 MiB disk cache, ImageLoader with 20-entry LruCache).
