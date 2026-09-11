@@ -1,0 +1,9 @@
+Utgivelse 2.0.0+75
+
+Funksjoner:
+* Søk i strømelementer med fulltekstsøk via en ny egen søkeside som støtter spørring, filtrering og sortering
+* Ny oversettelse til kinesisk (forenklet)
+
+Feilrettinger:
+* Stoler på rotsertifikater fra Let's Encrypt på gamle Android-enheter slik at https-strømmer fortsetter å fungere
+* Sorteringsknappen på startskjermen er nå synlig på lyse bakgrunner

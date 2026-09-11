@@ -1,0 +1,9 @@
+Rilascio 2.0.0+75
+
+Funzionalità:
+* Cerca gli elementi del feed con la ricerca a testo completo tramite una nuova pagina di ricerca dedicata che supporta query, filtri e ordinamento
+* Nuova traduzione in cinese semplificato
+
+Correzioni:
+* I certificati radice Let's Encrypt sono ora considerati attendibili sui vecchi dispositivi Android, così i feed https continuano a funzionare
+* Il pulsante di ordinamento nella schermata principale è ora visibile su sfondi chiari

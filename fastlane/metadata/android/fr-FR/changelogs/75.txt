@@ -1,0 +1,9 @@
+Version 2.0.0+75
+
+Fonctionnalités :
+* Rechercher les éléments du flux en texte intégral via une nouvelle page de recherche dédiée prenant en charge la requête, le filtre et le tri
+* Nouvelle traduction en chinois simplifié
+
+Corrections :
+* Approbation des certificats racine Let's Encrypt sur les anciens appareils Android afin que les flux https continuent de fonctionner
+* Le bouton de tri de l'écran d'accueil est désormais visible sur les fonds clairs

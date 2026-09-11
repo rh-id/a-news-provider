@@ -1,0 +1,9 @@
+Ediziun 2.0.0+75
+
+Funcziuns:
+* Tschertgar elements dal feed cun tschertga en text cumplet tras ina nova pagina da tschertga dedicada che sustegna tschertga, filtrar ed uslizziar
+* Nova translaziun en china simpel
+
+Corecziuns:
+* Confidar ils certificats da ragisch da Let's Encrypt sin vegls apparats Android per che ils feeds https funcziuneschan vinavant
+* Il buttun d'uslizzi sin l'ecran principal è ussa visibel sin fund clair

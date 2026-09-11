@@ -1,0 +1,9 @@
+Versioon 2.0.0+75
+
+Funktsioonid:
+* Otsi voo elemente täistekstiotsinguga uuel pühendatud otsingulehel, mis toetab päringut, filtrit ja sortimist
+* Uus lihtsustatud hiina keele tõlge
+
+Parandused:
+* Vana Androidi seadmetel usaldatakse Let's Encrypti juursertifikaate, et https-voog jätkaks töötamist
+* Sortimisnupp on avaekraanil nüüd heledatel taustadel nähtav

@@ -1,0 +1,9 @@
+Rilis 2.0.0+75
+
+Fitur:
+* Cari item feed dengan pencarian teks lengkap melalui halaman pencarian khusus baru yang mendukung kueri, filter, dan pengurutan
+* Terjemahan bahasa Mandarin Sederhana baru
+
+Perbaikan:
+* Mempercayai sertifikat akar Let's Encrypt di perangkat Android lama agar feed https tetap berfungsi
+* Tombol pengurutan di layar utama kini terlihat pada latar belakang terang

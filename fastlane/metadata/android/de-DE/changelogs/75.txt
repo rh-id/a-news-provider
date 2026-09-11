@@ -1,0 +1,9 @@
+Release 2.0.0+75
+
+Funktionen:
+* Feed-Einträge über eine neue eigene Suchseite per Volltextsuche durchsuchen – mit Unterstützung für Suche, Filter und Sortierung
+* Neue Übersetzung für Vereinfachtes Chinesisch
+
+Fehlerbehebungen:
+* Let's-Encrypt-Stammzertifikaten auf älteren Android-Geräten vertrauen, damit https-Feeds weiterhin funktionieren
+* Der Sortier-Button auf dem Startbildschirm ist jetzt vor hellem Hintergrund sichtbar

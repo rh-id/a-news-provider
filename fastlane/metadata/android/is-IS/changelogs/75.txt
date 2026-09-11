@@ -1,0 +1,9 @@
+Útgáfa 2.0.0+75
+
+Eiginleikar:
+* Leitaðu í hlutum straumsins með fulltextaleit í gegnum nýja sérstaka leitarsíðu sem styður leitarskilyrði, síun og röðun
+* Ný þýðing á einfaldaðri kínversku
+
+Villuleiðréttingar:
+* Treysta rótarskírteinum frá Let's Encrypt á eldri Android-tækjum svo https-streymar héldu áfram að virka
+* Röðunarhnappurinn á heimaskjá er nú sýnilegur á ljósum bakgrunnum

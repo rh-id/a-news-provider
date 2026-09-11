@@ -1,0 +1,9 @@
+Release 2.0.0+75
+
+Features:
+* Search feed items with full-text search via a new dedicated search page supporting query, filter and sort
+* New Simplified Chinese translation
+
+Fixes:
+* Trust Let's Encrypt root certificates on old Android devices so https feeds keep working
+* Sort button on the home screen is now visible on light backgrounds
