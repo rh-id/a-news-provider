@@ -62,6 +62,10 @@ android {
         buildConfig true
     }
     namespace 'm.co.rh.id.a_news_provider'
+    lint {
+        abortOnError = true
+        warningsAsErrors = false
+    }
 }
 
 dependencies {
@@ -73,8 +77,8 @@ dependencies {
     implementation 'com.google.android.material:material:1.13.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.2.1'
     implementation 'androidx.drawerlayout:drawerlayout:1.2.0'
-    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'androidx.recyclerview:recyclerview:1.4.0'
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
     implementation 'com.squareup.leakcanary:plumber-android:2.14'
     implementation 'com.github.rh-id:AndroidShowCase:v0.0.1'
 
