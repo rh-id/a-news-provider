@@ -14,11 +14,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
 
 import com.android.volley.toolbox.ImageLoader;
 import com.android.volley.toolbox.NetworkImageView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -194,7 +196,8 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
                             int selectedColor = UiUtils.getColorFromAttribute(activity, R.attr.colorOnPrimary);
                             if (rssChannelOptional.isPresent()) {
                                 if (rssChannelOptional.get().id.equals(rssChannelCountEntry.getKey().id)) {
-                                    selectedColor = activity.getResources().getColor(R.color.daynight_gray_300_gray_600);
+                                    selectedColor = ContextCompat.getColor(activity,
+                                            R.color.daynight_gray_300_gray_600);
                                 }
                             }
                             view.setBackgroundColor(selectedColor);
@@ -257,7 +260,7 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
             Context context = view.getContext();
             String url = mRssChannelCountSubject.getValue().getKey().url;
             MaterialAlertDialogBuilder materialAlertDialogBuilder = new MaterialAlertDialogBuilder(context);
-            materialAlertDialogBuilder.setTitle(context.getString(R.string.url).toUpperCase());
+            materialAlertDialogBuilder.setTitle(context.getString(R.string.url).toUpperCase(Locale.ROOT));
             materialAlertDialogBuilder.setMessage(url);
             materialAlertDialogBuilder.setNegativeButton(R.string.copy, (dialog, which) -> {
                 boolean copied = UiUtils.copyToClipboard(context, context.getString(R.string.copy), url);

@@ -20,7 +20,6 @@ import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderDisposable;
 
-@SuppressWarnings("deprecation")
 public class DeviceStatusNotifier implements ProviderDisposable, Application.ActivityLifecycleCallbacks {
     private Context mAppContext;
     private ConnectivityManager.NetworkCallback mNetworkCallback;
@@ -98,6 +97,7 @@ public class DeviceStatusNotifier implements ProviderDisposable, Application.Act
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void checkOnlineStatus() {
         ConnectivityManager cm =
                 (ConnectivityManager) mAppContext.getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -109,6 +109,10 @@ public class DeviceStatusNotifier implements ProviderDisposable, Application.Act
                     && hasInternetCapability(capabilities);
             mIsOnlineBehaviorSubject.onNext(isConnected);
         } else {
+            // Pre-M (API 21-22): getActiveNetwork()/getNetworkCapabilities() require API 23,
+            // so the deprecated NetworkInfo APIs are the only synchronous option. This
+            // synchronous check is what corrects a stale online state at resume when
+            // re-registering the network callback fires no callbacks (no matching network).
             NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
             boolean isConnected = activeNetwork != null
                     && activeNetwork.isConnectedOrConnecting();

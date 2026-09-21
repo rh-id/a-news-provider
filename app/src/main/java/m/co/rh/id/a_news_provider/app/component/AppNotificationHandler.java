@@ -11,6 +11,7 @@ import android.os.Handler;
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.ImageLoader;
@@ -99,7 +100,7 @@ public class AppNotificationHandler {
                 NotificationCompat.Builder builder = new NotificationCompat.Builder(mAppContext, CHANNEL_ID_RSS_SYNC)
                         .setSmallIcon(R.drawable.ic_notification_launcher)
                         .setColorized(true)
-                        .setColor(mAppContext.getResources().getColor(R.color.orange_600))
+                        .setColor(ContextCompat.getColor(mAppContext, R.color.orange_600))
                         .setContentTitle(title)
                         .setContentText(content)
                         .setPriority(NotificationCompat.PRIORITY_DEFAULT)

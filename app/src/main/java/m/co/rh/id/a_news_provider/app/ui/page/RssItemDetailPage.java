@@ -6,7 +6,6 @@ import android.app.DownloadManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
@@ -146,10 +145,10 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         }
         boolean showImage = appSharedPreferences.isDownloadImage() && imageUrl != null;
         if (showImage) {
-            Resources resources = activity.getResources();
-            Drawable drawable = DrawableCompat.wrap(resources
-                    .getDrawable(R.drawable.ic_image_black));
-            DrawableCompat.setTint(drawable, resources.getColor(R.color.daynight_black_white));
+            Drawable drawable = DrawableCompat.wrap(ContextCompat
+                    .getDrawable(activity, R.drawable.ic_image_black));
+            DrawableCompat.setTint(drawable, ContextCompat
+                    .getColor(activity, R.color.daynight_black_white));
             networkImageView.setDefaultImageDrawable(drawable);
             networkImageView.setErrorImageResId(R.drawable.ic_broken_image_red);
             networkImageView.setImageUrl(imageUrl, mImageLoader);
