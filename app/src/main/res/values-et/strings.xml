@@ -103,6 +103,9 @@
     <string name="favorite_removed">Eemaldatud lemmikutest</string>
     <string name="menu_search">Otsi</string>
     <string name="search_hint">Otsi artikleid…</string>
+    <string name="duplicate_feed_title">Voog on juba lisatud</string>
+    <string name="duplicate_feed_message">See voog on juba lisatud nimega \'%1$s\'</string>
+    <string name="open_existing">Ava olemasolev</string>
 
     <string-array name="array_filter_by">
         <item>Kõik</item>

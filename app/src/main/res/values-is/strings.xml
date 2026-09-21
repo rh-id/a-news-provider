@@ -103,6 +103,9 @@
     <string name="favorite_removed">Fjarlægt úr eftirlæti</string>
     <string name="menu_search">Leita</string>
     <string name="search_hint">Leita að greinum…</string>
+    <string name="duplicate_feed_title">Straumi hefur þegar verið bætt við</string>
+    <string name="duplicate_feed_message">Þessum straumi hefur þegar verið bætt við sem \'%1$s\'</string>
+    <string name="open_existing">Opna fyrirliggjandi</string>
 
     <string-array name="array_filter_by">
         <item>Allt</item>

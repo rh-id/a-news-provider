@@ -103,6 +103,9 @@
     <string name="favorite_removed">Aus Favoriten entfernt</string>
     <string name="menu_search">Suchen</string>
     <string name="search_hint">Artikel suchen…</string>
+    <string name="duplicate_feed_title">Feed bereits hinzugefügt</string>
+    <string name="duplicate_feed_message">Dieser Feed wurde bereits als \'%1$s\' hinzugefügt</string>
+    <string name="open_existing">Vorhandenen öffnen</string>
 
     <string-array name="array_filter_by">
         <item>Alle</item>

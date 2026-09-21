@@ -103,6 +103,9 @@
     <string name="favorite_removed">已从收藏中移除</string>
     <string name="menu_search">搜索</string>
     <string name="search_hint">搜索文章…</string>
+    <string name="duplicate_feed_title">订阅源已添加</string>
+    <string name="duplicate_feed_message">此订阅源已添加为 \'%1$s\'</string>
+    <string name="open_existing">打开现有订阅源</string>
 
     <string-array name="array_filter_by">
         <item>全部</item>

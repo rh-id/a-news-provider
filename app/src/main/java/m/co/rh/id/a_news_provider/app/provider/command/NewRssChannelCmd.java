@@ -12,11 +12,15 @@ import androidx.work.WorkManager;
 import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
+import io.reactivex.rxjava3.subjects.PublishSubject;
+import java.util.concurrent.ExecutorService;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.workmanager.ConstantsKey;
 import m.co.rh.id.a_news_provider.app.workmanager.NewRssWorker;
+import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.model.RssModel;
+import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.aprovider.Provider;
 
 public class NewRssChannelCmd {
@@ -25,6 +29,10 @@ public class NewRssChannelCmd {
     private final RssChangeNotifier mRssChangeNotifier;
     private final BehaviorSubject<RssModel> mRssModelBehaviorSubject;
     private final BehaviorSubject<String> mUrlValidationBehaviorSubject;
+    private final ExecutorService mExecutorService;
+    private final RssDao mRssDao;
+    private final PublishSubject<RssChannel> mDuplicateFeedSubject;
+    private final PublishSubject<String> mFeedEnqueuedSubject;
 
     public NewRssChannelCmd(Provider provider) {
         mAppContext = provider.getContext().getApplicationContext();
@@ -32,6 +40,10 @@ public class NewRssChannelCmd {
         mRssChangeNotifier = provider.get(RssChangeNotifier.class);
         mRssModelBehaviorSubject = BehaviorSubject.create();
         mUrlValidationBehaviorSubject = BehaviorSubject.create();
+        mExecutorService = provider.get(ExecutorService.class);
+        mRssDao = provider.get(RssDao.class);
+        mDuplicateFeedSubject = PublishSubject.create();
+        mFeedEnqueuedSubject = PublishSubject.create();
     }
 
     public boolean validUrl(String url) {
@@ -53,21 +65,42 @@ public class NewRssChannelCmd {
 
     public void execute(final String url) {
         final StringBuilder requestUrl = new StringBuilder(url);
+
         if (!url.startsWith("http://") && !url.startsWith("https://")) {
             requestUrl.insert(0, "https://");
         }
         if (!validUrl(requestUrl.toString())) {
             return;
         }
-        OneTimeWorkRequest oneTimeWorkRequest = new OneTimeWorkRequest.Builder(NewRssWorker.class)
-                .setConstraints(new Constraints.Builder()
-                        .setRequiredNetworkType(NetworkType.CONNECTED)
-                        .build())
-                .setInputData(new Data.Builder()
-                        .putString(ConstantsKey.KEY_STRING_URL, requestUrl.toString())
-                        .build()
-                ).build();
-        mWorkManager.enqueue(oneTimeWorkRequest);
+
+        enqueueIfNotDuplicate(requestUrl.toString());
+    }
+
+    void enqueueIfNotDuplicate(final String requestUrl) {
+        mExecutorService.execute(() -> {
+
+            RssChannel existingChannel = mRssDao.findRssChannelByUrl(requestUrl);
+
+            if (existingChannel != null) {
+                mDuplicateFeedSubject.onNext(existingChannel);
+                return;
+            }
+
+            OneTimeWorkRequest oneTimeWorkRequest =
+                    new OneTimeWorkRequest.Builder(NewRssWorker.class)
+                            .setConstraints(new Constraints.Builder()
+                                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                                    .build())
+                            .setInputData(new Data.Builder()
+                                    .putString(
+                                            ConstantsKey.KEY_STRING_URL,
+                                            requestUrl)
+                                    .build())
+                            .build();
+
+            mWorkManager.enqueue(oneTimeWorkRequest);
+            mFeedEnqueuedSubject.onNext(requestUrl);
+        });
     }
 
     public Flowable<RssModel> getRssModel() {
@@ -89,5 +122,23 @@ public class NewRssChannelCmd {
             validation = "";
         }
         return validation;
+    }
+
+    public Flowable<RssChannel> getDuplicateFeed() {
+        return Flowable.fromObservable(
+                mDuplicateFeedSubject,
+                BackpressureStrategy.BUFFER
+        );
+    }
+
+    /**
+     * Emits the request URL right after the fetch worker has been enqueued,
+     * in other words when the feed was not a duplicate.
+     */
+    public Flowable<String> getFeedEnqueued() {
+        return Flowable.fromObservable(
+                mFeedEnqueuedSubject,
+                BackpressureStrategy.BUFFER
+        );
     }
 }
