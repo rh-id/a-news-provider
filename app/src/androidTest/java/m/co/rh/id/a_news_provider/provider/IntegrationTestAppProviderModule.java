@@ -7,11 +7,13 @@ import androidx.work.WorkManager;
 import m.co.rh.id.a_news_provider.app.component.AppNotificationHandler;
 import m.co.rh.id.a_news_provider.app.provider.CommandProviderModule;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
+import m.co.rh.id.a_news_provider.app.provider.command.RedirectDuplicateChecker;
 import m.co.rh.id.a_news_provider.app.provider.event.AppSharedPreferencesEventHandler;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChannelStateNotifier;
 import m.co.rh.id.a_news_provider.app.provider.parser.OpmlParser;
 import m.co.rh.id.a_news_provider.app.provider.repository.RssRepository;
+import m.co.rh.id.a_news_provider.base.util.UrlNormalizer;
 import m.co.rh.id.a_news_provider.base.provider.BaseProviderModule;
 import m.co.rh.id.a_news_provider.base.provider.DatabaseProviderModule;
 import m.co.rh.id.a_news_provider.component.network.provider.NetworkProviderModule;
@@ -48,6 +50,8 @@ public class IntegrationTestAppProviderModule implements ProviderModule {
         providerRegistry.registerLazy(RssChangeNotifier.class, () -> new RssChangeNotifier());
         providerRegistry.registerLazy(RssChannelStateNotifier.class, () -> new RssChannelStateNotifier(provider));
         providerRegistry.registerLazy(RssRepository.class, () -> new RssRepository(provider));
+        providerRegistry.registerLazy(UrlNormalizer.class, UrlNormalizer::new);
+        providerRegistry.registerLazy(RedirectDuplicateChecker.class, () -> new RedirectDuplicateChecker(provider));
         providerRegistry.registerLazy(OpmlParser.class, () -> new OpmlParser(provider));
 
         providerRegistry.registerPool(StatefulViewProvider.class, () -> new StatefulViewProvider(provider));

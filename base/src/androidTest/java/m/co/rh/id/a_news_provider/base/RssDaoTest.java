@@ -18,10 +18,20 @@ import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * Instrumented test suite for {@link RssDao}, split in two sections:
+ * <p>
+ * 1. Search queries ({@code searchRssItemsWithLimit} / {@code searchRssItemsWithLimitAsc}):
+ * LIKE matching, wildcard escaping, state filters, limits and sort order.
+ * <p>
+ * 2. Duplicate detection ({@link RssDao#findRssChannelByUrlVariants(String, String)}):
+ * matches a channel by either the raw requested spelling or the normalized spelling.
+ */
 @RunWith(AndroidJUnit4.class)
-public class RssDaoSearchTest {
+public class RssDaoTest {
     private AppDatabase mAppDatabase;
     private RssDao mRssDao;
 
@@ -39,6 +49,10 @@ public class RssDaoSearchTest {
     public void tearDown() {
         mAppDatabase.close();
     }
+
+    // ==================================================================================
+    // Section 1: search queries
+    // ==================================================================================
 
     @Test
     public void searchMatchesTitleAndDescriptionCaseInsensitively() {
@@ -186,6 +200,84 @@ public class RssDaoSearchTest {
         assertEquals("bitcoin in feed 1", channel1Results.get(0).title);
         assertTrue(mRssDao.searchRssItemsWithLimit(
                 "bitcoin", channel2.id, null, null, 100).size() == 1);
+    }
+
+    // ==================================================================================
+    // Section 2: duplicate detection via findRssChannelByUrlVariants
+    // ==================================================================================
+
+    @Test
+    public void findRssChannelByUrlVariants_exactMatchReturnsInsertedChannel() {
+        RssChannel rssChannel = createRssChannel("https://example.com/feed", "Feed");
+        mRssDao.insertRssChannel(rssChannel);
+
+        RssChannel found = mRssDao.findRssChannelByUrlVariants(
+                "https://example.com/feed", "https://example.com/feed");
+
+        assertNotNull(found);
+        assertEquals(rssChannel.id, found.id);
+    }
+
+    @Test
+    public void findRssChannelByUrlVariants_normalizedParamMatchesStoredCanonicalUrl() {
+        RssChannel rssChannel = createRssChannel("https://example.com/feed", "Feed");
+        mRssDao.insertRssChannel(rssChannel);
+
+        // raw param has a trailing slash and does not match - the normalized param must find it
+        RssChannel found = mRssDao.findRssChannelByUrlVariants(
+                "https://example.com/feed/", "https://example.com/feed");
+
+        assertNotNull(found);
+        assertEquals(rssChannel.id, found.id);
+    }
+
+    @Test
+    public void findRssChannelByUrlVariants_rawParamMatchesLegacyRawStoredUrl() {
+        // legacy rows were stored with the scheme-prepended but UN-normalized spelling
+        RssChannel legacyChannel = createRssChannel("https://Example.com/feed/", "Legacy Feed");
+        mRssDao.insertRssChannel(legacyChannel);
+
+        // normalized param differs in host case and trailing slash - the raw param must find it
+        RssChannel found = mRssDao.findRssChannelByUrlVariants(
+                "https://Example.com/feed/", "https://example.com/feed");
+
+        assertNotNull(found);
+        assertEquals(legacyChannel.id, found.id);
+    }
+
+    @Test
+    public void findRssChannelByUrlVariants_duplicatePairReturnsLowestIdRow() {
+        // while a duplicate pair from before URL normalization still exists,
+        // the query must deterministically return the OLDEST row (lowest id)
+        RssChannel legacyChannel = createRssChannel("https://Example.com/feed/", "Legacy Feed");
+        mRssDao.insertRssChannel(legacyChannel);
+        RssChannel canonicalChannel = createRssChannel("https://example.com/feed", "Canonical Feed");
+        mRssDao.insertRssChannel(canonicalChannel);
+        assertTrue(legacyChannel.id < canonicalChannel.id);
+
+        RssChannel found = mRssDao.findRssChannelByUrlVariants(
+                "https://Example.com/feed/", "https://example.com/feed");
+
+        assertNotNull(found);
+        assertEquals(legacyChannel.id, found.id);
+        assertEquals("Legacy Feed", found.feedName);
+    }
+
+    @Test
+    public void findRssChannelByUrlVariants_duplicatePairReversedInsertOrderStillReturnsLowestIdRow() {
+        // insert order reversed - the lower id (now the canonical-spelled row) must win
+        RssChannel canonicalChannel = createRssChannel("https://example.com/feed", "Canonical Feed");
+        mRssDao.insertRssChannel(canonicalChannel);
+        RssChannel legacyChannel = createRssChannel("https://Example.com/feed/", "Legacy Feed");
+        mRssDao.insertRssChannel(legacyChannel);
+        assertTrue(canonicalChannel.id < legacyChannel.id);
+
+        RssChannel found = mRssDao.findRssChannelByUrlVariants(
+                "https://Example.com/feed/", "https://example.com/feed");
+
+        assertNotNull(found);
+        assertEquals(canonicalChannel.id, found.id);
+        assertEquals("Canonical Feed", found.feedName);
     }
 
     private RssChannel createRssChannel(String url, String feedName) {

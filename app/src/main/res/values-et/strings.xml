@@ -110,4 +110,7 @@
         <item>Loetud</item>
         <item>Lemmikud</item>
     </string-array>
+
+    <string name="feed_already_added_as">See voog on juba lisatud nimega \'%s\'</string>
+    <string name="error_feed_duplicate_redirect">See voog suunab ümber juba lisatud voogu</string>
 </resources>

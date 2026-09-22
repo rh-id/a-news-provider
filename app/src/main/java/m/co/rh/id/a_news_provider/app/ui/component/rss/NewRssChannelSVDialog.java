@@ -1,15 +1,13 @@
 package m.co.rh.id.a_news_provider.app.ui.component.rss;
 
 import android.app.Activity;
-import android.app.Dialog;
-import android.content.DialogInterface;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.EditText;
-
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import android.widget.ProgressBar;
 
 import java.io.Serializable;
 
@@ -26,7 +24,7 @@ import m.co.rh.id.anavigator.component.RequireComponent;
 import m.co.rh.id.anavigator.component.RequireNavRoute;
 import m.co.rh.id.aprovider.Provider;
 
-public class NewRssChannelSVDialog extends StatefulViewDialog<Activity> implements RequireNavRoute, RequireComponent<Provider>, DialogInterface.OnClickListener {
+public class NewRssChannelSVDialog extends StatefulViewDialog<Activity> implements RequireNavRoute, RequireComponent<Provider>, View.OnClickListener {
     private static final String TAG = NewRssChannelSVDialog.class.getName();
 
     private transient NavRoute mNavRoute;
@@ -34,9 +32,11 @@ public class NewRssChannelSVDialog extends StatefulViewDialog<Activity> implemen
     private transient Provider mSvProvider;
     private transient RxDisposer mRxDisposer;
     private transient NewRssChannelCmd mNewRssChannelCmd;
+    private transient ILogger mLogger;
     private SerialBehaviorSubject<String> mFeedUrlSubject;
 
     private transient TextWatcher mFeedUrlTextWatcher;
+    private final SerialBehaviorSubject<Boolean> mAddInFlightSubject = new SerialBehaviorSubject<>(false);
 
     @Override
     public void provideNavRoute(NavRoute navRoute) {
@@ -48,6 +48,7 @@ public class NewRssChannelSVDialog extends StatefulViewDialog<Activity> implemen
         mSvProvider = provider.get(StatefulViewProvider.class);
         mRxDisposer = mSvProvider.get(RxDisposer.class);
         mNewRssChannelCmd = mSvProvider.get(NewRssChannelCmd.class);
+        mLogger = mSvProvider.get(ILogger.class);
         if (mFeedUrlSubject == null) {
             String url;
             Args args = getArgs();
@@ -86,6 +87,11 @@ public class NewRssChannelSVDialog extends StatefulViewDialog<Activity> implemen
         EditText feedUrlEditText = view.findViewById(R.id.input_text_url);
         feedUrlEditText.setText(mFeedUrlSubject.getValue());
         feedUrlEditText.addTextChangedListener(mFeedUrlTextWatcher);
+        Button cancelButton = view.findViewById(R.id.button_cancel);
+        cancelButton.setOnClickListener(this);
+        Button addButton = view.findViewById(R.id.button_add);
+        addButton.setOnClickListener(this);
+        ProgressBar progressBar = view.findViewById(R.id.progress_add_feed);
         mRxDisposer.add("mNewRssChannelCmd", mNewRssChannelCmd
                 .getUrlValidation()
                 .observeOn(AndroidSchedulers.mainThread()).subscribe(s ->
@@ -97,17 +103,14 @@ public class NewRssChannelSVDialog extends StatefulViewDialog<Activity> implemen
                     }
                 })
         );
+        mRxDisposer.add("mAddInFlightSubject", mAddInFlightSubject
+                .getSubject()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(inFlight -> {
+                    addButton.setEnabled(!inFlight);
+                    progressBar.setVisibility(inFlight ? View.VISIBLE : View.GONE);
+                }));
         return view;
-    }
-
-    @Override
-    protected Dialog createDialog(Activity activity) {
-        View dialogView = buildView(activity, null);
-        MaterialAlertDialogBuilder alertBuilder = new MaterialAlertDialogBuilder(activity);
-        alertBuilder.setView(dialogView);
-        alertBuilder.setPositiveButton(R.string.add, this);
-        alertBuilder.setNegativeButton(android.R.string.cancel, this);
-        return alertBuilder.create();
     }
 
     @Override
@@ -117,19 +120,18 @@ public class NewRssChannelSVDialog extends StatefulViewDialog<Activity> implemen
             mSvProvider.dispose();
             mSvProvider = null;
         }
+        mFeedUrlTextWatcher = null;
+        mLogger = null;
     }
 
     @Override
-    public void onClick(DialogInterface dialogInterface, int id) {
-        if (id == DialogInterface.BUTTON_POSITIVE) {
-            if (isValid()) {
-                addNewFeed();
-            } else {
-                String validation = mNewRssChannelCmd.getValidationError();
-                mSvProvider.get(ILogger.class).i(TAG, validation);
-            }
-        } else if (id == DialogInterface.BUTTON_NEGATIVE) {
+    public void onClick(View view) {
+        int id = view.getId();
+        if (id == R.id.button_cancel) {
             mFeedUrlSubject.onNext("");
+            getNavigator().pop();
+        } else if (id == R.id.button_add) {
+            addNewFeed();
         }
     }
 
@@ -138,8 +140,38 @@ public class NewRssChannelSVDialog extends StatefulViewDialog<Activity> implemen
     }
 
     private void addNewFeed() {
-        if (mNewRssChannelCmd != null) {
-            mNewRssChannelCmd.execute(mFeedUrlSubject.getValue());
+        if (mNewRssChannelCmd == null) {
+            return;
+        }
+        if (isValid()) {
+            // the add is in flight (including the redirect-duplicate network probe) -
+            // show a loading indicator and block a second Add tap. Cancel pops and
+            // disposes the subscription: a probe that has not started yet is cancelled,
+            // but one already running on the executor thread is not interrupted and may
+            // still enqueue. Cancel stays enabled so a slow probe can be aborted early.
+            // The in-flight state survives rotation because the navigator retains this
+            // dialog instance and the createView subscription replays the subject's
+            // current value onto the freshly wired views.
+            mAddInFlightSubject.onNext(true);
+            mRxDisposer.add("mNewRssChannelCmdExecute", mNewRssChannelCmd
+                    .execute(mFeedUrlSubject.getValue())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe((requestUrl, throwable) -> {
+                        if (throwable != null) {
+                            // validation/duplicate message already shown inline via getUrlValidation()
+                            mAddInFlightSubject.onNext(false);
+                            if (mLogger != null) {
+                                mLogger.e(TAG, throwable.getMessage(), throwable);
+                            }
+                        } else {
+                            mAddInFlightSubject.onNext(false);
+                            mFeedUrlSubject.onNext("");
+                            getNavigator().pop();
+                        }
+                    }));
+        } else {
+            String validation = mNewRssChannelCmd.getValidationError();
+            mLogger.i(TAG, validation);
         }
     }
 

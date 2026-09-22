@@ -1,44 +1,80 @@
 package m.co.rh.id.a_news_provider.app.provider.repository;
 
+import androidx.room.Room;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
+
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
+import org.junit.runner.RunWith;
+
+import android.content.Context;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import m.co.rh.id.a_news_provider.base.util.UrlNormalizer;
+import m.co.rh.id.a_news_provider.base.AppDatabase;
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.a_news_provider.base.model.ChannelUnreadCount;
 import m.co.rh.id.a_news_provider.base.model.RssModel;
 import m.co.rh.id.aprovider.Provider;
+import m.co.rh.id.aprovider.ProviderModule;
+import m.co.rh.id.aprovider.ProviderRegistry;
 
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /**
- * Unit tests for RssRepository covering persistence item-state merging,
- * favorites union and unread-count map building.
+ * Instrumented tests for RssRepository covering persistence item-state merging,
+ * favorites union and unread-count map building, against a real in-memory Room
+ * database (no mocking framework - Mockito is unreliable on ART).
+ * <p>
+ * Two sections:
+ * <ul>
+ *     <li>static helper tests ({@code applyItemState}, {@code unionMissingFavorites},
+ *     {@code buildUnreadCountMap}) which need no instance or database,</li>
+ *     <li>{@link RssRepository#persist(RssModel)} tests which exercise the merge,
+ *     state carry-over, favorites union and URL normalization behavior through real
+ *     DAO rows (absorbing the former RssRepositoryPersistDuplicateTest).</li>
+ * </ul>
  */
+@RunWith(AndroidJUnit4.class)
 public class RssRepositoryTest {
 
-    private Provider mMockProvider;
-    private RssDao mMockRssDao;
+    private AppDatabase mAppDatabase;
+    private RssDao mRssDao;
+    private Provider mProvider;
     private RssRepository mRssRepository;
 
     @Before
     public void setUp() {
-        mMockProvider = mock(Provider.class);
-        mMockRssDao = mock(RssDao.class);
-        when(mMockProvider.get(RssDao.class)).thenReturn(mMockRssDao);
-        mRssRepository = new RssRepository(mMockProvider);
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        mAppDatabase = Room.inMemoryDatabaseBuilder(context, AppDatabase.class)
+                .allowMainThreadQueries()
+                .build();
+        mRssDao = mAppDatabase.rssDao();
+        mProvider = Provider.createProvider(context, new RepositoryTestProviderModule(mRssDao));
+        mRssRepository = mProvider.get(RssRepository.class);
     }
+
+    @After
+    public void tearDown() {
+        if (mProvider != null) {
+            mProvider.dispose();
+        }
+        if (mAppDatabase != null) {
+            mAppDatabase.close();
+        }
+    }
+
+    // ==================================================================================
+    // Section 1: static helper applyItemState
+    // ==================================================================================
 
     @Test
     public void testApplyItemStateMatchingLinksCarryOver() {
@@ -105,7 +141,7 @@ public class RssRepositoryTest {
     @Test
     public void testApplyItemStateWithEmptyDbItems() {
         List<RssItem> dbItems = new ArrayList<>();
-        
+
         ArrayList<RssItem> parsedItems = new ArrayList<>();
         RssItem parsedItem = new RssItem();
         parsedItem.link = "http://test.com/item1";
@@ -127,20 +163,6 @@ public class RssRepositoryTest {
 
         // Should not throw exception
         RssRepository.applyItemState(dbItems, null);
-    }
-
-    @Test
-    public void testApplyItemStateWithEmptyParsedItems() {
-        List<RssItem> dbItems = new ArrayList<>();
-        RssItem dbItem = new RssItem();
-        dbItem.link = "http://test.com/item1";
-        dbItem.isRead = true;
-        dbItems.add(dbItem);
-
-        ArrayList<RssItem> parsedItems = new ArrayList<>();
-        RssRepository.applyItemState(dbItems, parsedItems);
-
-        // Should complete without error
     }
 
     @Test
@@ -233,7 +255,7 @@ public class RssRepositoryTest {
     public void testApplyItemStateWithMultipleMixedCases() {
         // Test a comprehensive scenario with multiple items, some matching, some not
         List<RssItem> dbItems = new ArrayList<>();
-        
+
         RssItem db1 = new RssItem();
         db1.link = "http://test.com/1";
         db1.isRead = true;
@@ -250,7 +272,7 @@ public class RssRepositoryTest {
         dbItems.add(db3);
 
         ArrayList<RssItem> parsedItems = new ArrayList<>();
-        
+
         RssItem p1 = new RssItem();
         p1.link = "http://test.com/1";
         p1.isRead = false;
@@ -305,13 +327,17 @@ public class RssRepositoryTest {
         assertFalse("Different case should not match", parsedItem2.isRead);
     }
 
+    // ==================================================================================
+    // Section 2: static helper buildUnreadCountMap
+    // ==================================================================================
+
     @Test
     public void testBuildUnreadCountMapWithNullChannels() {
         List<RssChannel> channels = null;
         List<ChannelUnreadCount> unreadCounts = new ArrayList<>();
-        
+
         Map<RssChannel, Integer> result = RssRepository.buildUnreadCountMap(channels, unreadCounts);
-        
+
         assertTrue("Result should be empty map", result.isEmpty());
     }
 
@@ -319,30 +345,30 @@ public class RssRepositoryTest {
     public void testBuildUnreadCountMapWithEmptyChannels() {
         List<RssChannel> channels = new ArrayList<>();
         List<ChannelUnreadCount> unreadCounts = new ArrayList<>();
-        
+
         Map<RssChannel, Integer> result = RssRepository.buildUnreadCountMap(channels, unreadCounts);
-        
+
         assertTrue("Result should be empty map", result.isEmpty());
     }
 
     @Test
     public void testBuildUnreadCountMapWithChannelsNoCounts() {
         List<RssChannel> channels = new ArrayList<>();
-        
+
         RssChannel channel1 = new RssChannel();
         channel1.id = 1L;
         channel1.feedName = "Channel 1";
         channels.add(channel1);
-        
+
         RssChannel channel2 = new RssChannel();
         channel2.id = 2L;
         channel2.feedName = "Channel 2";
         channels.add(channel2);
-        
+
         List<ChannelUnreadCount> unreadCounts = new ArrayList<>();
-        
+
         Map<RssChannel, Integer> result = RssRepository.buildUnreadCountMap(channels, unreadCounts);
-        
+
         assertEquals("Should have 2 channels", 2, result.size());
         assertEquals("Channel 1 should have 0 unread", Integer.valueOf(0), result.get(channel1));
         assertEquals("Channel 2 should have 0 unread", Integer.valueOf(0), result.get(channel2));
@@ -351,36 +377,36 @@ public class RssRepositoryTest {
     @Test
     public void testBuildUnreadCountMapWithCounts() {
         List<RssChannel> channels = new ArrayList<>();
-        
+
         RssChannel channel1 = new RssChannel();
         channel1.id = 1L;
         channel1.feedName = "Channel 1";
         channels.add(channel1);
-        
+
         RssChannel channel2 = new RssChannel();
         channel2.id = 2L;
         channel2.feedName = "Channel 2";
         channels.add(channel2);
-        
+
         RssChannel channel3 = new RssChannel();
         channel3.id = 3L;
         channel3.feedName = "Channel 3";
         channels.add(channel3);
-        
+
         List<ChannelUnreadCount> unreadCounts = new ArrayList<>();
-        
+
         ChannelUnreadCount count1 = new ChannelUnreadCount();
         count1.channel_id = 1L;
         count1.cnt = 5;
         unreadCounts.add(count1);
-        
+
         ChannelUnreadCount count2 = new ChannelUnreadCount();
         count2.channel_id = 3L;
         count2.cnt = 10;
         unreadCounts.add(count2);
-        
+
         Map<RssChannel, Integer> result = RssRepository.buildUnreadCountMap(channels, unreadCounts);
-        
+
         assertEquals("Should have 3 channels", 3, result.size());
         assertEquals("Channel 1 should have 5 unread", Integer.valueOf(5), result.get(channel1));
         assertEquals("Channel 2 should have 0 unread", Integer.valueOf(0), result.get(channel2));
@@ -390,38 +416,38 @@ public class RssRepositoryTest {
     @Test
     public void testBuildUnreadCountMapPreservesOrder() {
         List<RssChannel> channels = new ArrayList<>();
-        
+
         RssChannel channel1 = new RssChannel();
         channel1.id = 3L;
         channel1.feedName = "Channel 3";
         channels.add(channel1);
-        
+
         RssChannel channel2 = new RssChannel();
         channel2.id = 1L;
         channel2.feedName = "Channel 1";
         channels.add(channel2);
-        
+
         RssChannel channel3 = new RssChannel();
         channel3.id = 2L;
         channel3.feedName = "Channel 2";
         channels.add(channel3);
-        
+
         List<ChannelUnreadCount> unreadCounts = new ArrayList<>();
-        
+
         ChannelUnreadCount count1 = new ChannelUnreadCount();
         count1.channel_id = 1L;
         count1.cnt = 5;
         unreadCounts.add(count1);
-        
+
         ChannelUnreadCount count2 = new ChannelUnreadCount();
         count2.channel_id = 2L;
         count2.cnt = 10;
         unreadCounts.add(count2);
-        
+
         Map<RssChannel, Integer> result = RssRepository.buildUnreadCountMap(channels, unreadCounts);
-        
+
         assertTrue("Result should be LinkedHashMap", result instanceof LinkedHashMap);
-        
+
         // Verify order is preserved
         Object[] keys = result.keySet().toArray();
         assertSame("First channel should be channel1", channel1, keys[0]);
@@ -432,16 +458,16 @@ public class RssRepositoryTest {
     @Test
     public void testBuildUnreadCountMapWithNullUnreadCounts() {
         List<RssChannel> channels = new ArrayList<>();
-        
+
         RssChannel channel1 = new RssChannel();
         channel1.id = 1L;
         channel1.feedName = "Channel 1";
         channels.add(channel1);
-        
+
         List<ChannelUnreadCount> unreadCounts = null;
-        
+
         Map<RssChannel, Integer> result = RssRepository.buildUnreadCountMap(channels, unreadCounts);
-        
+
         assertEquals("Should have 1 channel", 1, result.size());
         assertEquals("Channel 1 should have 0 unread", Integer.valueOf(0), result.get(channel1));
     }
@@ -462,6 +488,10 @@ public class RssRepositoryTest {
         assertEquals("Should have 1 channel", 1, result.size());
         assertEquals("Channel 1 should have 0 unread", Integer.valueOf(0), result.get(channel1));
     }
+
+    // ==================================================================================
+    // Section 3: static helper unionMissingFavorites
+    // ==================================================================================
 
     @Test
     public void testUnionMissingFavoritesKeepsFavoritedItemAbsentFromFeed() {
@@ -560,28 +590,22 @@ public class RssRepositoryTest {
         assertTrue("Merged list should be empty", mergedItems.isEmpty());
     }
 
+    // ==================================================================================
+    // Section 4: persist() against the real in-memory database
+    // (absorbs the former RssRepositoryPersistDuplicateTest)
+    // ==================================================================================
+
     @Test
     public void testPersistCarriesReadAndFavoriteStateByLink() {
-        RssChannel dbChannel = new RssChannel();
-        dbChannel.id = 1L;
-        dbChannel.url = "http://test.com/feed";
-        dbChannel.feedName = "Feed";
-        when(mMockRssDao.findRssChannelByUrl("http://test.com/feed")).thenReturn(dbChannel);
-
-        List<RssItem> dbItems = new ArrayList<>();
-        RssItem dbItem = new RssItem();
-        dbItem.id = 10L;
-        dbItem.link = "http://test.com/item1";
+        RssChannel dbChannel = createRssChannel("http://test.com/feed", "Feed");
+        RssItem dbItem = createRssItem("item1", "http://test.com/item1");
         dbItem.isRead = true;
         dbItem.isFavorite = true;
-        dbItems.add(dbItem);
-        when(mMockRssDao.findRssItemsByChannelId(1L)).thenReturn(dbItems);
+        mRssDao.insertRssChannel(dbChannel, dbItem);
 
-        RssChannel parsedChannel = new RssChannel();
-        parsedChannel.url = "http://test.com/feed";
+        RssChannel parsedChannel = createRssChannel("http://test.com/feed", "Feed");
         ArrayList<RssItem> parsedItems = new ArrayList<>();
-        RssItem parsedItem = new RssItem();
-        parsedItem.link = "http://test.com/item1";
+        RssItem parsedItem = createRssItem("item1", "http://test.com/item1");
         parsedItems.add(parsedItem);
 
         RssModel result = mRssRepository.persist(new RssModel(parsedChannel, parsedItems));
@@ -589,78 +613,218 @@ public class RssRepositoryTest {
         assertTrue("isRead should carry over by link", parsedItem.isRead);
         assertTrue("isFavorite should carry over by link", parsedItem.isFavorite);
         assertEquals("Result should carry the parsed items", 1, result.getRssItems().size());
+
+        // database state: still a single channel, the stored item keeps the carried state
+        List<RssChannel> channels = mRssDao.loadAllRssChannel();
+        assertEquals(1, channels.size());
+        List<RssItem> storedItems = mRssDao.findRssItemsByChannelId(channels.get(0).id);
+        assertEquals(1, storedItems.size());
+        assertTrue("Stored item must keep the read state", storedItems.get(0).isRead);
+        assertTrue("Stored item must keep the favorite state", storedItems.get(0).isFavorite);
     }
 
     @Test
     public void testPersistUnionsFavoritedItemMissingFromFeed() {
-        RssChannel dbChannel = new RssChannel();
-        dbChannel.id = 1L;
-        dbChannel.url = "http://test.com/feed";
-        dbChannel.feedName = "Feed";
-        when(mMockRssDao.findRssChannelByUrl("http://test.com/feed")).thenReturn(dbChannel);
-
-        List<RssItem> dbItems = new ArrayList<>();
-        RssItem dbItem = new RssItem();
-        dbItem.id = 10L;
-        dbItem.link = "http://test.com/item1";
+        RssChannel dbChannel = createRssChannel("http://test.com/feed", "Feed");
+        RssItem dbItem = createRssItem("item1", "http://test.com/item1");
         dbItem.isFavorite = true;
-        dbItems.add(dbItem);
-        when(mMockRssDao.findRssItemsByChannelId(1L)).thenReturn(dbItems);
+        mRssDao.insertRssChannel(dbChannel, dbItem);
+        Long originalFavoriteId = dbItem.id;
+        assertNotNull(originalFavoriteId);
 
-        RssChannel parsedChannel = new RssChannel();
-        parsedChannel.url = "http://test.com/feed";
+        RssChannel parsedChannel = createRssChannel("http://test.com/feed", null);
         ArrayList<RssItem> parsedItems = new ArrayList<>();
-        RssItem parsedItem = new RssItem();
-        parsedItem.link = "http://test.com/item2";
+        RssItem parsedItem = createRssItem("item2", "http://test.com/item2");
         parsedItems.add(parsedItem);
 
         RssModel result = mRssRepository.persist(new RssModel(parsedChannel, parsedItems));
 
-        ArgumentCaptor<RssItem[]> rssItemsCaptor = ArgumentCaptor.forClass(RssItem[].class);
-        verify(mMockRssDao).updateRssChannel(eq(parsedChannel), rssItemsCaptor.capture());
-
-        RssItem[] persistedItems = rssItemsCaptor.getValue();
-        assertEquals("Favorited item absent from feed should be persisted", 2, persistedItems.length);
-        assertEquals("http://test.com/item2", persistedItems[0].link);
-        assertEquals("http://test.com/item1", persistedItems[1].link);
-        assertTrue("Persisted missing item should stay favorited", persistedItems[1].isFavorite);
-        assertNull("Persisted missing item id should be null", persistedItems[1].id);
-
+        // merged list: parsed item first, then the unioned favorite; its stale id was
+        // cleared and the DAO reinsert assigns the fresh id visible in the result
         assertEquals("Returned model should carry the merged list", 2, result.getRssItems().size());
+        assertEquals("http://test.com/item2", result.getRssItems().get(0).link);
+        assertEquals("http://test.com/item1", result.getRssItems().get(1).link);
+        assertTrue("Persisted missing item should stay favorited", result.getRssItems().get(1).isFavorite);
+        assertNotNull("Persisted missing item must have been reinserted",
+                result.getRssItems().get(1).id);
+        assertNotEquals("Reinserted favorite must get a NEW id, not the stale one",
+                originalFavoriteId, result.getRssItems().get(1).id);
+
+        // channel identity must be preserved by the merge (no duplicate row)
+        List<RssChannel> channels = mRssDao.loadAllRssChannel();
+        assertEquals("Existing channel must be updated, not duplicated", 1, channels.size());
+        assertEquals("Merge must preserve the channel id", dbChannel.id, channels.get(0).id);
+        assertEquals("Merge must preserve the stored feed name", "Feed", channels.get(0).feedName);
+        assertEquals("Merge must preserve createdDateTime",
+                dbChannel.createdDateTime, channels.get(0).createdDateTime);
+
+        // database state: unioned favorite was reinserted with a new id
+        List<RssItem> storedItems = mRssDao.findRssItemsByChannelId(channels.get(0).id);
+        assertEquals(2, storedItems.size());
+        RssItem storedFavorite = findItemByLink(storedItems, "http://test.com/item1");
+        assertNotNull(storedFavorite);
+        assertTrue("Reinserted favorite must keep isFavorite", storedFavorite.isFavorite);
+        assertNotEquals("Reinserted favorite must get a new id", originalFavoriteId, storedFavorite.id);
     }
 
     @Test
     public void testPersistDoesNotUnionNonFavoritedItemMissingFromFeed() {
-        RssChannel dbChannel = new RssChannel();
-        dbChannel.id = 1L;
-        dbChannel.url = "http://test.com/feed";
-        dbChannel.feedName = "Feed";
-        when(mMockRssDao.findRssChannelByUrl("http://test.com/feed")).thenReturn(dbChannel);
-
-        List<RssItem> dbItems = new ArrayList<>();
-        RssItem dbItem = new RssItem();
-        dbItem.id = 10L;
-        dbItem.link = "http://test.com/item1";
+        RssChannel dbChannel = createRssChannel("http://test.com/feed", "Feed");
+        RssItem dbItem = createRssItem("item1", "http://test.com/item1");
         dbItem.isFavorite = false;
-        dbItems.add(dbItem);
-        when(mMockRssDao.findRssItemsByChannelId(1L)).thenReturn(dbItems);
+        mRssDao.insertRssChannel(dbChannel, dbItem);
 
-        RssChannel parsedChannel = new RssChannel();
-        parsedChannel.url = "http://test.com/feed";
+        RssChannel parsedChannel = createRssChannel("http://test.com/feed", "Feed");
         ArrayList<RssItem> parsedItems = new ArrayList<>();
-        RssItem parsedItem = new RssItem();
-        parsedItem.link = "http://test.com/item2";
+        RssItem parsedItem = createRssItem("item2", "http://test.com/item2");
         parsedItems.add(parsedItem);
 
         RssModel result = mRssRepository.persist(new RssModel(parsedChannel, parsedItems));
 
-        ArgumentCaptor<RssItem[]> rssItemsCaptor = ArgumentCaptor.forClass(RssItem[].class);
-        verify(mMockRssDao).updateRssChannel(eq(parsedChannel), rssItemsCaptor.capture());
-
-        RssItem[] persistedItems = rssItemsCaptor.getValue();
-        assertEquals("Non-favorited item absent from feed should not be persisted", 1, persistedItems.length);
-        assertEquals("http://test.com/item2", persistedItems[0].link);
-
         assertEquals("Returned model should only contain parsed items", 1, result.getRssItems().size());
+        assertEquals("http://test.com/item2", result.getRssItems().get(0).link);
+
+        // database state: the non-favorited item absent from the feed was dropped
+        List<RssItem> storedItems = mRssDao.findRssItemsByChannelId(dbChannel.id);
+        assertEquals(1, storedItems.size());
+        assertEquals("http://test.com/item2", storedItems.get(0).link);
+        assertNull("Dropped non-favorited item must not be stored",
+                findItemByLink(storedItems, "http://test.com/item1"));
+    }
+
+    @Test
+    public void testPersistNormalizesParsedChannelUrlForExistingChannel() {
+        // legacy row stored with the scheme-prepended but un-normalized spelling
+        RssChannel dbChannel = createRssChannel("https://Test.com/feed/", "Feed");
+        mRssDao.insertRssChannel(dbChannel);
+
+        RssChannel parsedChannel = createRssChannel("https://Test.com/feed/", null);
+        ArrayList<RssItem> parsedItems = new ArrayList<>();
+
+        mRssRepository.persist(new RssModel(parsedChannel, parsedItems));
+
+        assertEquals("Parsed channel url should be normalized before persisting",
+                "https://test.com/feed", parsedChannel.url);
+
+        // raw-first/normalized-second variant lookup matched the legacy raw spelling,
+        // and the row was rewritten to its canonical form without a duplicate
+        List<RssChannel> channels = mRssDao.loadAllRssChannel();
+        assertEquals(1, channels.size());
+        assertEquals("Existing channel url must be rewritten to the canonical spelling",
+                "https://test.com/feed", channels.get(0).url);
+        assertEquals("Merge must preserve the channel id", dbChannel.id, channels.get(0).id);
+        assertEquals("Merge must preserve the stored feed name", "Feed", channels.get(0).feedName);
+    }
+
+    @Test
+    public void testPersistInsertsNewChannelWithNormalizedUrl() {
+        // merged with the former RssRepositoryPersistDuplicateTest
+        // persist_rawUrlVariantWithNoExistingChannel_insertsSingleCanonicalChannel
+        RssChannel parsedChannel = createRssChannel("https://example.com/feed/", "Fresh feed");
+        ArrayList<RssItem> parsedItems = new ArrayList<>();
+
+        RssModel result = mRssRepository.persist(new RssModel(parsedChannel, parsedItems));
+
+        assertEquals("New channel url should be normalized before inserting",
+                "https://example.com/feed", parsedChannel.url);
+        assertNotNull("Inserted channel must have a database id", result.getRssChannel().id);
+
+        // database state: exactly one row stored with the canonical spelling
+        List<RssChannel> channels = mRssDao.loadAllRssChannel();
+        assertEquals(1, channels.size());
+        assertEquals("New channel must be stored with the canonical URL",
+                "https://example.com/feed", channels.get(0).url);
+        assertEquals("https://example.com/feed", result.getRssChannel().url);
+    }
+
+    @Test
+    public void persistRawUrlVariantOfExistingChannel_mergesAndPreservesItemState() {
+        // absorbed from the former RssRepositoryPersistDuplicateTest: a parsed feed
+        // reporting the raw variant spelling of a stored canonical URL must merge
+        // into that channel, not insert a duplicate row
+        RssChannel canonicalChannel = createRssChannel("https://example.com/feed", "Example feed");
+        RssItem readItem = createRssItem("item one", "https://example.com/feed/item-1");
+        readItem.isRead = true;
+        readItem.isFavorite = true;
+        RssItem unreadItem = createRssItem("item two", "https://example.com/feed/item-2");
+        mRssDao.insertRssChannel(canonicalChannel, readItem, unreadItem);
+
+        // parsed feed reports the raw variant spelling of the stored canonical URL
+        RssChannel parsedChannel = createRssChannel("https://example.com/feed/", "Parsed feed name");
+        ArrayList<RssItem> parsedItems = new ArrayList<>();
+        RssItem overlapItem = createRssItem("item one", "https://example.com/feed/item-1");
+        parsedItems.add(overlapItem);
+        RssItem newItem = createRssItem("item three", "https://example.com/feed/item-3");
+        parsedItems.add(newItem);
+
+        RssModel result = mRssRepository.persist(new RssModel(parsedChannel, parsedItems));
+
+        // merged into the existing channel - no duplicate row inserted
+        List<RssChannel> channels = mRssDao.loadAllRssChannel();
+        assertEquals(1, channels.size());
+        assertEquals("https://example.com/feed", channels.get(0).url);
+        assertEquals("Stored feed name must be preserved",
+                "Example feed", channels.get(0).feedName);
+
+        // stored item state: read/favorite carried over by link, new item inserted,
+        // non-favorited item absent from the feed dropped
+        List<RssItem> storedItems = mRssDao.findRssItemsByChannelId(channels.get(0).id);
+        assertEquals(2, storedItems.size());
+        RssItem storedOverlapItem = findItemByLink(storedItems, "https://example.com/feed/item-1");
+        assertNotNull(storedOverlapItem);
+        assertTrue("Read state must carry over to the merged item", storedOverlapItem.isRead);
+        assertTrue("Favorite state must carry over to the merged item", storedOverlapItem.isFavorite);
+        assertNotNull("New item must be inserted",
+                findItemByLink(storedItems, "https://example.com/feed/item-3"));
+        assertNull("Dropped non-favorited item must not be stored",
+                findItemByLink(storedItems, "https://example.com/feed/item-2"));
+
+        assertEquals("Returned model must carry the merged items", 2, result.getRssItems().size());
+    }
+
+    private RssItem findItemByLink(List<RssItem> rssItems, String link) {
+        for (RssItem rssItem : rssItems) {
+            if (link.equals(rssItem.link)) {
+                return rssItem;
+            }
+        }
+        return null;
+    }
+
+    private RssChannel createRssChannel(String url, String feedName) {
+        RssChannel rssChannel = new RssChannel();
+        rssChannel.url = url;
+        rssChannel.feedName = feedName;
+        return rssChannel;
+    }
+
+    private RssItem createRssItem(String title, String link) {
+        RssItem rssItem = new RssItem();
+        rssItem.title = title;
+        rssItem.link = link;
+        return rssItem;
+    }
+
+    /**
+     * Standalone test module that registers only what {@link RssRepository} needs:
+     * the shared in-memory {@link RssDao} and the real {@link UrlNormalizer}.
+     */
+    private static class RepositoryTestProviderModule implements ProviderModule {
+        private final RssDao mRssDao;
+
+        RepositoryTestProviderModule(RssDao rssDao) {
+            mRssDao = rssDao;
+        }
+
+        @Override
+        public void provides(ProviderRegistry providerRegistry, Provider provider) {
+            providerRegistry.registerAsync(RssDao.class, () -> mRssDao);
+            providerRegistry.registerLazy(UrlNormalizer.class, UrlNormalizer::new);
+            providerRegistry.registerLazy(RssRepository.class, () -> new RssRepository(provider));
+        }
+
+        @Override
+        public void dispose(Provider provider) {
+        }
     }
 }

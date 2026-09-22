@@ -103,6 +103,8 @@
     <string name="favorite_removed">Removed from favorites</string>
     <string name="menu_search">Search</string>
     <string name="search_hint">Search articles…</string>
+    <string name="feed_already_added_as">This feed is already added as \'%s\'</string>
+    <string name="error_feed_duplicate_redirect">This feed redirects to a feed that is already added</string>
 
     <string-array name="array_filter_by">
         <item>All</item>

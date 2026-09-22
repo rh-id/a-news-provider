@@ -110,4 +110,7 @@
         <item>Terbaca</item>
         <item>Favorit</item>
     </string-array>
+
+    <string name="feed_already_added_as">Feed ini sudah ditambahkan sebagai \'%s\'</string>
+    <string name="error_feed_duplicate_redirect">Feed ini beralih ke feed yang sudah ditambahkan</string>
 </resources>

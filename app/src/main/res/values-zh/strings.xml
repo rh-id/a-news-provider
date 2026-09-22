@@ -110,4 +110,7 @@
         <item>已读</item>
         <item>收藏</item>
     </string-array>
+
+    <string name="feed_already_added_as">此订阅源已作为 \'%s\' 添加</string>
+    <string name="error_feed_duplicate_redirect">此订阅源重定向到已添加的订阅源</string>
 </resources>

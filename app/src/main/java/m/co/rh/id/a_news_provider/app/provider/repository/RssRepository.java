@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import m.co.rh.id.a_news_provider.base.util.UrlNormalizer;
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
@@ -21,9 +22,11 @@ import m.co.rh.id.aprovider.Provider;
  */
 public class RssRepository {
     private final RssDao mRssDao;
+    private final UrlNormalizer mUrlNormalizer;
 
     public RssRepository(Provider provider) {
         mRssDao = provider.get(RssDao.class);
+        mUrlNormalizer = provider.get(UrlNormalizer.class);
     }
 
     /**
@@ -36,14 +39,18 @@ public class RssRepository {
      * @return the persisted model with database ID populated, containing the merged item list
      */
     public RssModel persist(RssModel parsed) {
-        RssChannel rssChannel = mRssDao.findRssChannelByUrl(parsed.getRssChannel().url);
+        RssChannel responseRssChannel = parsed.getRssChannel();
+        String originalUrl = responseRssChannel.url;
+        String normalizedUrl = mUrlNormalizer.normalizeUrl(originalUrl);
+        // Match both the raw and normalized URL variants so legacy un-normalized rows are found
+        RssChannel rssChannel = mRssDao.findRssChannelByUrlVariants(originalUrl, normalizedUrl);
+        responseRssChannel.url = normalizedUrl;
         if (rssChannel == null) {
             // New channel - insert directly
             mRssDao.insertRssChannel(parsed.getRssChannel(), parsed.getRssItems().toArray(new RssItem[0]));
             return parsed;
         } else {
             // Existing channel - preserve certain fields, merge item state and keep favorites
-            RssChannel responseRssChannel = parsed.getRssChannel();
             copyPreservedFields(rssChannel, responseRssChannel);
 
             ArrayList<RssItem> rssItemsFromModel = parsed.getRssItems();

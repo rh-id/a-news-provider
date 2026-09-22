@@ -23,8 +23,18 @@ public abstract class RssDao {
     @Query("SELECT * FROM rss_channel WHERE id = :id")
     public abstract RssChannel findRssChannelById(long id);
 
-    @Query("SELECT * FROM rss_channel WHERE url = :url")
-    public abstract RssChannel findRssChannelByUrl(String url);
+    /**
+     * Finds a channel matching either the raw or the normalized URL variant.
+     * Ordered by id ASC so that, while duplicate channels from before URL
+     * normalization still exist, the oldest row (lowest id) deterministically wins.
+     * This method must be called on a background thread.
+     *
+     * @param url           the raw URL to match
+     * @param normalizedUrl the normalized URL variant to match
+     * @return the first matching channel, or null when none exists
+     */
+    @Query("SELECT * FROM rss_channel WHERE url = :url OR url = :normalizedUrl ORDER BY id ASC LIMIT 1")
+    public abstract RssChannel findRssChannelByUrlVariants(String url, String normalizedUrl);
 
     @Query("SELECT * FROM rss_item WHERE channel_id = :channelId")
     public abstract List<RssItem> findRssItemsByChannelId(long channelId);

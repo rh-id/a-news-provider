@@ -90,6 +90,9 @@ dependencies {
     androidTestImplementation 'org.mockito:mockito-core:5.21.0'
     androidTestImplementation 'androidx.test.ext:junit:1.3.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
+    // for in-memory Room in androidTest (RssRepositoryTest); base exposes room-runtime
+    // only as `implementation`, so it does not leak into this module's test classpath
+    androidTestImplementation 'androidx.room:room-runtime:2.7.2'
 
 }
 

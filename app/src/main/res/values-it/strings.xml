@@ -110,4 +110,7 @@
         <item>Letto</item>
         <item>Preferiti</item>
     </string-array>
+
+    <string name="feed_already_added_as">Questo feed è già stato aggiunto come \'%s\'</string>
+    <string name="error_feed_duplicate_redirect">Questo feed reindirizza a un feed già aggiunto</string>
 </resources>

@@ -14,8 +14,8 @@ import com.android.volley.toolbox.RequestFuture;
 import java.util.concurrent.TimeUnit;
 
 import m.co.rh.id.a_news_provider.R;
-import m.co.rh.id.a_news_provider.app.provider.repository.RssRepository;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
+import m.co.rh.id.a_news_provider.app.provider.repository.RssRepository;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.a_news_provider.base.model.RssModel;
 import m.co.rh.id.a_news_provider.component.network.RssRequest;
@@ -40,6 +40,7 @@ public class NewRssWorker extends Worker {
         RssRepository rssRepository = provider.get(RssRepository.class);
         RequestQueue requestQueue = provider.get(RequestQueue.class);
         ILogger logger = provider.get(ILogger.class);
+
         RequestFuture<RssModel> requestFuture = RequestFuture.newFuture();
         RssRequest rssRequest = provider.
                 get(RssRequestFactory.class).
@@ -53,18 +54,13 @@ public class NewRssWorker extends Worker {
             // User-facing log (now unconditional)
             logger.i(TAG, appContext.getString(R.string.feed_added, persisted.getRssChannel().feedName));
         } catch (Throwable t) {
-            logger.e(TAG, appContext.getString(R.string.error_feed_add), t);
-            
+            String userMessage;
             if (t.getCause() instanceof ParseError) {
-                rssChangeNotifier.newRssModelError(new RuntimeException(
-                        appContext.getString(R.string.error_parse_data_from,
-                                url), t.getCause()));
+                userMessage = appContext.getString(R.string.error_parse_data_from, url);
             } else {
-                rssChangeNotifier.newRssModelError(new RuntimeException(
-                        appContext.getString(R.string.error_message,
-                                t.getMessage()), t));
+                userMessage = appContext.getString(R.string.error_message, t.getMessage());
             }
-
+            logger.e(TAG, userMessage, t);
         }
 
         return Result.success();

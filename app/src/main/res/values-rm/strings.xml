@@ -110,4 +110,7 @@
         <item>Legì</item>
         <item>Favurits</item>
     </string-array>
+
+    <string name="feed_already_added_as">Quest feed è gia agiuntà sco \'%s\'</string>
+    <string name="error_feed_duplicate_redirect">Quest feed renvia ad in feed gia agiuntà</string>
 </resources>

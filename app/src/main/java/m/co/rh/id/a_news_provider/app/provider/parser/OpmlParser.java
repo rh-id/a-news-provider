@@ -16,7 +16,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.command.NewRssChannelCmd;
@@ -102,6 +104,8 @@ public class OpmlParser {
                     throwable);
             return;
         }
+        // Request URLs queued during the current parse, to skip in-file duplicate outlines
+        Set<String> queuedRequestUrls = new HashSet<>();
         try {
             XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
             factory.setNamespaceAware(true);
@@ -116,7 +120,7 @@ public class OpmlParser {
                 }
                 String name = xpp.getName();
                 if (name.equals("body")) {
-                    readBody(xpp);
+                    readBody(xpp, queuedRequestUrls);
                 } else {
                     skip(xpp);
                 }
@@ -128,7 +132,7 @@ public class OpmlParser {
         }
     }
 
-    private void readBody(XmlPullParser xpp) throws IOException, XmlPullParserException {
+    private void readBody(XmlPullParser xpp, Set<String> queuedRequestUrls) throws IOException, XmlPullParserException {
         xpp.require(XmlPullParser.START_TAG, null, "body");
         List<String> rssUrls = new ArrayList<>();
         while (xpp.next() != XmlPullParser.END_TAG) {
@@ -137,7 +141,7 @@ public class OpmlParser {
             }
             String name = xpp.getName();
             if (name.equals("outline")) {
-                readNestedOutline(xpp, rssUrls);
+                readNestedOutline(xpp, rssUrls, queuedRequestUrls);
             } else {
                 skip(xpp);
             }
@@ -146,14 +150,28 @@ public class OpmlParser {
         mLogger.get().d(TAG, "RSS URLS: " + rssUrls);
     }
 
-    private void readNestedOutline(XmlPullParser xpp, List<String> rssUrls) throws IOException, XmlPullParserException {
+    private void readNestedOutline(XmlPullParser xpp, List<String> rssUrls, Set<String> queuedRequestUrls) throws IOException, XmlPullParserException {
         String type = xpp.getAttributeValue(null, "type");
         if ("rss".equals(type)) {
             String xmlUrl = xpp.getAttributeValue(null, "xmlUrl");
             if (xmlUrl != null && !xmlUrl.isEmpty()) {
-                mNewRssChannelCmd.get()
-                        .execute(xmlUrl);
-                rssUrls.add(xmlUrl);
+                String requestUrl = mNewRssChannelCmd.get().buildRequestUrl(xmlUrl);
+                // first param keeps the raw requested spelling so legacy un-normalized
+                // rows still match, second param covers normalized spellings
+                RssChannel existing = mRssDao.get()
+                        .findRssChannelByUrlVariants(NewRssChannelCmd.prependScheme(xmlUrl), requestUrl);
+                // skip feeds already in the database or already queued from an
+                // earlier outline in this same file - do not queue twice
+                if (existing == null && queuedRequestUrls.add(requestUrl)) {
+                    // execute() validates and enqueues the fetch worker; duplicates are
+                    // pre-checked above, so failures here are a rare race - just log them
+                    mNewRssChannelCmd.get()
+                            .execute(xmlUrl)
+                            .subscribe(queuedUrl -> { },
+                                    throwable -> mLogger.get().e(TAG,
+                                            throwable.getMessage(), throwable));
+                    rssUrls.add(xmlUrl);
+                }
             }
         }
         while (xpp.next() != XmlPullParser.END_TAG) {
@@ -162,7 +180,7 @@ public class OpmlParser {
             }
             String name = xpp.getName();
             if (name.equals("outline")) {
-                readNestedOutline(xpp, rssUrls);
+                readNestedOutline(xpp, rssUrls, queuedRequestUrls);
             } else {
                 skip(xpp);
             }

@@ -110,4 +110,7 @@
         <item>Lest</item>
         <item>Favoritter</item>
     </string-array>
+
+    <string name="feed_already_added_as">Denne feeden er allerede lagt til som \'%s\'</string>
+    <string name="error_feed_duplicate_redirect">Denne feeden omdirigerer til en feed som allerede er lagt til</string>
 </resources>

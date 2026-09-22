@@ -110,4 +110,7 @@
         <item>Lu</item>
         <item>Favoris</item>
     </string-array>
+
+    <string name="feed_already_added_as">Ce flux est déjà ajouté sous \'%s\'</string>
+    <string name="error_feed_duplicate_redirect">Ce flux redirige vers un flux déjà ajouté</string>
 </resources>

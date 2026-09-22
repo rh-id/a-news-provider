@@ -42,15 +42,6 @@ public class RssChangeNotifier {
     }
 
     /**
-     * Emits an error when adding a new RSS model fails.
-     *
-     * @param throwable the error
-     */
-    public void newRssModelError(Throwable throwable) {
-        mAddedRssModelPublishSubject.onNext(Optional.empty());
-    }
-
-    /**
      * Emits RSS models that were synced.
      *
      * @param rssModels the synced RSS models

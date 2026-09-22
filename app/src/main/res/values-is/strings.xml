@@ -110,4 +110,7 @@
         <item>Lesið</item>
         <item>Eftirlæti</item>
     </string-array>
+
+    <string name="feed_already_added_as">Þessi straumur er þegar bættur við sem \'%s\'</string>
+    <string name="error_feed_duplicate_redirect">Þessi straumur beinir á straum sem er þegar bættur við</string>
 </resources>
