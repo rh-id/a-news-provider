@@ -36,6 +36,7 @@ public class EditRssLinkSVDialog extends StatefulViewDialog<Activity> implements
     private transient Provider mSvProvider;
     private transient RxDisposer mRxDisposer;
     private transient EditRssLinkCmd mEditRssLinkCmd;
+    private transient ILogger mLogger;
     private SerialBehaviorSubject<String> mUrlSubject;
 
     private transient TextWatcher mUrlTextWatcher;
@@ -50,6 +51,7 @@ public class EditRssLinkSVDialog extends StatefulViewDialog<Activity> implements
         mSvProvider = provider.get(StatefulViewProvider.class);
         mRxDisposer = mSvProvider.get(RxDisposer.class);
         mEditRssLinkCmd = mSvProvider.get(EditRssLinkCmd.class);
+        mLogger = mSvProvider.get(ILogger.class);
         if (mUrlSubject == null) {
             String url;
             Args args = getArgs();
@@ -116,6 +118,7 @@ public class EditRssLinkSVDialog extends StatefulViewDialog<Activity> implements
             mSvProvider = null;
         }
         mUrlTextWatcher = null;
+        mLogger = null;
     }
 
     public Args getArgs() {
@@ -147,11 +150,11 @@ public class EditRssLinkSVDialog extends StatefulViewDialog<Activity> implements
                                     .observeOn(AndroidSchedulers.mainThread())
                                     .subscribe((s, throwable) -> {
                                         if (throwable != null) {
-                                            mSvProvider.get(ILogger.class).e(TAG, throwable.getMessage(), throwable);
+                                            mLogger.e(TAG, throwable.getMessage(), throwable);
                                         } else if (openAfterSave) {
                                             openUrl(activity, s);
                                         } else {
-                                            mSvProvider.get(ILogger.class).i(TAG,
+                                            mLogger.i(TAG,
                                                     mSvProvider.getContext().getString(R.string.success_save_link));
                                         }
                                         getNavigator().pop();
@@ -159,7 +162,7 @@ public class EditRssLinkSVDialog extends StatefulViewDialog<Activity> implements
                     );
         } else {
             String validation = mEditRssLinkCmd.getValidationError();
-            mSvProvider.get(ILogger.class).i(TAG, validation);
+            mLogger.i(TAG, validation);
         }
     }
 
@@ -168,7 +171,7 @@ public class EditRssLinkSVDialog extends StatefulViewDialog<Activity> implements
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
             activity.startActivity(browserIntent);
         } catch (ActivityNotFoundException activityNotFoundException) {
-            mSvProvider.get(ILogger.class).e(TAG, activityNotFoundException.getMessage(), activityNotFoundException);
+            mLogger.e(TAG, activityNotFoundException.getMessage(), activityNotFoundException);
         }
     }
 
