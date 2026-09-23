@@ -6,34 +6,40 @@
     android:padding="@dimen/text_margin">
 
     <com.google.android.material.textview.MaterialTextView
+        style="@style/Theme.Anewsprovider.MenuTextView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:minHeight="0dp"
         android:text="@string/theme_setting" />
 
     <RadioGroup
         android:id="@+id/radioGroup"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/text_margin">
 
         <com.google.android.material.radiobutton.MaterialRadioButton
             android:id="@+id/radio_system"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="@dimen/text_margin"
+            android:layout_marginStart="@dimen/text_margin"
+            android:layout_marginEnd="@dimen/text_margin"
             android:text="@string/follow_system" />
 
         <com.google.android.material.radiobutton.MaterialRadioButton
             android:id="@+id/radio_light"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="@dimen/text_margin"
+            android:layout_marginStart="@dimen/text_margin"
+            android:layout_marginEnd="@dimen/text_margin"
             android:text="@string/light_mode" />
 
         <com.google.android.material.radiobutton.MaterialRadioButton
             android:id="@+id/radio_dark"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="@dimen/text_margin"
+            android:layout_marginStart="@dimen/text_margin"
+            android:layout_marginEnd="@dimen/text_margin"
             android:text="@string/dark_mode" />
     </RadioGroup>
 </androidx.appcompat.widget.LinearLayoutCompat>
