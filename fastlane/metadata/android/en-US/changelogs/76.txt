@@ -1,0 +1,10 @@
+Release 2.1.0+76
+
+Features:
+* Themed app icon support: the launcher icon now adapts to the wallpaper on Android 13 and newer
+* Warn when adding a feed that is already subscribed to
+* OPML import now shows how many feeds could not be added
+
+Fixes:
+* The New feed dialog keeps its proper width
+* Theme menu spacing tightened and its title styled consistently with other menus

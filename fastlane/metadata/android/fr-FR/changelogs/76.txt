@@ -1,0 +1,10 @@
+Version 2.1.0+76
+
+Fonctionnalités :
+* Prise en charge de l'icône thématique : l'icône du lanceur s'adapte au fond d'écran sur Android 13 et versions ultérieures
+* Avertissement lors de l'ajout d'un flux déjà abonné
+* L'importation OPML affiche désormais combien de flux n'ont pas pu être ajoutés
+
+Corrections :
+* La boîte de dialogue « Nouveau flux » retrouve sa largeur normale
+* Espacement du menu des thèmes resserré et titre harmonisé avec les autres menus

@@ -1,0 +1,10 @@
+Utgivelse 2.1.0+76
+
+Funksjoner:
+* Støtte for tematiske appikoner: ikonet på startskjermen tilpasser seg nå bakgrunnen på Android 13 og nyere
+* Advarsel ved forsøk på å legge til en strøm du allerede abonnerer på
+* OPML-import viser nå hvor mange strømmer som ikke kunne legges til
+
+Feilrettinger:
+* Dialogen Ny strøm beholder riktig bredde
+* Strammere mellomrom i temamenyen og tittelen utformet konsekvent med andre menyer

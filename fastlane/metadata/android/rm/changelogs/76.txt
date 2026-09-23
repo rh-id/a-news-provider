@@ -1,0 +1,10 @@
+Ediziun 2.1.0+76
+
+Funcziuns:
+* Sustegn per icona d'applicaziun cun tema: l'icona dal launcher s'adatta ussa al fund sin Android 13 u pli nov
+* Avis cur ch'ins agiunscha in feed gia abonà
+* L'import da OPML inditgescha ussa quant feeds ch'ins n'ha betg pudì agiuntar
+
+Corecziuns:
+* Il dialog «Nouv feed» mantegna sia ladezza correcta
+* Spazi en il menu da tema reducì e ses titel uniformà cun ils auters menus

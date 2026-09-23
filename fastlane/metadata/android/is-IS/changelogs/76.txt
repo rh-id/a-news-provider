@@ -1,0 +1,10 @@
+Útgáfa 2.1.0+76
+
+Eiginleikar:
+* Stuðningur við þemaða forritatákn: tákn á heimaskjá aðlagast nú veggfóðri á Android 13 og nýrri
+* Aðvörun við að bæta við straumi sem þú ert þegar áskrifandi að
+* OPML-innflutningur sýnir nú fjölda strauma sem ekki tókst að bæta við
+
+Villuleiðréttingar:
+* Glugginn Nýr straumur heldur réttri breidd sinni
+* Bil í þemavalmynd stytt og titill þess gerður í samræmi við aðrar valmyndir

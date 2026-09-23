@@ -1,0 +1,10 @@
+Rilascio 2.1.0+76
+
+Funzionalità:
+* Supporto per l'icona a tema: l'icona di lancio si adatta ora allo sfondo su Android 13 e versioni successive
+* Avviso quando si aggiunge un feed già presente
+* L'importazione OPML ora mostra quanti feed non è stato possibile aggiungere
+
+Correzioni:
+* La finestra di dialogo Nuovo feed mantiene la larghezza corretta
+* Spaziatura del menu dei temi ridotta e titolo uniformato agli altri menu

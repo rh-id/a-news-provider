@@ -1,0 +1,10 @@
+Release 2.1.0+76
+
+Funktionen:
+* Unterstützung für thematische Launcher-Icons: Das Icon passt sich ab Android 13 an das Hintergrundbild an
+* Warnung beim Hinzufügen eines bereits abonnierten Feeds
+* Der OPML-Import zeigt nun an, wie viele Feeds nicht hinzugefügt werden konnten
+
+Fehlerbehebungen:
+* Der Dialog „Neuer Feed“ behält seine korrekte Breite
+* Abstände im Design-Menü verringert und der Titel an andere Menüs angeglichen

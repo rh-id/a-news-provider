@@ -1,0 +1,10 @@
+Versioon 2.1.0+76
+
+Funktsioonid:
+* Teemakohase rakenduse ikooni tugi: käivitaja ikoon kohandub nüüd Android 13 ja uuematel taustapildiga
+* Hoiatus juba tellitud voo lisamisel
+* OPML-i import näitab nüüd, mitut voogu ei õnnestunud lisada
+
+Parandused:
+* Dialoog „Uus voog“ säilitab oma õige laiuse
+* Kujundusmenüü vahesid on kokku tõmmatud ja selle pealkiri ühtlustatud teiste menüüdega

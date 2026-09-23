@@ -1,0 +1,10 @@
+Rilis 2.1.0+76
+
+Fitur:
+* Dukungan ikon aplikasi tematik: ikon peluncur kini menyesuaikan diri dengan wallpaper di Android 13 dan yang lebih baru
+* Peringatan saat menambahkan feed yang sudah dilangganan
+* Impor OPML kini menampilkan berapa feed yang tidak bisa ditambahkan
+
+Perbaikan:
+* Dialog Feed baru kini mempertahankan lebar yang semestinya
+* Jarak antar item menu tema dirapatkan dan judulnya disesuaikan dengan menu lain
