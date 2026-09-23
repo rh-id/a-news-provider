@@ -13,6 +13,7 @@ import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChannelStateNotifier;
 import m.co.rh.id.a_news_provider.app.provider.parser.OpmlParser;
 import m.co.rh.id.a_news_provider.app.provider.repository.RssRepository;
+import m.co.rh.id.a_news_provider.app.provider.service.RssService;
 import m.co.rh.id.a_news_provider.base.util.UrlNormalizer;
 import m.co.rh.id.a_news_provider.base.provider.BaseProviderModule;
 import m.co.rh.id.a_news_provider.base.provider.DatabaseProviderModule;
@@ -50,6 +51,7 @@ public class IntegrationTestAppProviderModule implements ProviderModule {
         providerRegistry.registerLazy(RssChangeNotifier.class, () -> new RssChangeNotifier());
         providerRegistry.registerLazy(RssChannelStateNotifier.class, () -> new RssChannelStateNotifier(provider));
         providerRegistry.registerLazy(RssRepository.class, () -> new RssRepository(provider));
+        providerRegistry.registerLazy(RssService.class, () -> new RssService(provider));
         providerRegistry.registerLazy(UrlNormalizer.class, UrlNormalizer::new);
         providerRegistry.registerLazy(RedirectDuplicateChecker.class, () -> new RedirectDuplicateChecker(provider));
         providerRegistry.registerLazy(OpmlParser.class, () -> new OpmlParser(provider));

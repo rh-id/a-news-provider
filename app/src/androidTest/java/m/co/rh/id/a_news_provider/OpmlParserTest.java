@@ -1,10 +1,7 @@
 package m.co.rh.id.a_news_provider;
 
-import android.app.Application;
-
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.work.WorkManager;
 
 import org.junit.After;
 import org.junit.Before;
@@ -15,24 +12,13 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 
-import io.reactivex.rxjava3.core.Single;
-import m.co.rh.id.a_news_provider.app.provider.command.NewRssChannelCmd;
-import m.co.rh.id.a_news_provider.app.provider.command.RedirectDuplicateChecker;
-import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
-import m.co.rh.id.a_news_provider.app.provider.notifier.RssChannelStateNotifier;
 import m.co.rh.id.a_news_provider.app.provider.parser.OpmlParser;
-import m.co.rh.id.a_news_provider.app.provider.repository.RssRepository;
-import m.co.rh.id.a_news_provider.base.util.UrlNormalizer;
 import m.co.rh.id.a_news_provider.base.AppDatabase;
-import m.co.rh.id.a_news_provider.base.dao.RssDao;
-import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.provider.BaseProviderModule;
 import m.co.rh.id.a_news_provider.base.provider.DatabaseProviderModule;
-import m.co.rh.id.a_news_provider.test.FakeWorkManager;
-import m.co.rh.id.a_news_provider.test.NoOpLogger;
+import m.co.rh.id.a_news_provider.base.util.UrlNormalizer;
 import m.co.rh.id.a_news_provider.test.TestApplication;
 import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderModule;
@@ -41,15 +27,14 @@ import m.co.rh.id.aprovider.ProviderRegistry;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Instrumented test for OpmlParser duplicate skipping against a real Room database:
- * outlines already stored in the database and in-file duplicate outlines must be
- * skipped without invoking NewRssChannelCmd.execute; only genuinely new feeds are
- * queued, exactly once.
+ * Instrumented tests for {@link OpmlParser#parse(File)} as a pure parser: every
+ * rss-type outline's non-empty xmlUrl is collected in file order, raw spelling,
+ * duplicates included - DB duplicate checks, normalization and queueing moved to
+ * RssService#addNewFeeds and are no longer the parser's job.
  */
 @RunWith(AndroidJUnit4.class)
 public class OpmlParserTest {
     private TestApplication mTestApplication;
-    private OpmlTestProviderModule mProviderModule;
     private Provider mTestProvider;
     private File mOpmlFile;
     private String mDbName;
@@ -81,90 +66,134 @@ public class OpmlParserTest {
     }
 
     @Test
-    public void parse_skipsDatabaseAndInFileDuplicatesAndQueuesOnlyTheNewFeed() throws IOException {
-        mDbName = "opmlDuplicateSkip";
-        mProviderModule = new OpmlTestProviderModule(mTestApplication, mDbName,
-                new FakeWorkManager());
-        mTestProvider = Provider.createProvider(mTestApplication, mProviderModule);
-
-        RssDao rssDao = mTestProvider.get(RssDao.class);
-        RssChannel existingChannel = new RssChannel();
-        existingChannel.url = "https://example.com/feed";
-        existingChannel.feedName = "Example feed";
-        rssDao.insertRssChannel(existingChannel);
-
+    public void parse_returnsEveryRawUrlInFileOrderDuplicatesIncluded() throws IOException {
+        createProvider("opmlParseRaw");
         OpmlParser opmlParser = mTestProvider.get(OpmlParser.class);
-        mOpmlFile = createOpmlFile();
-
-        opmlParser.parse(mOpmlFile);
-
-        List<String> executedUrls = mProviderModule.getCountingCmd().executedUrls;
-        assertEquals("Only the genuinely new feed must be queued",
-                1, executedUrls.size());
-        assertEquals("https://fresh.example.com/rss", executedUrls.get(0));
-    }
-
-    private File createOpmlFile() throws IOException {
-        File opmlFile = new File(mTestApplication.getFilesDir(), "opml_duplicate_test.opml");
-        String opml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        mOpmlFile = createOpmlFile("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<opml version=\"2.0\">\n" +
                 "    <head>\n" +
-                "        <title>Duplicate test</title>\n" +
+                "        <title>Raw test</title>\n" +
                 "    </head>\n" +
                 "    <body>\n" +
-                "        <outline type=\"rss\" text=\"db duplicate\" xmlUrl=\"https://example.com/feed\"/>\n" +
-                "        <outline type=\"rss\" text=\"in-file duplicate\" xmlUrl=\"https://example.com/feed\"/>\n" +
+                "        <outline type=\"rss\" text=\"first\" xmlUrl=\"https://example.com/feed\"/>\n" +
+                "        <outline type=\"rss\" text=\"duplicate\" xmlUrl=\"https://example.com/feed\"/>\n" +
                 "        <outline type=\"rss\" text=\"fresh feed\" xmlUrl=\"https://fresh.example.com/rss\"/>\n" +
                 "    </body>\n" +
-                "</opml>\n";
+                "</opml>\n");
+
+        List<String> rssUrls = opmlParser.parse(mOpmlFile);
+
+        assertEquals("The parser must collect all outlines, duplicates included",
+                3, rssUrls.size());
+        assertEquals("https://example.com/feed", rssUrls.get(0));
+        assertEquals("https://example.com/feed", rssUrls.get(1));
+        assertEquals("https://fresh.example.com/rss", rssUrls.get(2));
+    }
+
+    @Test
+    public void parse_collectsRssOutlinesNestedInsideContainerOutlines() throws IOException {
+        createProvider("opmlParseNested");
+        OpmlParser opmlParser = mTestProvider.get(OpmlParser.class);
+        mOpmlFile = createOpmlFile("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<opml version=\"2.0\">\n" +
+                "    <body>\n" +
+                "        <outline text=\"Folder\">\n" +
+                "            <outline type=\"rss\" text=\"Nested feed\" xmlUrl=\"https://nested.example.com/rss\"/>\n" +
+                "        </outline>\n" +
+                "    </body>\n" +
+                "</opml>\n");
+
+        List<String> rssUrls = opmlParser.parse(mOpmlFile);
+
+        assertEquals("Rss outlines nested in a non-rss container outline must be collected",
+                1, rssUrls.size());
+        assertEquals("https://nested.example.com/rss", rssUrls.get(0));
+    }
+
+    @Test
+    public void parse_ignoresNonRssOutlines() throws IOException {
+        createProvider("opmlParseNonRss");
+        OpmlParser opmlParser = mTestProvider.get(OpmlParser.class);
+        mOpmlFile = createOpmlFile("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<opml version=\"2.0\">\n" +
+                "    <body>\n" +
+                "        <outline text=\"Html page\" xmlUrl=\"https://html.example.com/page\"/>\n" +
+                "        <outline type=\"link\" text=\"Link page\" xmlUrl=\"https://link.example.com/page\"/>\n" +
+                "    </body>\n" +
+                "</opml>\n");
+
+        List<String> rssUrls = opmlParser.parse(mOpmlFile);
+
+        assertEquals("Outlines without the rss type attribute must be ignored",
+                0, rssUrls.size());
+    }
+
+    @Test
+    public void parse_ignoresEmptyOrMissingXmlUrl() throws IOException {
+        createProvider("opmlParseEmptyUrl");
+        OpmlParser opmlParser = mTestProvider.get(OpmlParser.class);
+        mOpmlFile = createOpmlFile("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<opml version=\"2.0\">\n" +
+                "    <body>\n" +
+                "        <outline type=\"rss\" text=\"Empty url\" xmlUrl=\"\"/>\n" +
+                "        <outline type=\"rss\" text=\"Missing url\"/>\n" +
+                "        <outline type=\"rss\" text=\"Real feed\" xmlUrl=\"https://real.example.com/rss\"/>\n" +
+                "    </body>\n" +
+                "</opml>\n");
+
+        List<String> rssUrls = opmlParser.parse(mOpmlFile);
+
+        assertEquals("Only the outline with a non-empty xmlUrl must be collected",
+                1, rssUrls.size());
+        assertEquals("https://real.example.com/rss", rssUrls.get(0));
+    }
+
+    @Test
+    public void parse_malformedXmlAfterValidOutlineReturnsPartialList() throws IOException {
+        createProvider("opmlParseMalformed");
+        OpmlParser opmlParser = mTestProvider.get(OpmlParser.class);
+        // the file ends in the middle of the second outline - the parser must log
+        // the error and return the outline parsed so far instead of throwing
+        mOpmlFile = createOpmlFile("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<opml version=\"2.0\">\n" +
+                "    <body>\n" +
+                "        <outline type=\"rss\" text=\"good\" xmlUrl=\"https://good.example.com/rss\"/>\n" +
+                "        <outline type=\"rss\" text=\"broken\" xmlUrl=\"https://broken");
+
+        List<String> rssUrls = opmlParser.parse(mOpmlFile);
+
+        assertEquals("The outline parsed before the malformed XML must be returned",
+                1, rssUrls.size());
+        assertEquals("https://good.example.com/rss", rssUrls.get(0));
+    }
+
+    private void createProvider(String dbName) {
+        mDbName = dbName;
+        mTestProvider = Provider.createProvider(mTestApplication,
+                new OpmlTestProviderModule(dbName));
+    }
+
+    private File createOpmlFile(String opml) throws IOException {
+        File opmlFile = new File(mTestApplication.getFilesDir(), "opml_parse_test.opml");
         try (FileOutputStream outputStream = new FileOutputStream(opmlFile)) {
             outputStream.write(opml.getBytes(StandardCharsets.UTF_8));
         }
         return opmlFile;
     }
 
-    private static class CountingNewRssChannelCmd extends NewRssChannelCmd {
-        private final List<String> executedUrls = new ArrayList<>();
-
-        CountingNewRssChannelCmd(Provider provider) {
-            super(provider);
-        }
-
-        @Override
-        public Single<String> execute(String url) {
-            // record only - OpmlParser pre-checks duplicates before calling execute
-            executedUrls.add(url);
-            return Single.just(url);
-        }
-    }
-
     /**
-     * Same wiring as the production AppProviderModule for everything OpmlParser touches
-     * (base, database, notifier, repository, normalizer, parser) but with the real
-     * CommandProviderModule left out and a counting NewRssChannelCmd registered instead.
-     * The counting cmd is the ONLY registration of its type, so no duplicate-skip probe
-     * ever resolves it during module installation - it is constructed on first use, at
-     * parse time, when every dependency is registered.
-     * <p>
-     * A {@link RedirectDuplicateChecker} with a FAKE resolver ({@code url -> null},
-     * never touches the network) is registered because the counting cmd's
-     * {@code super(provider)} constructor resolves it - the counting cmd overrides
-     * execute(), so the probe never actually runs.
+     * Same wiring as the production AppProviderModule for everything OpmlParser
+     * touches: base (FileHelper, ILogger, ExecutorService), the database module -
+     * OpmlParser's constructor resolves RssDao lazily even though parse() itself
+     * no longer touches the database - plus the normalizer and the parser. The
+     * command module is left out: queueing the parsed feeds moved to
+     * RssService#addNewFeeds.
      */
     private static class OpmlTestProviderModule implements ProviderModule {
-        private final Application mApplication;
         private final String mDbName;
-        private final WorkManager mWorkManager;
-        private CountingNewRssChannelCmd mCountingCmd;
 
-        OpmlTestProviderModule(Application application, String dbName, WorkManager workManager) {
-            mApplication = application;
+        OpmlTestProviderModule(String dbName) {
             mDbName = dbName;
-            mWorkManager = workManager;
-        }
-
-        CountingNewRssChannelCmd getCountingCmd() {
-            return mCountingCmd;
         }
 
         @Override
@@ -172,24 +201,6 @@ public class OpmlParserTest {
             providerRegistry.registerModule(new BaseProviderModule());
             providerRegistry.registerModule(new DatabaseProviderModule(mDbName));
 
-            providerRegistry.registerLazy(WorkManager.class, () -> mWorkManager);
-            providerRegistry.registerLazy(RedirectDuplicateChecker.class, () ->
-                    new RedirectDuplicateChecker(mApplication,
-                            provider.get(RssDao.class),
-                            new UrlNormalizer(),
-                            new NoOpLogger(),
-                            url -> null));
-            providerRegistry.registerLazy(NewRssChannelCmd.class, () -> {
-                if (mCountingCmd == null) {
-                    mCountingCmd = new CountingNewRssChannelCmd(provider);
-                }
-                return mCountingCmd;
-            });
-            // for rss
-            providerRegistry.registerLazy(RssChangeNotifier.class, () -> new RssChangeNotifier());
-            providerRegistry.registerLazy(RssChannelStateNotifier.class,
-                    () -> new RssChannelStateNotifier(provider));
-            providerRegistry.registerLazy(RssRepository.class, () -> new RssRepository(provider));
             providerRegistry.registerLazy(UrlNormalizer.class, UrlNormalizer::new);
             providerRegistry.registerLazy(OpmlParser.class, () -> new OpmlParser(provider));
         }

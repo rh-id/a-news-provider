@@ -35,7 +35,6 @@ import m.co.rh.id.aprovider.ProviderRegistry;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -47,9 +46,9 @@ import static org.junit.Assert.assertTrue;
  * Conversion notes (behavioral guarantees preserved):
  * <ul>
  *     <li>spy(validUrl) replaced by REAL validation - android.util.Patterns.WEB_URL
- *     works on-device. Real validation pushes an empty "" success value to the
- *     validation subject before the duplicate check, so duplicate scenarios assert
- *     "subject contains the duplicate message" instead of an exact single-value count.</li>
+ *     works on-device. The validation subject only receives the empty "" success
+ *     value on the added path, so duplicate scenarios assert "subject contains the
+ *     duplicate message" instead of an exact single-value count.</li>
  *     <li>mock WorkManager replaced by {@link FakeWorkManager} registered BEFORE the
  *     wrapped test module, so the duplicate-skip keeps the first registration.</li>
  *     <li>mock RssDao replaced by the real per-test Room database (unique dbName).</li>
@@ -326,29 +325,6 @@ public class NewRssChannelCmdTest {
         assertTrue("The canonical spelling misses the first lookup, so the redirect probe must run",
                 mRecordingResolver.getCalls().contains(CANONICAL_URL));
         assertEquals("No new row may appear in this test", 1, rssDao.loadAllRssChannel().size());
-    }
-
-    @Test
-    public void testPrependSchemeAddsHttpsOnlyWhenSchemeIsMissing() {
-        assertEquals("https://example.com/feed",
-                NewRssChannelCmd.prependScheme("example.com/feed"));
-        assertEquals("https://CoolFeed.com/rss/",
-                NewRssChannelCmd.prependScheme("https://CoolFeed.com/rss/"));
-        assertEquals("http://example.com/feed",
-                NewRssChannelCmd.prependScheme("http://example.com/feed"));
-        assertNull(NewRssChannelCmd.prependScheme(null));
-    }
-
-    @Test
-    public void testBuildRequestUrlPrependsSchemeAndNormalizes() {
-        createProvider("cmdBuildRequestUrl");
-        NewRssChannelCmd cmd = mTestProvider.get(NewRssChannelCmd.class);
-
-        assertEquals("https://example.com/feed",
-                cmd.buildRequestUrl("example.com/feed/"));
-        assertEquals("https://example.com/feed",
-                cmd.buildRequestUrl("https://EXAMPLE.com/feed/"));
-        assertNull(cmd.buildRequestUrl(null));
     }
 
     private void insertLegacyChannel(RssDao rssDao) {

@@ -20,6 +20,7 @@ import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChannelStateNotifier;
 import m.co.rh.id.a_news_provider.app.provider.parser.OpmlParser;
 import m.co.rh.id.a_news_provider.app.provider.repository.RssRepository;
+import m.co.rh.id.a_news_provider.app.provider.service.RssService;
 import m.co.rh.id.a_news_provider.app.ui.page.DonationsPage;
 import m.co.rh.id.a_news_provider.app.ui.page.HomePage;
 import m.co.rh.id.a_news_provider.app.ui.page.RssItemDetailPage;
@@ -63,6 +64,7 @@ public class AppProviderModule implements ProviderModule {
         providerRegistry.registerAsync(RssChannelStateNotifier.class, () -> new RssChannelStateNotifier(provider));
         providerRegistry.registerLazy(OpmlParser.class, () -> new OpmlParser(provider));
         providerRegistry.registerLazy(RssRepository.class, () -> new RssRepository(provider));
+        providerRegistry.registerLazy(RssService.class, () -> new RssService(provider));
         providerRegistry.registerLazy(UrlNormalizer.class, UrlNormalizer::new);
         providerRegistry.registerLazy(RedirectDuplicateChecker.class, () -> new RedirectDuplicateChecker(provider));
 

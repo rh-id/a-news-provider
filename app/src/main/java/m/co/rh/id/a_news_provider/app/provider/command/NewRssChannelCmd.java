@@ -1,13 +1,6 @@
 package m.co.rh.id.a_news_provider.app.provider.command;
 
 import android.content.Context;
-import android.util.Patterns;
-
-import androidx.work.Constraints;
-import androidx.work.Data;
-import androidx.work.NetworkType;
-import androidx.work.OneTimeWorkRequest;
-import androidx.work.WorkManager;
 
 import java.util.concurrent.ExecutorService;
 
@@ -18,131 +11,108 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
-import m.co.rh.id.a_news_provider.base.util.UrlNormalizer;
-import m.co.rh.id.a_news_provider.app.workmanager.ConstantsKey;
-import m.co.rh.id.a_news_provider.app.workmanager.NewRssWorker;
-import m.co.rh.id.a_news_provider.base.dao.RssDao;
+import m.co.rh.id.a_news_provider.app.provider.service.RssService;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.model.RssModel;
 import m.co.rh.id.aprovider.Provider;
 
+/**
+ * UI-facing command for adding a new RSS channel. Thin adapter over the non-UI
+ * {@link RssService}: runs the service add on a background executor and maps its
+ * typed {@link RssService.AddFeedResult} to user-facing strings for the add dialog.
+ */
 public class NewRssChannelCmd {
     private final Context mAppContext;
-    private final WorkManager mWorkManager;
     private final RssChangeNotifier mRssChangeNotifier;
-    private final RssDao mRssDao;
-    private final UrlNormalizer mUrlNormalizer;
-    private final RedirectDuplicateChecker mRedirectDuplicateChecker;
+    private final RssService mRssService;
     private final ExecutorService mExecutorService;
     private final BehaviorSubject<RssModel> mRssModelBehaviorSubject;
     private final BehaviorSubject<String> mUrlValidationBehaviorSubject;
 
     public NewRssChannelCmd(Provider provider) {
         mAppContext = provider.getContext().getApplicationContext();
-        mWorkManager = provider.get(WorkManager.class);
         mRssChangeNotifier = provider.get(RssChangeNotifier.class);
-        mRssDao = provider.get(RssDao.class);
-        mUrlNormalizer = provider.get(UrlNormalizer.class);
-        mRedirectDuplicateChecker = provider.get(RedirectDuplicateChecker.class);
+        mRssService = provider.get(RssService.class);
         mExecutorService = provider.get(ExecutorService.class);
         mRssModelBehaviorSubject = BehaviorSubject.create();
         mUrlValidationBehaviorSubject = BehaviorSubject.create();
     }
 
+    /**
+     * Validates the given feed URL for the add dialog's keystroke validation and
+     * pushes the validation message (empty string when valid) to getUrlValidation().
+     *
+     * @param url the raw feed URL input
+     * @return true when the URL is valid, false otherwise
+     */
     public boolean validUrl(String url) {
-        boolean valid = true;
-        if (url == null || url.isEmpty()) {
-            valid = false;
-            mUrlValidationBehaviorSubject.onNext(mAppContext.getString(R.string.url_is_required));
-        } else if (!Patterns.WEB_URL.matcher(url).matches()) {
-            valid = false;
-            mUrlValidationBehaviorSubject.onNext(mAppContext.getString(R.string.invalid_url));
-        } else if (url.startsWith("http://")) {
-            valid = false;
-            mUrlValidationBehaviorSubject.onNext(mAppContext.getString(R.string.http_not_allowed));
-        } else {
+        RssService.UrlError urlError = mRssService.checkUrl(url);
+        if (urlError == null) {
             mUrlValidationBehaviorSubject.onNext("");
+            return true;
         }
-        return valid;
+        mUrlValidationBehaviorSubject.onNext(getUrlErrorMessage(urlError));
+        return false;
     }
 
     /**
-     * Prepends "https://" when the scheme is missing. Unlike {@link #buildRequestUrl(String)}
-     * the result is NOT normalized, so the caller's original spelling is preserved.
-     *
-     * @param url the raw feed URL input
-     * @return the scheme-prepended URL, or null when the input is null
-     */
-    public static String prependScheme(String url) {
-        if (url == null) {
-            return null;
-        }
-        if (!url.startsWith("http://") && !url.startsWith("https://")) {
-            return "https://" + url;
-        }
-        return url;
-    }
-
-    /**
-     * Builds the actual request URL for the given feed URL input: prepends
-     * "https://" when the scheme is missing and normalizes the result.
-     *
-     * @param url the raw feed URL input
-     * @return the normalized request URL
-     */
-    public String buildRequestUrl(String url) {
-        if (url == null) {
-            return null;
-        }
-        return mUrlNormalizer.normalizeUrl(prependScheme(url));
-    }
-
-    /**
-     * Validates the URL, checks for an already added duplicate channel, probes whether
-     * the feed redirects to an already added channel - reported inline as a duplicate
-     * error - and enqueues the fetch worker when the feed is new.
+     * UI adapter for {@link RssService#addNewFeed(String)}: runs the add on the
+     * background executor and maps the typed result to the user-facing messages
+     * (also pushed to getUrlValidation() for inline display).
      * <p>
      * The redirect probe is best-effort: {@link RedirectDuplicateChecker} failures
      * fail open and the add proceeds to the normal fetch.
      *
      * @param url the raw feed URL input
      * @return Single that emits the normalized request URL after the worker is enqueued,
-     * or errors with the validation/duplicate/redirect message (also pushed to
-     * getUrlValidation() for inline display), or errors when the existing-channel lookup
-     * fails - a failed check never enqueues the worker
+     * or errors with the validation/duplicate/redirect message, or errors when the
+     * existing-channel lookup fails - a failed check never enqueues the worker
      */
     public Single<String> execute(final String url) {
-        return Single.fromCallable(() -> {
-            String requestUrl = buildRequestUrl(url);
-            if (!validUrl(requestUrl)) {
+        return Single.fromCallable(() -> mapResult(mRssService.addNewFeed(url)))
+                .subscribeOn(Schedulers.from(mExecutorService));
+    }
+
+    private String mapResult(RssService.AddFeedResult result) {
+        switch (result.kind) {
+            case ADDED:
+                mUrlValidationBehaviorSubject.onNext("");
+                return result.requestUrl;
+            case INVALID: {
+                mUrlValidationBehaviorSubject.onNext(getUrlErrorMessage(result.urlError));
                 throw new RuntimeException(getValidationError());
             }
-            RssChannel existing;
-            try {
-                // first param keeps the raw requested spelling so legacy un-normalized
-                // rows still match on identical re-add, second param covers normalized
-                // spellings of the same feed
-                existing = mRssDao.findRssChannelByUrlVariants(prependScheme(url), requestUrl);
-            } catch (Exception e) {
-                // duplicate check failed - fail closed rather than risk a duplicate add
-                String message = mAppContext.getString(R.string.error_feed_add);
-                mUrlValidationBehaviorSubject.onNext(message);
-                throw new RuntimeException(message, e);
-            }
-            if (existing != null) {
+            case DUPLICATE: {
                 String message = mAppContext.getString(R.string.feed_already_added_as,
-                        displayName(existing));
+                        displayName(result.existing));
                 mUrlValidationBehaviorSubject.onNext(message);
                 throw new RuntimeException(message);
             }
-            if (mRedirectDuplicateChecker.isRedirectToExistingChannel(requestUrl)) {
+            case DUPLICATE_REDIRECT: {
                 String message = mAppContext.getString(R.string.error_feed_duplicate_redirect);
                 mUrlValidationBehaviorSubject.onNext(message);
                 throw new RuntimeException(message);
             }
-            enqueueWorker(requestUrl);
-            return requestUrl;
-        }).subscribeOn(Schedulers.from(mExecutorService));
+            case DB_ERROR:
+            case DUPLICATE_IN_FILE: // never produced by addNewFeed, handled as a generic add error
+            default: {
+                String message = mAppContext.getString(R.string.error_feed_add);
+                mUrlValidationBehaviorSubject.onNext(message);
+                throw new RuntimeException(message, result.cause);
+            }
+        }
+    }
+
+    private String getUrlErrorMessage(RssService.UrlError urlError) {
+        switch (urlError) {
+            case EMPTY:
+                return mAppContext.getString(R.string.url_is_required);
+            case INVALID:
+                return mAppContext.getString(R.string.invalid_url);
+            case HTTP_NOT_ALLOWED:
+            default:
+                return mAppContext.getString(R.string.http_not_allowed);
+        }
     }
 
     private static String displayName(RssChannel rssChannel) {
@@ -157,18 +127,6 @@ public class NewRssChannelCmd {
             displayName = "";
         }
         return displayName;
-    }
-
-    private void enqueueWorker(String requestUrl) {
-        OneTimeWorkRequest oneTimeWorkRequest = new OneTimeWorkRequest.Builder(NewRssWorker.class)
-                .setConstraints(new Constraints.Builder()
-                        .setRequiredNetworkType(NetworkType.CONNECTED)
-                        .build())
-                .setInputData(new Data.Builder()
-                        .putString(ConstantsKey.KEY_STRING_URL, requestUrl)
-                        .build()
-                ).build();
-        mWorkManager.enqueue(oneTimeWorkRequest);
     }
 
     public Flowable<RssModel> getRssModel() {

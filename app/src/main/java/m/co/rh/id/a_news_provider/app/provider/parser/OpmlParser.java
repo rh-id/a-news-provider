@@ -16,12 +16,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import m.co.rh.id.a_news_provider.R;
-import m.co.rh.id.a_news_provider.app.provider.command.NewRssChannelCmd;
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.provider.FileHelper;
@@ -33,14 +30,12 @@ public class OpmlParser {
     private static final String TAG = OpmlParser.class.getName();
     private final Context mAppContext;
     private final ProviderValue<ILogger> mLogger;
-    private final ProviderValue<NewRssChannelCmd> mNewRssChannelCmd;
     private final ProviderValue<FileHelper> mFileHelper;
     private final ProviderValue<RssDao> mRssDao;
 
     public OpmlParser(Provider provider) {
         mAppContext = provider.getContext().getApplicationContext();
         mLogger = provider.lazyGet(ILogger.class);
-        mNewRssChannelCmd = provider.lazyGet(NewRssChannelCmd.class);
         mFileHelper = provider.lazyGet(FileHelper.class);
         mRssDao = provider.lazyGet(RssDao.class);
     }
@@ -86,7 +81,18 @@ public class OpmlParser {
         return resultFile;
     }
 
-    public void parse(File opmlFile) {
+    /**
+     * Pure OPML parsing: collects every rss-type outline's non-empty xmlUrl in file
+     * order, raw spelling, duplicates included. DB duplicate checks, normalization
+     * and queueing are the caller's job
+     * ({@link m.co.rh.id.a_news_provider.app.provider.service.RssService#addNewFeeds(List)}).
+     *
+     * @param opmlFile the OPML file to parse
+     * @return the collected feed URLs in file order; a malformed XML mid-file
+     * returns the partial list parsed so far, a file-read failure an empty list
+     */
+    public List<String> parse(File opmlFile) {
+        List<String> rssUrls = new ArrayList<>();
         StringBuilder stringBuilder = new StringBuilder();
         try (FileInputStream fileInputStream = new FileInputStream(opmlFile);
              InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream);
@@ -102,10 +108,8 @@ public class OpmlParser {
             mLogger.get().e(TAG,
                     mAppContext.getString(R.string.error_failed_to_open_file),
                     throwable);
-            return;
+            return rssUrls;
         }
-        // Request URLs queued during the current parse, to skip in-file duplicate outlines
-        Set<String> queuedRequestUrls = new HashSet<>();
         try {
             XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
             factory.setNamespaceAware(true);
@@ -120,7 +124,7 @@ public class OpmlParser {
                 }
                 String name = xpp.getName();
                 if (name.equals("body")) {
-                    readBody(xpp, queuedRequestUrls);
+                    readBody(xpp, rssUrls);
                 } else {
                     skip(xpp);
                 }
@@ -130,48 +134,30 @@ public class OpmlParser {
                     mAppContext.getString(R.string.error_parsing_opml_file),
                     throwable);
         }
+        return rssUrls;
     }
 
-    private void readBody(XmlPullParser xpp, Set<String> queuedRequestUrls) throws IOException, XmlPullParserException {
+    private void readBody(XmlPullParser xpp, List<String> rssUrls) throws IOException, XmlPullParserException {
         xpp.require(XmlPullParser.START_TAG, null, "body");
-        List<String> rssUrls = new ArrayList<>();
         while (xpp.next() != XmlPullParser.END_TAG) {
             if (xpp.getEventType() != XmlPullParser.START_TAG) {
                 continue;
             }
             String name = xpp.getName();
             if (name.equals("outline")) {
-                readNestedOutline(xpp, rssUrls, queuedRequestUrls);
+                readNestedOutline(xpp, rssUrls);
             } else {
                 skip(xpp);
             }
         }
-        mLogger.get().i(TAG, mAppContext.getString(R.string.added_rss, rssUrls.size()));
-        mLogger.get().d(TAG, "RSS URLS: " + rssUrls);
     }
 
-    private void readNestedOutline(XmlPullParser xpp, List<String> rssUrls, Set<String> queuedRequestUrls) throws IOException, XmlPullParserException {
+    private void readNestedOutline(XmlPullParser xpp, List<String> rssUrls) throws IOException, XmlPullParserException {
         String type = xpp.getAttributeValue(null, "type");
         if ("rss".equals(type)) {
             String xmlUrl = xpp.getAttributeValue(null, "xmlUrl");
             if (xmlUrl != null && !xmlUrl.isEmpty()) {
-                String requestUrl = mNewRssChannelCmd.get().buildRequestUrl(xmlUrl);
-                // first param keeps the raw requested spelling so legacy un-normalized
-                // rows still match, second param covers normalized spellings
-                RssChannel existing = mRssDao.get()
-                        .findRssChannelByUrlVariants(NewRssChannelCmd.prependScheme(xmlUrl), requestUrl);
-                // skip feeds already in the database or already queued from an
-                // earlier outline in this same file - do not queue twice
-                if (existing == null && queuedRequestUrls.add(requestUrl)) {
-                    // execute() validates and enqueues the fetch worker; duplicates are
-                    // pre-checked above, so failures here are a rare race - just log them
-                    mNewRssChannelCmd.get()
-                            .execute(xmlUrl)
-                            .subscribe(queuedUrl -> { },
-                                    throwable -> mLogger.get().e(TAG,
-                                            throwable.getMessage(), throwable));
-                    rssUrls.add(xmlUrl);
-                }
+                rssUrls.add(xmlUrl);
             }
         }
         while (xpp.next() != XmlPullParser.END_TAG) {
@@ -180,7 +166,7 @@ public class OpmlParser {
             }
             String name = xpp.getName();
             if (name.equals("outline")) {
-                readNestedOutline(xpp, rssUrls, queuedRequestUrls);
+                readNestedOutline(xpp, rssUrls);
             } else {
                 skip(xpp);
             }

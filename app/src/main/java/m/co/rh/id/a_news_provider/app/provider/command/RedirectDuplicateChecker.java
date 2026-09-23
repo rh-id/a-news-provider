@@ -25,9 +25,11 @@ import m.co.rh.id.aprovider.Provider;
  * to; if it ends up at an already added channel the add must be rejected with an
  * inline error instead of enqueueing the fetch.
  * <p>
- * Runs inside {@link NewRssChannelCmd#execute(String)} as part of the add check,
- * before the fetch worker is enqueued, so the add dialog shows the redirect case
- * inline. This class owns both the decision and the built-in network probing
+ * Runs inside
+ * {@link m.co.rh.id.a_news_provider.app.provider.service.RssService#addNewFeed(String)}
+ * as part of the add check, before the fetch worker is enqueued, so the add dialog
+ * shows the redirect case inline. This class owns both the decision and the
+ * built-in network probing
  * (the redirect chain is followed manually with {@link HttpURLConnection}
  * because the Volley stack reports the original request URL and never captures
  * redirect targets). HTTPS probe connections use
