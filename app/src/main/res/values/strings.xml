@@ -53,6 +53,7 @@
     <string name="error_failed_to_open_file">Failed to open file</string>
     <string name="error_parsing_opml_file">Error parsing OPML file</string>
     <string name="added_rss">Added RSS: %d</string>
+    <string name="opml_feeds_not_added">Feeds not added: %d</string>
     <string name="error_exporting_rss_channel">Error exporting feed: %s</string>
     <string name="menu_export_opml">Export My Feed</string>
     <string name="error_exporting_opml">Error exporting feed</string>

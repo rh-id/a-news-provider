@@ -51,6 +51,7 @@
     <string name="error_failed_to_open_file">Gagal membuka file</string>
     <string name="error_parsing_opml_file">Error mengurai OPML file</string>
     <string name="added_rss">RSS bertambah: %d</string>
+    <string name="opml_feeds_not_added">Feed yang tidak ditambahkan: %d</string>
     <string name="error_exporting_rss_channel">Error ekspor feed: %s</string>
     <string name="menu_export_opml">Ekspor Feed Saya</string>
     <string name="error_exporting_opml">Error mengekspor feed</string>

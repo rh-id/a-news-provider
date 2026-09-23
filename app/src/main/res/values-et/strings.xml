@@ -51,6 +51,7 @@
     <string name="error_failed_to_open_file">Faili avamine ebaõnnestus</string>
     <string name="error_parsing_opml_file">Viga OPML-faili sõelumisel</string>
     <string name="added_rss">Lisatud RSS: %d</string>
+    <string name="opml_feeds_not_added">Lisamata vood: %d</string>
     <string name="error_exporting_rss_channel">Viga voo eksportimisel: %s</string>
     <string name="menu_export_opml">Ekspordi minu voog</string>
     <string name="error_exporting_opml">Viga voo eksportimisel</string>

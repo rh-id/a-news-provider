@@ -51,6 +51,7 @@
     <string name="error_failed_to_open_file">Datei konnte nicht geöffnet werden</string>
     <string name="error_parsing_opml_file">Fehler beim Analysieren der OPML-Datei</string>
     <string name="added_rss">RSS hinzugefügt: %d</string>
+    <string name="opml_feeds_not_added">Nicht hinzugefügte Feeds: %d</string>
     <string name="error_exporting_rss_channel">Fehler beim Exportieren des Feeds: %s</string>
     <string name="menu_export_opml">Meinen Feed exportieren</string>
     <string name="error_exporting_opml">Fehler beim Exportieren des Feeds</string>

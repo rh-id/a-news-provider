@@ -51,6 +51,7 @@
     <string name="error_failed_to_open_file">Échec de l\'ouverture du fichier</string>
     <string name="error_parsing_opml_file">Erreur lors de l\'analyse du fichier OPML</string>
     <string name="added_rss">RSS ajouté(s) : %d</string>
+    <string name="opml_feeds_not_added">Flux non ajoutés : %d</string>
     <string name="error_exporting_rss_channel">Erreur lors de l\'export du flux : %s</string>
     <string name="menu_export_opml">Exporter mon flux</string>
     <string name="error_exporting_opml">Erreur lors de l\'export du flux</string>

@@ -51,6 +51,7 @@
     <string name="error_failed_to_open_file">Betg reussì da avrir il dossier</string>
     <string name="error_parsing_opml_file">Errur cun analisar il dossier OPML</string>
     <string name="added_rss">RSS agiuntà: %d</string>
+    <string name="opml_feeds_not_added">Feeds betg agiuntads: %d</string>
     <string name="error_exporting_rss_channel">Errur cun exporter il feed: %s</string>
     <string name="menu_export_opml">Exporter mes feed</string>
     <string name="error_exporting_opml">Errur cun exporter il feed</string>

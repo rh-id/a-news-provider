@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -146,7 +147,9 @@ public class RssService {
      * block on the network.
      * <p>
      * A duplicate-check database failure fails closed for the offending URL only -
-     * the rest of the list still imports.
+     * the rest of the list still imports. Surfacing non-ADDED outcomes to the user
+     * is the caller's job - the OPML import worker reports their count in its
+     * completion toast, this service's DEBUG log stays the only per-feed detail.
      *
      * @param urls the raw feed URL inputs to add
      * @return one add result per input URL, in input order
@@ -215,6 +218,27 @@ public class RssService {
         return results;
     }
 
+    /**
+     * Display name of the given channel for user-facing messages: feed name when
+     * set, then title, then url, then empty.
+     *
+     * @param rssChannel the channel to name
+     * @return the channel's display name
+     */
+    public static String displayName(RssChannel rssChannel) {
+        String displayName = rssChannel.feedName;
+        if (displayName == null || displayName.isEmpty()) {
+            displayName = rssChannel.title;
+        }
+        if (displayName == null || displayName.isEmpty()) {
+            displayName = rssChannel.url;
+        }
+        if (displayName == null) {
+            displayName = "";
+        }
+        return displayName;
+    }
+
     private void enqueueWorker(String requestUrl) {
         OneTimeWorkRequest oneTimeWorkRequest = new OneTimeWorkRequest.Builder(NewRssWorker.class)
                 .setConstraints(new Constraints.Builder()
@@ -263,7 +287,9 @@ public class RssService {
         }
 
         public static AddFeedResult duplicate(RssChannel existing, String requestUrl) {
-            return new AddFeedResult(Kind.DUPLICATE, requestUrl, existing, null, null);
+            // the UI paths format the channel's display name - pin the non-null invariant
+            return new AddFeedResult(Kind.DUPLICATE, requestUrl,
+                    Objects.requireNonNull(existing), null, null);
         }
 
         public static AddFeedResult duplicateInFile(String requestUrl) {

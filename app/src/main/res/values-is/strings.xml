@@ -51,6 +51,7 @@
     <string name="error_failed_to_open_file">Tókst ekki að opna skrá</string>
     <string name="error_parsing_opml_file">Villa við að þátta OPML-skrá</string>
     <string name="added_rss">RSS bætt við: %d</string>
+    <string name="opml_feeds_not_added">Straumar sem ekki voru bættir við: %d</string>
     <string name="error_exporting_rss_channel">Villa við að flytja út straum: %s</string>
     <string name="menu_export_opml">Flytja út minn straum</string>
     <string name="error_exporting_opml">Villa við að flytja út straum</string>

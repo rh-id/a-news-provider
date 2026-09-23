@@ -12,7 +12,6 @@ import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.provider.service.RssService;
-import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.model.RssModel;
 import m.co.rh.id.aprovider.Provider;
 
@@ -84,7 +83,7 @@ public class NewRssChannelCmd {
             }
             case DUPLICATE: {
                 String message = mAppContext.getString(R.string.feed_already_added_as,
-                        displayName(result.existing));
+                        RssService.displayName(result.existing));
                 mUrlValidationBehaviorSubject.onNext(message);
                 throw new RuntimeException(message);
             }
@@ -113,20 +112,6 @@ public class NewRssChannelCmd {
             default:
                 return mAppContext.getString(R.string.http_not_allowed);
         }
-    }
-
-    private static String displayName(RssChannel rssChannel) {
-        String displayName = rssChannel.feedName;
-        if (displayName == null || displayName.isEmpty()) {
-            displayName = rssChannel.title;
-        }
-        if (displayName == null || displayName.isEmpty()) {
-            displayName = rssChannel.url;
-        }
-        if (displayName == null) {
-            displayName = "";
-        }
-        return displayName;
     }
 
     public Flowable<RssModel> getRssModel() {
