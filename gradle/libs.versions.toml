@@ -24,7 +24,6 @@ a-logger = "v0.0.3"
 rx-utils = "v0.0.3"
 concurrent-utils = "v0.0.3"
 android-showcase = "v0.0.1"
-license-tools = "1.2.8"
 
 [libraries]
 desugar-jdk-libs = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugar" }
@@ -57,4 +56,3 @@ espresso-core = { group = "androidx.test.espresso", name = "espresso-core", vers
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
-license-tools = { id = "com.cookpad.android.plugin.license-tools", version.ref = "license-tools" }
