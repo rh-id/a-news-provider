@@ -1,3 +1,10 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
 rootProject.name = "a-news-provider"
 include ':app'
 include ':base'
