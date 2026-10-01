@@ -57,7 +57,7 @@ dependencies {
     api libs.a.logger
     api libs.rx.utils
     api libs.rxandroid
-    api libs.rxjava // can't update this, minSdk must be 21
+    api libs.rxjava // 3.1.12 is the final 3.x release; requires Android API 21+
 
     testImplementation libs.junit
     androidTestImplementation libs.junit
