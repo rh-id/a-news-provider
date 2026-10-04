@@ -102,6 +102,16 @@
     <string name="menu_toggle_favorite">Aktiver/deaktiver favoritt</string>
     <string name="favorite_added">Lagt til i favorittar</string>
     <string name="favorite_removed">Fjerna frå favorittar</string>
+    <string name="favorite_add">Legg til i favorittar</string>
+    <string name="favorite_remove">Fjern frå favorittar</string>
+    <string name="state_read">Lest</string>
+    <string name="state_unread">Ulest</string>
+    <string name="edit_channel">Rediger kanal</string>
+
+    <plurals name="new_items_available">
+        <item quantity="one">%d nytt element</item>
+        <item quantity="other">%d nye element</item>
+    </plurals>
     <string name="menu_search">Søk</string>
     <string name="search_hint">Søk etter artiklar…</string>
 

@@ -102,6 +102,16 @@
     <string name="menu_toggle_favorite">Attiva/disattiva preferito</string>
     <string name="favorite_added">Aggiunto ai preferiti</string>
     <string name="favorite_removed">Rimosso dai preferiti</string>
+    <string name="favorite_add">Aggiungi ai preferiti</string>
+    <string name="favorite_remove">Rimuovi dai preferiti</string>
+    <string name="state_read">Letto</string>
+    <string name="state_unread">Non letto</string>
+    <string name="edit_channel">Modifica canale</string>
+
+    <plurals name="new_items_available">
+        <item quantity="one">%d nuovo elemento</item>
+        <item quantity="other">%d nuovi elementi</item>
+    </plurals>
     <string name="menu_search">Cerca</string>
     <string name="search_hint">Cerca articoli…</string>
 

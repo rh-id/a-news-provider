@@ -102,6 +102,16 @@
     <string name="menu_toggle_favorite">Bæta í eftirlæti/fjarlægja</string>
     <string name="favorite_added">Bætt í eftirlæti</string>
     <string name="favorite_removed">Fjarlægt úr eftirlæti</string>
+    <string name="favorite_add">Bæta við eftirlæti</string>
+    <string name="favorite_remove">Fjarlægja úr eftirlætum</string>
+    <string name="state_read">Lesið</string>
+    <string name="state_unread">Ólesið</string>
+    <string name="edit_channel">Breyta rás</string>
+
+    <plurals name="new_items_available">
+        <item quantity="one">%d nýtt atriði</item>
+        <item quantity="other">%d ný atriði</item>
+    </plurals>
     <string name="menu_search">Leita</string>
     <string name="search_hint">Leita að greinum…</string>
 

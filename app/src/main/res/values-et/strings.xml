@@ -102,6 +102,16 @@
     <string name="menu_toggle_favorite">Lisa või eemalda lemmik</string>
     <string name="favorite_added">Lisatud lemmikutesse</string>
     <string name="favorite_removed">Eemaldatud lemmikutest</string>
+    <string name="favorite_add">Lisa lemmikutesse</string>
+    <string name="favorite_remove">Eemalda lemmikutest</string>
+    <string name="state_read">Loetud</string>
+    <string name="state_unread">Lugemata</string>
+    <string name="edit_channel">Muuda kanalit</string>
+
+    <plurals name="new_items_available">
+        <item quantity="one">%d uus üksus</item>
+        <item quantity="other">%d uut üksust</item>
+    </plurals>
     <string name="menu_search">Otsi</string>
     <string name="search_hint">Otsi artikleid…</string>
 

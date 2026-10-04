@@ -102,6 +102,15 @@
     <string name="menu_toggle_favorite">Tambah/hapus favorit</string>
     <string name="favorite_added">Ditambahkan ke favorit</string>
     <string name="favorite_removed">Dihapus dari favorit</string>
+    <string name="favorite_add">Tambahkan ke favorit</string>
+    <string name="favorite_remove">Hapus dari favorit</string>
+    <string name="state_read">Sudah dibaca</string>
+    <string name="state_unread">Belum dibaca</string>
+    <string name="edit_channel">Edit saluran</string>
+
+    <plurals name="new_items_available">
+        <item quantity="other">%d item baru</item>
+    </plurals>
     <string name="menu_search">Cari</string>
     <string name="search_hint">Cari artikel…</string>
 

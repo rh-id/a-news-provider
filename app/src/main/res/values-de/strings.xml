@@ -102,6 +102,16 @@
     <string name="menu_toggle_favorite">Zu Favoriten hinzufügen/entfernen</string>
     <string name="favorite_added">Zu Favoriten hinzugefügt</string>
     <string name="favorite_removed">Aus Favoriten entfernt</string>
+    <string name="favorite_add">Zu Favoriten hinzufügen</string>
+    <string name="favorite_remove">Aus Favoriten entfernen</string>
+    <string name="state_read">Gelesen</string>
+    <string name="state_unread">Ungelesen</string>
+    <string name="edit_channel">Kanal bearbeiten</string>
+
+    <plurals name="new_items_available">
+        <item quantity="one">%d neuer Eintrag</item>
+        <item quantity="other">%d neue Einträge</item>
+    </plurals>
     <string name="menu_search">Suchen</string>
     <string name="search_hint">Artikel suchen…</string>
 

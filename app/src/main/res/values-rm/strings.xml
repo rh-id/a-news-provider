@@ -102,6 +102,16 @@
     <string name="menu_toggle_favorite">Activar/deactivar il favurit</string>
     <string name="favorite_added">Agiuntà als favurits</string>
     <string name="favorite_removed">Allontanà dals favurits</string>
+    <string name="favorite_add">Agiuntar tar ils favurits</string>
+    <string name="favorite_remove">Allontanar dals favurits</string>
+    <string name="state_read">Legì</string>
+    <string name="state_unread">Betg legì</string>
+    <string name="edit_channel">Modifitgar il chanal</string>
+
+    <plurals name="new_items_available">
+        <item quantity="one">%d nov element</item>
+        <item quantity="other">%d novs elements</item>
+    </plurals>
     <string name="menu_search">Tschertgar</string>
     <string name="search_hint">Tschertgar artitgels…</string>
 

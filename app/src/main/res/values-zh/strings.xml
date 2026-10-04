@@ -102,6 +102,15 @@
     <string name="menu_toggle_favorite">切换收藏状态</string>
     <string name="favorite_added">已添加到收藏</string>
     <string name="favorite_removed">已从收藏中移除</string>
+    <string name="favorite_add">添加到收藏夹</string>
+    <string name="favorite_remove">从收藏夹移除</string>
+    <string name="state_read">已读</string>
+    <string name="state_unread">未读</string>
+    <string name="edit_channel">编辑频道</string>
+
+    <plurals name="new_items_available">
+        <item quantity="other">%d 条新内容</item>
+    </plurals>
     <string name="menu_search">搜索</string>
     <string name="search_hint">搜索文章…</string>
 
