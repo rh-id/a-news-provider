@@ -6,12 +6,15 @@ import android.graphics.Typeface;
 import android.os.Build;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.accessibility.AccessibilityEvent;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.core.text.HtmlCompat;
+import androidx.core.view.AccessibilityDelegateCompat;
 import androidx.core.view.ViewCompat;
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
 
 import java.text.SimpleDateFormat;
 import java.util.concurrent.ExecutorService;
@@ -56,6 +59,8 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
     private SerialBehaviorSubject<RssItem> mRssItemSubject;
     private transient RouteOptions mGetRssChannelByIdAndOpenDetail_routeOptions;
     private transient Observable<RssItemModel> mRssItemModelObservable;
+    private transient int mMarkReadUnreadAccessibilityActionId;
+    private transient int mAddRemoveFavoriteAccessibilityActionId;
 
     public RssItemSV() {
         mRssItemSubject = new SerialBehaviorSubject<>();
@@ -111,18 +116,23 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
         View view = activity.getLayoutInflater().inflate(R.layout.list_item_rss_item, container, false);
         view.setOnClickListener(this);
         view.setOnLongClickListener(this);
+        setupRowAccessibilityDelegate(view);
         TextView textDate = view.findViewById(R.id.text_date);
         TextView textTitle = view.findViewById(R.id.text_title);
         ImageButton buttonFavorite = view.findViewById(R.id.button_favorite);
-        buttonFavorite.setOnClickListener(v -> {
-            RssItem rssItem = mRssItemSubject.getValue();
-            if (rssItem == null) {
-                return;
+        buttonFavorite.setOnClickListener(v -> toggleFavorite());
+        ViewCompat.setAccessibilityDelegate(buttonFavorite, new AccessibilityDelegateCompat() {
+            @Override
+            public void onInitializeAccessibilityNodeInfo(View host, AccessibilityNodeInfoCompat info) {
+                super.onInitializeAccessibilityNodeInfo(host, info);
+                RssItem rssItem = mRssItemSubject.getValue();
+                // expose as toggle so that screen reader announces checked/unchecked on all API levels
+                info.setCheckable(true);
+                info.setChecked(rssItem != null && rssItem.isFavorite);
             }
-            boolean newVal = !rssItem.isFavorite;
-            mUpdateRssItemIsFavoriteCmd.execute(rssItem, newVal);
-            mRssItemSubject.onNext(rssItem);
         });
+        addReadAction(view);
+        addFavoriteAction(view);
         mRxDisposer.add("mRssItemSubject",
                 mRssItemModelObservable
                         .subscribeOn(Schedulers.from(mExecutorService))
@@ -140,9 +150,24 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
                             }
                             buttonFavorite.setImageResource(rssItemModel.isFavorite ?
                                     R.drawable.ic_star_filled_orange : R.drawable.ic_star_outline_gray);
-                            buttonFavorite.setContentDescription(
-                                    mSvProvider.getContext().getString(rssItemModel.isFavorite ?
-                                            R.string.favorite_added : R.string.favorite_removed));
+                            // setStateDescription is ignored below API 30, so there the state
+                            // word must live on the row view itself; a view-level content
+                            // description change fires its own accessibility event, which the
+                            // end-to-end a11y tree (including the node cache) serves reliably
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                                // state is announced purely via stateDescription, avoid doubling
+                                view.setContentDescription(null);
+                            } else {
+                                view.setContentDescription(mSvProvider.getContext().getString(
+                                        rssItemModel.isRead ?
+                                                R.string.state_read : R.string.state_unread));
+                            }
+                            // re-read the focused node(s), checked state and action labels may have changed
+                            buttonFavorite.sendAccessibilityEvent(
+                                    AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
+                            // action labels are fixed at registration, re-register with state-correct labels
+                            addReadAction(view);
+                            addFavoriteAction(view);
                         })
         );
         mRxDisposer.add("createView_onRssItemUpdated",
@@ -154,6 +179,81 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
                             }
                         }));
         return view;
+    }
+
+    private void setupRowAccessibilityDelegate(View rowView) {
+        ViewCompat.setAccessibilityDelegate(rowView, new AccessibilityDelegateCompat() {
+            @Override
+            public void onInitializeAccessibilityNodeInfo(View host, AccessibilityNodeInfoCompat info) {
+                super.onInitializeAccessibilityNodeInfo(host, info);
+                RssItem rssItem = mRssItemSubject.getValue();
+                if (rssItem == null) {
+                    return;
+                }
+                // setStateDescription is ignored below API 30, there the state word is
+                // set as the row view's content description in the Rx subscribe block,
+                // which the framework copies into the node via standard population
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    String stateText = mSvProvider.getContext().getString(rssItem.isRead ?
+                            R.string.state_read : R.string.state_unread);
+                    info.setStateDescription(stateText);
+                }
+            }
+        });
+    }
+
+    private void toggleFavorite() {
+        RssItem rssItem = mRssItemSubject.getValue();
+        if (rssItem == null) {
+            return;
+        }
+        boolean newVal = !rssItem.isFavorite;
+        mUpdateRssItemIsFavoriteCmd.execute(rssItem, newVal);
+        mRssItemSubject.onNext(rssItem);
+    }
+
+    private void toggleReadState() {
+        RssItem rssItem = mRssItemSubject.getValue();
+        if (rssItem == null) {
+            return;
+        }
+        Context context = mSvProvider.getContext();
+        boolean newIsRead = !rssItem.isRead;
+        mUpdateRssItemIsReadCmd.execute(rssItem, newIsRead);
+        mRssItemSubject.onNext(rssItem);
+        Toast.makeText(context, context.getString(newIsRead ?
+                R.string.mark_as_read : R.string.mark_as_unread), Toast.LENGTH_SHORT)
+                .show();
+    }
+
+    private void addReadAction(View rowView) {
+        RssItem rssItem = mRssItemSubject.getValue();
+        boolean isRead = rssItem != null && rssItem.isRead;
+        if (mMarkReadUnreadAccessibilityActionId != 0) {
+            ViewCompat.removeAccessibilityAction(rowView, mMarkReadUnreadAccessibilityActionId);
+        }
+        mMarkReadUnreadAccessibilityActionId = ViewCompat.addAccessibilityAction(rowView,
+                mSvProvider.getContext().getString(isRead ?
+                        R.string.mark_as_unread : R.string.mark_as_read),
+                (view, arguments) -> {
+                    toggleReadState();
+                    return true;
+                });
+    }
+
+    private void addFavoriteAction(View rowView) {
+        RssItem rssItem = mRssItemSubject.getValue();
+        boolean isFavorite = rssItem != null && rssItem.isFavorite;
+        if (mAddRemoveFavoriteAccessibilityActionId != 0) {
+            ViewCompat.removeAccessibilityAction(rowView, mAddRemoveFavoriteAccessibilityActionId);
+        }
+        mAddRemoveFavoriteAccessibilityActionId = ViewCompat.addAccessibilityAction(rowView,
+                mSvProvider.getContext().getString(isFavorite ?
+                        R.string.favorite_remove : R.string.favorite_add),
+                (view, arguments) -> {
+                    toggleFavorite();
+                    return true;
+                });
     }
 
     @Override
@@ -203,19 +303,7 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
     public boolean onLongClick(View view) {
         int id = view.getId();
         if (id == R.id.root_layout) {
-            Context context = mSvProvider.getContext();
-            RssItem rssItem = mRssItemSubject.getValue();
-            if (!rssItem.isRead) {
-                mUpdateRssItemIsReadCmd.execute(rssItem, true);
-                mRssItemSubject.onNext(rssItem);
-                Toast.makeText(context, context.getString(R.string.mark_as_read), Toast.LENGTH_SHORT)
-                        .show();
-            } else {
-                mUpdateRssItemIsReadCmd.execute(rssItem, false);
-                mRssItemSubject.onNext(rssItem);
-                Toast.makeText(context, context.getString(R.string.mark_as_unread), Toast.LENGTH_SHORT)
-                        .show();
-            }
+            toggleReadState();
             return true;
         }
         return false;

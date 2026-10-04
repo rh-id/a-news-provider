@@ -8,6 +8,7 @@ import android.text.TextWatcher;
 import android.text.util.Linkify;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -15,6 +16,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
 
 import com.android.volley.toolbox.ImageLoader;
 import com.android.volley.toolbox.NetworkImageView;
@@ -114,6 +116,7 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
         view.setOnClickListener(this);
         view.setLongClickable(true);
         view.setOnLongClickListener(this);
+        addRowAccessibilityActions(view);
         editName.addTextChangedListener(mNameTextWatcher);
         buttonRename.setOnClickListener(this);
         buttonDelete.setOnClickListener(this);
@@ -158,6 +161,12 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
                                 buttonCancel.setVisibility(View.VISIBLE);
                                 buttonLink.setVisibility(View.VISIBLE);
                                 buttonMarkAllRead.setVisibility(View.VISIBLE);
+                                // post the request, editName is only made visible in this frame,
+                                // an immediate accessibility focus request would be dropped
+                                view.post(() -> {
+                                    editName.performAccessibilityAction(
+                                            AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, null);
+                                });
                             } else {
                                 networkImageViewIcon.setVisibility(View.VISIBLE);
                                 textName.setVisibility(View.VISIBLE);
@@ -215,6 +224,39 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
         return view;
     }
 
+    private void addRowAccessibilityActions(View rowView) {
+        ViewCompat.addAccessibilityAction(rowView,
+                rowView.getContext().getString(R.string.edit_channel),
+                (view, arguments) -> {
+                    mEditModeSubject.onNext(!mEditModeSubject.getValue());
+                    return true;
+                });
+        ViewCompat.addAccessibilityAction(rowView,
+                rowView.getContext().getString(R.string.rename),
+                (view, arguments) -> {
+                    renameChannel();
+                    return true;
+                });
+        ViewCompat.addAccessibilityAction(rowView,
+                rowView.getContext().getString(R.string.delete),
+                (view, arguments) -> {
+                    deleteChannel();
+                    return true;
+                });
+        ViewCompat.addAccessibilityAction(rowView,
+                rowView.getContext().getString(R.string.open_link),
+                (view, arguments) -> {
+                    openLink(view);
+                    return true;
+                });
+        ViewCompat.addAccessibilityAction(rowView,
+                rowView.getContext().getString(R.string.menu_mark_all_read),
+                (view, arguments) -> {
+                    markAllRead();
+                    return true;
+                });
+    }
+
     @Override
     public void onClick(View view) {
         int viewId = view.getId();
@@ -234,48 +276,64 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
                 }
             }
         } else if (viewId == R.id.button_rename) {
-            String feedName = mEditNameSubject.getValue();
-            if (mRenameRssFeedCmd.validName(feedName)) {
-                Map.Entry<RssChannel, Integer> rssChannelCount = mRssChannelCountSubject.getValue();
-                if (rssChannelCount != null) {
-                    mRenameRssFeedCmd.execute(rssChannelCount.getKey().id, feedName);
-                }
-            }
-            mEditModeSubject.onNext(!mEditModeSubject.getValue());
+            renameChannel();
         } else if (viewId == R.id.button_delete) {
-            Map.Entry<RssChannel, Integer> rssChannelCount = mRssChannelCountSubject.getValue();
-            if (rssChannelCount != null) {
-                mDeleteRssChannelCmd.execute(rssChannelCount.getKey());
-            }
-            mEditModeSubject.onNext(!mEditModeSubject.getValue());
+            deleteChannel();
         } else if (viewId == R.id.button_mark_all_read) {
-            Map.Entry<RssChannel, Integer> rssChannelCount = mRssChannelCountSubject.getValue();
-            if (rssChannelCount != null) {
-                mMarkAllReadCmd.execute(rssChannelCount.getKey().id);
-            }
-            mEditModeSubject.onNext(!mEditModeSubject.getValue());
+            markAllRead();
         } else if (viewId == R.id.button_cancel) {
             mEditModeSubject.onNext(!mEditModeSubject.getValue());
         } else if (viewId == R.id.button_link) {
-            Context context = view.getContext();
-            String url = mRssChannelCountSubject.getValue().getKey().url;
-            MaterialAlertDialogBuilder materialAlertDialogBuilder = new MaterialAlertDialogBuilder(context);
-            materialAlertDialogBuilder.setTitle(context.getString(R.string.url).toUpperCase(Locale.ROOT));
-            materialAlertDialogBuilder.setMessage(url);
-            materialAlertDialogBuilder.setNegativeButton(R.string.copy, (dialog, which) -> {
-                boolean copied = UiUtils.copyToClipboard(context, context.getString(R.string.copy), url);
-                Toast.makeText(context,
-                        copied ? R.string.copied_to_clipboard : android.R.string.cancel,
-                        Toast.LENGTH_SHORT).show();
-            });
-            materialAlertDialogBuilder.setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss());
-            AlertDialog dialog = materialAlertDialogBuilder.create();
-            dialog.show();
-            TextView message = dialog.findViewById(android.R.id.message);
-            if (message != null) {
-                Linkify.addLinks(message, Linkify.WEB_URLS);
-                message.setMovementMethod(LinkMovementMethod.getInstance());
+            openLink(view);
+        }
+    }
+
+    private void renameChannel() {
+        String feedName = mEditNameSubject.getValue();
+        if (mRenameRssFeedCmd.validName(feedName)) {
+            Map.Entry<RssChannel, Integer> rssChannelCount = mRssChannelCountSubject.getValue();
+            if (rssChannelCount != null) {
+                mRenameRssFeedCmd.execute(rssChannelCount.getKey().id, feedName);
             }
+        }
+        mEditModeSubject.onNext(!mEditModeSubject.getValue());
+    }
+
+    private void deleteChannel() {
+        Map.Entry<RssChannel, Integer> rssChannelCount = mRssChannelCountSubject.getValue();
+        if (rssChannelCount != null) {
+            mDeleteRssChannelCmd.execute(rssChannelCount.getKey());
+        }
+        mEditModeSubject.onNext(!mEditModeSubject.getValue());
+    }
+
+    private void markAllRead() {
+        Map.Entry<RssChannel, Integer> rssChannelCount = mRssChannelCountSubject.getValue();
+        if (rssChannelCount != null) {
+            mMarkAllReadCmd.execute(rssChannelCount.getKey().id);
+        }
+        mEditModeSubject.onNext(!mEditModeSubject.getValue());
+    }
+
+    private void openLink(View view) {
+        Context context = view.getContext();
+        String url = mRssChannelCountSubject.getValue().getKey().url;
+        MaterialAlertDialogBuilder materialAlertDialogBuilder = new MaterialAlertDialogBuilder(context);
+        materialAlertDialogBuilder.setTitle(context.getString(R.string.url).toUpperCase(Locale.ROOT));
+        materialAlertDialogBuilder.setMessage(url);
+        materialAlertDialogBuilder.setNegativeButton(R.string.copy, (dialog, which) -> {
+            boolean copied = UiUtils.copyToClipboard(context, context.getString(R.string.copy), url);
+            Toast.makeText(context,
+                    copied ? R.string.copied_to_clipboard : android.R.string.cancel,
+                    Toast.LENGTH_SHORT).show();
+        });
+        materialAlertDialogBuilder.setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss());
+        AlertDialog dialog = materialAlertDialogBuilder.create();
+        dialog.show();
+        TextView message = dialog.findViewById(android.R.id.message);
+        if (message != null) {
+            Linkify.addLinks(message, Linkify.WEB_URLS);
+            message.setMovementMethod(LinkMovementMethod.getInstance());
         }
     }
 

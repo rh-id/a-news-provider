@@ -9,6 +9,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -20,6 +21,11 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
@@ -40,6 +46,9 @@ import m.co.rh.id.a_news_provider.app.ui.component.rss.RssChannelListSV;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.RssItemListSV;
 import m.co.rh.id.a_news_provider.app.util.UiUtils;
 import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
+import m.co.rh.id.a_news_provider.base.entity.RssChannel;
+import m.co.rh.id.a_news_provider.base.entity.RssItem;
+import m.co.rh.id.a_news_provider.base.model.RssModel;
 import m.co.rh.id.a_news_provider.base.provider.notifier.DeviceStatusNotifier;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.StatefulView;
@@ -68,6 +77,9 @@ public class HomePage extends StatefulView<Activity> implements RequireComponent
     private RssChannelListSV mRssChannelListSV;
     private Boolean mLastOnlineStatus;
     private transient long mLastBackPressMilis;
+    // intentionally survives dispose/state restore, holds only Long/String keys so it is harmless,
+    // keeps the new-item baseline stable across configuration changes
+    private final Map<Long, Set<String>> mSyncedRssItemLinksBaseline = new HashMap<>();
 
     // component
     private transient Provider mSvProvider;
@@ -82,6 +94,8 @@ public class HomePage extends StatefulView<Activity> implements RequireComponent
     // View related
     private transient DrawerLayout mDrawerLayout;
     private transient Runnable mOnNavigationClicked;
+    private transient View mContainerListNews;
+    private transient TextView mTextA11yStatus;
 
     public HomePage() {
         mAppBarSV = new AppBarSV(R.menu.home);
@@ -163,10 +177,14 @@ public class HomePage extends StatefulView<Activity> implements RequireComponent
                 mSyncRssCmd.syncedRss()
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(rssModels -> {
+                                    int newItemsCount = countNewSyncedItems(rssModels);
                                     if (!rssModels.isEmpty()) {
                                         Toast.makeText(context,
                                                 feedSyncSuccess
                                                 , Toast.LENGTH_LONG).show();
+                                    }
+                                    if (newItemsCount > 0) {
+                                        announceNewItems(newItemsCount);
                                     }
                                 },
                                 throwable ->
@@ -260,9 +278,66 @@ public class HomePage extends StatefulView<Activity> implements RequireComponent
 
         ViewGroup containerListNews = view.findViewById(R.id.container_list_news);
         containerListNews.addView(mRssItemListSV.buildView(activity, container));
+        mContainerListNews = containerListNews;
+
+        mTextA11yStatus = view.findViewById(R.id.text_a11y_status);
 
         FloatingActionButton fab = view.findViewById(R.id.fab);
         fab.setOnClickListener(this);
+    }
+
+    /**
+     * Track synced item links per channel against the last synced baseline
+     *
+     * @param rssModels synced RSS models, each containing the full item list of a channel
+     * @return count of item links not present in the baseline
+     */
+    private int countNewSyncedItems(List<RssModel> rssModels) {
+        int newItemsCount = 0;
+        for (RssModel rssModel : rssModels) {
+            RssChannel rssChannel = rssModel.getRssChannel();
+            if (rssChannel == null) {
+                continue;
+            }
+            Set<String> baseline = mSyncedRssItemLinksBaseline.get(rssChannel.id);
+            if (baseline == null) {
+                // first emission establishes the baseline, no announcement
+                baseline = new HashSet<>();
+                for (RssItem rssItem : rssModel.getRssItems()) {
+                    if (rssItem.link != null && !rssItem.link.isEmpty()) {
+                        baseline.add(rssItem.link);
+                    }
+                }
+                mSyncedRssItemLinksBaseline.put(rssChannel.id, baseline);
+            } else {
+                for (RssItem rssItem : rssModel.getRssItems()) {
+                    if (rssItem.link != null && !rssItem.link.isEmpty()
+                            && baseline.add(rssItem.link)) {
+                        newItemsCount++;
+                    }
+                }
+            }
+        }
+        return newItemsCount;
+    }
+
+    private void announceNewItems(int newItemsCount) {
+        View containerListNews = mContainerListNews;
+        TextView textA11yStatus = mTextA11yStatus;
+        if (containerListNews == null || textA11yStatus == null) {
+            return;
+        }
+        // guard against announcements from the periodic background sync while app is backgrounded
+        if (!containerListNews.isAttachedToWindow() || !containerListNews.hasWindowFocus()) {
+            return;
+        }
+        String message = mSvProvider.getContext().getResources()
+                .getQuantityString(R.plurals.new_items_available, newItemsCount, newItemsCount);
+        // text change on the live region view makes TalkBack announce it politely;
+        // clear first so an identical count after a previous sync still counts as a change
+        // (TalkBack suppresses repeated identical live region announcements)
+        textA11yStatus.setText("");
+        textA11yStatus.post(() -> textA11yStatus.setText(message));
     }
 
     private void handleLaunchIntent(Activity activity, FloatingActionButton fab) {
@@ -293,6 +368,8 @@ public class HomePage extends StatefulView<Activity> implements RequireComponent
             mSvProvider = null;
         }
         mDrawerLayout = null;
+        mContainerListNews = null;
+        mTextA11yStatus = null;
         mOnNavigationClicked = null;
     }
 

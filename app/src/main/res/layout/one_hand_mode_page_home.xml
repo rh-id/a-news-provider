@@ -27,6 +27,16 @@
                     android:layout_height="match_parent" />
             </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
+            <!-- 1dp invisible live region: setting its text triggers a polite TalkBack announcement -->
+            <TextView
+                android:id="@+id/text_a11y_status"
+                android:layout_width="1dp"
+                android:layout_height="1dp"
+                android:importantForAccessibility="yes"
+                android:accessibilityLiveRegion="polite"
+                android:textSize="1sp"
+                android:padding="0dp" />
+
             <com.google.android.material.appbar.AppBarLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

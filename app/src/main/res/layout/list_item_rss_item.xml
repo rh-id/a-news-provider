@@ -39,8 +39,8 @@
 
         <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/button_favorite"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_marginEnd="@dimen/text_margin"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/menu_toggle_favorite"

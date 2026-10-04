@@ -2,9 +2,20 @@ package m.co.rh.id.a_news_provider.test;
 
 import android.app.Activity;
 import android.util.Log;
+import android.widget.ProgressBar;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.widget.AppCompatImageView;
+import androidx.appcompat.widget.AppCompatSpinner;
+import androidx.test.espresso.accessibility.AccessibilityChecks;
+import androidx.test.espresso.matcher.ViewMatchers;
 import androidx.work.Configuration;
+
+import com.google.android.apps.common.testing.accessibility.framework.AccessibilityCheckResultUtils;
+import com.google.android.apps.common.testing.accessibility.framework.checks.ImageContrastCheck;
+import com.google.android.apps.common.testing.accessibility.framework.checks.SpeakableTextPresentCheck;
+
+import org.hamcrest.Matchers;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
@@ -34,6 +45,27 @@ public class TestApplication extends BaseApplication implements Configuration.Pr
                 // Logging might fail during teardown; ignore to prevent recursive errors
             }
         });
+
+        // Run automated accessibility checks on every instrumented test.
+        // Suppress third-party widget noise only, app-owned views remain fully checked.
+        AccessibilityChecks.enable()
+                .setSuppressingResultMatcher(Matchers.anyOf(
+                        // spinner exposes the selected item via its child node, not the widget itself
+                        Matchers.allOf(
+                                AccessibilityCheckResultUtils.matchesCheck(SpeakableTextPresentCheck.class),
+                                AccessibilityCheckResultUtils.matchesViews(
+                                        ViewMatchers.isAssignableFrom(AppCompatSpinner.class))),
+                        // indeterminate progress spinner has no speakable text by design
+                        Matchers.allOf(
+                                AccessibilityCheckResultUtils.matchesCheck(SpeakableTextPresentCheck.class),
+                                AccessibilityCheckResultUtils.matchesViews(
+                                        ViewMatchers.isAssignableFrom(ProgressBar.class))),
+                        // icon contrast on image views, decorative icons are marked
+                        // importantForAccessibility=no in the app layouts
+                        Matchers.allOf(
+                                AccessibilityCheckResultUtils.matchesCheck(ImageContrastCheck.class),
+                                AccessibilityCheckResultUtils.matchesViews(
+                                        ViewMatchers.isAssignableFrom(AppCompatImageView.class)))));
     }
 
     public void setProvider(Provider provider) {

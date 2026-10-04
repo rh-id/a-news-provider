@@ -102,6 +102,16 @@
     <string name="menu_toggle_favorite">Toggle favorite</string>
     <string name="favorite_added">Added to favorites</string>
     <string name="favorite_removed">Removed from favorites</string>
+    <string name="favorite_add">Add to favorites</string>
+    <string name="favorite_remove">Remove from favorites</string>
+    <string name="state_read">Read</string>
+    <string name="state_unread">Unread</string>
+    <string name="edit_channel">Edit channel</string>
+
+    <plurals name="new_items_available">
+        <item quantity="one">%d new item</item>
+        <item quantity="other">%d new items</item>
+    </plurals>
     <string name="menu_search">Search</string>
     <string name="search_hint">Search articles…</string>
     <string name="feed_already_added_as">This feed is already added as \'%s\'</string>

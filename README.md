@@ -29,7 +29,7 @@ A simple and easy to use RSS aggregator that deliver news to your smartphone.
   <li>Simple interface to add and read your news</li>
   <li>Theme selection: follow system, light, or dark mode</li>
   <li>Accessibility friendly with one hand mode (bottom-anchored layouts)</li>
-  <li>Accessibility friendly on screen reader (tested with TalkBack)</li>
+  <li>Accessibility friendly on screen reader (audited with TalkBack and Accessibility Scanner on 2026-10-03, see Accessibility notes below)</li>
   <li>View the in-app log file (share and clear supported)</li>
   <li>Open-source licenses screen</li>
   <li>Available in 11 languages: English, Indonesian, German, Estonian, French, Icelandic, Italian, Chinese (Simplified), Norwegian (Bokmål &amp; Nynorsk), and Romansh</li>
@@ -134,6 +134,12 @@ This project is a standard multi-module Gradle project (Gradle 9.4.1 wrapper, An
 
 *   **Unit tests:** cover the notifiers, repository, the RSS/Atom/RDF feed parser, and the date parser, using JUnit 4 and Mockito.
 *   **Instrumented tests:** page smoke tests via Espresso, and a database migration test covering versions 1 through 8 using Room's `MigrationTestHelper`.
+
+### Accessibility
+
+*   Screen reader support was audited with TalkBack and Accessibility Scanner on 2026-10-03: feed rows announce read/unread state (state descriptions on API 30+, a spoken fallback on older versions); feed rows expose custom TalkBack actions (mark as read/unread, add/remove favorites) and drawer feed rows expose edit/rename/delete/open link/mark all read; the list announces the number of new items after a sync; icon touch targets are at least 48dp.
+*   **Contributors:** any future swipe-action feature must land its `AccessibilityActionCompat` equivalent in the same PR.
+*   **Contributors:** the manual TalkBack/Accessibility Scanner audit checklist is recorded on issue #87.
 
 ### GitHub Workflows
 
