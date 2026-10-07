@@ -74,6 +74,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        // this is required to let navigator handle onRequestPermissionsResult
+        // (without it, no page ever receives permission results,
+        // e.g. RssItemDetailPage download-video and the notification permission prompts)
+        BaseApplication.of(this).getNavigator(this)
+                .onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    @Override
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         // using AppCompatDelegate.setDefaultNightMode trigger this method
