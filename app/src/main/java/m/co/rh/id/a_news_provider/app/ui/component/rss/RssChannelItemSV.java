@@ -37,6 +37,7 @@ import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.DeleteRssChannelCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.MarkAllReadCmd;
+import m.co.rh.id.a_news_provider.app.provider.command.PauseRssChannelCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.RenameRssFeedCmd;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChannelStateNotifier;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
@@ -58,6 +59,8 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
     private transient RenameRssFeedCmd mRenameRssFeedCmd;
     private transient DeleteRssChannelCmd mDeleteRssChannelCmd;
     private transient MarkAllReadCmd mMarkAllReadCmd;
+    private transient PauseRssChannelCmd mPauseRssChannelCmd;
+    private transient int mPauseUnpauseAccessibilityActionId;
 
     private transient TextWatcher mNameTextWatcher;
 
@@ -75,6 +78,7 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
         mRenameRssFeedCmd = mSvProvider.get(RenameRssFeedCmd.class);
         mDeleteRssChannelCmd = mSvProvider.get(DeleteRssChannelCmd.class);
         mMarkAllReadCmd = mSvProvider.get(MarkAllReadCmd.class);
+        mPauseRssChannelCmd = mSvProvider.get(PauseRssChannelCmd.class);
         if (mRssChannelCountSubject == null) {
             mRssChannelCountSubject = BehaviorSubject.create();
         }
@@ -112,6 +116,8 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
         Button buttonCancel = view.findViewById(R.id.button_cancel);
         Button buttonLink = view.findViewById(R.id.button_link);
         Button buttonMarkAllRead = view.findViewById(R.id.button_mark_all_read);
+        Button buttonPause = view.findViewById(R.id.button_pause);
+        TextView textPaused = view.findViewById(R.id.text_paused);
 
         view.setOnClickListener(this);
         view.setLongClickable(true);
@@ -123,6 +129,7 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
         buttonCancel.setOnClickListener(this);
         buttonLink.setOnClickListener(this);
         buttonMarkAllRead.setOnClickListener(this);
+        buttonPause.setOnClickListener(this);
         mRxDisposer.add("mRenameRssFeedCmd.getNameValidation",
                 mRenameRssFeedCmd.liveNameValidation()
                         .observeOn(AndroidSchedulers.mainThread())
@@ -151,6 +158,10 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
                         .getSubject()
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(editMode -> {
+                            Map.Entry<RssChannel, Integer> rssChannelCountEntry =
+                                    mRssChannelCountSubject.getValue();
+                            boolean isPaused = rssChannelCountEntry != null
+                                    && rssChannelCountEntry.getKey().isPaused;
                             if (editMode) {
                                 networkImageViewIcon.setVisibility(View.GONE);
                                 textName.setVisibility(View.GONE);
@@ -161,6 +172,7 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
                                 buttonCancel.setVisibility(View.VISIBLE);
                                 buttonLink.setVisibility(View.VISIBLE);
                                 buttonMarkAllRead.setVisibility(View.VISIBLE);
+                                buttonPause.setVisibility(View.VISIBLE);
                                 // post the request, editName is only made visible in this frame,
                                 // an immediate accessibility focus request would be dropped
                                 view.post(() -> {
@@ -177,7 +189,12 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
                                 buttonCancel.setVisibility(View.GONE);
                                 buttonLink.setVisibility(View.GONE);
                                 buttonMarkAllRead.setVisibility(View.GONE);
+                                buttonPause.setVisibility(View.GONE);
                             }
+                            // the paused badge and the row grey-out only apply outside edit mode
+                            textPaused.setVisibility(!editMode && isPaused
+                                    ? View.VISIBLE : View.GONE);
+                            view.setAlpha(!editMode && isPaused ? 0.5f : 1f);
                         })
         );
         mRxDisposer.add("rssChannelUiChange", Flowable.combineLatest(
@@ -201,6 +218,18 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
                                 networkImageViewIcon.setVisibility(View.GONE);
                             }
                             textCount.setText(rssChannelCountEntry.getValue().toString());
+
+                            boolean isPaused = rssChannel.isPaused;
+                            Boolean editModeValue = mEditModeSubject.getValue();
+                            boolean editMode = editModeValue != null && editModeValue;
+                            buttonPause.setText(isPaused ?
+                                    R.string.unpause : R.string.pause);
+                            // the paused badge and the row grey-out only apply outside edit mode
+                            textPaused.setVisibility(!editMode && isPaused
+                                    ? View.VISIBLE : View.GONE);
+                            view.setAlpha(!editMode && isPaused ? 0.5f : 1f);
+                            // re-register the state-correct pause/unpause accessibility action
+                            addPauseAccessibilityAction(view);
 
                             int selectedColor = UiUtils.getColorFromAttribute(activity, R.attr.colorOnPrimary);
                             if (rssChannelOptional.isPresent()) {
@@ -255,6 +284,27 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
                     markAllRead();
                     return true;
                 });
+        addPauseAccessibilityAction(rowView);
+    }
+
+    /**
+     * Registers the row's pause/unpause accessibility action with the
+     * state-correct label (the channel state at invocation time decides the
+     * label), replacing any previously registered pause/unpause action.
+     */
+    private void addPauseAccessibilityAction(View rowView) {
+        Map.Entry<RssChannel, Integer> rssChannelCount = mRssChannelCountSubject.getValue();
+        boolean isPaused = rssChannelCount != null && rssChannelCount.getKey().isPaused;
+        if (mPauseUnpauseAccessibilityActionId != 0) {
+            ViewCompat.removeAccessibilityAction(rowView, mPauseUnpauseAccessibilityActionId);
+        }
+        mPauseUnpauseAccessibilityActionId = ViewCompat.addAccessibilityAction(rowView,
+                rowView.getContext().getString(isPaused ?
+                        R.string.unpause : R.string.pause),
+                (view, arguments) -> {
+                    togglePause();
+                    return true;
+                });
     }
 
     @Override
@@ -281,6 +331,8 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
             deleteChannel();
         } else if (viewId == R.id.button_mark_all_read) {
             markAllRead();
+        } else if (viewId == R.id.button_pause) {
+            togglePause();
         } else if (viewId == R.id.button_cancel) {
             mEditModeSubject.onNext(!mEditModeSubject.getValue());
         } else if (viewId == R.id.button_link) {
@@ -313,6 +365,20 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
             mMarkAllReadCmd.execute(rssChannelCount.getKey().id);
         }
         mEditModeSubject.onNext(!mEditModeSubject.getValue());
+    }
+
+    /**
+     * Toggles the paused state of the current channel. When the write lands the
+     * RssChangeNotifier event triggers an unread-count refresh and the adapter
+     * rebinds this row via setRssChannelCount, which closes edit mode and shows
+     * the paused badge/grey-out (same flow as rename/delete).
+     */
+    private void togglePause() {
+        Map.Entry<RssChannel, Integer> rssChannelCount = mRssChannelCountSubject.getValue();
+        if (rssChannelCount != null) {
+            RssChannel rssChannel = rssChannelCount.getKey();
+            mPauseRssChannelCmd.execute(rssChannel.id, !rssChannel.isPaused);
+        }
     }
 
     private void openLink(View view) {

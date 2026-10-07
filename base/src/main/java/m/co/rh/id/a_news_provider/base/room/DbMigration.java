@@ -15,7 +15,8 @@ import m.co.rh.id.a_news_provider.base.util.UrlNormalizer;
 public class DbMigration {
     public static Migration[] getAll() {
         return new Migration[]{MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4,
-                MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9};
+                MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
+                MIGRATION_9_10};
     }
 
     public static final Migration MIGRATION_1_2 = new Migration(1, 2) {
@@ -96,6 +97,18 @@ public class DbMigration {
             } finally {
                 db.endTransaction();
             }
+        }
+    };
+
+    /**
+     * Adds the is_paused column to rss_channel. A paused channel keeps its history
+     * but is skipped by RssSyncWorker (no sync, no notifications). All existing
+     * channels default to not paused.
+     */
+    public static final Migration MIGRATION_9_10 = new Migration(9, 10) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE `rss_channel` ADD COLUMN `is_paused` INTEGER NOT NULL DEFAULT 0");
         }
     };
 

@@ -16,6 +16,9 @@
     <string name="feeds">Straumar</string>
     <string name="rename">Endra namn</string>
     <string name="delete">Slett</string>
+    <string name="pause">Set på pause</string>
+    <string name="unpause">Halda fram</string>
+    <string name="paused">På pause</string>
     <string name="name_is_required">Namn er påkravd</string>
     <string name="invalid_name">Ugyldig namn</string>
     <string name="record_not_found">Oppføring ikkje funnen</string>

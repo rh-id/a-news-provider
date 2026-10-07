@@ -16,6 +16,9 @@
     <string name="feeds">Straumar</string>
     <string name="rename">Endurnefna</string>
     <string name="delete">Eyða</string>
+    <string name="pause">Gera hlé</string>
+    <string name="unpause">Halda áfram</string>
+    <string name="paused">Í hlé</string>
     <string name="name_is_required">Nafn er nauðsynlegt</string>
     <string name="invalid_name">Ógilt nafn</string>
     <string name="record_not_found">Færsla fannst ekki</string>

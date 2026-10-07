@@ -16,6 +16,9 @@
     <string name="feeds">Flux</string>
     <string name="rename">Renommer</string>
     <string name="delete">Supprimer</string>
+    <string name="pause">Suspendre</string>
+    <string name="unpause">Reprendre</string>
+    <string name="paused">Suspendu</string>
     <string name="name_is_required">Le nom est requis</string>
     <string name="invalid_name">Nom invalide</string>
     <string name="record_not_found">Enregistrement introuvable</string>

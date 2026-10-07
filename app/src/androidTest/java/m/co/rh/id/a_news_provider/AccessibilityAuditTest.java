@@ -316,7 +316,8 @@ public class AccessibilityAuditTest {
                 mTargetContext.getString(R.string.rename),
                 mTargetContext.getString(R.string.delete),
                 mTargetContext.getString(R.string.open_link),
-                mTargetContext.getString(R.string.menu_mark_all_read)
+                mTargetContext.getString(R.string.menu_mark_all_read),
+                mTargetContext.getString(R.string.pause)
         };
         for (String expectedLabel : expectedLabels) {
             assertNotNull("Drawer row must expose the '" + expectedLabel + "' action",
@@ -335,6 +336,52 @@ public class AccessibilityAuditTest {
         awaitOnMain("Edit channel action must switch the drawer row into edit mode", () ->
                 buttonRename.getVisibility() == View.VISIBLE
                         && buttonDelete.getVisibility() == View.VISIBLE);
+    }
+
+    @Test
+    public void testRssChannelRow_pauseActionFlipsStatePersistsAndRelabels() {
+        RssChannel rssChannel = createRssChannel();
+        mTestProvider.get(RssDao.class).insertRssChannel(rssChannel);
+        RssChannelItemSV channelItemSv = new RssChannelItemSV();
+        TestSvPage page = launchTestPage(singleList(channelItemSv));
+
+        TextView textName = page.getChildViews().get(0).findViewById(R.id.text_name);
+        assertNotNull(textName);
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(() ->
+                channelItemSv.setRssChannelCount(
+                        new AbstractMap.SimpleEntry<>(rssChannel, DRAWER_ROW_UNREAD_COUNT)));
+        awaitOnMain("Drawer row never rendered the channel name", () ->
+                rssChannel.feedName.equals(textName.getText().toString()));
+
+        View drawerRowView = page.getChildViews().get(0);
+        AccessibilityActionCompat pauseAction = onMain(() -> findActionByLabel(
+                obtainNodeInfo(drawerRowView).getActionList(),
+                mTargetContext.getString(R.string.pause)));
+        assertNotNull("Unpaused drawer row must expose the state-correct pause action",
+                pauseAction);
+
+        Boolean performed = onMain(() ->
+                drawerRowView.performAccessibilityAction(pauseAction.getId(), null));
+        assertTrue("Custom accessibility action must report it was performed", performed);
+
+        awaitUntil("Pause action must persist the paused state to the database", () -> {
+            RssChannel stored = mTestProvider.get(RssDao.class)
+                    .findRssChannelById(rssChannel.id);
+            return stored != null && stored.isPaused;
+        });
+
+        // rebind the row with the persisted channel the same way the real adapter
+        // does after the RssChangeNotifier event, the action must relabel to unpause
+        RssChannel storedChannel = mTestProvider.get(RssDao.class)
+                .findRssChannelById(rssChannel.id);
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(() ->
+                channelItemSv.setRssChannelCount(
+                        new AbstractMap.SimpleEntry<>(storedChannel, DRAWER_ROW_UNREAD_COUNT)));
+        awaitOnMain("Drawer row must re-register the action with the unpause label", () ->
+                findActionByLabel(obtainNodeInfo(drawerRowView).getActionList(),
+                        mTargetContext.getString(R.string.unpause)) != null
+                        && findActionByLabel(obtainNodeInfo(drawerRowView).getActionList(),
+                        mTargetContext.getString(R.string.pause)) == null);
     }
 
     // ========================================================================

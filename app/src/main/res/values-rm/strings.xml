@@ -16,6 +16,9 @@
     <string name="feeds">Feeds</string>
     <string name="rename">Renamesciar</string>
     <string name="delete">Stizzar</string>
+    <string name="pause">Pausar</string>
+    <string name="unpause">Cuntinuar</string>
+    <string name="paused">In pausa</string>
     <string name="name_is_required">Il num è necessari</string>
     <string name="invalid_name">Num nunvalid</string>
     <string name="record_not_found">Endataziun betg chattada</string>

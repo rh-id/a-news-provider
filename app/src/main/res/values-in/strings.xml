@@ -16,6 +16,9 @@
     <string name="feeds">Feeds</string>
     <string name="rename">Ganti nama</string>
     <string name="delete">Hapus</string>
+    <string name="pause">Jeda</string>
+    <string name="unpause">Lanjutkan</string>
+    <string name="paused">Dijeda</string>
     <string name="name_is_required">Nama dibutuhkan</string>
     <string name="invalid_name">Nama tidak valid</string>
     <string name="record_not_found">Data tidak ditemukan</string>

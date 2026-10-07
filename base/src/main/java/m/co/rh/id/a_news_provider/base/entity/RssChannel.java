@@ -50,6 +50,13 @@ public class RssChannel implements Serializable {
     @ColumnInfo(name = "updated_date_time")
     public Date updatedDateTime;
 
+    /**
+     * True when the user paused this feed. Paused feeds keep their history
+     * but are skipped by RssSyncWorker (no sync, no notifications).
+     */
+    @ColumnInfo(name = "is_paused", defaultValue = "0")
+    public boolean isPaused;
+
     @Override
     public String toString() {
         return "RssChannel{" +
@@ -62,6 +69,7 @@ public class RssChannel implements Serializable {
                 ", imageUrl='" + imageUrl + '\'' +
                 ", createdDateTime=" + createdDateTime +
                 ", updatedDateTime=" + updatedDateTime +
+                ", isPaused=" + isPaused +
                 '}';
     }
 }

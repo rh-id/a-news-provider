@@ -22,7 +22,7 @@ A simple and easy to use RSS aggregator that deliver news to your smartphone.
   <li>Sort items by newest or oldest, and mark all items as read (globally or per channel)</li>
   <li>Configurable periodic background sync with a 1-24 hours interval (default: every 6 hours, can be toggled off)</li>
   <li>Per-channel grouped sync notifications with unread counts (requires the Notifications permission on Android 13+)</li>
-  <li>Rename or delete feeds</li>
+  <li>Rename, pause (mute), or delete feeds — paused feeds keep their history and unread counts but stop syncing and notifying</li>
   <li>Support editing feed item link</li>
   <li>Copy feed item links and channel links to clipboard</li>
   <li>Offline/online detection with SnackBar feedback; syncs run automatically once the device is back online</li>
@@ -56,7 +56,7 @@ This is a single-activity application built using a component-based architecture
 ### Command Pattern
 
 Business logic is encapsulated using the **Command Pattern**. This decouples the UI from the execution logic.
-*   **Commands:** The app currently has 11 commands: `PagedRssItemsCmd`, `NewRssChannelCmd`, `RenameRssFeedCmd`, `SyncRssCmd`, `RssQueryCmd`, `EditRssLinkCmd`, `UpdateRssItemIsReadCmd`, `UpdateRssItemIsFavoriteCmd`, `DeleteRssChannelCmd`, `OpmlCmd`, and `MarkAllReadCmd`.
+*   **Commands:** The app currently has 13 commands: `PagedRssItemsCmd`, `NewRssChannelCmd`, `RenameRssFeedCmd`, `SyncRssCmd`, `RssQueryCmd`, `EditRssLinkCmd`, `UpdateRssItemIsReadCmd`, `UpdateRssItemIsFavoriteCmd`, `DeleteRssChannelCmd`, `OpmlCmd`, `MarkAllReadCmd`, `SearchRssItemsCmd`, and `PauseRssChannelCmd`.
 *   **Execution:** The UI retrieves a command instance via `a-provider` and executes it.
 *   **Threading:** Commands run on a shared weighted thread pool (max weight 5); network work is offloaded to WorkManager.
 *   **Benefit:** Keeps UI classes (StatefulViews) clean and testable.
@@ -77,7 +77,7 @@ Sync operations are executed as WorkManager chains with a `NetworkType.CONNECTED
 
 ### Persistence (Room)
 
-*   Room database `a-news-provider.db` (version 8, with migrations from version 1 to 8). Entities: `RssChannel`, `RssItem`, and `AndroidNotification`.
+*   Room database `a-news-provider.db` (version 10, with migrations from version 1 to 10). Entities: `RssChannel`, `RssItem`, and `AndroidNotification`.
 *   Read and favorite state is synced across channels by item link, so the same article shared by multiple feeds keeps its state.
 *   Feed lists are paginated using `LIMIT`-based queries (no androidx.paging).
 
@@ -133,11 +133,11 @@ This project is a standard multi-module Gradle project (Gradle 9.4.1 wrapper, An
 ### Testing
 
 *   **Unit tests:** cover the notifiers, repository, the RSS/Atom/RDF feed parser, and the date parser, using JUnit 4 and Mockito.
-*   **Instrumented tests:** page smoke tests via Espresso, and a database migration test covering versions 1 through 8 using Room's `MigrationTestHelper`.
+*   **Instrumented tests:** page smoke tests via Espresso, and a database migration test covering versions 1 through 10 using Room's `MigrationTestHelper`.
 
 ### Accessibility
 
-*   Screen reader support was audited with TalkBack and Accessibility Scanner on 2026-10-03: feed rows announce read/unread state (state descriptions on API 30+, a spoken fallback on older versions); feed rows expose custom TalkBack actions (mark as read/unread, add/remove favorites) and drawer feed rows expose edit/rename/delete/open link/mark all read; the list announces the number of new items after a sync; icon touch targets are at least 48dp.
+*   Screen reader support was audited with TalkBack and Accessibility Scanner on 2026-10-03: feed rows announce read/unread state (state descriptions on API 30+, a spoken fallback on older versions); feed rows expose custom TalkBack actions (mark as read/unread, add/remove favorites) and drawer feed rows expose edit/rename/delete/open link/mark all read, and pause/unpause actions added on 2026-10-07 (to be covered by the next audit, checklist on issue #87); the list announces the number of new items after a sync; icon touch targets are at least 48dp.
 *   **Contributors:** any future swipe-action feature must land its `AccessibilityActionCompat` equivalent in the same PR.
 *   **Contributors:** the manual TalkBack/Accessibility Scanner audit checklist is recorded on issue #87.
 
@@ -163,7 +163,7 @@ The `fastlane/` directory contains store metadata (descriptions, images, and per
 ## Project Structure
 
 *   `app/`: Main application module containing UI (StatefulViews), Commands, DI configuration, WorkManager workers, and notifications.
-*   `base/`: Room database, entities, DAOs, shared preferences, base provider modules, and logger/file/network-status helpers. Exported Room schemas (`base/schemas/m.co.rh.id.a_news_provider.base.AppDatabase/1.json` - `8.json`) live here.
+*   `base/`: Room database, entities, DAOs, shared preferences, base provider modules, and logger/file/network-status helpers. Exported Room schemas (`base/schemas/m.co.rh.id.a_news_provider.base.AppDatabase/1.json` - `10.json`) live here.
 *   `component-network/`: Volley-based `RssRequest` and the RSS/Atom/RDF feed parsers.
 *   `fastlane/`: Store metadata for 10 locales and per-version changelogs.
 *   `.github/`: GitHub Actions workflow configurations.

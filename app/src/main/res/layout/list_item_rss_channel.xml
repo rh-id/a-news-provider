@@ -22,7 +22,7 @@
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/text_margin"
         app:layout_constraintBottom_toBottomOf="@id/network_image_view_icon"
-        app:layout_constraintEnd_toStartOf="@id/text_count"
+        app:layout_constraintEnd_toStartOf="@id/text_paused"
         app:layout_constraintStart_toEndOf="@id/network_image_view_icon"
         app:layout_constraintTop_toTopOf="@id/network_image_view_icon"
         tools:text="News 1" />
@@ -86,8 +86,21 @@
         android:text="@string/menu_mark_all_read"
         android:textSize="11sp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/button_pause"
         app:layout_constraintStart_toStartOf="@id/input_text_name"
+        app:layout_constraintTop_toBottomOf="@id/button_rename" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/button_pause"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_marginLeft="10dp"
+        android:text="@string/pause"
+        android:textSize="11sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/button_mark_all_read"
         app:layout_constraintTop_toBottomOf="@id/button_rename" />
 
     <com.google.android.material.button.MaterialButton
@@ -99,6 +112,21 @@
         app:icon="@drawable/ic_link_black"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/text_paused"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/text_margin"
+        android:background="@color/daynight_gray_300_gray_600"
+        android:padding="4dp"
+        android:text="@string/paused"
+        android:textColor="@color/daynight_black_white"
+        android:textSize="11sp"
+        android:visibility="gone"
+        app:layout_constraintEnd_toStartOf="@id/text_count"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="Paused" />
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/text_count"

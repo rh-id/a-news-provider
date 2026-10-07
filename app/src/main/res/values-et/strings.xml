@@ -16,6 +16,9 @@
     <string name="feeds">Vood</string>
     <string name="rename">Nimeta ümber</string>
     <string name="delete">Kustuta</string>
+    <string name="pause">Peata</string>
+    <string name="unpause">Jätka</string>
+    <string name="paused">Peatatud</string>
     <string name="name_is_required">Nimi on nõutud</string>
     <string name="invalid_name">Sobimatu nimi</string>
     <string name="record_not_found">Kirjet ei leitud</string>

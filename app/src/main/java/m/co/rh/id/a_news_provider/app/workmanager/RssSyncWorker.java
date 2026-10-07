@@ -44,6 +44,9 @@ public class RssSyncWorker extends Worker {
         List<RssChannel> rssChannelList = rssDao.loadAllRssChannel();
         List<RequestFuture<RssModel>> requestFutureList = new ArrayList<>();
         for (RssChannel rssChannel : rssChannelList) {
+            if (rssChannel.isPaused) {
+                continue;
+            }
             RequestFuture<RssModel> requestFuture = RequestFuture.newFuture();
             RssRequest rssRequest = rssRequestFactory.
                     newRssRequest(Request.Method.GET, rssChannel.url, requestFuture, requestFuture);

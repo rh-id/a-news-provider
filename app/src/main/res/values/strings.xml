@@ -18,6 +18,9 @@
     <string name="feeds">Feeds</string>
     <string name="rename">Rename</string>
     <string name="delete">Delete</string>
+    <string name="pause">Pause</string>
+    <string name="unpause">Unpause</string>
+    <string name="paused">Paused</string>
     <string name="name_is_required">Name is required</string>
     <string name="invalid_name">Invalid name</string>
     <string name="record_not_found">Record not found</string>

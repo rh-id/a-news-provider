@@ -216,6 +216,17 @@ public abstract class RssDao {
     public abstract void updateRssItemsIsFavoriteByLink(boolean isFavorite, String link);
 
     /**
+     * Updates the paused state of the given channel. A paused channel keeps its
+     * history and unread counts but is skipped by the sync worker.
+     * This method must be called on a background thread.
+     *
+     * @param channelId the channel id to update
+     * @param isPaused  the paused state to set
+     */
+    @Query("UPDATE rss_channel SET is_paused = :isPaused WHERE id = :channelId")
+    public abstract void updateRssChannelIsPaused(long channelId, boolean isPaused);
+
+    /**
      * Finds all rss items matching the given link, regardless of channel.
      * This method must be called on a background thread.
      *

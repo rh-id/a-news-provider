@@ -297,6 +297,38 @@ public class DbMigrationTest {
     }
 
     // ==================================================================================
+    // MIGRATION_9_10: rss_channel.is_paused column for the pause/mute feature
+    // ==================================================================================
+
+    @Test
+    public void migrate9to10_addsIsPausedDefaultingToZero() throws IOException {
+        SupportSQLiteDatabase db = helper.createDatabase(TEST_DB, 9);
+        // seeded using the exact version-9 rss_channel column list (no is_paused yet)
+        insertRssChannel(db, 1, "Pause Candidate", "https://p.com/feed");
+        db.close();
+
+        SupportSQLiteDatabase migrated = helper.runMigrationsAndValidate(TEST_DB, 10,
+                true, DbMigration.MIGRATION_9_10);
+
+        try {
+            // every migrated channel row defaults to not paused
+            assertEquals(1, readLong(migrated,
+                    "SELECT COUNT(id) FROM rss_channel WHERE id = 1"));
+            assertEquals(0, readLong(migrated,
+                    "SELECT is_paused FROM rss_channel WHERE id = 1"));
+            // the new column is writable: pausing and unpausing round-trips
+            migrated.execSQL("UPDATE rss_channel SET is_paused = 1 WHERE id = 1");
+            assertEquals(1, readLong(migrated,
+                    "SELECT is_paused FROM rss_channel WHERE id = 1"));
+            migrated.execSQL("UPDATE rss_channel SET is_paused = 0 WHERE id = 1");
+            assertEquals(0, readLong(migrated,
+                    "SELECT is_paused FROM rss_channel WHERE id = 1"));
+        } finally {
+            migrated.close();
+        }
+    }
+
+    // ==================================================================================
     // helpers: seed rows using the exact version-8 schema, read values after migration
     // ==================================================================================
 

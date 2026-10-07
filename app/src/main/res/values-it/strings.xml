@@ -16,6 +16,9 @@
     <string name="feeds">Feed</string>
     <string name="rename">Rinomina</string>
     <string name="delete">Elimina</string>
+    <string name="pause">Pausa</string>
+    <string name="unpause">Riprendi</string>
+    <string name="paused">In pausa</string>
     <string name="name_is_required">Il nome è obbligatorio</string>
     <string name="invalid_name">Nome non valido</string>
     <string name="record_not_found">Record non trovato</string>
