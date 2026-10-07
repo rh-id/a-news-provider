@@ -1,10 +1,13 @@
 package m.co.rh.id.a_news_provider.app.ui.page;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Build;
+import android.provider.Settings;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -14,6 +17,8 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
@@ -44,6 +49,7 @@ import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.NewRssChannelSVDialog;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.RssChannelListSV;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.RssItemListSV;
+import m.co.rh.id.a_news_provider.app.util.NotificationPermissionPolicy;
 import m.co.rh.id.a_news_provider.app.util.UiUtils;
 import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
@@ -51,17 +57,21 @@ import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.a_news_provider.base.model.RssModel;
 import m.co.rh.id.a_news_provider.base.provider.notifier.DeviceStatusNotifier;
 import m.co.rh.id.alogger.ILogger;
+import m.co.rh.id.anavigator.NavRoute;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.anavigator.component.INavigator;
+import m.co.rh.id.anavigator.component.NavActivityLifecycle;
 import m.co.rh.id.anavigator.component.NavOnActivityResult;
 import m.co.rh.id.anavigator.component.NavOnBackPressed;
+import m.co.rh.id.anavigator.component.NavOnRequestPermissionResult;
 import m.co.rh.id.anavigator.component.RequireComponent;
 import m.co.rh.id.aprovider.Provider;
 
-public class HomePage extends StatefulView<Activity> implements RequireComponent<Provider>, NavOnBackPressed<Activity>, Toolbar.OnMenuItemClickListener, SwipeRefreshLayout.OnRefreshListener, DrawerLayout.DrawerListener, View.OnClickListener, AppBarSV.OnMenuCreated, NavOnActivityResult<Activity> {
+public class HomePage extends StatefulView<Activity> implements RequireComponent<Provider>, NavOnBackPressed<Activity>, Toolbar.OnMenuItemClickListener, SwipeRefreshLayout.OnRefreshListener, DrawerLayout.DrawerListener, View.OnClickListener, AppBarSV.OnMenuCreated, NavOnActivityResult<Activity>, NavOnRequestPermissionResult, NavActivityLifecycle<Activity> {
     private static final String TAG = HomePage.class.getName();
     private static final int REQUEST_CODE_IMPORT_OPML = 1;
+    private static final int REQUEST_CODE_NOTIFICATION_PERMISSION = 2;
     private static final long BACK_PRESS_EXIT_TIMEOUT_MILLIS = 1000L;
     private static final int ONLINE_STATUS_DEBOUNCE_SECONDS = 1;
 
@@ -77,6 +87,11 @@ public class HomePage extends StatefulView<Activity> implements RequireComponent
     private RssChannelListSV mRssChannelListSV;
     private Boolean mLastOnlineStatus;
     private transient long mLastBackPressMilis;
+    // true while the POST_NOTIFICATIONS system dialog is expected to be on screen,
+    // prevents the resume hook from double-asking before the result is dispatched
+    private transient boolean mNotificationPermissionInFlight;
+    // passive notification prompt is shown at most once per app session
+    private transient boolean mNotificationPermissionPromptedThisSession;
     // intentionally survives dispose/state restore, holds only Long/String keys so it is harmless,
     // keeps the new-item baseline stable across configuration changes
     private final Map<Long, Set<String>> mSyncedRssItemLinksBaseline = new HashMap<>();
@@ -90,12 +105,14 @@ public class HomePage extends StatefulView<Activity> implements RequireComponent
     private transient SyncRssCmd mSyncRssCmd;
     private transient OpmlCmd mOpmlCmd;
     private transient MarkAllReadCmd mMarkAllReadCmd;
+    private transient ILogger mLogger;
 
     // View related
     private transient DrawerLayout mDrawerLayout;
     private transient Runnable mOnNavigationClicked;
     private transient View mContainerListNews;
     private transient TextView mTextA11yStatus;
+    private transient View mRootView;
 
     public HomePage() {
         mAppBarSV = new AppBarSV(R.menu.home);
@@ -113,11 +130,13 @@ public class HomePage extends StatefulView<Activity> implements RequireComponent
         mSyncRssCmd = mSvProvider.get(SyncRssCmd.class);
         mOpmlCmd = mSvProvider.get(OpmlCmd.class);
         mMarkAllReadCmd = mSvProvider.get(MarkAllReadCmd.class);
+        mLogger = mSvProvider.get(ILogger.class);
     }
 
     @Override
     protected View createView(Activity activity, ViewGroup container) {
         View view = inflateLayout(activity, container);
+        mRootView = view;
         setupDrawer(view);
         setupAppBar(view, activity);
         SwipeRefreshLayout swipeRefreshLayout = setupSwipeRefresh(view);
@@ -188,7 +207,7 @@ public class HomePage extends StatefulView<Activity> implements RequireComponent
                                     }
                                 },
                                 throwable ->
-                                        mSvProvider.get(ILogger.class)
+                                        mLogger
                                                 .e(TAG, feedSyncError, throwable)
                         )
         );
@@ -211,7 +230,7 @@ public class HomePage extends StatefulView<Activity> implements RequireComponent
                         .subscribe(rssModelOptional ->
                                 rssModelOptional
                                         .ifPresent(rssModel ->
-                                                mSvProvider.get(ILogger.class)
+                                                mLogger
                                                         .i(TAG,
                                                                 context.getString(
                                                                         R.string.feed_added,
@@ -228,7 +247,7 @@ public class HomePage extends StatefulView<Activity> implements RequireComponent
                                                 context.getString(R.string.marked_all_as_read)
                                                 , Toast.LENGTH_SHORT).show(),
                                 throwable ->
-                                        mSvProvider.get(ILogger.class)
+                                        mLogger
                                                 .e(TAG, context.getString(
                                                         R.string.error_message, throwable.getMessage()), throwable)
                         )
@@ -367,10 +386,12 @@ public class HomePage extends StatefulView<Activity> implements RequireComponent
             mSvProvider.dispose();
             mSvProvider = null;
         }
+        mLogger = null;
         mDrawerLayout = null;
         mContainerListNews = null;
         mTextA11yStatus = null;
         mOnNavigationClicked = null;
+        mRootView = null;
     }
 
     @Override
@@ -383,7 +404,7 @@ public class HomePage extends StatefulView<Activity> implements RequireComponent
                 navigator.finishActivity(null);
             } else {
                 mLastBackPressMilis = currentMilis;
-                mSvProvider.get(ILogger.class).i(TAG,
+                mLogger.i(TAG,
                         activity.getString(R.string.toast_back_press_exit));
             }
         }
@@ -406,7 +427,7 @@ public class HomePage extends StatefulView<Activity> implements RequireComponent
             mRxDisposer.add("asyncExportOpml", mOpmlCmd.exportOpml()
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(file -> UiUtils.shareFile(context, file, context.getString(R.string.share_opml)),
-                            throwable -> mSvProvider.get(ILogger.class)
+                            throwable -> mLogger
                                     .e(TAG, context.getString(R.string.error_exporting_opml),
                                             throwable)));
         } else if (id == R.id.menu_import_opml) {
@@ -487,5 +508,137 @@ public class HomePage extends StatefulView<Activity> implements RequireComponent
                 mOpmlCmd.importOpml(data.getData());
             }
         }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(View currentView, Activity activity, INavigator INavigator, int requestCode, String[] permissions, int[] grantResults) {
+        if (requestCode == REQUEST_CODE_NOTIFICATION_PERMISSION) {
+            mNotificationPermissionInFlight = false;
+            if (grantResults.length == 0) {
+                // cancelled request (no user answer): never count it as a denial
+                return;
+            }
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // granted: sync notifications will work from now on
+                return;
+            }
+            mAppSharedPreferences.setNotificationPermissionDeniedBefore(true);
+            mLogger.i(TAG,
+                    activity.getString(R.string.error_permission_denied));
+            if (!ActivityCompat.shouldShowRequestPermissionRationale(activity,
+                    Manifest.permission.POST_NOTIFICATIONS)) {
+                // permanent denial (2 dialog denials): further dialogs silently no-op,
+                // consume the passive budget and redirect the user to the system settings
+                int count = mAppSharedPreferences.getNotificationPermissionRequestCount();
+                mAppSharedPreferences.setNotificationPermissionRequestCount(Math.max(count, 2));
+                showNotificationSettingsSnackbar(activity);
+            }
+        }
+    }
+
+    @Override
+    public void onNavActivityResumed(Activity activity) {
+        // dispatched to every route on the stack, only act when HomePage is the top route
+        if (!isTopRoute()) {
+            return;
+        }
+        // ask at most once per app session, and never while a dialog is still in flight
+        if (mNotificationPermissionPromptedThisSession || mNotificationPermissionInFlight) {
+            return;
+        }
+        if (mRootView == null) {
+            // view not (yet) built
+            return;
+        }
+        // cheap synchronous pre-check: once the passive budget is exhausted,
+        // decide() always returns DO_NOTHING — skip the db query entirely
+        // (this also keeps the settings snackbar from repeating after its
+        // budget consumption)
+        if (mAppSharedPreferences.getNotificationPermissionRequestCount() >= 2) {
+            return;
+        }
+        // gate behind an async precondition: only prompt when at least 1 rss item exists
+        mRxDisposer.add("onNavActivityResumed_countRssItems",
+                mSvProvider.get(RssQueryCmd.class).countRssItem()
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe((integer, throwable) -> {
+                            if (throwable != null) {
+                                mLogger.e(TAG,
+                                        throwable.getMessage(), throwable);
+                                return;
+                            }
+                            if (integer == null || integer <= 0) {
+                                return;
+                            }
+                            // route may have changed while the db query ran
+                            if (isTopRoute() && !mNotificationPermissionPromptedThisSession
+                                    && !mNotificationPermissionInFlight) {
+                                decideNotificationPermission(false);
+                            }
+                        }));
+    }
+
+    @SuppressWarnings("rawtypes")
+    private boolean isTopRoute() {
+        if (mNavigator == null) {
+            return false;
+        }
+        NavRoute currentRoute = mNavigator.getCurrentRoute();
+        if (currentRoute == null) {
+            return false;
+        }
+        StatefulView statefulView = currentRoute.getStatefulView();
+        return statefulView == this;
+    }
+
+    /**
+     * Evaluates NotificationPermissionPolicy and acts on the decision.
+     *
+     * @param explicitRequest true when the ask comes from an explicit user action
+     */
+    private void decideNotificationPermission(boolean explicitRequest) {
+        Activity activity = mNavigator.getActivity();
+        if (activity == null) {
+            return;
+        }
+        boolean notificationsEnabled = NotificationManagerCompat.from(activity)
+                .areNotificationsEnabled();
+        boolean deniedBefore = mAppSharedPreferences.isNotificationPermissionDeniedBefore();
+        int count = mAppSharedPreferences.getNotificationPermissionRequestCount();
+        boolean rationaleAvailable = ActivityCompat.shouldShowRequestPermissionRationale(activity,
+                Manifest.permission.POST_NOTIFICATIONS);
+        NotificationPermissionPolicy.Decision decision = NotificationPermissionPolicy.decide(
+                Build.VERSION.SDK_INT, notificationsEnabled, deniedBefore,
+                count, rationaleAvailable, explicitRequest);
+        if (decision == NotificationPermissionPolicy.Decision.ASK_DIALOG) {
+            mNotificationPermissionPromptedThisSession = true;
+            mNotificationPermissionInFlight = true;
+            // increment BEFORE showing so a process death mid-dialog is counted
+            mAppSharedPreferences.setNotificationPermissionRequestCount(count + 1);
+            ActivityCompat.requestPermissions(activity,
+                    new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                    REQUEST_CODE_NOTIFICATION_PERMISSION);
+        } else if (decision == NotificationPermissionPolicy.Decision.SHOW_SETTINGS_SNACKBAR) {
+            mNotificationPermissionPromptedThisSession = true;
+            // the dialog is a permanent dead end, consume the remaining passive budget
+            mAppSharedPreferences.setNotificationPermissionRequestCount(Math.max(count, 2));
+            showNotificationSettingsSnackbar(activity);
+        }
+        // DO_NOTHING: leave blank
+    }
+
+    private void showNotificationSettingsSnackbar(Activity activity) {
+        View rootView = mRootView;
+        if (rootView == null) {
+            return;
+        }
+        Intent settingsIntent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                .putExtra(Settings.EXTRA_APP_PACKAGE, activity.getPackageName());
+        Snackbar.make(rootView,
+                        R.string.notification_permission_disabled_hint,
+                        Snackbar.LENGTH_LONG)
+                .setAction(R.string.notification_permission_open_settings,
+                        view -> activity.startActivity(settingsIntent))
+                .show();
     }
 }

@@ -124,4 +124,6 @@
 
     <string name="feed_already_added_as">Dieser Feed ist bereits als \'%s\' hinzugefügt</string>
     <string name="error_feed_duplicate_redirect">Dieser Feed leitet zu einem Feed weiter, der bereits hinzugefügt wurde</string>
+    <string name="notification_permission_disabled_hint">Benachrichtigungen sind deaktiviert. Hinweise zu neuen Artikeln werden nicht angezeigt.</string>
+    <string name="notification_permission_open_settings">Einstellungen öffnen</string>
 </resources>

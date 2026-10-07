@@ -124,4 +124,6 @@
 
     <string name="feed_already_added_as">Denne feeden er allerede lagt til som \'%s\'</string>
     <string name="error_feed_duplicate_redirect">Denne feeden omdirigerer til en feed som allerede er lagt til</string>
+    <string name="notification_permission_disabled_hint">Varsler er slått av. Varsler om nye artikler vises ikke.</string>
+    <string name="notification_permission_open_settings">Åpne innstillinger</string>
 </resources>

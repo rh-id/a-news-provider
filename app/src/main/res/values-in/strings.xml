@@ -123,4 +123,6 @@
 
     <string name="feed_already_added_as">Feed ini sudah ditambahkan sebagai \'%s\'</string>
     <string name="error_feed_duplicate_redirect">Feed ini beralih ke feed yang sudah ditambahkan</string>
+    <string name="notification_permission_disabled_hint">Notifikasi dimatikan. Pemberitahuan artikel baru tidak akan ditampilkan.</string>
+    <string name="notification_permission_open_settings">Buka pengaturan</string>
 </resources>

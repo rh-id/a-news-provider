@@ -123,4 +123,6 @@
 
     <string name="feed_already_added_as">此订阅源已作为 \'%s\' 添加</string>
     <string name="error_feed_duplicate_redirect">此订阅源重定向到已添加的订阅源</string>
+    <string name="notification_permission_disabled_hint">通知已关闭。新文章提醒将不会显示。</string>
+    <string name="notification_permission_open_settings">打开设置</string>
 </resources>

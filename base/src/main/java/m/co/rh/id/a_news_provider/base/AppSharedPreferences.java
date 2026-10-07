@@ -39,6 +39,12 @@ public class AppSharedPreferences {
     private boolean mDownloadImage;
     private String mDownloadImageKey;
 
+    private int mNotificationPermissionRequestCount;
+    private String mNotificationPermissionRequestCountKey;
+
+    private boolean mNotificationPermissionDeniedBefore;
+    private String mNotificationPermissionDeniedBeforeKey;
+
     public AppSharedPreferences(Provider provider) {
         mExecutorService = provider.get(ExecutorService.class);
         mSharedPreferences = provider.getContext().getSharedPreferences(
@@ -68,6 +74,10 @@ public class AppSharedPreferences {
                 + ".showCaseRssItemList";
         mDownloadImageKey = SHARED_PREFERENCES_NAME
                 + ".downloadImage";
+        mNotificationPermissionRequestCountKey = SHARED_PREFERENCES_NAME
+                + ".notificationPermissionRequestCount";
+        mNotificationPermissionDeniedBeforeKey = SHARED_PREFERENCES_NAME
+                + ".notificationPermissionDeniedBefore";
 
         boolean enablePeriodicSync = mSharedPreferences.getBoolean(mEnablePeriodicSyncKey, true);
         enablePeriodicSync(enablePeriodicSync);
@@ -89,6 +99,13 @@ public class AppSharedPreferences {
         setShowCaseRssItemList(showCaseRssItemList);
         boolean downloadImage = mSharedPreferences.getBoolean(mDownloadImageKey, false);
         setDownloadImage(downloadImage);
+        // assign directly (do NOT use the persisting setters) — a cold start must not
+        // write these keys back to disk; they should only ever be written by an
+        // actual permission ask/denial
+        mNotificationPermissionRequestCount = mSharedPreferences.getInt(
+                mNotificationPermissionRequestCountKey, 0);
+        mNotificationPermissionDeniedBefore = mSharedPreferences.getBoolean(
+                mNotificationPermissionDeniedBeforeKey, false);
     }
 
     private void enablePeriodicSync(boolean b) {
@@ -216,5 +233,42 @@ public class AppSharedPreferences {
 
     public boolean isDownloadImage() {
         return mDownloadImage;
+    }
+
+    /**
+     * Number of times the {@code POST_NOTIFICATIONS} system dialog was ACTUALLY shown.
+     * Both the passive homepage prompt and the explicit settings-toggle path increment
+     * it right before showing the dialog. Used by NotificationPermissionPolicy as the
+     * passive anti-nag budget.
+     *
+     * @param count the new request count
+     */
+    public void setNotificationPermissionRequestCount(int count) {
+        mNotificationPermissionRequestCount = count;
+        mExecutorService.execute(() ->
+                mSharedPreferences.edit().putInt(mNotificationPermissionRequestCountKey, count)
+                        .commit());
+    }
+
+    public int getNotificationPermissionRequestCount() {
+        return mNotificationPermissionRequestCount;
+    }
+
+    /**
+     * True ONLY when a shown {@code POST_NOTIFICATIONS} system dialog was answered
+     * with deny. Never inferred from the request count (the OS rationale flag cannot
+     * distinguish permanent denial from a grant-then-revoke-in-settings state).
+     *
+     * @param denied true if a dialog was denied
+     */
+    public void setNotificationPermissionDeniedBefore(boolean denied) {
+        mNotificationPermissionDeniedBefore = denied;
+        mExecutorService.execute(() ->
+                mSharedPreferences.edit().putBoolean(mNotificationPermissionDeniedBeforeKey, denied)
+                        .commit());
+    }
+
+    public boolean isNotificationPermissionDeniedBefore() {
+        return mNotificationPermissionDeniedBefore;
     }
 }
