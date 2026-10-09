@@ -97,6 +97,10 @@
     <string name="menu_subtitle_download_image">Aktifkan/nonaktifkan pengunduhan gambar</string>
     <string name="download_image_enabled">Unduh gambar dinyalakan</string>
     <string name="download_image_disabled">Unduh gambar dimatikan</string>
+    <string name="title_mark_read_on_scroll">Tandai Terbaca saat Menggulir</string>
+    <string name="menu_subtitle_mark_read_on_scroll">Aktifkan/nonaktifkan penandaan terbaca saat menggulir</string>
+    <string name="mark_read_on_scroll_enabled">Tandai terbaca saat menggulir dinyalakan</string>
+    <string name="mark_read_on_scroll_disabled">Tandai terbaca saat menggulir dimatikan</string>
     <string name="image">Gambar</string>
     <string name="menu_import_opml">Impor file OPML</string>
     <string name="open_video">Buka video</string>

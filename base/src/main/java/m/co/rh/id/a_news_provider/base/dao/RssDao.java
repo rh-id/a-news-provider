@@ -17,6 +17,14 @@ import m.co.rh.id.a_news_provider.base.model.ChannelUnreadCount;
 @Dao
 public abstract class RssDao {
 
+    /**
+     * Maximum number of links bound per UPDATE statement. SQLite older than 3.32
+     * (Android 11 and below) allows at most 999 host parameters per query, and the
+     * caller's page size starts at 1000 (see BaseRssItemsCmd.mLimit), so 500 keeps
+     * every chunk safely within the limit while halving the number of statements.
+     */
+    private static final int MARK_READ_BY_LINKS_CHUNK_SIZE = 500;
+
     @Query("SELECT * FROM rss_channel ORDER BY feed_name")
     public abstract List<RssChannel> loadAllRssChannel();
 
@@ -204,6 +212,48 @@ public abstract class RssDao {
      */
     @Query("UPDATE rss_item SET is_read = 1 WHERE channel_id = :channelId AND is_read = 0")
     public abstract void markRssItemsReadByChannelId(long channelId);
+
+    /**
+     * Marks unread rss items as read when their link matches one of the given links.
+     * Matching is done by link (not id) so cross-channel duplicates stay consistent,
+     * same as {@link #updateRssItemsIsReadByLink(boolean, String)} and
+     * {@link #markOldItemsRead(long)}. Rows with a null or empty link can never match
+     * and are explicitly excluded by the query.
+     * This method must be called on a background thread.
+     *
+     * @param links the links of the rss items to mark as read
+     * @return the number of rows marked as read for this chunk
+     */
+    @Query("UPDATE rss_item SET is_read = 1 " +
+            "WHERE is_read = 0 AND link IS NOT NULL AND link != '' " +
+            "AND link IN (:links)")
+    protected abstract int markItemsReadByLinksChunk(List<String> links);
+
+    /**
+     * Marks unread rss items as read when their link matches one of the given links,
+     * splitting the links into chunks of {@link #MARK_READ_BY_LINKS_CHUNK_SIZE}.
+     * Chunking is required because SQLite older than 3.32 (Android 11 and below)
+     * allows at most 999 host parameters per query while the caller's page size
+     * starts at 1000 and doubles (BaseRssItemsCmd.mLimit). Since link is unindexed,
+     * each UPDATE is a full table scan, so chunking also bounds the work per
+     * statement. The {@code is_read = 0} guard makes repeated calls idempotent.
+     * This method must be called on a background thread.
+     *
+     * @param links the links of the rss items to mark as read
+     * @return the total number of rows marked as read
+     */
+    @Transaction
+    public int markItemsReadByLinks(List<String> links) {
+        if (links == null || links.isEmpty()) {
+            return 0;
+        }
+        int totalRows = 0;
+        for (int i = 0; i < links.size(); i += MARK_READ_BY_LINKS_CHUNK_SIZE) {
+            int end = Math.min(i + MARK_READ_BY_LINKS_CHUNK_SIZE, links.size());
+            totalRows += markItemsReadByLinksChunk(links.subList(i, end));
+        }
+        return totalRows;
+    }
 
     /**
      * Auto mark-read (unread retention window): marks unread, non-favorite rss items

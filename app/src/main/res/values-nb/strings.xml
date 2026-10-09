@@ -99,6 +99,10 @@
     <string name="menu_subtitle_download_image">Aktivér/deaktivér bilenedlasting</string>
     <string name="download_image_enabled">Bilenedlasting aktivert</string>
     <string name="download_image_disabled">Bilenedlasting deaktivert</string>
+    <string name="title_mark_read_on_scroll">Merk som lest ved rulling</string>
+    <string name="menu_subtitle_mark_read_on_scroll">Aktiver/deaktiver merking som lest ved rulling</string>
+    <string name="mark_read_on_scroll_enabled">Merking som lest ved rulling aktivert</string>
+    <string name="mark_read_on_scroll_disabled">Merking som lest ved rulling deaktivert</string>
     <string name="image">Bilde</string>
     <string name="menu_import_opml">Importer OPML-fil</string>
     <string name="open_video">Åpne video</string>

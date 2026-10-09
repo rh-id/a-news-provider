@@ -99,6 +99,10 @@
     <string name="menu_subtitle_download_image">启用/停用图片下载</string>
     <string name="download_image_enabled">图片下载已启用</string>
     <string name="download_image_disabled">图片下载已停用</string>
+    <string name="title_mark_read_on_scroll">滚动时标为已读</string>
+    <string name="menu_subtitle_mark_read_on_scroll">启用/停用滚动时标为已读</string>
+    <string name="mark_read_on_scroll_enabled">滚动时标为已读已启用</string>
+    <string name="mark_read_on_scroll_disabled">滚动时标为已读已停用</string>
     <string name="image">图片</string>
     <string name="menu_import_opml">导入 OPML 文件</string>
     <string name="open_video">打开视频</string>

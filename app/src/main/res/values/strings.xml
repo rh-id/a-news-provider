@@ -101,6 +101,10 @@
     <string name="menu_subtitle_download_image">Enable/Disable image download</string>
     <string name="download_image_enabled">Download image enabled</string>
     <string name="download_image_disabled">Download image disabled</string>
+    <string name="title_mark_read_on_scroll">Mark as Read on Scroll</string>
+    <string name="menu_subtitle_mark_read_on_scroll">Enable/Disable marking items as read when scrolled past</string>
+    <string name="mark_read_on_scroll_enabled">Mark as read on scroll enabled</string>
+    <string name="mark_read_on_scroll_disabled">Mark as read on scroll disabled</string>
     <string name="image">Image</string>
     <string name="menu_import_opml">Import OPML file</string>
     <string name="open_video">Open video</string>

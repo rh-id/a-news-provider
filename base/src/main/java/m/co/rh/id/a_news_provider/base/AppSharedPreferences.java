@@ -33,6 +33,9 @@ public class AppSharedPreferences {
     private SerialBehaviorSubject<Boolean> mOneHandMode;
     private String mOneHandModeKey;
 
+    private SerialBehaviorSubject<Boolean> mMarkReadOnScroll;
+    private String mMarkReadOnScrollKey;
+
     private boolean mShowCaseRssChannelList;
     private String mShowCaseRssChannelListKey;
 
@@ -58,6 +61,7 @@ public class AppSharedPreferences {
         mAutoMarkReadDays = new SerialBehaviorSubject<>();
         mSelectedTheme = new SerialBehaviorSubject<>();
         mOneHandMode = new SerialBehaviorSubject<>();
+        mMarkReadOnScroll = new SerialBehaviorSubject<>();
         initValue();
     }
 
@@ -74,6 +78,8 @@ public class AppSharedPreferences {
                 + ".selectedTheme";
         mOneHandModeKey = SHARED_PREFERENCES_NAME
                 + ".oneHandMode";
+        mMarkReadOnScrollKey = SHARED_PREFERENCES_NAME
+                + ".markReadOnScroll";
         mShowCaseRssChannelListKey = SHARED_PREFERENCES_NAME
                 + ".showCaseRssChannelList";
         mShowCaseRssItemListKey = SHARED_PREFERENCES_NAME
@@ -102,6 +108,8 @@ public class AppSharedPreferences {
         setSelectedTheme(selectedTheme);
         boolean oneHandMode = mSharedPreferences.getBoolean(mOneHandModeKey, false);
         oneHandMode(oneHandMode);
+        boolean markReadOnScroll = mSharedPreferences.getBoolean(mMarkReadOnScrollKey, false);
+        markReadOnScroll(markReadOnScroll);
         boolean showCaseRssChannelList = mSharedPreferences.getBoolean(mShowCaseRssChannelListKey, false);
         setShowCaseRssChannelList(showCaseRssChannelList);
         boolean showCaseRssItemList = mSharedPreferences.getBoolean(mShowCaseRssItemListKey, false);
@@ -232,6 +240,30 @@ public class AppSharedPreferences {
 
     public Flowable<Boolean> getIsOneHandModeFlow() {
         return Flowable.fromObservable(mOneHandMode.getSubject(), BackpressureStrategy.BUFFER);
+    }
+
+    /**
+     * Opt-in setting (default off): when enabled, rss items in the main list are
+     * marked as read once they are scrolled fully above the viewport.
+     */
+    private void markReadOnScroll(boolean markReadOnScroll) {
+        mMarkReadOnScroll.onNext(markReadOnScroll);
+        mExecutorService.execute(() ->
+                mSharedPreferences.edit().putBoolean(mMarkReadOnScrollKey, markReadOnScroll)
+                        .commit());
+    }
+
+    public boolean isMarkReadOnScroll() {
+        Boolean value = mMarkReadOnScroll.getValue();
+        return value != null && value;
+    }
+
+    public void setMarkReadOnScroll(boolean markReadOnScroll) {
+        markReadOnScroll(markReadOnScroll);
+    }
+
+    public Flowable<Boolean> getIsMarkReadOnScrollFlow() {
+        return Flowable.fromObservable(mMarkReadOnScroll.getSubject(), BackpressureStrategy.BUFFER);
     }
 
     public void setShowCaseRssChannelList(boolean show) {

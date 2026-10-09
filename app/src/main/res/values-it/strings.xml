@@ -101,6 +101,10 @@
     <string name="menu_subtitle_download_image">Abilita/disabilita il download delle immagini</string>
     <string name="download_image_enabled">Download delle immagini abilitato</string>
     <string name="download_image_disabled">Download delle immagini disabilitato</string>
+    <string name="title_mark_read_on_scroll">Segna come letto durante lo scorrimento</string>
+    <string name="menu_subtitle_mark_read_on_scroll">Abilita/disabilita la segnatura come letto durante lo scorrimento</string>
+    <string name="mark_read_on_scroll_enabled">Segnatura come letto durante lo scorrimento abilitata</string>
+    <string name="mark_read_on_scroll_disabled">Segnatura come letto durante lo scorrimento disabilitata</string>
     <string name="image">Immagine</string>
     <string name="menu_import_opml">Importa file OPML</string>
     <string name="open_video">Apri video</string>

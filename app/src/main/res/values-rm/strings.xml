@@ -99,6 +99,10 @@
     <string name="menu_subtitle_download_image">Activar/deactivar la telechargiada da graficas</string>
     <string name="download_image_enabled">Telechargiada da graficas activada</string>
     <string name="download_image_disabled">Telechargiada da graficas deactivada</string>
+    <string name="title_mark_read_on_scroll">Marcar sco legì cun curriger</string>
+    <string name="menu_subtitle_mark_read_on_scroll">Activar/deactivar il marcar sco legì cun curriger</string>
+    <string name="mark_read_on_scroll_enabled">Marcar sco legì cun curriger activà</string>
+    <string name="mark_read_on_scroll_disabled">Marcar sco legì cun curriger deactivà</string>
     <string name="image">Grafica</string>
     <string name="menu_import_opml">Importar il dossier OPML</string>
     <string name="open_video">Avrir il video</string>

@@ -22,6 +22,7 @@ A simple and easy to use RSS aggregator that deliver news to your smartphone.
   <li>Sort items by newest or oldest, and mark all items as read (globally or per channel)</li>
   <li>Configurable periodic background sync with a 1-24 hours interval (default: every 6 hours, can be toggled off)</li>
   <li>Optional unread retention window: auto mark items as read after 7/14/30/90 days at the end of each sync (off by default, favorites are never auto-read)</li>
+  <li>Opt-in "mark as read on scroll" setting: items scrolled past in the list are marked as read automatically (off by default)</li>
   <li>Per-channel grouped sync notifications with unread counts (requires the Notifications permission on Android 13+)</li>
   <li>Rename, pause (mute), or delete feeds — paused feeds keep their history but stop syncing and notifying (their unread counts may still decrease via the optional auto mark-read setting)</li>
   <li>Support editing feed item link</li>
@@ -57,7 +58,7 @@ This is a single-activity application built using a component-based architecture
 ### Command Pattern
 
 Business logic is encapsulated using the **Command Pattern**. This decouples the UI from the execution logic.
-*   **Commands:** The app currently has 13 commands: `PagedRssItemsCmd`, `NewRssChannelCmd`, `RenameRssFeedCmd`, `SyncRssCmd`, `RssQueryCmd`, `EditRssLinkCmd`, `UpdateRssItemIsReadCmd`, `UpdateRssItemIsFavoriteCmd`, `DeleteRssChannelCmd`, `OpmlCmd`, `MarkAllReadCmd`, `SearchRssItemsCmd`, and `PauseRssChannelCmd`.
+*   **Commands:** The app currently has 14 commands: `PagedRssItemsCmd`, `NewRssChannelCmd`, `RenameRssFeedCmd`, `SyncRssCmd`, `RssQueryCmd`, `EditRssLinkCmd`, `UpdateRssItemIsReadCmd`, `UpdateRssItemIsFavoriteCmd`, `DeleteRssChannelCmd`, `OpmlCmd`, `MarkAllReadCmd`, `SearchRssItemsCmd`, `PauseRssChannelCmd`, and `MarkItemsReadOnScrollCmd`.
 *   **Execution:** The UI retrieves a command instance via `a-provider` and executes it.
 *   **Threading:** Commands run on a shared weighted thread pool (max weight 5); network work is offloaded to WorkManager.
 *   **Benefit:** Keeps UI classes (StatefulViews) clean and testable.

@@ -99,6 +99,10 @@
     <string name="menu_subtitle_download_image">Bilddownload aktivieren/deaktivieren</string>
     <string name="download_image_enabled">Bilddownload aktiviert</string>
     <string name="download_image_disabled">Bilddownload deaktiviert</string>
+    <string name="title_mark_read_on_scroll">Beim Scrollen als gelesen markieren</string>
+    <string name="menu_subtitle_mark_read_on_scroll">Aktivieren/deaktivieren des Als-gelesen-Markierens beim Scrollen</string>
+    <string name="mark_read_on_scroll_enabled">Als gelesen markieren beim Scrollen aktiviert</string>
+    <string name="mark_read_on_scroll_disabled">Als gelesen markieren beim Scrollen deaktiviert</string>
     <string name="image">Bild</string>
     <string name="menu_import_opml">OPML-Datei importieren</string>
     <string name="open_video">Video öffnen</string>

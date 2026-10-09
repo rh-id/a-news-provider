@@ -99,6 +99,10 @@
     <string name="menu_subtitle_download_image">Luba/keela piltide allalaadimine</string>
     <string name="download_image_enabled">Piltide allalaadimine lubatud</string>
     <string name="download_image_disabled">Piltide allalaadimine keelatud</string>
+    <string name="title_mark_read_on_scroll">Märgi kerimisel loetuks</string>
+    <string name="menu_subtitle_mark_read_on_scroll">Luba/keela kerimisel loetuks märkimine</string>
+    <string name="mark_read_on_scroll_enabled">Kerimisel loetuks märkimine lubatud</string>
+    <string name="mark_read_on_scroll_disabled">Kerimisel loetuks märkimine keelatud</string>
     <string name="image">Pilt</string>
     <string name="menu_import_opml">Impordi OPML-fail</string>
     <string name="open_video">Ava video</string>

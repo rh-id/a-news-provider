@@ -26,10 +26,12 @@ import io.reactivex.rxjava3.core.Flowable;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.BaseRssItemsCmd;
+import m.co.rh.id.a_news_provider.app.provider.command.MarkItemsReadOnScrollCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.PagedRssItemsCmd;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
+import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.annotation.NavInject;
@@ -46,6 +48,7 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
     private transient Provider mSvProvider;
     private transient AppSharedPreferences mAppSharedPreferences;
     private transient PagedRssItemsCmd mPagedRssItemsCmd;
+    private transient MarkItemsReadOnScrollCmd mMarkItemsReadOnScrollCmd;
     private transient Handler mHandler;
     private transient RxDisposer mRxDisposer;
     private transient RecyclerView.OnScrollListener mOnScrollListener;
@@ -57,6 +60,7 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
         mAppSharedPreferences = mSvProvider.get(AppSharedPreferences.class);
         mPagedRssItemsCmd = mSvProvider.get(PagedRssItemsCmd.class);
         mPagedRssItemsCmd.load();
+        mMarkItemsReadOnScrollCmd = mSvProvider.get(MarkItemsReadOnScrollCmd.class);
         mHandler = mSvProvider.get(Handler.class);
         mRxDisposer = mSvProvider.get(RxDisposer.class);
         mRssItemRecyclerViewAdapter = new RssItemRecyclerViewAdapter(
@@ -68,6 +72,10 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
                     if (!recyclerView.canScrollVertically(1) &&
                             newState == RecyclerView.SCROLL_STATE_IDLE) {
                         mPagedRssItemsCmd.loadNextPage();
+                    }
+                    if (newState == RecyclerView.SCROLL_STATE_IDLE
+                            && mAppSharedPreferences.isMarkReadOnScroll()) {
+                        markItemsAboveViewportRead(recyclerView);
                     }
                 }
             };
@@ -98,6 +106,66 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
                             }
                         })
         );
+    }
+
+    /**
+     * Marks all list items fully scrolled past (above the viewport) as read.
+     * Uses the LayoutManager's first visible adapter position instead of the attached
+     * children: RecyclerView only keeps roughly one viewport of children attached, so
+     * after a fast fling the scrolled-past rows are already recycled and collecting
+     * child positions would mark almost nothing. The in-memory {@code isRead} flip
+     * made by the command doubles as the dedupe, so no processed-set is kept.
+     * Note: the list can be filtered to unread only - items marked read here disappear
+     * on the next reload, never mid-scroll.
+     *
+     * @param recyclerView the RecyclerView that just stopped scrolling
+     */
+    private void markItemsAboveViewportRead(RecyclerView recyclerView) {
+        RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
+        if (layoutManager == null) {
+            return;
+        }
+        int firstVisiblePosition;
+        if (layoutManager instanceof StaggeredGridLayoutManager) {
+            StaggeredGridLayoutManager staggeredGridLayoutManager =
+                    (StaggeredGridLayoutManager) layoutManager;
+            int[] firstVisiblePositions = staggeredGridLayoutManager
+                    .findFirstVisibleItemPositions(new int[staggeredGridLayoutManager.getSpanCount()]);
+            firstVisiblePosition = Integer.MAX_VALUE;
+            for (int position : firstVisiblePositions) {
+                if (position != RecyclerView.NO_POSITION && position < firstVisiblePosition) {
+                    firstVisiblePosition = position;
+                }
+            }
+            if (firstVisiblePosition == Integer.MAX_VALUE) {
+                return;
+            }
+        } else if (layoutManager instanceof LinearLayoutManager) {
+            firstVisiblePosition = ((LinearLayoutManager) layoutManager)
+                    .findFirstVisibleItemPosition();
+        } else {
+            return;
+        }
+        // <= 0 already covers RecyclerView.NO_POSITION (-1); 0 means nothing
+        // has been scrolled past yet
+        if (firstVisiblePosition <= 0) {
+            return;
+        }
+        ArrayList<RssItem> rssItems = mPagedRssItemsCmd.getAllRssItems();
+        if (rssItems == null) {
+            return;
+        }
+        int count = Math.min(firstVisiblePosition, rssItems.size());
+        ArrayList<RssItem> itemsToMarkRead = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            RssItem rssItem = rssItems.get(i);
+            if (!rssItem.isRead && rssItem.link != null && !rssItem.link.isEmpty()) {
+                itemsToMarkRead.add(rssItem);
+            }
+        }
+        if (!itemsToMarkRead.isEmpty()) {
+            mMarkItemsReadOnScrollCmd.execute(itemsToMarkRead);
+        }
     }
 
     @Override

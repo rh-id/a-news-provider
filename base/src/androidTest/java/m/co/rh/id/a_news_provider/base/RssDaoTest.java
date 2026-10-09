@@ -9,6 +9,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -18,17 +19,22 @@ import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Instrumented test suite for {@link RssDao}, split in two sections:
+ * Instrumented test suite for {@link RssDao}, split in three sections:
  * <p>
  * 1. Search queries ({@code searchRssItemsWithLimit} / {@code searchRssItemsWithLimitAsc}):
  * LIKE matching, wildcard escaping, state filters, limits and sort order.
  * <p>
  * 2. Duplicate detection ({@link RssDao#findRssChannelByUrlVariants(String, String)}):
  * matches a channel by either the raw requested spelling or the normalized spelling.
+ * <p>
+ * 3. Mark as read by links ({@code markItemsReadByLinks}): flips only unread rows with
+ * a matching link across channels, skips null/empty/already-read rows, is idempotent,
+ * and handles link lists that cross a query-chunk boundary.
  */
 @RunWith(AndroidJUnit4.class)
 public class RssDaoTest {
@@ -280,11 +286,104 @@ public class RssDaoTest {
         assertEquals("Canonical Feed", found.feedName);
     }
 
+    // ==================================================================================
+    // Section 3: mark as read by links
+    // ==================================================================================
+
+    @Test
+    public void markItemsReadByLinks_marksOnlyUnreadMatchingRowsAcrossChannels() {
+        RssChannel channel1 = createRssChannel("http://test.com/feed1", "Feed 1");
+        RssChannel channel2 = createRssChannel("http://test.com/feed2", "Feed 2");
+        RssItem channel1SharedItem = createRssItem("shared news in feed 1", null,
+                "http://test.com/shared", createDate(2026, 1, 1));
+        RssItem channel2SharedItem = createRssItem("shared news in feed 2", null,
+                "http://test.com/shared", createDate(2026, 1, 2));
+        RssItem nullLinkItem = createRssItem("null link news", null,
+                null, createDate(2026, 1, 3));
+        RssItem emptyLinkItem = createRssItem("empty link news", null,
+                "", createDate(2026, 1, 4));
+        RssItem alreadyReadItem = createRssItem("read news", null,
+                "http://test.com/read", createDate(2026, 1, 5));
+        mRssDao.insertRssChannel(channel1, channel1SharedItem, nullLinkItem, alreadyReadItem);
+        mRssDao.insertRssChannel(channel2, channel2SharedItem, emptyLinkItem);
+        alreadyReadItem.isRead = true;
+        mRssDao.updateRssItem(alreadyReadItem);
+
+        // null and empty entries must neither break the IN clause nor match the
+        // null/empty-link rows
+        List<String> links = new ArrayList<>();
+        links.add("http://test.com/shared");
+        links.add("http://test.com/read");
+        links.add(null);
+        links.add("");
+
+        int markedRows = mRssDao.markItemsReadByLinks(links);
+
+        // only the two unread rows sharing the link flip, across both channels
+        assertEquals(2, markedRows);
+        assertTrue(findByTitle(mRssDao.findRssItemsByChannelId(channel1.id),
+                "shared news in feed 1").isRead);
+        assertTrue(findByTitle(mRssDao.findRssItemsByChannelId(channel2.id),
+                "shared news in feed 2").isRead);
+
+        // already-read, null-link and empty-link rows stay untouched
+        assertTrue(findByTitle(mRssDao.findRssItemsByChannelId(channel1.id),
+                "read news").isRead);
+        assertFalse(findByTitle(mRssDao.findRssItemsByChannelId(channel1.id),
+                "null link news").isRead);
+        assertFalse(findByTitle(mRssDao.findRssItemsByChannelId(channel2.id),
+                "empty link news").isRead);
+
+        // second call is a no-op thanks to the is_read = 0 guard
+        assertEquals(0, mRssDao.markItemsReadByLinks(links));
+    }
+
+    @Test
+    public void markItemsReadByLinks_chunkBoundary_marksAllRowsAcrossChunks() {
+        RssChannel rssChannel = createRssChannel("http://test.com/feed", "Feed");
+        // 501 distinct links cross exactly one 500-link query chunk (500 + 1)
+        int itemCount = 501;
+        ArrayList<RssItem> rssItems = new ArrayList<>();
+        ArrayList<String> links = new ArrayList<>();
+        for (int i = 0; i < itemCount; i++) {
+            String link = "http://test.com/item" + i;
+            rssItems.add(createRssItem("item " + i, null, link, createDate(2026, 1, 1)));
+            links.add(link);
+        }
+        mRssDao.insertRssChannel(rssChannel, rssItems.toArray(new RssItem[0]));
+
+        // the null and empty entries land in the overflow chunk (chunk 2) and
+        // must not break the chunk loop - the query never matches them anyway
+        links.add(null);
+        links.add("");
+
+        int markedRows = mRssDao.markItemsReadByLinks(links);
+
+        // both chunks ran fully: 500 rows in chunk 1 plus 1 row in chunk 2
+        assertEquals(itemCount, markedRows);
+        List<RssItem> storedItems = mRssDao.findRssItemsByChannelId(rssChannel.id);
+        assertEquals(itemCount, storedItems.size());
+        for (int i = 0; i < itemCount; i++) {
+            RssItem storedItem = findByTitle(storedItems, "item " + i);
+            assertNotNull(storedItem);
+            assertTrue(storedItem.isRead);
+        }
+    }
+
     private RssChannel createRssChannel(String url, String feedName) {
         RssChannel rssChannel = new RssChannel();
         rssChannel.url = url;
         rssChannel.feedName = feedName;
         return rssChannel;
+    }
+
+    private RssItem findByTitle(List<RssItem> rssItems, String title) {
+        for (RssItem rssItem : rssItems) {
+            if (rssItem.title.equals(title)) {
+                return rssItem;
+            }
+        }
+        return null;
     }
 
     private RssItem createRssItem(String title, String description, String link, Date pubDate) {

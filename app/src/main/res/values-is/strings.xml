@@ -99,6 +99,10 @@
     <string name="menu_subtitle_download_image">Virkja/afvirkja niðurhal mynda</string>
     <string name="download_image_enabled">Niðurhal mynda virkjað</string>
     <string name="download_image_disabled">Niðurhal mynda afvirkjað</string>
+    <string name="title_mark_read_on_scroll">Merkja sem lesið við skrun</string>
+    <string name="menu_subtitle_mark_read_on_scroll">Virkja/afvirkja merkingu sem lesið við skrun</string>
+    <string name="mark_read_on_scroll_enabled">Merking sem lesið við skrun virkjuð</string>
+    <string name="mark_read_on_scroll_disabled">Merking sem lesið við skrun afvirkjuð</string>
     <string name="image">Mynd</string>
     <string name="menu_import_opml">Flytja inn OPML-skrá</string>
     <string name="open_video">Opna myndskeið</string>

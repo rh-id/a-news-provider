@@ -3,6 +3,7 @@ package m.co.rh.id.a_news_provider.app.provider;
 import m.co.rh.id.a_news_provider.app.provider.command.DeleteRssChannelCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.EditRssLinkCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.MarkAllReadCmd;
+import m.co.rh.id.a_news_provider.app.provider.command.MarkItemsReadOnScrollCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.NewRssChannelCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.OpmlCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.PagedRssItemsCmd;
@@ -34,5 +35,6 @@ public class CommandProviderModule implements ProviderModule {
         providerRegistry.registerLazy(OpmlCmd.class, () -> new OpmlCmd(provider));
         providerRegistry.registerLazy(MarkAllReadCmd.class, () -> new MarkAllReadCmd(provider));
         providerRegistry.registerLazy(SearchRssItemsCmd.class, () -> new SearchRssItemsCmd(provider));
+        providerRegistry.registerLazy(MarkItemsReadOnScrollCmd.class, () -> new MarkItemsReadOnScrollCmd(provider));
     }
 }

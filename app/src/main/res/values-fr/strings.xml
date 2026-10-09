@@ -101,6 +101,10 @@
     <string name="menu_subtitle_download_image">Activer/désactiver le téléchargement des images</string>
     <string name="download_image_enabled">Téléchargement des images activé</string>
     <string name="download_image_disabled">Téléchargement des images désactivé</string>
+    <string name="title_mark_read_on_scroll">Marquer comme lu au défilement</string>
+    <string name="menu_subtitle_mark_read_on_scroll">Activer/désactiver le marquage comme lu lors du défilement</string>
+    <string name="mark_read_on_scroll_enabled">Marquage comme lu au défilement activé</string>
+    <string name="mark_read_on_scroll_disabled">Marquage comme lu au défilement désactivé</string>
     <string name="image">Image</string>
     <string name="menu_import_opml">Importer un fichier OPML</string>
     <string name="open_video">Ouvrir la vidéo</string>

@@ -163,6 +163,18 @@ public class RssRepository {
     }
 
     /**
+     * Marks unread RSS items as read when their link matches one of the given links,
+     * keeping cross-channel duplicates (same link) consistent.
+     * This method must be called on a background thread.
+     *
+     * @param links the links of the RSS items to mark as read
+     * @return the number of rows marked as read
+     */
+    public int markItemsReadByLinks(List<String> links) {
+        return mRssDao.markItemsReadByLinks(links);
+    }
+
+    /**
      * Auto mark-read (unread retention window): marks unread, non-favorite RSS items
      * older than the given cutoff as read, keeping cross-channel duplicates
      * (same link) consistent. Favorites are never touched.

@@ -99,6 +99,10 @@
     <string name="menu_subtitle_download_image">Aktivér/deaktivér biletenedlasting</string>
     <string name="download_image_enabled">Biletenedlasting aktivert</string>
     <string name="download_image_disabled">Biletenedlasting deaktivert</string>
+    <string name="title_mark_read_on_scroll">Merk som lese ved rulling</string>
+    <string name="menu_subtitle_mark_read_on_scroll">Aktiver/deaktiver merking som lese ved rulling</string>
+    <string name="mark_read_on_scroll_enabled">Merking som lese ved rulling aktivert</string>
+    <string name="mark_read_on_scroll_disabled">Merking som lese ved rulling deaktivert</string>
     <string name="image">Bilete</string>
     <string name="menu_import_opml">Importer OPML-fil</string>
     <string name="open_video">Opna video</string>
