@@ -67,6 +67,18 @@
     <string name="main_menu">Menu principal</string>
     <string name="back_to_previous_page">Enavos a la pagina precedenta</string>
     <string name="sync_feed_period_in_hour">Interval da sincronisaziun dal feed en uras</string>
+    <string name="menu_auto_mark_read">Marcar automatic sco legì</string>
+    <plurals name="auto_mark_read_after_x_days">
+        <item quantity="one">Marcar automatic sco legì suenter %d di</item>
+        <item quantity="other">Marcar automatic sco legì suenter %d dis</item>
+    </plurals>
+    <string name="auto_mark_read_off">Deactivà</string>
+    <string name="auto_mark_read_period_in_day">Interval da marcar automatic sco legì en dis</string>
+    <plurals name="x_days">
+        <item quantity="one">%d di</item>
+        <item quantity="other">%d dis</item>
+    </plurals>
+    <string name="error_auto_mark_read_failed">Errur cun marcar automatic sco legì</string>
     <string name="one_hand_mode_activated">Modus d\'in maun activà</string>
     <string name="one_hand_mode_deactivated">Modus d\'in maun deactivà</string>
     <string name="http_not_allowed">HTTP betg permess, fa diever da HTTPS</string>

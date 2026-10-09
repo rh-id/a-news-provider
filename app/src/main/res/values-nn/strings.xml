@@ -67,6 +67,18 @@
     <string name="main_menu">Hovudmeny</string>
     <string name="back_to_previous_page">Tilbake til førre side</string>
     <string name="sync_feed_period_in_hour">Synkroniseringsintervall for straum i timar</string>
+    <string name="menu_auto_mark_read">Merk automatisk som lesen</string>
+    <plurals name="auto_mark_read_after_x_days">
+        <item quantity="one">Merk automatisk som lesen etter %d dag</item>
+        <item quantity="other">Merk automatisk som lesen etter %d dagar</item>
+    </plurals>
+    <string name="auto_mark_read_off">Av</string>
+    <string name="auto_mark_read_period_in_day">Intervall for automatisk merking som lesen i dagar</string>
+    <plurals name="x_days">
+        <item quantity="one">%d dag</item>
+        <item quantity="other">%d dagar</item>
+    </plurals>
+    <string name="error_auto_mark_read_failed">Klarte ikkje merka automatisk som lesen</string>
     <string name="one_hand_mode_activated">Einhandsbetjening aktivert</string>
     <string name="one_hand_mode_deactivated">Einhandsbetjening deaktivert</string>
     <string name="http_not_allowed">HTTP ikkje tillate, bruk HTTPS i staden</string>

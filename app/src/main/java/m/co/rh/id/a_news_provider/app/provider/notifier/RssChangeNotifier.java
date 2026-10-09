@@ -13,7 +13,9 @@ import m.co.rh.id.a_news_provider.base.model.RssModel;
 
 /**
  * A hub for RSS change events. Emits events when RSS models are added, synced, or updated,
- * and when RSS items are marked as read.
+ * and when RSS items are marked as read (user-initiated via
+ * {@link #itemsMarkedRead(Long)} or auto-aged by the unread retention window via
+ * {@link #itemsMarkedReadAuto(Long)}).
  */
 public class RssChangeNotifier {
     private final PublishSubject<Optional<RssModel>> mAddedRssModelPublishSubject;
@@ -22,6 +24,7 @@ public class RssChangeNotifier {
     private final PublishSubject<RssItem> mUpdatedRssItemSubject;
     private final PublishSubject<Optional<RssChannel>> mDeletedRssChannelPublishSubject;
     private final PublishSubject<Optional<Long>> mItemsMarkedReadSubject;
+    private final PublishSubject<Optional<Long>> mItemsMarkedReadAutoSubject;
 
     public RssChangeNotifier() {
         mAddedRssModelPublishSubject = PublishSubject.create();
@@ -30,6 +33,7 @@ public class RssChangeNotifier {
         mUpdatedRssItemSubject = PublishSubject.create();
         mDeletedRssChannelPublishSubject = PublishSubject.create();
         mItemsMarkedReadSubject = PublishSubject.create();
+        mItemsMarkedReadAutoSubject = PublishSubject.create();
     }
 
     /**
@@ -78,12 +82,27 @@ public class RssChangeNotifier {
     }
 
     /**
-     * Emits an items marked as read event.
+     * Emits a user-initiated items marked as read event (e.g. "mark all read").
+     * Consumers that show user-facing feedback (HomePage toast) subscribe to this
+     * event only; auto-aging emits on {@link #itemsMarkedReadAuto(Long)} instead.
      *
      * @param channelId the channel id of the marked items, null for all channels
      */
     public void itemsMarkedRead(Long channelId) {
         mItemsMarkedReadSubject.onNext(Optional.ofNullable(channelId));
+    }
+
+    /**
+     * Emits an auto mark-read event raised by the unread retention window
+     * (unread items older than the configured days aged to read at the end of a sync).
+     * Kept separate from the user-initiated {@link #itemsMarkedRead(Long)} so user-facing
+     * feedback (HomePage toast) is never triggered by background aging, while list-refresh
+     * consumers subscribe to both events.
+     *
+     * @param channelId the channel id of the auto-marked items, null for all channels
+     */
+    public void itemsMarkedReadAuto(Long channelId) {
+        mItemsMarkedReadAutoSubject.onNext(Optional.ofNullable(channelId));
     }
 
     /**
@@ -138,5 +157,14 @@ public class RssChangeNotifier {
      */
     public Flowable<Optional<Long>> getItemsMarkedRead() {
         return Flowable.fromObservable(mItemsMarkedReadSubject, BackpressureStrategy.BUFFER);
+    }
+
+    /**
+     * Provides a Flowable stream of auto mark-read events (unread retention window).
+     *
+     * @return Flowable that emits the optional channel id of the auto-marked items, empty for all channels
+     */
+    public Flowable<Optional<Long>> getItemsMarkedReadAuto() {
+        return Flowable.fromObservable(mItemsMarkedReadAutoSubject, BackpressureStrategy.BUFFER);
     }
 }

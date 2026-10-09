@@ -80,6 +80,14 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
                                                 mSvProvider.getContext()
                                                         .getString(R.string.error_message, throwable.getMessage())))
         );
+        mRxDisposer.add("mPagedRssItemsCmd.itemsMarkedReadAuto",
+                mSvProvider.get(RssChangeNotifier.class).getItemsMarkedReadAuto()
+                        .subscribe(channelId -> mPagedRssItemsCmd.reload(),
+                                throwable ->
+                                        mSvProvider.get(ILogger.class).e(TAG,
+                                                mSvProvider.getContext()
+                                                        .getString(R.string.error_message, throwable.getMessage())))
+        );
         mRxDisposer.add("mRssChangeNotifier.updatedRssItem.favoriteFilter",
                 mSvProvider.get(RssChangeNotifier.class).getUpdatedRssItem()
                         .subscribe(rssItem -> {

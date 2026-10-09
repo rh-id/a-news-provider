@@ -19,6 +19,7 @@ import java.util.ArrayList;
 
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
+import m.co.rh.id.a_news_provider.app.ui.component.settings.AutoMarkReadMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.DownloadImageMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.LicensesMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.LogMenuSV;
@@ -58,6 +59,8 @@ public class SettingsPage extends StatefulView<Activity> implements RssSyncMenuS
         mStatefulViews = new ArrayList<>();
         mRssSyncMenuSV = new RssSyncMenuSV();
         mStatefulViews.add(mRssSyncMenuSV);
+        AutoMarkReadMenuSV autoMarkReadMenuSV = new AutoMarkReadMenuSV();
+        mStatefulViews.add(autoMarkReadMenuSV);
         ThemeMenuSV themeMenuSV = new ThemeMenuSV();
         mStatefulViews.add(themeMenuSV);
         OneHandModeMenuSV oneHandModeMenuSV = new OneHandModeMenuSV();

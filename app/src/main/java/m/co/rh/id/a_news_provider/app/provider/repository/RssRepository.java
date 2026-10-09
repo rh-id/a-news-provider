@@ -163,6 +163,19 @@ public class RssRepository {
     }
 
     /**
+     * Auto mark-read (unread retention window): marks unread, non-favorite RSS items
+     * older than the given cutoff as read, keeping cross-channel duplicates
+     * (same link) consistent. Favorites are never touched.
+     * This method must be called on a background thread.
+     *
+     * @param cutoffMillis epoch millis; items strictly older than this are affected
+     * @return the number of rows marked as read
+     */
+    public int markOldItemsRead(long cutoffMillis) {
+        return mRssDao.markOldItemsRead(cutoffMillis);
+    }
+
+    /**
      * Updates the isFavorite status of an RSS item in the database.
      * This method must be called on a background thread.
      *

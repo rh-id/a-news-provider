@@ -67,6 +67,18 @@
     <string name="main_menu">Peamenüü</string>
     <string name="back_to_previous_page">Tagasi eelmisele lehele</string>
     <string name="sync_feed_period_in_hour">Voo sünkroonimise intervall tundides</string>
+    <string name="menu_auto_mark_read">Märgi automaatselt loetuks</string>
+    <plurals name="auto_mark_read_after_x_days">
+        <item quantity="one">Märgi automaatselt loetuks pärast %d päev</item>
+        <item quantity="other">Märgi automaatselt loetuks pärast %d päeva</item>
+    </plurals>
+    <string name="auto_mark_read_off">Väljalülitatud</string>
+    <string name="auto_mark_read_period_in_day">Automaatse loetuks märkimise intervall päevades</string>
+    <plurals name="x_days">
+        <item quantity="one">%d päev</item>
+        <item quantity="other">%d päeva</item>
+    </plurals>
+    <string name="error_auto_mark_read_failed">Automaatne loetuks märkimine ebaõnnestus</string>
     <string name="one_hand_mode_activated">Ühekäerežiim aktiveeritud</string>
     <string name="one_hand_mode_deactivated">Ühekäerežiim deaktiveeritud</string>
     <string name="http_not_allowed">HTTP pole lubatud, kasutage HTTPS-i</string>

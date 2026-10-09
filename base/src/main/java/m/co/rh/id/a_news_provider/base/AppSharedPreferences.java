@@ -24,6 +24,9 @@ public class AppSharedPreferences {
     private SerialBehaviorSubject<Integer> mPeriodicSyncRssHour;
     private String mPeriodicSyncRssHourKey;
 
+    private SerialBehaviorSubject<Integer> mAutoMarkReadDays;
+    private String mAutoMarkReadDaysKey;
+
     private SerialBehaviorSubject<Integer> mSelectedTheme;
     private String mSelectedThemeKey;
 
@@ -52,6 +55,7 @@ public class AppSharedPreferences {
         mPeriodicSyncInit = new SerialBehaviorSubject<>();
         mEnablePeriodicSync = new SerialBehaviorSubject<>();
         mPeriodicSyncRssHour = new SerialBehaviorSubject<>();
+        mAutoMarkReadDays = new SerialBehaviorSubject<>();
         mSelectedTheme = new SerialBehaviorSubject<>();
         mOneHandMode = new SerialBehaviorSubject<>();
         initValue();
@@ -64,6 +68,8 @@ public class AppSharedPreferences {
                 + ".enablePeriodicSync";
         mPeriodicSyncRssHourKey = SHARED_PREFERENCES_NAME
                 + ".periodicSyncRssHour";
+        mAutoMarkReadDaysKey = SHARED_PREFERENCES_NAME
+                + ".autoMarkReadDays";
         mSelectedThemeKey = SHARED_PREFERENCES_NAME
                 + ".selectedTheme";
         mOneHandModeKey = SHARED_PREFERENCES_NAME
@@ -84,6 +90,9 @@ public class AppSharedPreferences {
         int periodicSyncRssHour = mSharedPreferences.getInt(
                 mPeriodicSyncRssHourKey, 6);
         periodicSyncRssHour(periodicSyncRssHour);
+        int autoMarkReadDays = mSharedPreferences.getInt(
+                mAutoMarkReadDaysKey, 0);
+        autoMarkReadDays(autoMarkReadDays);
         boolean periodicSyncInit = mSharedPreferences.getBoolean(mPeriodicSyncInitKey, false);
         setPeriodicSyncInit(periodicSyncInit);
 
@@ -136,6 +145,29 @@ public class AppSharedPreferences {
 
     public Flowable<Integer> getPeriodicSyncRssHourFlow() {
         return Flowable.fromObservable(mPeriodicSyncRssHour.getSubject(), BackpressureStrategy.BUFFER);
+    }
+
+    /**
+     * Unread retention window in days: unread items older than this are automatically
+     * marked as read at the end of each sync. 0 (default) turns the feature off.
+     */
+    private void autoMarkReadDays(int days) {
+        mAutoMarkReadDays.onNext(days);
+        mExecutorService.execute(() ->
+                mSharedPreferences.edit().putInt(mAutoMarkReadDaysKey, days)
+                        .commit());
+    }
+
+    public Integer getAutoMarkReadDays() {
+        return mAutoMarkReadDays.getValue();
+    }
+
+    public void setAutoMarkReadDays(int days) {
+        autoMarkReadDays(days);
+    }
+
+    public Flowable<Integer> getAutoMarkReadDaysFlow() {
+        return Flowable.fromObservable(mAutoMarkReadDays.getSubject(), BackpressureStrategy.BUFFER);
     }
 
     public boolean isPeriodicSyncInit() {

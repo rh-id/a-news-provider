@@ -12,9 +12,11 @@ import org.junit.runner.RunWith;
 import android.content.Context;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import m.co.rh.id.a_news_provider.base.util.UrlNormalizer;
 import m.co.rh.id.a_news_provider.base.AppDatabase;
@@ -31,8 +33,9 @@ import static org.junit.Assert.*;
 
 /**
  * Instrumented tests for RssRepository covering persistence item-state merging,
- * favorites union and unread-count map building, against a real in-memory Room
- * database (no mocking framework - Mockito is unreliable on ART).
+ * favorites union, unread-count map building and the auto mark-read retention
+ * window, against a real in-memory Room database (no mocking framework - Mockito
+ * is unreliable on ART).
  * <p>
  * Two sections:
  * <ul>
@@ -40,7 +43,10 @@ import static org.junit.Assert.*;
  *     {@code buildUnreadCountMap}) which need no instance or database,</li>
  *     <li>{@link RssRepository#persist(RssModel)} tests which exercise the merge,
  *     state carry-over, favorites union and URL normalization behavior through real
- *     DAO rows (absorbing the former RssRepositoryPersistDuplicateTest).</li>
+ *     DAO rows (absorbing the former RssRepositoryPersistDuplicateTest), plus
+ *     {@link RssRepository#markOldItemsRead(long)} tests for the unread retention
+ *     window (cutoff boundary, favorite immunity, cross-channel link consistency,
+ *     null/empty-link exclusion, paused-channel aging).</li>
  * </ul>
  */
 @RunWith(AndroidJUnit4.class)
@@ -782,9 +788,126 @@ public class RssRepositoryTest {
         assertEquals("Returned model must carry the merged items", 2, result.getRssItems().size());
     }
 
+    // ==================================================================================
+    // Section 5: markOldItemsRead (unread retention window)
+    // ==================================================================================
+
+    @Test
+    public void testMarkOldItemsReadCutoffBoundary() {
+        RssChannel channel = createRssChannel("http://test.com/feed", "Feed");
+        long cutoff = System.currentTimeMillis();
+        RssItem atCutoff = createRssItem("at cutoff", "http://test.com/at-cutoff");
+        atCutoff.pubDate = new Date(cutoff); // exactly AT the cutoff, must NOT age
+        RssItem older = createRssItem("older", "http://test.com/older");
+        older.pubDate = new Date(cutoff - 1); // strictly older, must age
+        mRssDao.insertRssChannel(channel, atCutoff, older);
+
+        int rowsUpdated = mRssRepository.markOldItemsRead(cutoff);
+
+        assertEquals("Only the strictly-older item must be updated", 1, rowsUpdated);
+        List<RssItem> storedItems = mRssDao.findRssItemsByChannelId(channel.id);
+        assertFalse("Item exactly at the cutoff must stay unread",
+                findItemByLink(storedItems, "http://test.com/at-cutoff").isRead);
+        assertTrue("Item older than the cutoff must be marked read",
+                findItemByLink(storedItems, "http://test.com/older").isRead);
+    }
+
+    @Test
+    public void testMarkOldItemsReadFavoriteImmunity() {
+        RssChannel channel = createRssChannel("http://test.com/feed", "Feed");
+        long cutoff = System.currentTimeMillis();
+        RssItem oldFavorite = createRssItem("old favorite", "http://test.com/fav");
+        oldFavorite.pubDate = new Date(cutoff - TimeUnit.DAYS.toMillis(90));
+        oldFavorite.isFavorite = true;
+        RssItem oldUnread = createRssItem("old unread", "http://test.com/unread");
+        oldUnread.pubDate = new Date(cutoff - TimeUnit.DAYS.toMillis(90));
+        mRssDao.insertRssChannel(channel, oldFavorite, oldUnread);
+
+        int rowsUpdated = mRssRepository.markOldItemsRead(cutoff);
+
+        assertEquals("Only the non-favorite item must be updated", 1, rowsUpdated);
+        List<RssItem> storedItems = mRssDao.findRssItemsByChannelId(channel.id);
+        assertFalse("Old favorite must stay unread",
+                findItemByLink(storedItems, "http://test.com/fav").isRead);
+        assertTrue("Old non-favorite item must be marked read",
+                findItemByLink(storedItems, "http://test.com/unread").isRead);
+    }
+
+    @Test
+    public void testMarkOldItemsReadCrossChannelDuplicatesStayConsistent() {
+        RssChannel oldChannel = createRssChannel("http://test.com/feed-old", "Old feed");
+        RssChannel newChannel = createRssChannel("http://test.com/feed-new", "New feed");
+        long cutoff = System.currentTimeMillis();
+        RssItem oldCopy = createRssItem("dup", "http://test.com/dup");
+        oldCopy.pubDate = new Date(cutoff - TimeUnit.DAYS.toMillis(30)); // old copy
+        RssItem freshCopy = createRssItem("dup", "http://test.com/dup");
+        freshCopy.pubDate = new Date(cutoff); // recent republish, not old itself
+        mRssDao.insertRssChannel(oldChannel, oldCopy);
+        mRssDao.insertRssChannel(newChannel, freshCopy);
+
+        int rowsUpdated = mRssRepository.markOldItemsRead(cutoff);
+
+        assertEquals("Both copies of the same link must be marked read", 2, rowsUpdated);
+        List<RssItem> duplicates = mRssDao.findRssItemsByLink("http://test.com/dup");
+        assertEquals(2, duplicates.size());
+        for (RssItem rssItem : duplicates) {
+            assertTrue("Cross-channel duplicate must be marked read", rssItem.isRead);
+        }
+    }
+
+    @Test
+    public void testMarkOldItemsReadSkipsNullAndEmptyLinks() {
+        RssChannel channel = createRssChannel("http://test.com/feed", "Feed");
+        long cutoff = System.currentTimeMillis();
+        RssItem nullLink = createRssItem("null link", null);
+        nullLink.createdDateTime = new Date(cutoff - TimeUnit.DAYS.toMillis(90));
+        RssItem emptyLink = createRssItem("empty link", "");
+        emptyLink.createdDateTime = new Date(cutoff - TimeUnit.DAYS.toMillis(90));
+        mRssDao.insertRssChannel(channel, nullLink, emptyLink);
+
+        int rowsUpdated = mRssRepository.markOldItemsRead(cutoff);
+
+        assertEquals("Null/empty link rows must never be aged", 0, rowsUpdated);
+        List<RssItem> storedItems = mRssDao.findRssItemsByChannelId(channel.id);
+        assertEquals(2, storedItems.size());
+        for (RssItem rssItem : storedItems) {
+            assertFalse("Null/empty link item must stay unread", rssItem.isRead);
+        }
+    }
+
+    @Test
+    public void testMarkOldItemsReadAgesPausedChannelItems() {
+        RssChannel pausedChannel = createRssChannel("http://test.com/feed", "Paused feed");
+        pausedChannel.isPaused = true;
+        long cutoff = System.currentTimeMillis();
+        RssItem oldItem = createRssItem("old", "http://test.com/old");
+        oldItem.createdDateTime = new Date(cutoff - TimeUnit.DAYS.toMillis(90));
+        mRssDao.insertRssChannel(pausedChannel, oldItem);
+
+        int rowsUpdated = mRssRepository.markOldItemsRead(cutoff);
+
+        assertEquals("Paused channels are aged too", 1, rowsUpdated);
+        assertTrue("Old item of the paused channel must be marked read",
+                mRssDao.findRssItemsByChannelId(pausedChannel.id).get(0).isRead);
+    }
+
+    @Test
+    public void testMarkOldItemsReadLeavesAlreadyReadItemsUntouched() {
+        RssChannel channel = createRssChannel("http://test.com/feed", "Feed");
+        long cutoff = System.currentTimeMillis();
+        RssItem oldRead = createRssItem("old read", "http://test.com/read");
+        oldRead.createdDateTime = new Date(cutoff - TimeUnit.DAYS.toMillis(90));
+        oldRead.isRead = true;
+        mRssDao.insertRssChannel(channel, oldRead);
+
+        int rowsUpdated = mRssRepository.markOldItemsRead(cutoff);
+
+        assertEquals("Already-read rows must not be counted", 0, rowsUpdated);
+    }
+
     private RssItem findItemByLink(List<RssItem> rssItems, String link) {
         for (RssItem rssItem : rssItems) {
-            if (link.equals(rssItem.link)) {
+            if (link == null ? rssItem.link == null : link.equals(rssItem.link)) {
                 return rssItem;
             }
         }

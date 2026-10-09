@@ -206,6 +206,29 @@ public abstract class RssDao {
     public abstract void markRssItemsReadByChannelId(long channelId);
 
     /**
+     * Auto mark-read (unread retention window): marks unread, non-favorite rss items
+     * as read when they are old. An item is old when
+     * COALESCE(pub_date, created_date_time) is strictly before the given cutoff.
+     * The update is link-consistent with {@link #updateRssItemsIsReadByLink(boolean, String)}:
+     * every row whose link belongs to an old-dated row is marked too, so cross-channel
+     * duplicates stay in sync. Rows with a null or empty link are explicitly excluded -
+     * a null link can never match the IN subquery and all empty-link rows would
+     * wrongly couple together.
+     * This method must be called on a background thread.
+     *
+     * @param cutoffMillis epoch millis; items strictly older than this are affected
+     * @return the number of rows marked as read
+     */
+    @Query("UPDATE rss_item SET is_read = 1 " +
+            "WHERE is_read = 0 AND is_favorite = 0 " +
+            "AND link IS NOT NULL AND link != '' " +
+            "AND link IN (" +
+            "SELECT link FROM rss_item " +
+            "WHERE COALESCE(pub_date, created_date_time) < :cutoffMillis " +
+            "AND link IS NOT NULL AND link != '')")
+    public abstract int markOldItemsRead(long cutoffMillis);
+
+    /**
      * Updates the favorite state of rss items matching the given link.
      * This method must be called on a background thread.
      *
@@ -217,7 +240,9 @@ public abstract class RssDao {
 
     /**
      * Updates the paused state of the given channel. A paused channel keeps its
-     * history and unread counts but is skipped by the sync worker.
+     * history but is skipped by the sync worker (no sync, no notifications).
+     * Its unread counts can still decrease via the optional auto mark-read
+     * retention window, see {@link #markOldItemsRead(long)}.
      * This method must be called on a background thread.
      *
      * @param channelId the channel id to update

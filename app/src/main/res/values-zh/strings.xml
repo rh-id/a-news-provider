@@ -69,6 +69,16 @@
     <string name="main_menu">主菜单</string>
     <string name="back_to_previous_page">返回上一页</string>
     <string name="sync_feed_period_in_hour">订阅源同步间隔（小时）</string>
+    <string name="menu_auto_mark_read">自动标为已读</string>
+    <plurals name="auto_mark_read_after_x_days">
+        <item quantity="other">%d 天后自动标为已读</item>
+    </plurals>
+    <string name="auto_mark_read_off">关闭</string>
+    <string name="auto_mark_read_period_in_day">自动标为已读间隔（天）</string>
+    <plurals name="x_days">
+        <item quantity="other">%d 天</item>
+    </plurals>
+    <string name="error_auto_mark_read_failed">自动标为已读失败</string>
     <string name="one_hand_mode_activated">单手模式已开启</string>
     <string name="one_hand_mode_deactivated">单手模式已关闭</string>
     <string name="http_not_allowed">不允许使用 HTTP，请改用 HTTPS</string>

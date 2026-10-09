@@ -21,8 +21,9 @@ A simple and easy to use RSS aggregator that deliver news to your smartphone.
   <li>Search all feed items by title or description from the home screen search menu</li>
   <li>Sort items by newest or oldest, and mark all items as read (globally or per channel)</li>
   <li>Configurable periodic background sync with a 1-24 hours interval (default: every 6 hours, can be toggled off)</li>
+  <li>Optional unread retention window: auto mark items as read after 7/14/30/90 days at the end of each sync (off by default, favorites are never auto-read)</li>
   <li>Per-channel grouped sync notifications with unread counts (requires the Notifications permission on Android 13+)</li>
-  <li>Rename, pause (mute), or delete feeds — paused feeds keep their history and unread counts but stop syncing and notifying</li>
+  <li>Rename, pause (mute), or delete feeds — paused feeds keep their history but stop syncing and notifying (their unread counts may still decrease via the optional auto mark-read setting)</li>
   <li>Support editing feed item link</li>
   <li>Copy feed item links and channel links to clipboard</li>
   <li>Offline/online detection with SnackBar feedback; syncs run automatically once the device is back online</li>

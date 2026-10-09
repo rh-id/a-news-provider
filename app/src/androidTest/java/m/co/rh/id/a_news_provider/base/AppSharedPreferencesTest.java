@@ -14,6 +14,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import io.reactivex.rxjava3.subscribers.TestSubscriber;
 import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderModule;
 import m.co.rh.id.aprovider.ProviderRegistry;
@@ -24,9 +25,10 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * Instrumented tests for the AppSharedPreferences notification-permission state
- * (issue #51): asserts the fresh-install defaults, the set/get round-trip of both
- * new fields and that state persists through a fresh provider instance (re-read
- * from the shared preferences file, mirroring a process restart).
+ * (issue #51) and the auto mark-read retention window (issue #47): asserts the
+ * fresh-install defaults, the set/get round-trip of both new fields and that state
+ * persists through a fresh provider instance (re-read from the shared preferences
+ * file, mirroring a process restart).
  */
 @RunWith(AndroidJUnit4.class)
 public class AppSharedPreferencesTest {
@@ -97,6 +99,49 @@ public class AppSharedPreferencesTest {
         AppSharedPreferences reloaded = mProvider.get(AppSharedPreferences.class);
         assertEquals(2, reloaded.getNotificationPermissionRequestCount());
         assertTrue(reloaded.isNotificationPermissionDeniedBefore());
+    }
+
+    @Test
+    public void testAutoMarkReadDaysFreshInstallDefault() {
+        assertEquals("Auto mark-read must default to off (0)",
+                Integer.valueOf(0), mAppSharedPreferences.getAutoMarkReadDays());
+    }
+
+    @Test
+    public void testAutoMarkReadDaysRoundTrip() {
+        mAppSharedPreferences.setAutoMarkReadDays(7);
+        assertEquals(Integer.valueOf(7), mAppSharedPreferences.getAutoMarkReadDays());
+        mAppSharedPreferences.setAutoMarkReadDays(90);
+        assertEquals(Integer.valueOf(90), mAppSharedPreferences.getAutoMarkReadDays());
+        mAppSharedPreferences.setAutoMarkReadDays(0);
+        assertEquals("Setting 0 must turn the feature back off",
+                Integer.valueOf(0), mAppSharedPreferences.getAutoMarkReadDays());
+    }
+
+    @Test
+    public void testAutoMarkReadDaysFlowEmitsUpdates() {
+        TestSubscriber<Integer> testSubscriber =
+                mAppSharedPreferences.getAutoMarkReadDaysFlow().test();
+
+        // SerialBehaviorSubject replays the current value on subscribe
+        assertEquals(Integer.valueOf(0), testSubscriber.values().get(0));
+
+        mAppSharedPreferences.setAutoMarkReadDays(14);
+
+        testSubscriber.assertValueCount(2);
+        assertEquals(Integer.valueOf(14), testSubscriber.values().get(1));
+    }
+
+    @Test
+    public void testAutoMarkReadDaysSurvivesNewProviderInstance() throws Exception {
+        mAppSharedPreferences.setAutoMarkReadDays(30);
+        // the setter persists asynchronously on the executor thread, give it a moment
+        // (generous for slow emulators)
+        Thread.sleep(1000);
+        mProvider.dispose();
+        mProvider = Provider.createProvider(mContext, new PrefsTestProviderModule());
+        AppSharedPreferences reloaded = mProvider.get(AppSharedPreferences.class);
+        assertEquals(Integer.valueOf(30), reloaded.getAutoMarkReadDays());
     }
 
     private static class PrefsTestProviderModule implements ProviderModule {

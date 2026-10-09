@@ -67,6 +67,20 @@
     <string name="main_menu">Menu principale</string>
     <string name="back_to_previous_page">Torna alla pagina precedente</string>
     <string name="sync_feed_period_in_hour">Intervallo di sincronizzazione del feed in ore</string>
+    <string name="menu_auto_mark_read">Segna automaticamente come letto</string>
+    <plurals name="auto_mark_read_after_x_days">
+        <item quantity="one">Segna automaticamente come letto dopo %d giorno</item>
+        <item quantity="many">Segna automaticamente come letto dopo %d di giorni</item>
+        <item quantity="other">Segna automaticamente come letto dopo %d giorni</item>
+    </plurals>
+    <string name="auto_mark_read_off">Disattivato</string>
+    <string name="auto_mark_read_period_in_day">Intervallo di segnalazione automatica come letto in giorni</string>
+    <plurals name="x_days">
+        <item quantity="one">%d giorno</item>
+        <item quantity="many">%d di giorni</item>
+        <item quantity="other">%d giorni</item>
+    </plurals>
+    <string name="error_auto_mark_read_failed">Segnatura automatica come letto non riuscita</string>
     <string name="one_hand_mode_activated">Modalità a una mano attivata</string>
     <string name="one_hand_mode_deactivated">Modalità a una mano disattivata</string>
     <string name="http_not_allowed">HTTP non consentito, usa HTTPS</string>
@@ -113,6 +127,7 @@
 
     <plurals name="new_items_available">
         <item quantity="one">%d nuovo elemento</item>
+        <item quantity="many">%d di nuovi elementi</item>
         <item quantity="other">%d nuovi elementi</item>
     </plurals>
     <string name="menu_search">Cerca</string>

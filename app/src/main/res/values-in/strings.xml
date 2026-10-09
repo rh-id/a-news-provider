@@ -67,6 +67,16 @@
     <string name="main_menu">Menu utama</string>
     <string name="back_to_previous_page">Kembali ke halaman sebelumnya</string>
     <string name="sync_feed_period_in_hour">Periode sinkron feed dalam jam</string>
+    <string name="menu_auto_mark_read">Tandai Otomatis Terbaca</string>
+    <plurals name="auto_mark_read_after_x_days">
+        <item quantity="other">Tandai otomatis terbaca setelah %d hari</item>
+    </plurals>
+    <string name="auto_mark_read_off">Mati</string>
+    <string name="auto_mark_read_period_in_day">Periode tandai otomatis terbaca dalam hari</string>
+    <plurals name="x_days">
+        <item quantity="other">%d hari</item>
+    </plurals>
+    <string name="error_auto_mark_read_failed">Gagal menandai otomatis sebagai terbaca</string>
     <string name="one_hand_mode_activated">Mode satu tangan diaktifkan</string>
     <string name="one_hand_mode_deactivated">Mode satu tangan dinonaktifkan</string>
     <string name="http_not_allowed">HTTP tidak diizinkan gunakan HTTPS sebagai gantinya</string>

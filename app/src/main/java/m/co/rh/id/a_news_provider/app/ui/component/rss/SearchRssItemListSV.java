@@ -85,6 +85,14 @@ public class SearchRssItemListSV extends StatefulView<Activity> implements Requi
                                                 mSvProvider.getContext()
                                                         .getString(R.string.error_message, throwable.getMessage())))
         );
+        mRxDisposer.add("mSearchRssItemsCmd.itemsMarkedReadAuto",
+                mSvProvider.get(RssChangeNotifier.class).getItemsMarkedReadAuto()
+                        .subscribe(channelId -> mSearchRssItemsCmd.reload(),
+                                throwable ->
+                                        mSvProvider.get(ILogger.class).e(TAG,
+                                                mSvProvider.getContext()
+                                                        .getString(R.string.error_message, throwable.getMessage())))
+        );
         mRxDisposer.add("mRssChangeNotifier.updatedRssItem.favoriteFilter",
                 mSvProvider.get(RssChangeNotifier.class).getUpdatedRssItem()
                         .subscribe(rssItem -> {

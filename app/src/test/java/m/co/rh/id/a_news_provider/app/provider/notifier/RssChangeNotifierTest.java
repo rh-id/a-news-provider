@@ -237,6 +237,48 @@ public class RssChangeNotifierTest {
         assertEquals(Long.valueOf(1L), testSubscriber.values().get(0).orElse(null));
     }
 
+    @Test
+    public void testItemsMarkedReadAutoEmitsNull() {
+        RssChangeNotifier notifier = new RssChangeNotifier();
+
+        TestSubscriber<Optional<Long>> testSubscriber = notifier.getItemsMarkedReadAuto().test();
+
+        notifier.itemsMarkedReadAuto(null);
+
+        testSubscriber.assertValueCount(1);
+        assertEquals(Optional.empty(), testSubscriber.values().get(0));
+    }
+
+    @Test
+    public void testItemsMarkedReadAutoEmitsChannelId() {
+        RssChangeNotifier notifier = new RssChangeNotifier();
+
+        TestSubscriber<Optional<Long>> testSubscriber = notifier.getItemsMarkedReadAuto().test();
+
+        notifier.itemsMarkedReadAuto(1L);
+
+        testSubscriber.assertValueCount(1);
+        assertEquals(Long.valueOf(1L), testSubscriber.values().get(0).orElse(null));
+    }
+
+    @Test
+    public void testAutoAndUserInitiatedMarkedReadAreSeparateStreams() {
+        RssChangeNotifier notifier = new RssChangeNotifier();
+
+        TestSubscriber<Optional<Long>> userInitiatedSubscriber = notifier.getItemsMarkedRead().test();
+        TestSubscriber<Optional<Long>> autoSubscriber = notifier.getItemsMarkedReadAuto().test();
+
+        notifier.itemsMarkedReadAuto(1L);
+        notifier.itemsMarkedRead(2L);
+
+        // the auto event must not leak into the user-initiated stream (HomePage toast)
+        // and vice versa (list-refresh consumers subscribe to both streams)
+        userInitiatedSubscriber.assertValueCount(1);
+        assertEquals(Long.valueOf(2L), userInitiatedSubscriber.values().get(0).orElse(null));
+        autoSubscriber.assertValueCount(1);
+        assertEquals(Long.valueOf(1L), autoSubscriber.values().get(0).orElse(null));
+    }
+
     // ==================================================================================
     // Section 2: RssChannelStateNotifier tests
     // ==================================================================================

@@ -67,6 +67,18 @@
     <string name="main_menu">Aðalvalmynd</string>
     <string name="back_to_previous_page">Til baka á fyrri síðu</string>
     <string name="sync_feed_period_in_hour">Samstillingarbil straums í klukkustundum</string>
+    <string name="menu_auto_mark_read">Merkja sjálfvirkt sem lesið</string>
+    <plurals name="auto_mark_read_after_x_days">
+        <item quantity="one">Merkja sjálfvirkt sem lesið eftir %d dag</item>
+        <item quantity="other">Merkja sjálfvirkt sem lesið eftir %d daga</item>
+    </plurals>
+    <string name="auto_mark_read_off">Óvirkt</string>
+    <string name="auto_mark_read_period_in_day">Bil fyrir sjálfvirka merkingu sem lesið í dögum</string>
+    <plurals name="x_days">
+        <item quantity="one">%d dag</item>
+        <item quantity="other">%d daga</item>
+    </plurals>
+    <string name="error_auto_mark_read_failed">Mistókst að merkja sjálfvirkt sem lesið</string>
     <string name="one_hand_mode_activated">Einnhendarstilling virkjuð</string>
     <string name="one_hand_mode_deactivated">Einnhendarstilling afvirkjuð</string>
     <string name="http_not_allowed">HTTP ekki leyft, notaðu HTTPS í staðinn</string>
