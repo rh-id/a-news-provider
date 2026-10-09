@@ -6,22 +6,18 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.work.WorkManager;
 
-import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
+import java.util.concurrent.ExecutorService;
 
 import io.reactivex.rxjava3.observers.TestObserver;
 import io.reactivex.rxjava3.subscribers.TestSubscriber;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.workmanager.ConstantsKey;
-import m.co.rh.id.a_news_provider.base.AppDatabase;
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.util.UrlNormalizer;
@@ -29,6 +25,9 @@ import m.co.rh.id.a_news_provider.provider.IntegrationTestAppProviderModule;
 import m.co.rh.id.a_news_provider.test.FakeWorkManager;
 import m.co.rh.id.a_news_provider.test.NoOpLogger;
 import m.co.rh.id.a_news_provider.test.TestApplication;
+import m.co.rh.id.a_news_provider.test.util.DirectExecutorService;
+import m.co.rh.id.a_news_provider.test.util.ProviderDbRule;
+import m.co.rh.id.a_news_provider.test.util.RecordingRedirectResolver;
 import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderModule;
 import m.co.rh.id.aprovider.ProviderRegistry;
@@ -61,10 +60,14 @@ import static org.junit.Assert.assertTrue;
  *     Android (API 26+) deterministically rejects when the database is OPENED -
  *     SQLiteOpenHelper throws the "File ... contains a path separator"
  *     IllegalArgumentException at open time, so the first DAO query (the duplicate
- *     check) fails. The tearDown deleteDatabase call does not throw for such a name
+ *     check) fails. The rule's cleanup deleteDatabase call does not throw for such a name
  *     (the suite stays green with it). execute() fails closed: the Single errors
  *     with the feed-add error message (also carried by the validation subject) and
  *     no worker is enqueued.</li>
+ *     <li>the ExecutorService registration is overridden FIRST with a direct
+ *     (same-thread) executor via setSkipSameType(true), so BaseProviderModule's
+ *     real threaded executor registration is skipped: execute() completes
+ *     synchronously inside .test() and no awaitDone waiting is needed.</li>
  * </ul>
  */
 @RunWith(AndroidJUnit4.class)
@@ -72,6 +75,9 @@ public class NewRssChannelCmdTest {
     private static final String LEGACY_RAW_URL = "https://CoolFeed.com/rss/";
     private static final String CANONICAL_URL = "https://coolfeed.com/rss";
     private static final String LEGACY_FEED_NAME = "Cool Feed";
+
+    @Rule
+    public final ProviderDbRule mDbRule = new ProviderDbRule();
 
     private TestApplication mTestApplication;
     private Provider mTestProvider;
@@ -89,26 +95,9 @@ public class NewRssChannelCmdTest {
         mDbName = dbName;
         mFakeWorkManager = new FakeWorkManager();
         mRecordingResolver = new RecordingRedirectResolver();
-        mTestProvider = Provider.createProvider(mTestApplication,
+        mTestProvider = mDbRule.create(mTestApplication,
                 new WorkManagerOverrideProviderModule(mTestApplication, dbName,
-                        mFakeWorkManager, mRecordingResolver));
-    }
-
-    @After
-    public void tearDown() {
-        if (mTestProvider != null) {
-            try {
-                // close the Room instance before deleting its file so the delete
-                // cannot race an open database handle
-                mTestProvider.get(AppDatabase.class).close();
-            } catch (Throwable ignored) {
-                // database may never have been opened (e.g. the brokenDb test)
-            }
-            mTestProvider.dispose();
-        }
-        if (mDbName != null) {
-            mTestApplication.deleteDatabase(mDbName);
-        }
+                        mFakeWorkManager, mRecordingResolver), dbName);
     }
 
     @Test
@@ -126,7 +115,7 @@ public class NewRssChannelCmdTest {
         TestSubscriber<String> validationSubscriber = cmd.getUrlValidation().test();
 
         TestObserver<String> observer = cmd.execute("https://example.com/feed")
-                .test().awaitDone(10, TimeUnit.SECONDS);
+                .test();
 
         observer.assertError(throwable -> expectedMessage.equals(throwable.getMessage()));
         assertTrue("Validation subject must carry the duplicate message",
@@ -157,7 +146,7 @@ public class NewRssChannelCmdTest {
         TestSubscriber<String> validationSubscriber = cmd.getUrlValidation().test();
 
         TestObserver<String> observer = cmd.execute("https://EXAMPLE.com/feed/")
-                .test().awaitDone(10, TimeUnit.SECONDS);
+                .test();
 
         observer.assertError(throwable -> expectedMessage.equals(throwable.getMessage()));
         assertTrue("Validation subject must carry the duplicate message",
@@ -187,7 +176,7 @@ public class NewRssChannelCmdTest {
         TestSubscriber<String> validationSubscriber = cmd.getUrlValidation().test();
 
         TestObserver<String> observer = cmd.execute("https://old.example.com/feed")
-                .test().awaitDone(10, TimeUnit.SECONDS);
+                .test();
 
         observer.assertError(throwable -> expectedMessage.equals(throwable.getMessage()));
         assertTrue("Validation subject must carry the redirect-duplicate message",
@@ -209,8 +198,7 @@ public class NewRssChannelCmdTest {
         NewRssChannelCmd cmd = mTestProvider.get(NewRssChannelCmd.class);
 
         TestObserver<String> observer = cmd.execute("example.com/newfeed/")
-                .test().awaitDone(10, TimeUnit.SECONDS)
-                .assertComplete();
+                .test().assertComplete();
 
         observer.assertValue("https://example.com/newfeed");
         assertEquals("Add path must enqueue exactly one fetch worker",
@@ -238,7 +226,7 @@ public class NewRssChannelCmdTest {
         TestSubscriber<String> validationSubscriber = cmd.getUrlValidation().test();
 
         TestObserver<String> observer = cmd.execute("https://example.com/feed")
-                .test().awaitDone(10, TimeUnit.SECONDS);
+                .test();
 
         observer.assertError(throwable -> expectedMessage.equals(throwable.getMessage())
                 && throwable.getCause() != null);
@@ -266,7 +254,7 @@ public class NewRssChannelCmdTest {
         String invalidUrlMessage = mTestApplication.getString(R.string.invalid_url);
 
         TestObserver<String> observer = cmd.execute("invalid url")
-                .test().awaitDone(10, TimeUnit.SECONDS);
+                .test();
 
         observer.assertError(RuntimeException.class);
         assertEquals("Validation error must carry the invalid-url message",
@@ -288,7 +276,7 @@ public class NewRssChannelCmdTest {
         TestSubscriber<String> validationSubscriber = cmd.getUrlValidation().test();
 
         TestObserver<String> observer = cmd.execute(LEGACY_RAW_URL)
-                .test().awaitDone(10, TimeUnit.SECONDS);
+                .test();
 
         observer.assertError(throwable -> expectedMessage.equals(throwable.getMessage()));
         assertTrue("Validation subject must carry the duplicate message",
@@ -314,7 +302,7 @@ public class NewRssChannelCmdTest {
         TestSubscriber<String> validationSubscriber = cmd.getUrlValidation().test();
 
         TestObserver<String> observer = cmd.execute(CANONICAL_URL)
-                .test().awaitDone(10, TimeUnit.SECONDS);
+                .test();
 
         observer.assertComplete();
         observer.assertValue(CANONICAL_URL);
@@ -340,7 +328,9 @@ public class NewRssChannelCmdTest {
      * throws on duplicate registrations, and with setSkipSameType(true) it keeps the
      * FIRST registration - so the doubles win and the wrapped module's real WorkManager
      * and real (network-resolving) checker registrations are skipped. The fake resolver
-     * records every probe call and never touches the network.
+     * records every probe call and never touches the network. The direct (same-thread)
+     * ExecutorService registered first wins the same way, so commands complete
+     * synchronously inside .test().
      */
     private static class WorkManagerOverrideProviderModule implements ProviderModule {
         private final Application mApplication;
@@ -359,6 +349,7 @@ public class NewRssChannelCmdTest {
 
         @Override
         public void provides(ProviderRegistry providerRegistry, Provider provider) {
+            providerRegistry.register(ExecutorService.class, DirectExecutorService::new);
             providerRegistry.registerLazy(WorkManager.class, () -> mWorkManager);
             providerRegistry.registerLazy(RedirectDuplicateChecker.class, () ->
                     new RedirectDuplicateChecker(mApplication,
@@ -373,30 +364,6 @@ public class NewRssChannelCmdTest {
 
         @Override
         public void dispose(Provider provider) {
-        }
-    }
-
-    /**
-     * Resolver double that records every probe URL so tests can assert whether the
-     * redirect probe ran (and how often). Defaults to never redirecting
-     * ({@code url -> null}); individual tests install their own resolution.
-     */
-    private static class RecordingRedirectResolver implements Function<String, String> {
-        private final List<String> mCalls = new ArrayList<>();
-        private Function<String, String> mResolution = url -> null;
-
-        void setResolution(Function<String, String> resolution) {
-            mResolution = resolution;
-        }
-
-        List<String> getCalls() {
-            return mCalls;
-        }
-
-        @Override
-        public String apply(String url) {
-            mCalls.add(url);
-            return mResolution.apply(url);
         }
     }
 }

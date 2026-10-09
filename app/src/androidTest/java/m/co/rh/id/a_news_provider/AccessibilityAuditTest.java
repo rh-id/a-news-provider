@@ -34,6 +34,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -511,10 +513,12 @@ public class AccessibilityAuditTest {
 
     private TestSvPage launchTestPage(List<? extends StatefulView<Activity>> testSvs) {
         AtomicReference<TestSvPage> pageRef = new AtomicReference<>();
+        CountDownLatch pageCreated = new CountDownLatch(1);
         Map<String, StatefulViewFactory<Activity, StatefulView>> navMap = new HashMap<>();
         navMap.put(ROUTE_ACCESSIBILITY_TEST_PAGE, (args, activity) -> {
             TestSvPage testSvPage = new TestSvPage(testSvs);
             pageRef.set(testSvPage);
+            pageCreated.countDown();
             return testSvPage;
         });
         NavConfiguration.Builder<Activity, StatefulView> navBuilder =
@@ -528,9 +532,18 @@ public class AccessibilityAuditTest {
         mTestProvider.get(ProviderRegistry.class).register(INavigator.class, () -> mNavigator);
 
         mMainActivityScenario = ActivityScenario.launch(MainActivity.class);
-        // a cold/slow emulator can delay the initial navigation past scenario launch,
-        // so poll for the page instead of failing immediately
-        awaitUntil("Test page was not created", () -> pageRef.get() != null);
+        // event-driven wait: the latch is counted down by the nav factory when the
+        // test page is created. The Navigator creates routes on the main thread
+        // after a background load, so a cross-thread latch is the deterministic
+        // wait for page creation
+        try {
+            if (!pageCreated.await(AWAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
+                fail("Test page was not created");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            fail("Interrupted while waiting for test page");
+        }
         return pageRef.get();
     }
 

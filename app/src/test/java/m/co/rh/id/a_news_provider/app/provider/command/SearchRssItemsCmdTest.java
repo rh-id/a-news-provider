@@ -4,14 +4,12 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
+import m.co.rh.id.a_news_provider.test.util.DirectExecutorService;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.aprovider.Provider;
 
@@ -133,38 +131,5 @@ public class SearchRssItemsCmdTest {
                 isNull(), isNull(), isNull(), eq(1000));
         verify(mMockRssDao, times(2)).searchRssItemsWithLimit(anyString(),
                 isNull(), isNull(), isNull(), eq(1000));
-    }
-
-    private static class DirectExecutorService extends AbstractExecutorService {
-
-        @Override
-        public void execute(Runnable command) {
-            command.run();
-        }
-
-        @Override
-        public void shutdown() {
-            // no-op
-        }
-
-        @Override
-        public List<Runnable> shutdownNow() {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public boolean isShutdown() {
-            return false;
-        }
-
-        @Override
-        public boolean isTerminated() {
-            return false;
-        }
-
-        @Override
-        public boolean awaitTermination(long timeout, TimeUnit unit) {
-            return true;
-        }
     }
 }

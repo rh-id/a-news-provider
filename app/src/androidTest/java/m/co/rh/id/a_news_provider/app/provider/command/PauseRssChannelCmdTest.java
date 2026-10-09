@@ -1,24 +1,29 @@
 package m.co.rh.id.a_news_provider.app.provider.command;
 
+import android.app.Application;
+
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
-import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutorService;
 
 import io.reactivex.rxjava3.subscribers.TestSubscriber;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
-import m.co.rh.id.a_news_provider.base.AppDatabase;
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.provider.IntegrationTestAppProviderModule;
 import m.co.rh.id.a_news_provider.test.TestApplication;
+import m.co.rh.id.a_news_provider.test.util.DirectExecutorService;
+import m.co.rh.id.a_news_provider.test.util.ProviderDbRule;
 import m.co.rh.id.aprovider.Provider;
+import m.co.rh.id.aprovider.ProviderModule;
+import m.co.rh.id.aprovider.ProviderRegistry;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -32,13 +37,20 @@ import static org.junit.Assert.assertTrue;
  * is_paused state and that the RssChangeNotifier emits the updated channel so
  * the UI refreshes. Unpausing round-trips back to false. An unknown channel id
  * must neither crash nor emit (the command logs record_not_found instead).
+ * <p>
+ * The {@link SyncExecutorOverrideProviderModule} below registers a direct
+ * executor FIRST, so command execution is fully synchronous: execute() returns
+ * only after the DAO write and the notifier emission, and assertions need no
+ * waiting.
  */
 @RunWith(AndroidJUnit4.class)
 public class PauseRssChannelCmdTest {
 
+    @Rule
+    public final ProviderDbRule mDbRule = new ProviderDbRule();
+
     private TestApplication mTestApplication;
     private Provider mTestProvider;
-    private String mDbName;
 
     @Before
     public void setUp() {
@@ -47,30 +59,13 @@ public class PauseRssChannelCmdTest {
     }
 
     private void createProvider(String dbName) {
-        mDbName = dbName;
-        mTestProvider = Provider.createProvider(mTestApplication,
-                new IntegrationTestAppProviderModule(mTestApplication, dbName));
-    }
-
-    @After
-    public void tearDown() {
-        if (mTestProvider != null) {
-            try {
-                // close the Room instance before deleting its file so the delete
-                // cannot race an open database handle
-                mTestProvider.get(AppDatabase.class).close();
-            } catch (Throwable ignored) {
-                // database may never have been opened
-            }
-            mTestProvider.dispose();
-        }
-        if (mDbName != null) {
-            mTestApplication.deleteDatabase(mDbName);
-        }
+        // the direct-executor override module makes command execution fully synchronous
+        mTestProvider = mDbRule.create(mTestApplication,
+                new SyncExecutorOverrideProviderModule(mTestApplication, dbName), dbName);
     }
 
     @Test
-    public void testExecutePausePersistsAndNotifies() throws InterruptedException {
+    public void testExecutePausePersistsAndNotifies() {
         createProvider("pauseCmdPersistsAndNotifies");
         RssDao rssDao = mTestProvider.get(RssDao.class);
         RssChannel existingChannel = new RssChannel();
@@ -84,8 +79,6 @@ public class PauseRssChannelCmdTest {
         mTestProvider.get(PauseRssChannelCmd.class)
                 .execute(existingChannel.id, true);
 
-        assertTrue("Pause must emit an updatedRssChannel event",
-                awaitValues(subscriber, 1, 10, TimeUnit.SECONDS));
         subscriber.assertValueCount(1);
         Optional<RssChannel> emitted = subscriber.values().get(0);
         assertTrue("The emitted event must carry the updated channel",
@@ -98,7 +91,7 @@ public class PauseRssChannelCmdTest {
     }
 
     @Test
-    public void testExecuteUnpauseRestoresNotPaused() throws InterruptedException {
+    public void testExecuteUnpauseRestoresNotPaused() {
         createProvider("pauseCmdUnpauseRestores");
         RssDao rssDao = mTestProvider.get(RssDao.class);
         RssChannel existingChannel = new RssChannel();
@@ -110,10 +103,7 @@ public class PauseRssChannelCmdTest {
         TestSubscriber<Optional<RssChannel>> subscriber = mTestProvider
                 .get(RssChangeNotifier.class).updatedRssChannel().test();
         cmd.execute(existingChannel.id, true);
-        assertTrue(awaitValues(subscriber, 1, 10, TimeUnit.SECONDS));
         cmd.execute(existingChannel.id, false);
-        assertTrue("Unpause must emit a second updatedRssChannel event",
-                awaitValues(subscriber, 2, 10, TimeUnit.SECONDS));
         subscriber.assertValueCount(2);
         Optional<RssChannel> emitted = subscriber.values().get(1);
         assertTrue(emitted.isPresent());
@@ -125,7 +115,7 @@ public class PauseRssChannelCmdTest {
     }
 
     @Test
-    public void testExecuteUnknownChannelIdDoesNotNotifyOrCrash() throws InterruptedException {
+    public void testExecuteUnknownChannelIdDoesNotNotifyOrCrash() {
         createProvider("pauseCmdUnknownChannelId");
         RssDao rssDao = mTestProvider.get(RssDao.class);
 
@@ -133,25 +123,40 @@ public class PauseRssChannelCmdTest {
                 .get(RssChangeNotifier.class).updatedRssChannel().test();
         mTestProvider.get(PauseRssChannelCmd.class).execute(999, true);
 
-        // no record exists - the command logs record_not_found and must stay silent
-        assertFalse("Unknown channel id must not emit any event",
-                awaitValues(subscriber, 1, 2, TimeUnit.SECONDS));
+        // no record exists - the command logs record_not_found and must stay silent.
+        // execute() runs inline, so by the time it returns any emission would
+        // already be visible
         subscriber.assertValueCount(0);
         assertNull(rssDao.findRssChannelById(999));
     }
 
     /**
-     * Waits until the subscriber has received at least {@code count} values or the
-     * timeout elapses. RxJava 3.1.12 has no awaitCount(count, timeout, unit) overload
-     * and its awaitCount(int) blocks indefinitely, so this polls instead.
+     * Wraps {@link IntegrationTestAppProviderModule} and registers the direct
+     * executor FIRST: DefaultProvider throws on duplicate registrations, and with
+     * setSkipSameType(true) it keeps the FIRST registration - so the direct
+     * executor wins and the wrapped module's real threaded executor registration
+     * is skipped. Commands then run inline on the test thread: execute() returns
+     * only after the DAO write and the notifier emission, so assertions need no
+     * waiting.
      */
-    private static boolean awaitValues(TestSubscriber<?> subscriber, int count,
-                                       long timeout, TimeUnit unit)
-            throws InterruptedException {
-        long deadlineNanos = System.nanoTime() + unit.toNanos(timeout);
-        while (subscriber.values().size() < count && System.nanoTime() < deadlineNanos) {
-            TimeUnit.MILLISECONDS.sleep(50);
+    private static class SyncExecutorOverrideProviderModule implements ProviderModule {
+        private final Application mApplication;
+        private final String mDbName;
+
+        SyncExecutorOverrideProviderModule(Application application, String dbName) {
+            mApplication = application;
+            mDbName = dbName;
         }
-        return subscriber.values().size() >= count;
+
+        @Override
+        public void provides(ProviderRegistry providerRegistry, Provider provider) {
+            providerRegistry.register(ExecutorService.class, DirectExecutorService::new);
+            providerRegistry.setSkipSameType(true);
+            providerRegistry.registerModule(new IntegrationTestAppProviderModule(mApplication, mDbName));
+        }
+
+        @Override
+        public void dispose(Provider provider) {
+        }
     }
 }

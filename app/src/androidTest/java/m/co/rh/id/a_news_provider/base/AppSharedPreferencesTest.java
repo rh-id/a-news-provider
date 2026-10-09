@@ -12,9 +12,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import io.reactivex.rxjava3.subscribers.TestSubscriber;
+import m.co.rh.id.a_news_provider.test.util.DirectExecutorService;
 import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderModule;
 import m.co.rh.id.aprovider.ProviderRegistry;
@@ -40,27 +40,24 @@ public class AppSharedPreferencesTest {
     private AppSharedPreferences mAppSharedPreferences;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         mContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        // isolate: a previous test's executor may still hold a pending async commit
-        // (setters persist asynchronously); wait for it to land, then clear again so
-        // the stale write is wiped instead of leaking into this test's state
+        // defensive clear: with the direct executor this test's own writes are
+        // synchronous, so the wipe only guards against a stale write from a
+        // previously-run foreign test class
         SharedPreferences prefs = mContext.getSharedPreferences(SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE);
-        prefs.edit().clear().commit();
-        Thread.sleep(300);
         prefs.edit().clear().commit();
         mProvider = Provider.createProvider(mContext, new PrefsTestProviderModule());
         mAppSharedPreferences = mProvider.get(AppSharedPreferences.class);
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         if (mProvider != null) {
             mProvider.dispose();
         }
-        // let this test's own async commits land before wiping the file, otherwise
-        // they can leak into the next test's fresh provider
-        Thread.sleep(300);
+        // this test's own commits are synchronous now, so the wipe simply prevents
+        // them from leaking into the next test
         mContext.getSharedPreferences(SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
                 .edit().clear().commit();
     }
@@ -88,12 +85,11 @@ public class AppSharedPreferencesTest {
     }
 
     @Test
-    public void testStateSurvivesNewProviderInstance() throws Exception {
+    public void testStateSurvivesNewProviderInstance() {
         mAppSharedPreferences.setNotificationPermissionRequestCount(2);
         mAppSharedPreferences.setNotificationPermissionDeniedBefore(true);
-        // the setter persists asynchronously on the executor thread, give it a moment
-        // (generous for slow emulators)
-        Thread.sleep(1000);
+        // the setter persists synchronously via the direct executor, so the write
+        // has landed before dispose() runs
         mProvider.dispose();
         mProvider = Provider.createProvider(mContext, new PrefsTestProviderModule());
         AppSharedPreferences reloaded = mProvider.get(AppSharedPreferences.class);
@@ -133,11 +129,10 @@ public class AppSharedPreferencesTest {
     }
 
     @Test
-    public void testAutoMarkReadDaysSurvivesNewProviderInstance() throws Exception {
+    public void testAutoMarkReadDaysSurvivesNewProviderInstance() {
         mAppSharedPreferences.setAutoMarkReadDays(30);
-        // the setter persists asynchronously on the executor thread, give it a moment
-        // (generous for slow emulators)
-        Thread.sleep(1000);
+        // the setter persists synchronously via the direct executor, so the write
+        // has landed before dispose() runs
         mProvider.dispose();
         mProvider = Provider.createProvider(mContext, new PrefsTestProviderModule());
         AppSharedPreferences reloaded = mProvider.get(AppSharedPreferences.class);
@@ -147,8 +142,10 @@ public class AppSharedPreferencesTest {
     private static class PrefsTestProviderModule implements ProviderModule {
         @Override
         public void provides(ProviderRegistry providerRegistry, Provider provider) {
-            providerRegistry.register(ExecutorService.class, Executors::newSingleThreadExecutor);
-            // mirror the production registration in BaseProviderModule
+            // direct executor: pref persistence runs inline on the calling thread,
+            // keeping writes synchronous and deterministic in tests (still mirrors
+            // the production ExecutorService registration in BaseProviderModule)
+            providerRegistry.register(ExecutorService.class, DirectExecutorService::new);
             providerRegistry.registerAsync(AppSharedPreferences.class, () -> new AppSharedPreferences(provider));
         }
 

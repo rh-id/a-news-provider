@@ -6,20 +6,18 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import io.reactivex.rxjava3.subscribers.TestSubscriber;
 import m.co.rh.id.a_news_provider.app.provider.repository.RssRepository;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.a_news_provider.base.model.RssModel;
+import m.co.rh.id.a_news_provider.test.util.DirectExecutorService;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.aprovider.Provider;
 
@@ -709,42 +707,5 @@ public class RssChangeNotifierTest {
         // Verify both state Flowables are completed
         selectedChannelSubscriber.assertComplete();
         countSubscriber.assertComplete();
-    }
-
-    /**
-     * Executor that runs every task synchronously on the calling thread, so the
-     * state notifier's refresh/hub handling is deterministic in tests.
-     */
-    private static class DirectExecutorService extends AbstractExecutorService {
-
-        @Override
-        public void execute(Runnable command) {
-            command.run();
-        }
-
-        @Override
-        public void shutdown() {
-            // no-op
-        }
-
-        @Override
-        public List<Runnable> shutdownNow() {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public boolean isShutdown() {
-            return false;
-        }
-
-        @Override
-        public boolean isTerminated() {
-            return false;
-        }
-
-        @Override
-        public boolean awaitTermination(long timeout, TimeUnit unit) {
-            return true;
-        }
     }
 }

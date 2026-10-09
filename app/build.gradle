@@ -67,6 +67,16 @@ android {
         abortOnError = true
         warningsAsErrors = false
     }
+    // sharedTest sources are compiled into BOTH the unit-test and instrumented-test
+    // source sets, letting one file serve both (see DirectExecutorService)
+    sourceSets {
+        test {
+            java.srcDirs += 'src/sharedTest/java'
+        }
+        androidTest {
+            java.srcDirs += 'src/sharedTest/java'
+        }
+    }
 }
 
 dependencies {

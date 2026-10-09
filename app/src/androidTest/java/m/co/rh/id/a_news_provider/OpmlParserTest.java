@@ -5,6 +5,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -15,11 +16,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import m.co.rh.id.a_news_provider.app.provider.parser.OpmlParser;
-import m.co.rh.id.a_news_provider.base.AppDatabase;
 import m.co.rh.id.a_news_provider.base.provider.BaseProviderModule;
 import m.co.rh.id.a_news_provider.base.provider.DatabaseProviderModule;
 import m.co.rh.id.a_news_provider.base.util.UrlNormalizer;
 import m.co.rh.id.a_news_provider.test.TestApplication;
+import m.co.rh.id.a_news_provider.test.util.ProviderDbRule;
 import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderModule;
 import m.co.rh.id.aprovider.ProviderRegistry;
@@ -34,10 +35,12 @@ import static org.junit.Assert.assertEquals;
  */
 @RunWith(AndroidJUnit4.class)
 public class OpmlParserTest {
+    @Rule
+    public final ProviderDbRule mDbRule = new ProviderDbRule();
+
     private TestApplication mTestApplication;
     private Provider mTestProvider;
     private File mOpmlFile;
-    private String mDbName;
 
     @Before
     public void setUp() {
@@ -46,22 +49,9 @@ public class OpmlParserTest {
     }
 
     @After
-    public void tearDown() {
+    public void deleteOpmlFile() {
         if (mOpmlFile != null && mOpmlFile.exists()) {
             mOpmlFile.delete();
-        }
-        if (mTestProvider != null) {
-            try {
-                // close the Room instance before deleting its file so the delete
-                // cannot race an open database handle
-                mTestProvider.get(AppDatabase.class).close();
-            } catch (Throwable ignored) {
-                // database may never have been opened
-            }
-            mTestProvider.dispose();
-        }
-        if (mDbName != null) {
-            mTestApplication.deleteDatabase(mDbName);
         }
     }
 
@@ -168,9 +158,8 @@ public class OpmlParserTest {
     }
 
     private void createProvider(String dbName) {
-        mDbName = dbName;
-        mTestProvider = Provider.createProvider(mTestApplication,
-                new OpmlTestProviderModule(dbName));
+        mTestProvider = mDbRule.create(mTestApplication,
+                new OpmlTestProviderModule(dbName), dbName);
     }
 
     private File createOpmlFile(String opml) throws IOException {

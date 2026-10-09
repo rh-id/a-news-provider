@@ -6,21 +6,17 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.work.WorkManager;
 
-import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.function.Function;
 
 import m.co.rh.id.a_news_provider.app.provider.command.RedirectDuplicateChecker;
 import m.co.rh.id.a_news_provider.app.workmanager.ConstantsKey;
-import m.co.rh.id.a_news_provider.base.AppDatabase;
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.util.UrlNormalizer;
@@ -28,6 +24,8 @@ import m.co.rh.id.a_news_provider.provider.IntegrationTestAppProviderModule;
 import m.co.rh.id.a_news_provider.test.FakeWorkManager;
 import m.co.rh.id.a_news_provider.test.NoOpLogger;
 import m.co.rh.id.a_news_provider.test.TestApplication;
+import m.co.rh.id.a_news_provider.test.util.ProviderDbRule;
+import m.co.rh.id.a_news_provider.test.util.RecordingRedirectResolver;
 import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderModule;
 import m.co.rh.id.aprovider.ProviderRegistry;
@@ -55,6 +53,9 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(AndroidJUnit4.class)
 public class RssServiceTest {
+    @Rule
+    public final ProviderDbRule mDbRule = new ProviderDbRule();
+
     private TestApplication mTestApplication;
     private Provider mTestProvider;
     private FakeWorkManager mFakeWorkManager;
@@ -71,26 +72,9 @@ public class RssServiceTest {
         mDbName = dbName;
         mFakeWorkManager = new FakeWorkManager();
         mRecordingResolver = new RecordingRedirectResolver();
-        mTestProvider = Provider.createProvider(mTestApplication,
+        mTestProvider = mDbRule.create(mTestApplication,
                 new ServiceOverrideProviderModule(mTestApplication, dbName,
-                        mFakeWorkManager, mRecordingResolver));
-    }
-
-    @After
-    public void tearDown() {
-        if (mTestProvider != null) {
-            try {
-                // close the Room instance before deleting its file so the delete
-                // cannot race an open database handle
-                mTestProvider.get(AppDatabase.class).close();
-            } catch (Throwable ignored) {
-                // database may never have been opened (e.g. the brokenDb tests)
-            }
-            mTestProvider.dispose();
-        }
-        if (mDbName != null) {
-            mTestApplication.deleteDatabase(mDbName);
-        }
+                        mFakeWorkManager, mRecordingResolver), dbName);
     }
 
     @Test
@@ -412,33 +396,6 @@ public class RssServiceTest {
 
         @Override
         public void dispose(Provider provider) {
-        }
-    }
-
-    /**
-     * Resolver double that records every probe URL so tests can assert whether the
-     * redirect probe ran (and how often). Defaults to never redirecting
-     * ({@code url -> null}); individual tests install their own resolution. The
-     * call list is thread-safe - the bulk add probes genuinely new urls on
-     * concurrent executor threads.
-     */
-    private static class RecordingRedirectResolver implements Function<String, String> {
-        private final List<String> mCalls = Collections.synchronizedList(new ArrayList<>());
-        private Function<String, String> mResolution = url -> null;
-
-        void setResolution(Function<String, String> resolution) {
-            mResolution = resolution;
-        }
-
-        List<String> getCalls() {
-            // snapshot so callers never iterate the live list while probe tasks append to it
-            return new ArrayList<>(mCalls);
-        }
-
-        @Override
-        public String apply(String url) {
-            mCalls.add(url);
-            return mResolution.apply(url);
         }
     }
 }
