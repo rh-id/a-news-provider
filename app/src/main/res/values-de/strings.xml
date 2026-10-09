@@ -61,6 +61,7 @@
     <string name="share_opml">Feed teilen</string>
     <string name="menu_one_hand_mode">Einhand-Modus der App</string>
     <string name="menu_subtitle_one_hand_mode">Integriertes Einhand-Layout der App zur einfacheren Bedienung aktivieren</string>
+    <string name="settings_use_dynamic_colors">Systemfarben verwenden (Material You)</string>
     <string name="clear_log_file">Protokolldatei löschen</string>
     <string name="log_file_deleted">Protokolldatei gelöscht</string>
     <string name="open_link">Link öffnen</string>

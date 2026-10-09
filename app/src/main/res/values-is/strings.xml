@@ -61,6 +61,7 @@
     <string name="share_opml">Deila straum</string>
     <string name="menu_one_hand_mode">Einnhendarstilling forrits</string>
     <string name="menu_subtitle_one_hand_mode">Virkja innbyggða einnhendarframsetningu forrits til auðveldari notkunar</string>
+    <string name="settings_use_dynamic_colors">Nota kerfisliti (Material You)</string>
     <string name="clear_log_file">Hreinsa annálaskrá</string>
     <string name="log_file_deleted">Annálaskrá eytt</string>
     <string name="open_link">Opna tengil</string>

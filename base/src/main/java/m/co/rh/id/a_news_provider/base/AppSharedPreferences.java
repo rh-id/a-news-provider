@@ -33,6 +33,9 @@ public class AppSharedPreferences {
     private SerialBehaviorSubject<Boolean> mOneHandMode;
     private String mOneHandModeKey;
 
+    private SerialBehaviorSubject<Boolean> mDynamicColorsEnabled;
+    private String mDynamicColorsEnabledKey;
+
     private SerialBehaviorSubject<Boolean> mMarkReadOnScroll;
     private String mMarkReadOnScrollKey;
 
@@ -61,6 +64,7 @@ public class AppSharedPreferences {
         mAutoMarkReadDays = new SerialBehaviorSubject<>();
         mSelectedTheme = new SerialBehaviorSubject<>();
         mOneHandMode = new SerialBehaviorSubject<>();
+        mDynamicColorsEnabled = new SerialBehaviorSubject<>();
         mMarkReadOnScroll = new SerialBehaviorSubject<>();
         initValue();
     }
@@ -78,6 +82,8 @@ public class AppSharedPreferences {
                 + ".selectedTheme";
         mOneHandModeKey = SHARED_PREFERENCES_NAME
                 + ".oneHandMode";
+        mDynamicColorsEnabledKey = SHARED_PREFERENCES_NAME
+                + ".dynamicColorsEnabled";
         mMarkReadOnScrollKey = SHARED_PREFERENCES_NAME
                 + ".markReadOnScroll";
         mShowCaseRssChannelListKey = SHARED_PREFERENCES_NAME
@@ -108,6 +114,8 @@ public class AppSharedPreferences {
         setSelectedTheme(selectedTheme);
         boolean oneHandMode = mSharedPreferences.getBoolean(mOneHandModeKey, false);
         oneHandMode(oneHandMode);
+        boolean dynamicColorsEnabled = mSharedPreferences.getBoolean(mDynamicColorsEnabledKey, true);
+        dynamicColorsEnabled(dynamicColorsEnabled);
         boolean markReadOnScroll = mSharedPreferences.getBoolean(mMarkReadOnScrollKey, false);
         markReadOnScroll(markReadOnScroll);
         boolean showCaseRssChannelList = mSharedPreferences.getBoolean(mShowCaseRssChannelListKey, false);
@@ -240,6 +248,30 @@ public class AppSharedPreferences {
 
     public Flowable<Boolean> getIsOneHandModeFlow() {
         return Flowable.fromObservable(mOneHandMode.getSubject(), BackpressureStrategy.BUFFER);
+    }
+
+    /**
+     * Material You dynamic colors preference. Default ON, applied only on
+     * Android 12 (S) and up where the system supports dynamic color.
+     */
+    private void dynamicColorsEnabled(boolean enabled) {
+        mDynamicColorsEnabled.onNext(enabled);
+        mExecutorService.execute(() ->
+                mSharedPreferences.edit().putBoolean(mDynamicColorsEnabledKey, enabled)
+                        .commit());
+    }
+
+    public boolean isDynamicColorsEnabled() {
+        Boolean value = mDynamicColorsEnabled.getValue();
+        return value != null && value;
+    }
+
+    public void setDynamicColorsEnabled(boolean enabled) {
+        dynamicColorsEnabled(enabled);
+    }
+
+    public Flowable<Boolean> getIsDynamicColorsEnabledFlow() {
+        return Flowable.fromObservable(mDynamicColorsEnabled.getSubject(), BackpressureStrategy.BUFFER);
     }
 
     /**

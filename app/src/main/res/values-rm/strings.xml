@@ -61,6 +61,7 @@
     <string name="share_opml">Cundivider il feed</string>
     <string name="menu_one_hand_mode">Modus d\'in maun da l\'app</string>
     <string name="menu_subtitle_one_hand_mode">Activar il layout integrà d\'in maun da l\'app per ina simpla utilisaziun</string>
+    <string name="settings_use_dynamic_colors">Utilisar las colurs dal sistem (Material You)</string>
     <string name="clear_log_file">Svuidar il dossier da log</string>
     <string name="log_file_deleted">Dossier da log stizzà</string>
     <string name="open_link">Avrir la colliaziun</string>

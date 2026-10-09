@@ -61,6 +61,7 @@
     <string name="share_opml">Jaga voogu</string>
     <string name="menu_one_hand_mode">Rakenduse ühekäerežiim</string>
     <string name="menu_subtitle_one_hand_mode">Luba rakenduse sisseehitatud ühekäepaigutus hõlbustatud kasutamiseks</string>
+    <string name="settings_use_dynamic_colors">Kasuta süsteemi värve (Material You)</string>
     <string name="clear_log_file">Tühjenda logifail</string>
     <string name="log_file_deleted">Logifail kustutatud</string>
     <string name="open_link">Ava link</string>

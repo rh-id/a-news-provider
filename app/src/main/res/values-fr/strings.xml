@@ -61,6 +61,7 @@
     <string name="share_opml">Partager le flux</string>
     <string name="menu_one_hand_mode">Mode à une main de l\'app</string>
     <string name="menu_subtitle_one_hand_mode">Activer la disposition intégrée en mode une main de l\'app pour une utilisation plus facile</string>
+    <string name="settings_use_dynamic_colors">Utiliser les couleurs du système (Material You)</string>
     <string name="clear_log_file">Effacer le fichier journal</string>
     <string name="log_file_deleted">Fichier journal supprimé</string>
     <string name="open_link">Ouvrir le lien</string>

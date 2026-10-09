@@ -61,6 +61,7 @@
     <string name="share_opml">Del straum</string>
     <string name="menu_one_hand_mode">Appen si einhandsbetjening</string>
     <string name="menu_subtitle_one_hand_mode">Aktivér appen sitt innebygde einhandsoppsett for enklare bruk</string>
+    <string name="settings_use_dynamic_colors">Bruk systemfargane (Material You)</string>
     <string name="clear_log_file">Tøm loggfil</string>
     <string name="log_file_deleted">Loggfil sletta</string>
     <string name="open_link">Opna lenkje</string>

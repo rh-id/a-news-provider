@@ -6,4 +6,6 @@
     <color name="daynight_transparent_white_black">#A0000000</color>
     <color name="daynight_white_gray_900">@color/gray_900</color>
     <color name="daynight_black_white">@color/white</color>
+    <color name="dynamic_primary_variant">@color/m3_sys_color_dynamic_dark_primary</color>
+    <color name="dynamic_secondary_variant">@color/m3_sys_color_dynamic_dark_secondary</color>
 </resources>

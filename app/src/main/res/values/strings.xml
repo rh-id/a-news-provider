@@ -63,6 +63,7 @@
     <string name="share_opml">Share feed</string>
     <string name="menu_one_hand_mode">App One Hand Mode</string>
     <string name="menu_subtitle_one_hand_mode">Enable app built-in one hand mode layout for easier use</string>
+    <string name="settings_use_dynamic_colors">Use system colors (Material You)</string>
     <string name="clear_log_file">Clear log file</string>
     <string name="log_file_deleted">Log file deleted</string>
     <string name="open_link">Open link</string>

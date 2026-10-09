@@ -61,6 +61,7 @@
     <string name="share_opml">Condividi feed</string>
     <string name="menu_one_hand_mode">Modalità a una mano dell\'app</string>
     <string name="menu_subtitle_one_hand_mode">Attiva il layout integrato a una mano dell\'app per un uso più semplice</string>
+    <string name="settings_use_dynamic_colors">Usa i colori di sistema (Material You)</string>
     <string name="clear_log_file">Cancella file di registro</string>
     <string name="log_file_deleted">File di registro eliminato</string>
     <string name="open_link">Apri link</string>

@@ -61,6 +61,7 @@
     <string name="share_opml">Bagi feed</string>
     <string name="menu_one_hand_mode">App Mode Satu Tangan</string>
     <string name="menu_subtitle_one_hand_mode">Menyalakan tata letak satu tangan untuk memudahkan penggunaan</string>
+    <string name="settings_use_dynamic_colors">Gunakan warna sistem (Material You)</string>
     <string name="clear_log_file">Bersihkan log file</string>
     <string name="log_file_deleted">Log file dihapus</string>
     <string name="open_link">Buka link</string>
