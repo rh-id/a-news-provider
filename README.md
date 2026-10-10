@@ -156,7 +156,7 @@ The project uses GitHub Actions for CI/CD:
     *   Creates a GitHub Release and attaches `app-debug.apk`, `app-release.apk`, and `changelog.txt`. The release body is taken from `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`, which the Gradle build copies to `app/build/changelog.txt`.
 *   **Android Emulator Test (`android-emulator-test.yml`):**
     *   Triggered on push/pull request to `master`.
-    *   Runs `./gradlew connectedCheck` on an emulator matrix (API levels 23, 26, 31, and 36, fail-fast disabled) with KVM enabled and AVD caching. The workflow wakes the screen, dismisses the keyguard, and runs the API 36 emulator as a cold boot.
+    *   Runs `./gradlew connectedCheck` on an emulator matrix (API levels 26, 31, and 36, fail-fast disabled) with KVM enabled and AVD caching. The workflow wakes the screen, dismisses the keyguard, and runs the API 36 emulator as a cold boot.
 
 ### Fastlane
 

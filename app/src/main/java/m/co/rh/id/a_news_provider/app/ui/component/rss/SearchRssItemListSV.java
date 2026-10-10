@@ -20,8 +20,8 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
 import java.util.concurrent.TimeUnit;
 
+import co.rh.id.lib.rx3_utils.subject.SerialBehaviorSubject;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.subjects.PublishSubject;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.BaseRssItemsCmd;
@@ -42,13 +42,12 @@ public class SearchRssItemListSV extends StatefulView<Activity> implements Requi
     @NavInject
     private transient INavigator mNavigator;
 
-    private String mQuery;
     private transient Provider mSvProvider;
     private transient SearchRssItemsCmd mSearchRssItemsCmd;
     private transient RxDisposer mRxDisposer;
     private transient RecyclerView.OnScrollListener mOnScrollListener;
     private transient RssItemRecyclerViewAdapter mRssItemRecyclerViewAdapter;
-    private transient PublishSubject<String> mQuerySubject;
+    private SerialBehaviorSubject<String> mQuerySubject;
     private transient boolean mIsUpdateQueryText;
 
     public SearchRssItemListSV() {
@@ -65,22 +64,16 @@ public class SearchRssItemListSV extends StatefulView<Activity> implements Requi
      * @param seedQuery the query to pre-fill the search with, may be null
      */
     public SearchRssItemListSV(String seedQuery) {
-        mQuery = seedQuery == null ? "" : seedQuery;
-        mQuerySubject = PublishSubject.create();
+        mQuerySubject = new SerialBehaviorSubject<>(seedQuery == null ? "" : seedQuery);
     }
 
     @Override
     public void provideComponent(Provider provider) {
         mSvProvider = provider.get(StatefulViewProvider.class);
         mSearchRssItemsCmd = mSvProvider.get(SearchRssItemsCmd.class);
-        if (mQuery != null && !mQuery.isEmpty()) {
-            mSearchRssItemsCmd.setQuery(mQuery);
-        }
-        if (mQuerySubject == null) {
-            // mQuerySubject is transient: a StatefulView restored from a saved
-            // navigation stack (process death) is deserialized with constructors
-            // skipped, so the subject must be re-created here
-            mQuerySubject = PublishSubject.create();
+        String query = mQuerySubject.getValue();
+        if (query != null && !query.isEmpty()) {
+            mSearchRssItemsCmd.setQuery(query);
         }
         mRxDisposer = mSvProvider.get(RxDisposer.class);
         mRssItemRecyclerViewAdapter = new RssItemRecyclerViewAdapter(
@@ -211,7 +204,7 @@ public class SearchRssItemListSV extends StatefulView<Activity> implements Requi
                                                         .getString(R.string.error_message, throwable.getMessage())))
         );
         EditText editTextSearch = view.findViewById(R.id.edit_text_search);
-        String currentQuery = mSearchRssItemsCmd.getQuery();
+        String currentQuery = mQuerySubject.getValue();
         if (currentQuery != null && !currentQuery.isEmpty()) {
             mIsUpdateQueryText = true;
             editTextSearch.setText(currentQuery);
@@ -245,7 +238,7 @@ public class SearchRssItemListSV extends StatefulView<Activity> implements Requi
             }
         });
         mRxDisposer.add("mQuerySubject.debounce",
-                mQuerySubject
+                mQuerySubject.getSubject()
                         .debounce(SEARCH_DEBOUNCE_MILLIS, TimeUnit.MILLISECONDS)
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(this::updateQuery,
@@ -258,7 +251,6 @@ public class SearchRssItemListSV extends StatefulView<Activity> implements Requi
     }
 
     private void updateQuery(String query) {
-        mQuery = query;
         mSearchRssItemsCmd.setQuery(query);
     }
 

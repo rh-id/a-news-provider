@@ -20,7 +20,7 @@ Release builds are signed only when env vars are set, otherwise unsigned:
 ## CI/CD (GitHub Actions, `.github/workflows/`)
 - **`gradlew-build.yml`** ("Android CI"): push/PR to `master` → JDK 17 → `./gradlew build`.
 - **`android-release.yml`**: tag `v*` pushed → builds Debug + Release APKs (signed from repo secrets) → creates GitHub Release with `app-debug.apk`, `app-release.apk`, `changelog.txt`. Release body from `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`.
-- **`android-emulator-test.yml`**: push/PR to `master` → `./gradlew connectedCheck` on emulator matrix API 23/26/31/36 (fail-fast disabled, KVM, AVD cache; wakes screen, dismisses keyguard; API 36 runs cold boot).
+- **`android-emulator-test.yml`**: push/PR to `master` → `./gradlew connectedCheck` on emulator matrix API 26/31/36 (fail-fast disabled, KVM, AVD cache; wakes screen, dismisses keyguard; API 36 runs cold boot).
 
 ## Version Bump Ritual (release)
 1. Bump `versionCode`/`versionName` in `app/build.gradle`.
