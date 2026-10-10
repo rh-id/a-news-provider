@@ -905,6 +905,81 @@ public class RssRepositoryTest {
         assertEquals("Already-read rows must not be counted", 0, rowsUpdated);
     }
 
+    // ==================================================================================
+    // Section 6: item categories (feed-provided, joined with the unit separator)
+    // ==================================================================================
+
+    @Test
+    public void testPersistStoresCategoriesThroughDeleteReinsert() {
+        // categories refresh from the feed on every sync: updateRssChannel deletes and
+        // reinserts all items, and unlike isRead/isFavorite nothing is carried over in
+        // applyItemState - the parsed feed's categories are the stored ones
+        RssChannel dbChannel = createRssChannel("http://test.com/feed", "Feed");
+        RssItem dbItem = createRssItem("item1", "http://test.com/item1");
+        mRssDao.insertRssChannel(dbChannel, dbItem);
+
+        RssChannel parsedChannel = createRssChannel("http://test.com/feed", "Feed");
+        ArrayList<RssItem> parsedItems = new ArrayList<>();
+        RssItem parsedItem = createRssItem("item1", "http://test.com/item1");
+        parsedItem.categories = "Tech\u001FNews";
+        parsedItems.add(parsedItem);
+
+        mRssRepository.persist(new RssModel(parsedChannel, parsedItems));
+
+        List<RssItem> storedItems = mRssDao.findRssItemsByChannelId(dbChannel.id);
+        assertEquals("Item must be reinserted", 1, storedItems.size());
+        assertEquals("Categories must ride the delete+reinsert path",
+                "Tech\u001FNews", storedItems.get(0).categories);
+    }
+
+    @Test
+    public void testPersistReplacesCategoriesOnNextSync() {
+        RssChannel dbChannel = createRssChannel("http://test.com/feed", "Feed");
+        RssItem dbItem = createRssItem("item1", "http://test.com/item1");
+        dbItem.categories = "Stale";
+        mRssDao.insertRssChannel(dbChannel, dbItem);
+
+        RssChannel parsedChannel = createRssChannel("http://test.com/feed", "Feed");
+        ArrayList<RssItem> parsedItems = new ArrayList<>();
+        RssItem parsedItem = createRssItem("item1", "http://test.com/item1");
+        parsedItem.categories = "Fresh\u001FTech";
+        parsedItems.add(parsedItem);
+
+        mRssRepository.persist(new RssModel(parsedChannel, parsedItems));
+
+        List<RssItem> storedItems = mRssDao.findRssItemsByChannelId(dbChannel.id);
+        assertEquals(1, storedItems.size());
+        assertEquals("Stale categories must be replaced by the feed's terms",
+                "Fresh\u001FTech", storedItems.get(0).categories);
+    }
+
+    @Test
+    public void testSearchRssItemsMatchesCategoriesIncludingLikeWildcards() {
+        RssChannel channel = createRssChannel("http://test.com/feed", "Feed");
+        RssItem plainItem = createRssItem("plain title", "http://test.com/plain");
+        RssItem categorizedItem = createRssItem("markets", "http://test.com/markets");
+        categorizedItem.categories = "50%_growth\u001FTech";
+        mRssDao.insertRssChannel(channel, plainItem, categorizedItem);
+
+        // substring match against the categories column only
+        List<RssItem> byCategory = mRssDao.searchRssItemsWithLimit(
+                "growth", null, null, null, 10);
+        assertEquals(1, byCategory.size());
+        assertEquals("http://test.com/markets", byCategory.get(0).link);
+
+        // a chip-tapped term containing % and _ arrives pre-escaped and must stay
+        // literal (match exactly, not act as wildcards)
+        List<RssItem> byEscapedCategory = mRssDao.searchRssItemsWithLimit(
+                "50\\%\\_growth", null, null, null, 10);
+        assertEquals(1, byEscapedCategory.size());
+        assertEquals("http://test.com/markets", byEscapedCategory.get(0).link);
+
+        List<RssItem> ascByCategory = mRssDao.searchRssItemsWithLimitAsc(
+                "50\\%\\_growth", null, null, null, 10);
+        assertEquals(1, ascByCategory.size());
+        assertEquals("http://test.com/markets", ascByCategory.get(0).link);
+    }
+
     private RssItem findItemByLink(List<RssItem> rssItems, String link) {
         for (RssItem rssItem : rssItems) {
             if (link == null ? rssItem.link == null : link.equals(rssItem.link)) {

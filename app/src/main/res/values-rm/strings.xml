@@ -146,4 +146,5 @@
     <string name="error_feed_duplicate_redirect">Quest feed renvia ad in feed gia agiuntà</string>
     <string name="notification_permission_disabled_hint">Las communicaziuns èn deactivadas. Avis per novs artitgs na vegnan betg mussads.</string>
     <string name="notification_permission_open_settings">Avrir ils parameters</string>
+    <string name="search_articles_in_category">Tscherchar artitgs en la categoria %s</string>
 </resources>

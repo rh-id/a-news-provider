@@ -50,6 +50,16 @@
                             android:layout_margin="@dimen/text_margin"
                             android:contentDescription="@string/image" />
 
+                        <com.google.android.material.chip.ChipGroup
+                            android:id="@+id/container_categories"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/text_margin"
+                            android:layout_marginEnd="@dimen/text_margin"
+                            app:chipSpacingHorizontal="8dp"
+                            app:chipSpacingVertical="8dp"
+                            android:visibility="gone" />
+
                         <com.google.android.material.textview.MaterialTextView
                             android:id="@+id/text_content"
                             android:layout_width="match_parent"

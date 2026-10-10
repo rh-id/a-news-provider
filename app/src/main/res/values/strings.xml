@@ -145,4 +145,5 @@
     </string-array>
     <string name="notification_permission_disabled_hint">Notifications are turned off. New article alerts won\'t be shown.</string>
     <string name="notification_permission_open_settings">Open settings</string>
+    <string name="search_articles_in_category">Search articles in category %s</string>
 </resources>

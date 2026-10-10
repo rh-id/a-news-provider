@@ -143,4 +143,5 @@
     <string name="error_feed_duplicate_redirect">Feed ini beralih ke feed yang sudah ditambahkan</string>
     <string name="notification_permission_disabled_hint">Notifikasi dimatikan. Pemberitahuan artikel baru tidak akan ditampilkan.</string>
     <string name="notification_permission_open_settings">Buka pengaturan</string>
+    <string name="search_articles_in_category">Cari artikel dalam kategori %s</string>
 </resources>

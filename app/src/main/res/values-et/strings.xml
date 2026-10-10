@@ -146,4 +146,5 @@
     <string name="error_feed_duplicate_redirect">See voog suunab ümber juba lisatud voogu</string>
     <string name="notification_permission_disabled_hint">Teavitused on välja lülitatud. Uute artiklite hoiatusi ei kuvata.</string>
     <string name="notification_permission_open_settings">Ava sätted</string>
+    <string name="search_articles_in_category">Otsi artikleid kategoorias %s</string>
 </resources>

@@ -11,6 +11,7 @@ import java.util.Date;
 
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
+import m.co.rh.id.a_news_provider.base.entity.RssItemCategories;
 import m.co.rh.id.a_news_provider.base.model.RssModel;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.aprovider.Provider;
@@ -202,6 +203,7 @@ public class RssFeedParser {
     private RssItem readEntry(XmlPullParser xpp) throws IOException, XmlPullParserException {
         xpp.require(XmlPullParser.START_TAG, null, "entry");
         RssItem rssItem = new RssItem();
+        ArrayList<String> categories = new ArrayList<>();
         while (xpp.next() != XmlPullParser.END_TAG) {
             if (xpp.getEventType() != XmlPullParser.START_TAG) {
                 continue;
@@ -217,11 +219,37 @@ public class RssFeedParser {
                 rssItem.link = readLinkHref(xpp);
             } else if (name.equals("updated")) {
                 rssItem.pubDate = readUpdated(xpp);
+            } else if (name.equals("category")) {
+                categories.add(readAtomCategory(xpp));
             } else {
                 skip(xpp);
             }
         }
+        rssItem.categories = RssItemCategories.serialize(categories);
         return rssItem;
+    }
+
+    // Atom XML
+    private String readAtomCategory(XmlPullParser xpp) throws IOException, XmlPullParserException {
+        xpp.require(XmlPullParser.START_TAG, null, "category");
+        String term = null;
+        String label = null;
+        int attrSize = xpp.getAttributeCount();
+        for (int i = 0; i < attrSize; i++) {
+            switch (xpp.getAttributeName(i)) {
+                case "term":
+                    term = xpp.getAttributeValue(i);
+                    break;
+                case "label":
+                    label = xpp.getAttributeValue(i);
+                    break;
+            }
+        }
+        // a category may also carry text content or child elements - consume it
+        // tolerantly, the readLinkHref pattern (next + require END_TAG) would throw
+        // on <category term="X">text</category> and abort the whole channel sync
+        skip(xpp);
+        return term == null || term.isEmpty() ? label : term;
     }
 
     // Atom XML
@@ -252,6 +280,7 @@ public class RssFeedParser {
     private RssItem readItem(XmlPullParser xpp) throws IOException, XmlPullParserException {
         xpp.require(XmlPullParser.START_TAG, null, "item");
         RssItem rssItem = new RssItem();
+        ArrayList<String> categories = new ArrayList<>();
         while (xpp.next() != XmlPullParser.END_TAG) {
             if (xpp.getEventType() != XmlPullParser.START_TAG) {
                 continue;
@@ -265,6 +294,13 @@ public class RssFeedParser {
                 rssItem.link = readLink(xpp);
             } else if (name.equals("pubDate")) {
                 rssItem.pubDate = readPubDate(xpp);
+            } else if (name.equals("category")) {
+                categories.add(readCategory(xpp));
+            } else if (name.equals("dc:subject")) {
+                // RDF items reuse readItem, so RSS 2.0 feeds carrying dc:subject
+                // are captured here too; namespaces are off, the prefixed name is
+                // matched literally (same trick as media:content)
+                categories.add(readDcSubject(xpp));
             } else if (name.equals("media:content")) {
                 RssMedia rssMedia = readMediaContent(xpp);
                 if (rssMedia.isImage()) {
@@ -288,7 +324,22 @@ public class RssFeedParser {
                 skip(xpp);
             }
         }
+        rssItem.categories = RssItemCategories.serialize(categories);
         return rssItem;
+    }
+
+    private String readCategory(XmlPullParser xpp) throws IOException, XmlPullParserException {
+        xpp.require(XmlPullParser.START_TAG, null, "category");
+        String category = readText(xpp);
+        xpp.require(XmlPullParser.END_TAG, null, "category");
+        return category;
+    }
+
+    private String readDcSubject(XmlPullParser xpp) throws IOException, XmlPullParserException {
+        xpp.require(XmlPullParser.START_TAG, null, "dc:subject");
+        String category = readText(xpp);
+        xpp.require(XmlPullParser.END_TAG, null, "dc:subject");
+        return category;
     }
 
     private RssMedia readMediaContent(XmlPullParser xpp) throws IOException, XmlPullParserException {

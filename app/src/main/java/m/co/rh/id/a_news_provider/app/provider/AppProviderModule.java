@@ -81,7 +81,7 @@ public class AppProviderModule implements ProviderModule {
         navMap.put(Routes.SETTINGS_PAGE, (args, activity) -> new SettingsPage());
         navMap.put(Routes.DONATIONS_PAGE, (args, activity) -> new DonationsPage());
         navMap.put(Routes.RSS_ITEM_DETAIL_PAGE, (args, activity) -> new RssItemDetailPage());
-        navMap.put(Routes.SEARCH_RSS_PAGE, (args, activity) -> new SearchRssPage());
+        navMap.put(Routes.SEARCH_RSS_PAGE, (args, activity) -> new SearchRssPage(args));
         NavConfiguration.Builder<Activity, StatefulView> navBuilder =
                 new NavConfiguration.Builder<>(Routes.SPLASH_PAGE, navMap);
         navBuilder.setRequiredComponent(provider);

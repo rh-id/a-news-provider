@@ -143,4 +143,5 @@
     <string name="error_feed_duplicate_redirect">此订阅源重定向到已添加的订阅源</string>
     <string name="notification_permission_disabled_hint">通知已关闭。新文章提醒将不会显示。</string>
     <string name="notification_permission_open_settings">打开设置</string>
+    <string name="search_articles_in_category">搜索类别 %s 中的文章</string>
 </resources>

@@ -18,7 +18,7 @@ A simple and easy to use RSS aggregator that deliver news to your smartphone.
   <li>Support RSS 2.0, Atom, and RDF (RSS 1.0) feed formats, including <code>media:content</code>, <code>media:thumbnail</code>, and <code>enclosure</code> elements for attached images and videos</li>
   <li>Download attached videos to <code>Downloads/&lt;feedName&gt;/</code> via the system download manager; attached images are displayed in the item detail when the "download image" setting is enabled</li>
   <li>Star items as favorites and filter the list by All / Unread / Read / Favorites</li>
-  <li>Search all feed items by title or description from the home screen search menu</li>
+  <li>Search all feed items by title, description, or category from the home screen search menu — feed-provided categories (RSS 2.0 <code>&lt;category&gt;</code>, Atom <code>&lt;category&gt;</code>, RDF <code>dc:subject</code>) are shown as tappable chips on each item that open a pre-filled search</li>
   <li>Sort items by newest or oldest, and mark all items as read (globally or per channel)</li>
   <li>Configurable periodic background sync with a 1-24 hours interval (default: every 6 hours, can be toggled off)</li>
   <li>Optional unread retention window: auto mark items as read after 7/14/30/90 days at the end of each sync (off by default, favorites are never auto-read)</li>
@@ -79,7 +79,7 @@ Sync operations are executed as WorkManager chains with a `NetworkType.CONNECTED
 
 ### Persistence (Room)
 
-*   Room database `a-news-provider.db` (version 10, with migrations from version 1 to 10). Entities: `RssChannel`, `RssItem`, and `AndroidNotification`.
+*   Room database `a-news-provider.db` (version 11, with migrations from version 1 to 11). Entities: `RssChannel`, `RssItem`, and `AndroidNotification`.
 *   Read and favorite state is synced across channels by item link, so the same article shared by multiple feeds keeps its state.
 *   Feed lists are paginated using `LIMIT`-based queries (no androidx.paging).
 
@@ -135,7 +135,7 @@ This project is a standard multi-module Gradle project (Gradle 9.4.1 wrapper, An
 ### Testing
 
 *   **Unit tests:** cover the notifiers, repository, the RSS/Atom/RDF feed parser, and the date parser, using JUnit 4 and Mockito.
-*   **Instrumented tests:** page smoke tests via Espresso, and a database migration test covering versions 1 through 10 using Room's `MigrationTestHelper`.
+*   **Instrumented tests:** page smoke tests via Espresso, and a database migration test covering versions 1 through 11 using Room's `MigrationTestHelper`.
 
 ### Accessibility
 
@@ -165,7 +165,7 @@ The `fastlane/` directory contains store metadata (descriptions, images, and per
 ## Project Structure
 
 *   `app/`: Main application module containing UI (StatefulViews), Commands, DI configuration, WorkManager workers, and notifications.
-*   `base/`: Room database, entities, DAOs, shared preferences, base provider modules, and logger/file/network-status helpers. Exported Room schemas (`base/schemas/m.co.rh.id.a_news_provider.base.AppDatabase/1.json` - `10.json`) live here.
+*   `base/`: Room database, entities, DAOs, shared preferences, base provider modules, and logger/file/network-status helpers. Exported Room schemas (`base/schemas/m.co.rh.id.a_news_provider.base.AppDatabase/1.json` - `11.json`) live here.
 *   `component-network/`: Volley-based `RssRequest` and the RSS/Atom/RDF feed parsers.
 *   `fastlane/`: Store metadata for 10 locales and per-version changelogs.
 *   `.github/`: GitHub Actions workflow configurations.

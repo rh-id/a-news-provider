@@ -149,4 +149,5 @@
     <string name="error_feed_duplicate_redirect">Questo feed reindirizza a un feed già aggiunto</string>
     <string name="notification_permission_disabled_hint">Le notifiche sono disattivate. Gli avvisi per i nuovi articoli non verranno mostrati.</string>
     <string name="notification_permission_open_settings">Apri impostazioni</string>
+    <string name="search_articles_in_category">Cerca articoli nella categoria %s</string>
 </resources>

@@ -16,7 +16,7 @@ public class DbMigration {
     public static Migration[] getAll() {
         return new Migration[]{MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4,
                 MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
-                MIGRATION_9_10};
+                MIGRATION_9_10, MIGRATION_10_11};
     }
 
     public static final Migration MIGRATION_1_2 = new Migration(1, 2) {
@@ -109,6 +109,20 @@ public class DbMigration {
         @Override
         public void migrate(SupportSQLiteDatabase database) {
             database.execSQL("ALTER TABLE `rss_channel` ADD COLUMN `is_paused` INTEGER NOT NULL DEFAULT 0");
+        }
+    };
+
+    /**
+     * Adds the categories column to rss_item. It stores the feed-provided category
+     * terms joined with the unit-separator delimiter (see
+     * {@link m.co.rh.id.a_news_provider.base.entity.RssItemCategories}). The column
+     * is nullable with no default: rows created before this migration (and items of
+     * paused channels) simply have no categories until their next feed sync.
+     */
+    public static final Migration MIGRATION_10_11 = new Migration(10, 11) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE `rss_item` ADD COLUMN `categories` TEXT");
         }
     };
 

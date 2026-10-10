@@ -146,4 +146,5 @@
     <string name="error_feed_duplicate_redirect">Þessi straumur beinir á straum sem er þegar bættur við</string>
     <string name="notification_permission_disabled_hint">Tilkynningar eru óvirkar. Tilkynningar um nýjar greinar verða ekki birtar.</string>
     <string name="notification_permission_open_settings">Opna stillingar</string>
+    <string name="search_articles_in_category">Leita að greinum í flokknum %s</string>
 </resources>

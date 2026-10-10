@@ -10,6 +10,7 @@ import java.io.IOException;
 
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
+import m.co.rh.id.a_news_provider.base.entity.RssItemCategories;
 import m.co.rh.id.a_news_provider.base.model.RssModel;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.aprovider.Provider;
@@ -151,6 +152,8 @@ public class RssFeedParserTest {
         assertEquals("http://test.com/video1.mp4", item.mediaVideo);
         assertNull(item.mediaImage);
         assertNotNull(item.pubDate);
+        // zero-category feed degrades silently to null
+        assertNull(item.categories);
     }
 
     @Test
@@ -401,5 +404,162 @@ public class RssFeedParserTest {
         assertEquals("Media Content Image and Thumbnail", item.title);
         assertEquals("http://test.com/thumbnail.jpg", item.mediaImage);
         assertNull(item.mediaVideo);
+    }
+
+    @Test
+    public void testParseRss2FeedWithRepeatableCategories() throws IOException, XmlPullParserException {
+        String delimiter = String.valueOf(RssItemCategories.DELIMITER);
+        String rss = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" +
+                "<rss version=\"2.0\">\n" +
+                "  <channel>\n" +
+                "    <title>Test Feed</title>\n" +
+                "    <item>\n" +
+                "      <title>Item 1</title>\n" +
+                "      <link>http://test.com/item1</link>\n" +
+                "      <category>Tech</category>\n" +
+                "      <category><![CDATA[Tech News]]></category>\n" +
+                "      <category>  World  </category>\n" +
+                "    </item>\n" +
+                "  </channel>\n" +
+                "</rss>";
+
+        RssModel model = parser.parse(rss, "http://test.com/feed");
+
+        RssItem item = model.getRssItems().get(0);
+        // repeatable, CDATA-safe, trimmed
+        assertEquals("Tech" + delimiter + "Tech News" + delimiter + "World", item.categories);
+    }
+
+    @Test
+    public void testParseRss2FeedFiltersEmptyCategories() throws IOException, XmlPullParserException {
+        String rss = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" +
+                "<rss version=\"2.0\">\n" +
+                "  <channel>\n" +
+                "    <title>Test Feed</title>\n" +
+                "    <item>\n" +
+                "      <title>Item 1</title>\n" +
+                "      <link>http://test.com/item1</link>\n" +
+                "      <category/>\n" +
+                "      <category>   </category>\n" +
+                "    </item>\n" +
+                "  </channel>\n" +
+                "</rss>";
+
+        RssModel model = parser.parse(rss, "http://test.com/feed");
+
+        RssItem item = model.getRssItems().get(0);
+        // empty-after-trim terms are all dropped, nothing is stored
+        assertNull(item.categories);
+    }
+
+    @Test
+    public void testParseAtomFeedWithCategoryTermAndLabelFallback() throws IOException, XmlPullParserException {
+        String delimiter = String.valueOf(RssItemCategories.DELIMITER);
+        String atom = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" +
+                "<feed xmlns=\"http://www.w3.org/2005/Atom\">\n" +
+                "  <title>Atom Feed</title>\n" +
+                "  <entry>\n" +
+                "    <title>Atom Entry</title>\n" +
+                "    <category term=\"Tech\"/>\n" +
+                "    <category label=\"Only Label\"/>\n" +
+                "    <category term=\"\" label=\"Fallback Label\"/>\n" +
+                "  </entry>\n" +
+                "</feed>";
+
+        RssModel model = parser.parse(atom, "http://test.com/feed");
+
+        RssItem item = model.getRssItems().get(0);
+        // term wins, label is the fallback (including for an empty term)
+        assertEquals("Tech" + delimiter + "Only Label" + delimiter + "Fallback Label",
+                item.categories);
+    }
+
+    @Test
+    public void testParseAtomFeedCategoryWithTextContent() throws IOException, XmlPullParserException {
+        // regression: a category carrying text content must not abort the whole sync
+        String atom = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" +
+                "<feed xmlns=\"http://www.w3.org/2005/Atom\">\n" +
+                "  <title>Atom Feed</title>\n" +
+                "  <entry>\n" +
+                "    <title>Atom Entry</title>\n" +
+                "    <link href=\"http://test.com/atom-entry\"/>\n" +
+                "    <category term=\"Tech\">Tech label text</category>\n" +
+                "    <updated>2010-09-06T00:01:00Z</updated>\n" +
+                "  </entry>\n" +
+                "</feed>";
+
+        RssModel model = parser.parse(atom, "http://test.com/feed");
+
+        RssItem item = model.getRssItems().get(0);
+        assertEquals("Atom Entry", item.title);
+        assertEquals("http://test.com/atom-entry", item.link);
+        assertNotNull(item.pubDate);
+        assertEquals("Tech", item.categories);
+    }
+
+    @Test
+    public void testParseRdfFeedWithDcSubject() throws IOException, XmlPullParserException {
+        String delimiter = String.valueOf(RssItemCategories.DELIMITER);
+        String rdf = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" +
+                "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" " +
+                "xmlns:dc=\"http://purl.org/dc/elements/1.1/\">\n" +
+                "  <channel>\n" +
+                "    <title>RDF Feed</title>\n" +
+                "    <link>http://test.com</link>\n" +
+                "  </channel>\n" +
+                "  <item>\n" +
+                "    <title>RDF Item</title>\n" +
+                "    <link>http://test.com/rdf-item</link>\n" +
+                "    <dc:subject>Politics</dc:subject>\n" +
+                "    <dc:subject><![CDATA[World News]]></dc:subject>\n" +
+                "  </item>\n" +
+                "</rdf:RDF>";
+
+        RssModel model = parser.parse(rdf, "http://test.com/feed");
+
+        RssItem item = model.getRssItems().get(0);
+        assertEquals("Politics" + delimiter + "World News", item.categories);
+    }
+
+    @Test
+    public void testParseCategoriesDedupeCaseInsensitiveBeforeCap() throws IOException, XmlPullParserException {
+        String delimiter = String.valueOf(RssItemCategories.DELIMITER);
+        // 13 raw terms: 3 duplicates (case or whitespace variants) and one that only
+        // fits before the cap - the dedupe must run BEFORE the 10-term cap so the
+        // 10 unique terms all survive
+        String rss = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" +
+                "<rss version=\"2.0\">\n" +
+                "  <channel>\n" +
+                "    <title>Test Feed</title>\n" +
+                "    <item>\n" +
+                "      <title>Item 1</title>\n" +
+                "      <link>http://test.com/item1</link>\n" +
+                "      <category>Tech</category>\n" +
+                "      <category>TECH</category>\n" +
+                "      <category>  tech  </category>\n" +
+                "      <category>News</category>\n" +
+                "      <category>World</category>\n" +
+                "      <category>Business</category>\n" +
+                "      <category>Science</category>\n" +
+                "      <category>Health</category>\n" +
+                "      <category>Sports</category>\n" +
+                "      <category>Culture</category>\n" +
+                "      <category>Travel</category>\n" +
+                "      <category>Finance</category>\n" +
+                "      <category>Politics</category>\n" +
+                "    </item>\n" +
+                "  </channel>\n" +
+                "</rss>";
+
+        RssModel model = parser.parse(rss, "http://test.com/feed");
+
+        RssItem item = model.getRssItems().get(0);
+        String[] storedTerms = item.categories.split(delimiter);
+        assertEquals(10, storedTerms.length);
+        // first-occurrence casing kept; the 11th unique term (Politics) is capped away
+        assertEquals("Tech" + delimiter + "News" + delimiter + "World" + delimiter + "Business"
+                        + delimiter + "Science" + delimiter + "Health" + delimiter + "Sports"
+                        + delimiter + "Culture" + delimiter + "Travel" + delimiter + "Finance",
+                item.categories);
     }
 }

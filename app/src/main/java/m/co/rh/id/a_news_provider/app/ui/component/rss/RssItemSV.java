@@ -7,7 +7,9 @@ import android.os.Build;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityEvent;
+import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -16,7 +18,10 @@ import androidx.core.view.AccessibilityDelegateCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
 
+import com.google.android.material.chip.Chip;
+
 import java.text.SimpleDateFormat;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 import co.rh.id.lib.rx3_utils.subject.SerialBehaviorSubject;
@@ -33,7 +38,9 @@ import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.ui.model.RssItemModel;
 import m.co.rh.id.a_news_provider.app.ui.page.RssItemDetailPage;
+import m.co.rh.id.a_news_provider.app.ui.page.SearchRssPage;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
+import m.co.rh.id.a_news_provider.base.entity.RssItemCategories;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.RouteOptions;
 import m.co.rh.id.anavigator.StatefulView;
@@ -45,6 +52,13 @@ import m.co.rh.id.aprovider.Provider;
 public class RssItemSV extends StatefulView<Activity> implements RequireNavigator, RequireComponent<Provider>, View.OnClickListener, View.OnLongClickListener {
 
     private static final String TAG = RssItemSV.class.getName();
+
+    /**
+     * Uniform gap between category chips in the row strip, applied as marginEnd on
+     * every chip (including the last) so spacing never depends on Material's internal
+     * chip bounds or the touch-target expansion.
+     */
+    private static final float CHIP_SPACING_DP = 8f;
 
 
     private transient INavigator mNavigator;
@@ -92,6 +106,7 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
                     }
                     rssItemModel.title = HtmlCompat
                             .fromHtml(rssItem.title, HtmlCompat.FROM_HTML_MODE_COMPACT);
+                    rssItemModel.categories = RssItemCategories.parse(rssItem.categories);
                     rssItemModel.isRead = rssItem.isRead;
                     rssItemModel.isFavorite = rssItem.isFavorite;
 
@@ -120,6 +135,8 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
         TextView textDate = view.findViewById(R.id.text_date);
         TextView textTitle = view.findViewById(R.id.text_title);
         ImageButton buttonFavorite = view.findViewById(R.id.button_favorite);
+        HorizontalScrollView scrollCategories = view.findViewById(R.id.scroll_categories);
+        LinearLayout containerCategories = view.findViewById(R.id.container_categories);
         buttonFavorite.setOnClickListener(v -> toggleFavorite());
         ViewCompat.setAccessibilityDelegate(buttonFavorite, new AccessibilityDelegateCompat() {
             @Override
@@ -150,6 +167,8 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
                             }
                             buttonFavorite.setImageResource(rssItemModel.isFavorite ?
                                     R.drawable.ic_star_filled_orange : R.drawable.ic_star_outline_gray);
+                            bindCategoryChips(activity, scrollCategories, containerCategories,
+                                    rssItemModel.categories);
                             // setStateDescription is ignored below API 30, so there the state
                             // word must live on the row view itself; a view-level content
                             // description change fires its own accessibility event, which the
@@ -179,6 +198,55 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
                             }
                         }));
         return view;
+    }
+
+    /**
+     * Rebuilds the single-line category chip strip for the given categories.
+     * The strip is hidden entirely when the item has no categories; chip taps are
+     * consumed so they never trigger the row's open-detail click.
+     *
+     * @param activity            the current activity, used to inflate the chips
+     * @param scrollCategories    the strip's scroll container
+     * @param containerCategories the container hosting the chips
+     * @param categories          the item's category terms, may be null or empty
+     */
+    private void bindCategoryChips(Activity activity, HorizontalScrollView scrollCategories,
+                                   LinearLayout containerCategories, List<String> categories) {
+        containerCategories.removeAllViews();
+        if (categories == null || categories.isEmpty()) {
+            scrollCategories.setVisibility(View.GONE);
+            return;
+        }
+        scrollCategories.setVisibility(View.VISIBLE);
+        for (String category : categories) {
+            containerCategories.addView(buildCategoryChip(activity, category));
+        }
+    }
+
+    private Chip buildCategoryChip(Activity activity, String category) {
+        Chip chip = new Chip(activity);
+        chip.setText(category);
+        chip.setCheckable(false);
+        // consume the tap: the row root has click and long-click listeners, the chip
+        // must not trigger the row's open-detail navigation
+        chip.setClickable(true);
+        chip.setFocusable(true);
+        // 48dp TOUCH target via Material's touch delegate; the visual pill keeps the
+        // ~32dp Material default height (text stays at the 14sp chip default)
+        chip.setEnsureMinTouchTargetSize(true);
+        // deterministic, uniform 8dp gap on every chip (including the last) - the
+        // perceived spacing must not depend on Material's internal chip bounds
+        int chipSpacingPx = (int) (CHIP_SPACING_DP
+                * activity.getResources().getDisplayMetrics().density + 0.5f);
+        LinearLayout.LayoutParams chipLayoutParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        chipLayoutParams.setMarginEnd(chipSpacingPx);
+        chip.setLayoutParams(chipLayoutParams);
+        chip.setContentDescription(
+                activity.getString(R.string.search_articles_in_category, category));
+        chip.setOnClickListener(v -> mNavigator.push(Routes.SEARCH_RSS_PAGE,
+                SearchRssPage.Args.withSearchTerm(category), null, null));
+        return chip;
     }
 
     private void setupRowAccessibilityDelegate(View rowView) {

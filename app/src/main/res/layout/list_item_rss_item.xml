@@ -31,11 +31,38 @@
             android:layout_margin="@dimen/text_margin"
             android:textSize="20sp"
             android:textStyle="bold"
-            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@id/button_favorite"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/text_date"
             tools:text="BREAKING NEWS" />
+
+        <HorizontalScrollView
+            android:id="@+id/scroll_categories"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/text_margin"
+            android:layout_marginEnd="@dimen/text_margin"
+            android:fadingEdgeLength="24dp"
+            android:requiresFadingEdge="horizontal"
+            android:scrollbars="none"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/button_favorite"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/text_title"
+            app:layout_constraintVertical_bias="0">
+
+            <!-- single-line strip: chips never wrap, overflow scrolls horizontally;
+                 each chip carries its own 8dp end margin, so no container end padding
+                 is needed and the fade distance equals the inter-chip gap -->
+            <LinearLayout
+                android:id="@+id/container_categories"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingStart="0dp"
+                android:paddingEnd="0dp"
+                android:paddingTop="4dp" />
+        </HorizontalScrollView>
 
         <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/button_favorite"

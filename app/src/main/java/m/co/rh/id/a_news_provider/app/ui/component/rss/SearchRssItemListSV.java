@@ -52,7 +52,20 @@ public class SearchRssItemListSV extends StatefulView<Activity> implements Requi
     private transient boolean mIsUpdateQueryText;
 
     public SearchRssItemListSV() {
-        mQuery = "";
+        this(null);
+    }
+
+    /**
+     * Creates the search list seeded with the given query. A non-empty seed query is
+     * applied to the search command in {@link #provideComponent(Provider)}, which
+     * auto-executes the search before any user input; {@link #createView(Activity)}
+     * mirrors it into the search text field guarded by {@code mIsUpdateQueryText}
+     * so no second search is triggered.
+     *
+     * @param seedQuery the query to pre-fill the search with, may be null
+     */
+    public SearchRssItemListSV(String seedQuery) {
+        mQuery = seedQuery == null ? "" : seedQuery;
         mQuerySubject = PublishSubject.create();
     }
 
@@ -62,6 +75,12 @@ public class SearchRssItemListSV extends StatefulView<Activity> implements Requi
         mSearchRssItemsCmd = mSvProvider.get(SearchRssItemsCmd.class);
         if (mQuery != null && !mQuery.isEmpty()) {
             mSearchRssItemsCmd.setQuery(mQuery);
+        }
+        if (mQuerySubject == null) {
+            // mQuerySubject is transient: a StatefulView restored from a saved
+            // navigation stack (process death) is deserialized with constructors
+            // skipped, so the subject must be re-created here
+            mQuerySubject = PublishSubject.create();
         }
         mRxDisposer = mSvProvider.get(RxDisposer.class);
         mRssItemRecyclerViewAdapter = new RssItemRecyclerViewAdapter(

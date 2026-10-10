@@ -29,13 +29,17 @@ import androidx.core.view.ViewCompat;
 
 import com.android.volley.toolbox.ImageLoader;
 import com.android.volley.toolbox.NetworkImageView;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import m.co.rh.id.a_news_provider.R;
+import m.co.rh.id.a_news_provider.app.constants.Routes;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.RssQueryCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.UpdateRssItemIsFavoriteCmd;
@@ -47,6 +51,7 @@ import m.co.rh.id.a_news_provider.app.util.UiUtils;
 import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
+import m.co.rh.id.a_news_provider.base.entity.RssItemCategories;
 import m.co.rh.id.a_news_provider.base.ui.SwipeGestureDetector;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.NavRoute;
@@ -61,6 +66,7 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
 
     private static final String TAG = RssItemDetailPage.class.getName();
     private static final int REQUEST_CODE_PERMISSION_WRITE_EXTERNAL_STORAGE = 1;
+
     @NavInject
     private AppBarSV mAppBarSV;
     @NavInject
@@ -162,6 +168,8 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
             textView.setText(HtmlCompat.fromHtml(desc, HtmlCompat.FROM_HTML_MODE_LEGACY));
             textView.setMovementMethod(LinkMovementMethod.getInstance());
         }
+        ChipGroup containerCategories = view.findViewById(R.id.container_categories);
+        bindCategoryChips(activity, containerCategories);
         Button fabOpenLink = view.findViewById(R.id.fab_open_link);
         fabOpenLink.setOnClickListener(this);
         Button fabOpenVideo = view.findViewById(R.id.fab_open_video);
@@ -173,6 +181,36 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         }
         mAppBarSV.setTitle(mRssChannel.feedName);
         return view;
+    }
+
+    /**
+     * Fills the detail page's category chip group. The full list is shown and chips
+     * may wrap freely; the group stays hidden when the item has no categories.
+     *
+     * @param activity           the current activity, used to inflate the chips
+     * @param containerCategories the chip group hosting the category chips
+     */
+    private void bindCategoryChips(Activity activity, ChipGroup containerCategories) {
+        List<String> categories = RssItemCategories.parse(mRssItem.categories);
+        if (categories.isEmpty()) {
+            return;
+        }
+        for (String category : categories) {
+            Chip chip = new Chip(activity);
+            chip.setText(category);
+            chip.setCheckable(false);
+            chip.setClickable(true);
+            chip.setFocusable(true);
+            // 48dp TOUCH target via Material's touch delegate; the visual pill keeps
+            // the ~32dp Material default height (text stays at the 14sp chip default)
+            chip.setEnsureMinTouchTargetSize(true);
+            chip.setContentDescription(
+                    activity.getString(R.string.search_articles_in_category, category));
+            chip.setOnClickListener(v -> mNavigator.push(Routes.SEARCH_RSS_PAGE,
+                    SearchRssPage.Args.withSearchTerm(category), null, null));
+            containerCategories.addView(chip);
+        }
+        containerCategories.setVisibility(View.VISIBLE);
     }
 
     @Override

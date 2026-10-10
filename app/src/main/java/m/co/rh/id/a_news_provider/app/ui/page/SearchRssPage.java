@@ -4,11 +4,14 @@ import android.app.Activity;
 import android.view.View;
 import android.view.ViewGroup;
 
+import java.io.Serializable;
+
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.SearchRssItemListSV;
 import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
+import m.co.rh.id.anavigator.NavRoute;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.anavigator.component.INavigator;
@@ -28,8 +31,22 @@ public class SearchRssPage extends StatefulView<Activity> implements RequireComp
     private transient AppSharedPreferences mAppSharedPreferences;
 
     public SearchRssPage() {
+        this(null);
+    }
+
+    /**
+     * Creates the search page seeded with the term carried by the given route args.
+     * The constructor-arg pattern is required (not NavRoute injection) because the
+     * child {@link SearchRssItemListSV} is built here, before NavRoute injection
+     * happens.
+     *
+     * @param args the route args carrying the optional search term, may be null
+     */
+    public SearchRssPage(Serializable args) {
         mAppBarSV = new AppBarSV();
-        mSearchRssItemListSV = new SearchRssItemListSV();
+        Args pageArgs = Args.of(args);
+        mSearchRssItemListSV = new SearchRssItemListSV(
+                pageArgs == null ? null : pageArgs.getSearchTerm());
     }
 
     @Override
@@ -65,5 +82,33 @@ public class SearchRssPage extends StatefulView<Activity> implements RequireComp
             mSvProvider = null;
         }
         mAppSharedPreferences = null;
+    }
+
+    public static class Args implements Serializable {
+        public static Args withSearchTerm(String searchTerm) {
+            Args args = new Args();
+            args.mSearchTerm = searchTerm;
+            return args;
+        }
+
+        public static Args of(NavRoute navRoute) {
+            if (navRoute != null) {
+                return of(navRoute.getRouteArgs());
+            }
+            return null;
+        }
+
+        public static Args of(Serializable serializable) {
+            if (serializable instanceof Args) {
+                return (Args) serializable;
+            }
+            return null;
+        }
+
+        private String mSearchTerm;
+
+        public String getSearchTerm() {
+            return mSearchTerm;
+        }
     }
 }

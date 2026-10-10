@@ -52,6 +52,14 @@ public class RssItem implements Serializable {
     @ColumnInfo(name = "media_video")
     public String mediaVideo;
 
+    /**
+     * Feed-provided category terms joined with
+     * {@link m.co.rh.id.a_news_provider.base.entity.RssItemCategories#DELIMITER},
+     * see {@link m.co.rh.id.a_news_provider.base.entity.RssItemCategories}.
+     */
+    @ColumnInfo(name = "categories")
+    public String categories;
+
     @ColumnInfo(name = "is_read")
     public boolean isRead;
 
@@ -76,6 +84,7 @@ public class RssItem implements Serializable {
                 ", description='" + description + '\'' +
                 ", pubDate=" + pubDate +
                 ", mediaImage='" + mediaImage + '\'' +
+                ", categories='" + categories + '\'' +
                 ", isRead=" + isRead +
                 ", isFavorite=" + isFavorite +
                 ", createdDateTime=" + createdDateTime +

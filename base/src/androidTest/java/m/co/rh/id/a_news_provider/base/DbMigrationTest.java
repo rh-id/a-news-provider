@@ -329,6 +329,40 @@ public class DbMigrationTest {
     }
 
     // ==================================================================================
+    // MIGRATION_10_11: rss_item.categories column for feed-provided categories
+    // ==================================================================================
+
+    @Test
+    public void migrate10to11_addsNullableCategoriesColumn() throws IOException {
+        SupportSQLiteDatabase db = helper.createDatabase(TEST_DB, 10);
+        // seeded using the exact version-10 rss_item column list (no categories yet)
+        insertRssChannel(db, 1, "Categorized Feed", "https://cat.com/feed");
+        insertRssItem(db, 11, 1, "https://cat.com/post-1", false, false);
+        db.close();
+
+        SupportSQLiteDatabase migrated = helper.runMigrationsAndValidate(TEST_DB, 11,
+                true, DbMigration.MIGRATION_10_11);
+
+        try {
+            // every migrated item row starts out with no categories
+            assertNull(readString(migrated,
+                    "SELECT categories FROM rss_item WHERE id = 11"));
+            // the new column is writable: joined category terms round-trip
+            String storedCategories = "Tech" + ((char) 0x1F) + "News";
+            migrated.execSQL("UPDATE rss_item SET categories = ? WHERE id = 11",
+                    new Object[]{storedCategories});
+            assertEquals(storedCategories, readString(migrated,
+                    "SELECT categories FROM rss_item WHERE id = 11"));
+            // a second row without categories keeps storing null fine
+            migrated.execSQL("UPDATE rss_item SET title = 'renamed' WHERE id = 11");
+            assertEquals("renamed", readString(migrated,
+                    "SELECT title FROM rss_item WHERE id = 11"));
+        } finally {
+            migrated.close();
+        }
+    }
+
+    // ==================================================================================
     // helpers: seed rows using the exact version-8 schema, read values after migration
     // ==================================================================================
 

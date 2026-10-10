@@ -146,4 +146,5 @@
     <string name="error_feed_duplicate_redirect">Denne feeden omdirigerer til en feed som allerede er lagt til</string>
     <string name="notification_permission_disabled_hint">Varsler er slått av. Varsler om nye artikler vises ikke.</string>
     <string name="notification_permission_open_settings">Åpne innstillinger</string>
+    <string name="search_articles_in_category">Søk etter artikler i kategorien %s</string>
 </resources>

@@ -4,6 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
@@ -130,6 +131,26 @@ public class SearchRssItemsCmdTest {
         verify(mMockRssDao, times(1)).searchRssItemsWithLimit(eq("other"),
                 isNull(), isNull(), isNull(), eq(1000));
         verify(mMockRssDao, times(2)).searchRssItemsWithLimit(anyString(),
+                isNull(), isNull(), isNull(), eq(1000));
+    }
+
+    @Test
+    public void categoryTermWithLikeWildcardsEscapedAndCategorizedItemFlowsThrough() {
+        // the DAO query matches categories too, so a chip-tapped term containing
+        // % or _ must reach the DAO pre-escaped (kept literal, not a wildcard)
+        RssItem categoryItem = new RssItem();
+        categoryItem.title = "Markets close mixed";
+        categoryItem.categories = "50%_growth\u001FTech";
+        when(mMockRssDao.searchRssItemsWithLimit(eq("50\\%\\_growth"),
+                isNull(), isNull(), isNull(), eq(1000)))
+                .thenReturn(new ArrayList<>(Collections.singletonList(categoryItem)));
+
+        mSearchRssItemsCmd.setQuery("50%_growth");
+
+        List<RssItem> results = mSearchRssItemsCmd.getAllRssItems();
+        assertEquals(1, results.size());
+        assertEquals("50%_growth\u001FTech", results.get(0).categories);
+        verify(mMockRssDao).searchRssItemsWithLimit(eq("50\\%\\_growth"),
                 isNull(), isNull(), isNull(), eq(1000));
     }
 }
