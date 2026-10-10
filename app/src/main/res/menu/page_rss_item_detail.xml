@@ -11,6 +11,16 @@
             android:title="@string/menu_toggle_favorite"
             app:showAsAction="ifRoom" />
         <item
+            android:id="@+id/menu_previous_article"
+            android:icon="@drawable/ic_chevron_left_white"
+            android:title="@string/menu_previous_article"
+            app:showAsAction="always" />
+        <item
+            android:id="@+id/menu_next_article"
+            android:icon="@drawable/ic_chevron_right_white"
+            android:title="@string/menu_next_article"
+            app:showAsAction="always" />
+        <item
             android:id="@+id/menu_edit_link"
             android:icon="@drawable/ic_link_black"
             android:title="@string/menu_edit_link"

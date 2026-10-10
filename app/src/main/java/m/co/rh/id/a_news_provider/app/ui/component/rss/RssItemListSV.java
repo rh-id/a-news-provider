@@ -58,7 +58,12 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
     public void provideComponent(Provider provider) {
         mSvProvider = provider.get(StatefulViewProvider.class);
         mAppSharedPreferences = mSvProvider.get(AppSharedPreferences.class);
-        mPagedRssItemsCmd = mSvProvider.get(PagedRssItemsCmd.class);
+        // PagedRssItemsCmd must come from the GLOBAL provider: it is re-registered in
+        // the page-scoped StatefulViewProviderModule too, so going through mSvProvider
+        // would create a page-local instance with default filter/sort. The shared
+        // app-scoped instance lets the item detail page read the exact list context
+        // (channel, filter, sort) for its next/previous article navigation.
+        mPagedRssItemsCmd = provider.get(PagedRssItemsCmd.class);
         mPagedRssItemsCmd.load();
         mMarkItemsReadOnScrollCmd = mSvProvider.get(MarkItemsReadOnScrollCmd.class);
         mHandler = mSvProvider.get(Handler.class);

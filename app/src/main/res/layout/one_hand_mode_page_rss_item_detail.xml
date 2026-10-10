@@ -34,6 +34,7 @@
                     android:textSize="24sp" />
 
                 <ScrollView
+                    android:id="@+id/scroll_content"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_marginStart="@dimen/text_margin"
@@ -91,6 +92,13 @@
                 android:id="@+id/container_swipe_region"
                 android:layout_width="50dp"
                 android:layout_height="match_parent"
+                android:background="@color/transparent" />
+
+            <FrameLayout
+                android:id="@+id/container_swipe_region_right"
+                android:layout_width="50dp"
+                android:layout_height="match_parent"
+                android:layout_gravity="end"
                 android:background="@color/transparent" />
         </FrameLayout>
     </androidx.appcompat.widget.LinearLayoutCompat>

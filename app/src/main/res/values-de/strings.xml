@@ -147,4 +147,11 @@
     <string name="notification_permission_disabled_hint">Benachrichtigungen sind deaktiviert. Hinweise zu neuen Artikeln werden nicht angezeigt.</string>
     <string name="notification_permission_open_settings">Einstellungen öffnen</string>
     <string name="search_articles_in_category">Artikel in der Kategorie %s suchen</string>
+    <string name="menu_previous_article">Vorheriger Artikel</string>
+    <string name="menu_next_article">Nächster Artikel</string>
+    <string name="no_more_articles">Keine weiteren Artikel</string>
+    <string name="title_swipe_article_navigation">Artikelnavigation durch Wischen</string>
+    <string name="menu_subtitle_swipe_article_navigation">Aktivieren/deaktivieren des Blätterns zum nächsten/vorherigen Artikel durch Wischen vom Bildschirmrand auf der Artikelseite</string>
+    <string name="swipe_article_navigation_enabled">Artikelnavigation durch Wischen aktiviert</string>
+    <string name="swipe_article_navigation_disabled">Artikelnavigation durch Wischen deaktiviert</string>
 </resources>

@@ -164,6 +164,46 @@ public abstract class RssDao {
     public abstract List<RssItem> findRssItemsWithLimitAsc(Long channelId, Integer isRead, Integer isFavorite, int limit);
 
     /**
+     * Finds the rss item directly older than the given anchor position, using the
+     * same optional filters and ordering as {@link #findRssItemsWithLimit(Long, Integer, Integer, int)}.
+     * The compound predicate spells out the tuple comparison of the list's two sort
+     * keys - (COALESCE(pub_date, created_date_time), created_date_time) &lt; anchor -
+     * because SQLite row-values are unavailable on the framework SQLite shipped with
+     * old API levels. Returns the anchor's next row in the newest-first list order.
+     * This method must be called on a background thread.
+     *
+     * @param channelId     optional channel id filter, null to include all channels
+     * @param isRead        optional read-state filter, null to include read and unread items
+     * @param isFavorite    optional favorite filter, null to include favorite and non-favorite items
+     * @param anchorDate    the anchor item's effective date (pub_date, falling back to
+     *                      created_date_time) in epoch millis
+     * @param anchorCreated the anchor item's created date tiebreaker in epoch millis
+     * @return the closest older rss item, or null when the anchor is the oldest matching item
+     */
+    @Query("SELECT * FROM rss_item WHERE (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) AND (COALESCE(pub_date, created_date_time) < :anchorDate OR (COALESCE(pub_date, created_date_time) = :anchorDate AND created_date_time < :anchorCreated)) ORDER BY COALESCE(pub_date, created_date_time) DESC, created_date_time DESC LIMIT 1")
+    public abstract RssItem findOlderRssItem(Long channelId, Integer isRead, Integer isFavorite, long anchorDate, long anchorCreated);
+
+    /**
+     * Finds the rss item directly newer than the given anchor position, using the
+     * same optional filters and ordering as {@link #findRssItemsWithLimitAsc(Long, Integer, Integer, int)}.
+     * The compound predicate spells out the tuple comparison of the list's two sort
+     * keys - (COALESCE(pub_date, created_date_time), created_date_time) &gt; anchor -
+     * because SQLite row-values are unavailable on the framework SQLite shipped with
+     * old API levels. Returns the anchor's next row in the oldest-first list order.
+     * This method must be called on a background thread.
+     *
+     * @param channelId     optional channel id filter, null to include all channels
+     * @param isRead        optional read-state filter, null to include read and unread items
+     * @param isFavorite    optional favorite filter, null to include favorite and non-favorite items
+     * @param anchorDate    the anchor item's effective date (pub_date, falling back to
+     *                      created_date_time) in epoch millis
+     * @param anchorCreated the anchor item's created date tiebreaker in epoch millis
+     * @return the closest newer rss item, or null when the anchor is the newest matching item
+     */
+    @Query("SELECT * FROM rss_item WHERE (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) AND (COALESCE(pub_date, created_date_time) > :anchorDate OR (COALESCE(pub_date, created_date_time) = :anchorDate AND created_date_time > :anchorCreated)) ORDER BY COALESCE(pub_date, created_date_time) ASC, created_date_time ASC LIMIT 1")
+    public abstract RssItem findNewerRssItem(Long channelId, Integer isRead, Integer isFavorite, long anchorDate, long anchorCreated);
+
+    /**
      * Searches rss items matching the given query against title, description, or
      * categories,
      * filtered by optional channel, read and favorite state,

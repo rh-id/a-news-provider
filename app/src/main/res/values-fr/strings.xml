@@ -150,4 +150,11 @@
     <string name="notification_permission_disabled_hint">Les notifications sont désactivées. Les alertes des nouveaux articles ne seront pas affichées.</string>
     <string name="notification_permission_open_settings">Ouvrir les paramètres</string>
     <string name="search_articles_in_category">Rechercher des articles dans la catégorie %s</string>
+    <string name="menu_previous_article">Article précédent</string>
+    <string name="menu_next_article">Article suivant</string>
+    <string name="no_more_articles">Plus d\'articles</string>
+    <string name="title_swipe_article_navigation">Navigation entre articles par balayage</string>
+    <string name="menu_subtitle_swipe_article_navigation">Activer/désactiver la navigation vers l\'article suivant/précédent en balayant depuis les bords de l\'écran sur la page de l\'article</string>
+    <string name="swipe_article_navigation_enabled">Navigation entre articles par balayage activée</string>
+    <string name="swipe_article_navigation_disabled">Navigation entre articles par balayage désactivée</string>
 </resources>

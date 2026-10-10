@@ -147,4 +147,11 @@
     <string name="notification_permission_disabled_hint">Varsel er slått av. Varsel om nye artiklar blir ikkje vist.</string>
     <string name="notification_permission_open_settings">Opna innstillingar</string>
     <string name="search_articles_in_category">Søk etter artiklar i kategorien %s</string>
+    <string name="menu_previous_article">Førre artikkel</string>
+    <string name="menu_next_article">Neste artikkel</string>
+    <string name="no_more_articles">Ingen fleire artiklar</string>
+    <string name="title_swipe_article_navigation">Artikkelnavigasjon ved sveip</string>
+    <string name="menu_subtitle_swipe_article_navigation">Aktiver/deaktiver navigering til neste/forre artikkel ved å sveipe frå skjermkantane på artikelsida</string>
+    <string name="swipe_article_navigation_enabled">Artikkelnavigasjon ved sveip aktivert</string>
+    <string name="swipe_article_navigation_disabled">Artikkelnavigasjon ved sveip deaktivert</string>
 </resources>

@@ -26,6 +26,7 @@ import m.co.rh.id.a_news_provider.app.ui.component.settings.LogMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.MarkReadOnScrollMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.OneHandModeMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.RssSyncMenuSV;
+import m.co.rh.id.a_news_provider.app.ui.component.settings.SwipeArticleNavigationMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.ThemeMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.VersionMenuSV;
 import m.co.rh.id.a_news_provider.app.util.NotificationPermissionPolicy;
@@ -64,6 +65,8 @@ public class SettingsPage extends StatefulView<Activity> implements RssSyncMenuS
         mStatefulViews.add(autoMarkReadMenuSV);
         MarkReadOnScrollMenuSV markReadOnScrollMenuSV = new MarkReadOnScrollMenuSV();
         mStatefulViews.add(markReadOnScrollMenuSV);
+        SwipeArticleNavigationMenuSV swipeArticleNavigationMenuSV = new SwipeArticleNavigationMenuSV();
+        mStatefulViews.add(swipeArticleNavigationMenuSV);
         ThemeMenuSV themeMenuSV = new ThemeMenuSV();
         mStatefulViews.add(themeMenuSV);
         OneHandModeMenuSV oneHandModeMenuSV = new OneHandModeMenuSV();

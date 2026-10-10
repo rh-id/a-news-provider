@@ -19,6 +19,7 @@ import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -35,15 +36,20 @@ import com.google.android.material.chip.Chip;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.constants.Routes;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
+import m.co.rh.id.a_news_provider.app.provider.command.BaseRssItemsCmd;
+import m.co.rh.id.a_news_provider.app.provider.command.PagedRssItemsCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.RssQueryCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.UpdateRssItemIsFavoriteCmd;
+import m.co.rh.id.a_news_provider.app.provider.command.UpdateRssItemIsReadCmd;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
@@ -56,6 +62,7 @@ import m.co.rh.id.a_news_provider.base.entity.RssItemCategories;
 import m.co.rh.id.a_news_provider.base.ui.SwipeGestureDetector;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.NavRoute;
+import m.co.rh.id.anavigator.RouteOptions;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.anavigator.component.INavigator;
@@ -86,13 +93,30 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
     private transient ExecutorService mExecutorService;
     private transient ILogger mLogger;
     private transient ImageLoader mImageLoader;
+    private transient AppSharedPreferences mAppSharedPreferences;
     private transient SwipeGestureDetector mSwipeGestureDetector;
     private transient RxDisposer mRxDisposer;
     private transient UpdateRssItemIsFavoriteCmd mUpdateRssItemIsFavoriteCmd;
+    private transient UpdateRssItemIsReadCmd mUpdateRssItemIsReadCmd;
+    private transient PagedRssItemsCmd mPagedRssItemsCmd;
+    private transient RssQueryCmd mRssQueryCmd;
     private transient MenuItem mToggleFavoriteMenuItem;
+    private transient MenuItem mDownloadVideoMenuItem;
 
     public RssItemDetailPage() {
         mAppBarSV = new AppBarSV(R.menu.page_rss_item_detail);
+    }
+
+    /**
+     * Builds the RouteOptions used when opening the rss item detail page: Material
+     * transitions. Shared by the list's open-detail push (RssItemSV) and the detail
+     * page's next/previous replace so both move identically.
+     *
+     * @return the route options for showing the rss item detail page
+     */
+    public static RouteOptions detailPageRouteOptions() {
+        return RouteOptions.withTransition(R.transition.page_rss_item_detail_enter,
+                R.transition.page_rss_item_detail_exit);
     }
 
     @Override
@@ -101,12 +125,32 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         mExecutorService = mSvProvider.get(ExecutorService.class);
         mLogger = mSvProvider.get(ILogger.class);
         mImageLoader = mSvProvider.get(ImageLoader.class);
+        mAppSharedPreferences = mSvProvider.get(AppSharedPreferences.class);
         mRxDisposer = mSvProvider.get(RxDisposer.class);
         mUpdateRssItemIsFavoriteCmd = mSvProvider.get(UpdateRssItemIsFavoriteCmd.class);
+        mUpdateRssItemIsReadCmd = mSvProvider.get(UpdateRssItemIsReadCmd.class);
+        mRssQueryCmd = mSvProvider.get(RssQueryCmd.class);
+        // PagedRssItemsCmd must come from the GLOBAL provider: the home list uses the
+        // same app-scoped instance (see RssItemListSV), so its channel/filter/sort
+        // describe exactly the list the user navigated from. The page-scoped provider
+        // would return a fresh instance with default filter/sort instead.
+        mPagedRssItemsCmd = provider.get(PagedRssItemsCmd.class);
         mSwipeGestureDetector = new SwipeGestureDetector(provider.getContext()) {
             @Override
             public void onSwipeRight() {
-                mNavigator.pop();
+                // the setting gates the whole edge-gesture pair: back-swipe and
+                // next-swipe turn on and off together
+                if (mAppSharedPreferences.isSwipeArticleNavigationEnabled()) {
+                    mNavigator.pop();
+                }
+            }
+
+            @Override
+            public void onSwipeLeft() {
+                // swipe left from the right edge = next article, same setting;
+                if (mAppSharedPreferences.isSwipeArticleNavigationEnabled()) {
+                    navigateToNeighbor(true);
+                }
             }
         };
     }
@@ -124,12 +168,16 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
     @Override
     protected View createView(Activity activity, ViewGroup container) {
         int layoutId = R.layout.page_rss_item_detail;
-        AppSharedPreferences appSharedPreferences = mSvProvider.get(AppSharedPreferences.class);
-        if (appSharedPreferences.isOneHandMode()) {
+        if (mAppSharedPreferences.isOneHandMode()) {
             layoutId = R.layout.one_hand_mode_page_rss_item_detail;
         }
         View view = activity.getLayoutInflater().inflate(layoutId, container, false);
+        // edge gesture strips overlay the content sides; both directions are
+        // gated by the swipe setting (read live in the detector): fling outward
+        // from the left edge = back, fling left from the right edge = next
         view.findViewById(R.id.container_swipe_region)
+                .setOnTouchListener(mSwipeGestureDetector);
+        view.findViewById(R.id.container_swipe_region_right)
                 .setOnTouchListener(mSwipeGestureDetector);
         ViewGroup containerAppBar = view.findViewById(R.id.container_app_bar);
         mAppBarSV.setMenuItemListener(this);
@@ -145,6 +193,21 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
                                 updateFavoriteIcon(mRssItem.isFavorite);
                             }
                         }));
+        Button fabOpenLink = view.findViewById(R.id.fab_open_link);
+        fabOpenLink.setOnClickListener(this);
+        Button fabOpenVideo = view.findViewById(R.id.fab_open_video);
+        fabOpenVideo.setOnClickListener(this);
+        bindRssItem(activity, view);
+        return view;
+    }
+
+    /**
+     * Binds the current rss item and channel to the content views on page creation.
+     *
+     * @param activity the current activity, used to inflate chips
+     * @param view     the page's content view
+     */
+    private void bindRssItem(Activity activity, View view) {
         TextView titleText = view.findViewById(R.id.text_title);
         ViewCompat.setTransitionName(titleText, "title_" + mRssItem.id);
         titleText.setText(HtmlCompat
@@ -156,7 +219,7 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         if (mRssItem.mediaImage != null) {
             imageUrl = mRssItem.mediaImage;
         }
-        boolean showImage = appSharedPreferences.isDownloadImage() && imageUrl != null;
+        boolean showImage = mAppSharedPreferences.isDownloadImage() && imageUrl != null;
         if (showImage) {
             Drawable drawable = DrawableCompat.wrap(ContextCompat
                     .getDrawable(activity, R.drawable.ic_image_black));
@@ -174,21 +237,28 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         if (desc != null && !desc.isEmpty()) {
             textView.setText(HtmlCompat.fromHtml(desc, HtmlCompat.FROM_HTML_MODE_LEGACY));
             textView.setMovementMethod(LinkMovementMethod.getInstance());
+        } else {
+            // clear leftover content when re-binding to an item without a description
+            textView.setText("");
         }
         HorizontalScrollView scrollCategories = view.findViewById(R.id.scroll_categories);
         LinearLayout containerCategories = view.findViewById(R.id.container_categories);
         bindCategoryChips(activity, scrollCategories, containerCategories);
-        Button fabOpenLink = view.findViewById(R.id.fab_open_link);
-        fabOpenLink.setOnClickListener(this);
         Button fabOpenVideo = view.findViewById(R.id.fab_open_video);
-        fabOpenVideo.setOnClickListener(this);
         if (mRssItem.mediaVideo != null) {
             fabOpenVideo.setVisibility(View.VISIBLE);
         } else {
             fabOpenVideo.setVisibility(View.GONE);
         }
         mAppBarSV.setTitle(mRssChannel.feedName);
-        return view;
+        updateFavoriteIcon(mRssItem.isFavorite);
+        // refresh the overflow entry too: an in-place swap can land on an item
+        // with different video availability than the one the page opened with
+        if (mDownloadVideoMenuItem != null) {
+            mDownloadVideoMenuItem.setVisible(mRssItem.mediaVideo != null);
+        }
+        ScrollView scrollView = view.findViewById(R.id.scroll_content);
+        scrollView.scrollTo(0, 0);
     }
 
     /**
@@ -244,10 +314,15 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         mAppBarSV = null;
         mRssItem = null;
         mRssChannel = null;
+        mAppSharedPreferences = null;
         mSwipeGestureDetector = null;
         mRxDisposer = null;
         mUpdateRssItemIsFavoriteCmd = null;
+        mUpdateRssItemIsReadCmd = null;
+        mPagedRssItemsCmd = null;
+        mRssQueryCmd = null;
         mToggleFavoriteMenuItem = null;
+        mDownloadVideoMenuItem = null;
     }
 
     @Override
@@ -305,6 +380,10 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
             Toast.makeText(context,
                     newIsFavorite ? R.string.favorite_added : R.string.favorite_removed,
                     Toast.LENGTH_SHORT).show();
+        } else if (id == R.id.menu_previous_article) {
+            navigateToNeighbor(false);
+        } else if (id == R.id.menu_next_article) {
+            navigateToNeighbor(true);
         } else if (id == R.id.menu_download_video) {
             Context context = mSvProvider.getContext().getApplicationContext();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -326,8 +405,8 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
 
     @Override
     public void onMenuCreated(Menu menu) {
-        MenuItem downloadVideoMenu = menu.findItem(R.id.menu_download_video);
-        downloadVideoMenu.setVisible(mRssItem.mediaVideo != null);
+        mDownloadVideoMenuItem = menu.findItem(R.id.menu_download_video);
+        mDownloadVideoMenuItem.setVisible(mRssItem.mediaVideo != null);
         mToggleFavoriteMenuItem = menu.findItem(R.id.menu_toggle_favorite);
         mToggleFavoriteMenuItem.setIcon(mRssItem.isFavorite ?
                 R.drawable.ic_star_filled_white : R.drawable.ic_star_outline_white);
@@ -354,6 +433,68 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
             mToggleFavoriteMenuItem.setIcon(isFavorite ?
                     R.drawable.ic_star_filled_white : R.drawable.ic_star_outline_white);
         }
+    }
+
+    /**
+     * Navigates to the neighboring article in the home list context (channel,
+     * filter and sort order as currently held by {@link PagedRssItemsCmd}), the
+     * same list the user opened this page from. Direction follows the list's sort
+     * order: in a newest-first list "next" walks to the older item, and the
+     * mapping inverts when the list is sorted oldest-first. At the edges of the
+     * list a short toast is shown and the page stays put.
+     *
+     * @param next true to walk to the next article, false for the previous one
+     */
+    private void navigateToNeighbor(boolean next) {
+        Integer filterType = mPagedRssItemsCmd.getFilterType().orElse(null);
+        Integer isRead = BaseRssItemsCmd.toIsRead(filterType);
+        Integer isFavorite = BaseRssItemsCmd.toIsFavorite(filterType);
+        Long channelId = mPagedRssItemsCmd.getSelectedChannelId();
+        Integer sortOrder = mPagedRssItemsCmd.getSortOrder();
+        boolean asc = sortOrder != null && sortOrder == BaseRssItemsCmd.SORT_ORDER_OLDEST;
+        // newest-first (DESC) list: next = older neighbor; oldest-first (ASC): next = newer
+        boolean findOlder = next != asc;
+        Single<Optional<RssItem>> neighborSingle = findOlder
+                ? mRssQueryCmd.findOlderRssItem(channelId, isRead, isFavorite, mRssItem)
+                : mRssQueryCmd.findNewerRssItem(channelId, isRead, isFavorite, mRssItem);
+        mRxDisposer.add(next ? "navigateToNeighbor_next" : "navigateToNeighbor_prev",
+                neighborSingle
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(neighborOptional -> {
+                            if (neighborOptional.isPresent()) {
+                                openNeighbor(neighborOptional.get());
+                            } else {
+                                // edge of the home list, nothing to walk to
+                                Toast.makeText(mSvProvider.getContext(),
+                                        R.string.no_more_articles, Toast.LENGTH_SHORT).show();
+                            }
+                        }, throwable ->
+                                mLogger.e(TAG, throwable.getMessage(), throwable)));
+    }
+
+    /**
+     * Marks the given neighbor read before navigating (mirrors the list's
+     * open-detail click flow), loads its channel, then replaces this page with
+     * the neighbor's, so the back stack still returns to the list.
+     *
+     * @param neighbor the neighboring rss item to open
+     */
+    private void openNeighbor(RssItem neighbor) {
+        if (!neighbor.isRead) {
+            mUpdateRssItemIsReadCmd.execute(neighbor, true);
+        }
+        mRxDisposer.add("openNeighbor_getRssChannelById",
+                mRssQueryCmd.getRssChannelById(neighbor.channelId)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe((rssChannel, throwable) -> {
+                            if (throwable != null) {
+                                mLogger.e(TAG, throwable.getMessage(), throwable);
+                            } else {
+                                mNavigator.replace(Routes.RSS_ITEM_DETAIL_PAGE,
+                                        Args.withRss(neighbor, rssChannel), null,
+                                        RssItemDetailPage.detailPageRouteOptions());
+                            }
+                        }));
     }
 
     private void downloadMediaFile() {

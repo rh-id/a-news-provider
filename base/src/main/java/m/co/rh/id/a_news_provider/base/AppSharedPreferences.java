@@ -39,6 +39,9 @@ public class AppSharedPreferences {
     private SerialBehaviorSubject<Boolean> mMarkReadOnScroll;
     private String mMarkReadOnScrollKey;
 
+    private SerialBehaviorSubject<Boolean> mSwipeArticleNavigationEnabled;
+    private String mSwipeArticleNavigationEnabledKey;
+
     private boolean mShowCaseRssChannelList;
     private String mShowCaseRssChannelListKey;
 
@@ -66,6 +69,7 @@ public class AppSharedPreferences {
         mOneHandMode = new SerialBehaviorSubject<>();
         mDynamicColorsEnabled = new SerialBehaviorSubject<>();
         mMarkReadOnScroll = new SerialBehaviorSubject<>();
+        mSwipeArticleNavigationEnabled = new SerialBehaviorSubject<>();
         initValue();
     }
 
@@ -86,6 +90,8 @@ public class AppSharedPreferences {
                 + ".dynamicColorsEnabled";
         mMarkReadOnScrollKey = SHARED_PREFERENCES_NAME
                 + ".markReadOnScroll";
+        mSwipeArticleNavigationEnabledKey = SHARED_PREFERENCES_NAME
+                + ".swipeArticleNavigationEnabled";
         mShowCaseRssChannelListKey = SHARED_PREFERENCES_NAME
                 + ".showCaseRssChannelList";
         mShowCaseRssItemListKey = SHARED_PREFERENCES_NAME
@@ -118,6 +124,12 @@ public class AppSharedPreferences {
         dynamicColorsEnabled(dynamicColorsEnabled);
         boolean markReadOnScroll = mSharedPreferences.getBoolean(mMarkReadOnScrollKey, false);
         markReadOnScroll(markReadOnScroll);
+        // swipe article navigation defaults to ON: the left-edge swipe-right
+        // (back) gesture has always been there, so the mirrored swipe-left
+        // (next) starts enabled and users can turn the pair off in settings
+        boolean swipeArticleNavigationEnabled = mSharedPreferences.getBoolean(
+                mSwipeArticleNavigationEnabledKey, true);
+        swipeArticleNavigationEnabled(swipeArticleNavigationEnabled);
         boolean showCaseRssChannelList = mSharedPreferences.getBoolean(mShowCaseRssChannelListKey, false);
         setShowCaseRssChannelList(showCaseRssChannelList);
         boolean showCaseRssItemList = mSharedPreferences.getBoolean(mShowCaseRssItemListKey, false);
@@ -296,6 +308,32 @@ public class AppSharedPreferences {
 
     public Flowable<Boolean> getIsMarkReadOnScrollFlow() {
         return Flowable.fromObservable(mMarkReadOnScroll.getSubject(), BackpressureStrategy.BUFFER);
+    }
+
+    /**
+     * On by default: when enabled, the item detail page supports navigating to
+     * the next/previous article of the home list by swiping from the screen
+     * edges (swipe left = next article, swipe right = back). When disabled,
+     * both swipe gestures are off and only the toolbar buttons navigate.
+     */
+    private void swipeArticleNavigationEnabled(boolean enabled) {
+        mSwipeArticleNavigationEnabled.onNext(enabled);
+        mExecutorService.execute(() ->
+                mSharedPreferences.edit().putBoolean(mSwipeArticleNavigationEnabledKey, enabled)
+                        .commit());
+    }
+
+    public boolean isSwipeArticleNavigationEnabled() {
+        Boolean value = mSwipeArticleNavigationEnabled.getValue();
+        return value != null && value;
+    }
+
+    public void setSwipeArticleNavigationEnabled(boolean enabled) {
+        swipeArticleNavigationEnabled(enabled);
+    }
+
+    public Flowable<Boolean> getIsSwipeArticleNavigationEnabledFlow() {
+        return Flowable.fromObservable(mSwipeArticleNavigationEnabled.getSubject(), BackpressureStrategy.BUFFER);
     }
 
     public void setShowCaseRssChannelList(boolean show) {

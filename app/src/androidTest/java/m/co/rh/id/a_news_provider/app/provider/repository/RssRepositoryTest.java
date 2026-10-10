@@ -980,6 +980,145 @@ public class RssRepositoryTest {
         assertEquals("http://test.com/markets", ascByCategory.get(0).link);
     }
 
+    // ==================================================================================
+    // Section 7: neighbor navigation (next/previous article lookups)
+    // ==================================================================================
+
+    @Test
+    public void testFindNeighborWalksNewestFirstOrderAndStopsAtEdges() {
+        RssChannel channel = createRssChannel("http://test.com/feed", "Feed");
+        long base = System.currentTimeMillis();
+        RssItem oldest = createRssItem("oldest", "http://test.com/oldest");
+        oldest.pubDate = new Date(base - 2000);
+        RssItem middle = createRssItem("middle", "http://test.com/middle");
+        middle.pubDate = new Date(base - 1000);
+        RssItem newest = createRssItem("newest", "http://test.com/newest");
+        newest.pubDate = new Date(base);
+        mRssDao.insertRssChannel(channel, oldest, middle, newest);
+
+        // walking the newest-first list order: the older neighbor of the middle
+        // item is the oldest one
+        RssItem older = mRssDao.findOlderRssItem(null, null, null,
+                middle.pubDate.getTime(), middle.createdDateTime.getTime());
+        assertNotNull(older);
+        assertEquals("http://test.com/oldest", older.link);
+
+        // and the newer neighbor of the middle item is the newest one
+        RssItem newer = mRssDao.findNewerRssItem(null, null, null,
+                middle.pubDate.getTime(), middle.createdDateTime.getTime());
+        assertNotNull(newer);
+        assertEquals("http://test.com/newest", newer.link);
+
+        // edges: nothing exists beyond the oldest / newest item
+        assertNull(mRssDao.findOlderRssItem(null, null, null,
+                oldest.pubDate.getTime(), oldest.createdDateTime.getTime()));
+        assertNull(mRssDao.findNewerRssItem(null, null, null,
+                newest.pubDate.getTime(), newest.createdDateTime.getTime()));
+    }
+
+    @Test
+    public void testFindNeighborAnchorNeverMatchesItself() {
+        RssChannel channel = createRssChannel("http://test.com/feed", "Feed");
+        RssItem item = createRssItem("item", "http://test.com/item");
+        item.pubDate = new Date(System.currentTimeMillis());
+        mRssDao.insertRssChannel(channel, item);
+
+        // the strict compound comparison must exclude the anchor row itself,
+        // even when it is the only row in the table
+        assertNull(mRssDao.findOlderRssItem(null, null, null,
+                item.pubDate.getTime(), item.createdDateTime.getTime()));
+        assertNull(mRssDao.findNewerRssItem(null, null, null,
+                item.pubDate.getTime(), item.createdDateTime.getTime()));
+    }
+
+    @Test
+    public void testFindNeighborFallsBackToCreatedDateTimeWhenPubDateNull() {
+        RssChannel channel = createRssChannel("http://test.com/feed", "Feed");
+        long base = System.currentTimeMillis();
+        RssItem older = createRssItem("older", "http://test.com/older");
+        older.createdDateTime = new Date(base - 1000); // no pubDate: created date orders
+        RssItem newer = createRssItem("newer", "http://test.com/newer");
+        newer.createdDateTime = new Date(base);
+        mRssDao.insertRssChannel(channel, older, newer);
+
+        // COALESCE(pub_date, created_date_time) falls back to created_date_time,
+        // matching the home list ordering for items without a publication date
+        RssItem newerOfOlder = mRssDao.findNewerRssItem(null, null, null,
+                older.createdDateTime.getTime(), older.createdDateTime.getTime());
+        assertNotNull(newerOfOlder);
+        assertEquals("http://test.com/newer", newerOfOlder.link);
+
+        RssItem olderOfNewer = mRssDao.findOlderRssItem(null, null, null,
+                newer.createdDateTime.getTime(), newer.createdDateTime.getTime());
+        assertNotNull(olderOfNewer);
+        assertEquals("http://test.com/older", olderOfNewer.link);
+    }
+
+    @Test
+    public void testFindNeighborUsesCreatedDateTimeAsTiebreaker() {
+        RssChannel channel = createRssChannel("http://test.com/feed", "Feed");
+        long base = System.currentTimeMillis();
+        RssItem first = createRssItem("first", "http://test.com/first");
+        first.pubDate = new Date(base);
+        first.createdDateTime = new Date(base - 1000);
+        RssItem second = createRssItem("second", "http://test.com/second");
+        second.pubDate = new Date(base); // same pub date as first
+        second.createdDateTime = new Date(base);
+        mRssDao.insertRssChannel(channel, first, second);
+
+        // equal primary sort key: the created_date_time tiebreaker decides the
+        // order, exactly as the list queries' secondary ORDER BY does
+        RssItem newer = mRssDao.findNewerRssItem(null, null, null,
+                first.pubDate.getTime(), first.createdDateTime.getTime());
+        assertNotNull(newer);
+        assertEquals("http://test.com/second", newer.link);
+
+        RssItem older = mRssDao.findOlderRssItem(null, null, null,
+                second.pubDate.getTime(), second.createdDateTime.getTime());
+        assertNotNull(older);
+        assertEquals("http://test.com/first", older.link);
+    }
+
+    @Test
+    public void testFindNeighborRespectsChannelAndStateFilters() {
+        RssChannel channelA = createRssChannel("http://test.com/feed-a", "Feed A");
+        RssChannel channelB = createRssChannel("http://test.com/feed-b", "Feed B");
+        long base = System.currentTimeMillis();
+        RssItem aOld = createRssItem("a old", "http://test.com/a-old");
+        aOld.pubDate = new Date(base - 2000);
+        aOld.isFavorite = true;
+        RssItem aMiddle = createRssItem("a middle", "http://test.com/a-middle");
+        aMiddle.pubDate = new Date(base - 1000);
+        RssItem aNewRead = createRssItem("a new read", "http://test.com/a-new-read");
+        aNewRead.pubDate = new Date(base);
+        aNewRead.isRead = true;
+        mRssDao.insertRssChannel(channelA, aOld, aMiddle, aNewRead);
+        RssItem bNewest = createRssItem("b newest", "http://test.com/b-newest");
+        bNewest.pubDate = new Date(base + 1000);
+        mRssDao.insertRssChannel(channelB, bNewest);
+
+        // the channel filter must exclude the newer item of channel B
+        RssItem older = mRssDao.findOlderRssItem(channelA.id, null, null,
+                aMiddle.pubDate.getTime(), aMiddle.createdDateTime.getTime());
+        assertNotNull(older);
+        assertEquals("http://test.com/a-old", older.link);
+
+        // unread-only home list: the newer read item must be filtered out
+        RssItem newerUnread = mRssDao.findNewerRssItem(channelA.id, 0, null,
+                aMiddle.pubDate.getTime(), aMiddle.createdDateTime.getTime());
+        assertNull("Read newer item must be filtered out", newerUnread);
+        RssItem olderUnread = mRssDao.findOlderRssItem(channelA.id, 0, null,
+                aMiddle.pubDate.getTime(), aMiddle.createdDateTime.getTime());
+        assertNotNull(olderUnread);
+        assertEquals("http://test.com/a-old", olderUnread.link);
+
+        // favorites-only home list: only the favorited neighbor remains
+        RssItem olderFavorite = mRssDao.findOlderRssItem(channelA.id, null, 1,
+                aMiddle.pubDate.getTime(), aMiddle.createdDateTime.getTime());
+        assertNotNull(olderFavorite);
+        assertEquals("http://test.com/a-old", olderFavorite.link);
+    }
+
     private RssItem findItemByLink(List<RssItem> rssItems, String link) {
         for (RssItem rssItem : rssItems) {
             if (link == null ? rssItem.link == null : link.equals(rssItem.link)) {

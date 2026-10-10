@@ -147,4 +147,11 @@
     <string name="notification_permission_disabled_hint">Las communicaziuns èn deactivadas. Avis per novs artitgs na vegnan betg mussads.</string>
     <string name="notification_permission_open_settings">Avrir ils parameters</string>
     <string name="search_articles_in_category">Tscherchar artitgs en la categoria %s</string>
+    <string name="menu_previous_article">Artitg precedent</string>
+    <string name="menu_next_article">Artitg suandant</string>
+    <string name="no_more_articles">Na plü artitgs</string>
+    <string name="title_swipe_article_navigation">Navigaziun d\'artitgs cun strischar</string>
+    <string name="menu_subtitle_swipe_article_navigation">Activar/deactivar la navigaziun tar l\'artitg suandant/precedent cun strischar dals urs da l\'ecran sin la pagina da l\'artitg</string>
+    <string name="swipe_article_navigation_enabled">Navigaziun d\'artitgs cun strischar activada</string>
+    <string name="swipe_article_navigation_disabled">Navigaziun d\'artitgs cun strischar deactivada</string>
 </resources>

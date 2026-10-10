@@ -147,4 +147,11 @@
     <string name="notification_permission_disabled_hint">Tilkynningar eru óvirkar. Tilkynningar um nýjar greinar verða ekki birtar.</string>
     <string name="notification_permission_open_settings">Opna stillingar</string>
     <string name="search_articles_in_category">Leita að greinum í flokknum %s</string>
+    <string name="menu_previous_article">Fyrri grein</string>
+    <string name="menu_next_article">Næsta grein</string>
+    <string name="no_more_articles">Engar fleiri greinar</string>
+    <string name="title_swipe_article_navigation">Flakk milli greina með stroku</string>
+    <string name="menu_subtitle_swipe_article_navigation">Virkja/ávirkja flakk til næstu/fyrri greinar með stroku frá skjájaðrinum á greinasíðunni</string>
+    <string name="swipe_article_navigation_enabled">Flakk milli greina með stroku virkjað</string>
+    <string name="swipe_article_navigation_disabled">Flakk milli greina með stroku óvirkt</string>
 </resources>

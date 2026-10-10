@@ -154,7 +154,15 @@ public abstract class BaseRssItemsCmd implements RssItemsProvider {
         mLimit = 1000;
     }
 
-    protected static Integer toIsRead(Integer filterType) {
+    /**
+     * Maps a filter type to the is_read column filter used by the rss item queries.
+     * Public so pages outside the command hierarchy (e.g. the item detail page's
+     * neighbor navigation) derive the exact same query filters as loadItems().
+     *
+     * @param filterType the filter type, may be null
+     * @return 0 for unread-only, 1 for read-only, null for no read-state filtering
+     */
+    public static Integer toIsRead(Integer filterType) {
         Integer isRead = null;
         if (filterType != null) {
             switch (filterType) {
@@ -171,7 +179,15 @@ public abstract class BaseRssItemsCmd implements RssItemsProvider {
         return isRead;
     }
 
-    protected static Integer toIsFavorite(Integer filterType) {
+    /**
+     * Maps a filter type to the is_favorite column filter used by the rss item
+     * queries. Public so pages outside the command hierarchy (e.g. the item detail
+     * page's neighbor navigation) derive the exact same query filters as loadItems().
+     *
+     * @param filterType the filter type, may be null
+     * @return 1 for favorites-only, null for no favorite filtering
+     */
+    public static Integer toIsFavorite(Integer filterType) {
         Integer isFavorite = null;
         if (filterType != null) {
             switch (filterType) {

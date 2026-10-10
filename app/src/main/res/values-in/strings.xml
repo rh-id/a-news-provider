@@ -144,4 +144,11 @@
     <string name="notification_permission_disabled_hint">Notifikasi dimatikan. Pemberitahuan artikel baru tidak akan ditampilkan.</string>
     <string name="notification_permission_open_settings">Buka pengaturan</string>
     <string name="search_articles_in_category">Cari artikel dalam kategori %s</string>
+    <string name="menu_previous_article">Artikel sebelumnya</string>
+    <string name="menu_next_article">Artikel berikutnya</string>
+    <string name="no_more_articles">Tidak ada artikel lagi</string>
+    <string name="title_swipe_article_navigation">Navigasi artikel dengan geser</string>
+    <string name="menu_subtitle_swipe_article_navigation">Aktif/nonaktifkan navigasi ke artikel berikutnya/sebelumnya dengan menggeser dari tepi layar di halaman artikel</string>
+    <string name="swipe_article_navigation_enabled">Navigasi artikel dengan geser aktif</string>
+    <string name="swipe_article_navigation_disabled">Navigasi artikel dengan geser nonaktif</string>
 </resources>

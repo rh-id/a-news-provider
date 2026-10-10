@@ -146,4 +146,11 @@
     <string name="notification_permission_disabled_hint">Notifications are turned off. New article alerts won\'t be shown.</string>
     <string name="notification_permission_open_settings">Open settings</string>
     <string name="search_articles_in_category">Search articles in category %s</string>
+    <string name="menu_previous_article">Previous article</string>
+    <string name="menu_next_article">Next article</string>
+    <string name="no_more_articles">No more articles</string>
+    <string name="title_swipe_article_navigation">Swipe Article Navigation</string>
+    <string name="menu_subtitle_swipe_article_navigation">Enable/Disable navigating to the next or previous article by swiping from the screen edges on the article page</string>
+    <string name="swipe_article_navigation_enabled">Swipe article navigation enabled</string>
+    <string name="swipe_article_navigation_disabled">Swipe article navigation disabled</string>
 </resources>

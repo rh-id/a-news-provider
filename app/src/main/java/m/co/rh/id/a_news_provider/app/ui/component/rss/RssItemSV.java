@@ -113,17 +113,9 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
                     return rssItemModel;
                 }
         );
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            mGetRssChannelByIdAndOpenDetail_routeOptions = RouteOptions.withTransition(R.transition.page_rss_item_detail_enter,
-                    R.transition.page_rss_item_detail_exit);
-        } else {
-            mGetRssChannelByIdAndOpenDetail_routeOptions = RouteOptions.withAnimation(
-                    R.anim.slide_in_right,
-                    R.anim.slide_out_left,
-                    null,
-                    android.R.anim.slide_out_right
-            );
-        }
+        // shared with the detail page's next/previous replace so both open identically
+        mGetRssChannelByIdAndOpenDetail_routeOptions =
+                RssItemDetailPage.detailPageRouteOptions();
     }
 
     @Override

@@ -144,4 +144,11 @@
     <string name="notification_permission_disabled_hint">通知已关闭。新文章提醒将不会显示。</string>
     <string name="notification_permission_open_settings">打开设置</string>
     <string name="search_articles_in_category">搜索类别 %s 中的文章</string>
+    <string name="menu_previous_article">上一篇文章</string>
+    <string name="menu_next_article">下一篇文章</string>
+    <string name="no_more_articles">没有更多文章</string>
+    <string name="title_swipe_article_navigation">滑动切换文章</string>
+    <string name="menu_subtitle_swipe_article_navigation">启用/停用在文章页面从屏幕边缘滑动切换到上一篇/下一篇文章</string>
+    <string name="swipe_article_navigation_enabled">滑动切换文章已启用</string>
+    <string name="swipe_article_navigation_disabled">滑动切换文章已停用</string>
 </resources>

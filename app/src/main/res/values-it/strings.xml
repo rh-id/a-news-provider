@@ -150,4 +150,11 @@
     <string name="notification_permission_disabled_hint">Le notifiche sono disattivate. Gli avvisi per i nuovi articoli non verranno mostrati.</string>
     <string name="notification_permission_open_settings">Apri impostazioni</string>
     <string name="search_articles_in_category">Cerca articoli nella categoria %s</string>
+    <string name="menu_previous_article">Articolo precedente</string>
+    <string name="menu_next_article">Articolo successivo</string>
+    <string name="no_more_articles">Nessun altro articolo</string>
+    <string name="title_swipe_article_navigation">Navigazione tra articoli con scorrimento</string>
+    <string name="menu_subtitle_swipe_article_navigation">Attiva/disattiva la navigazione all\'articolo successivo/precedente scorrendo dai bordi dello schermo sulla pagina dell\'articolo</string>
+    <string name="swipe_article_navigation_enabled">Navigazione tra articoli con scorrimento attivata</string>
+    <string name="swipe_article_navigation_disabled">Navigazione tra articoli con scorrimento disattivata</string>
 </resources>

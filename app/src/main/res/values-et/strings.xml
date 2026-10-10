@@ -147,4 +147,11 @@
     <string name="notification_permission_disabled_hint">Teavitused on välja lülitatud. Uute artiklite hoiatusi ei kuvata.</string>
     <string name="notification_permission_open_settings">Ava sätted</string>
     <string name="search_articles_in_category">Otsi artikleid kategoorias %s</string>
+    <string name="menu_previous_article">Eelmine artikkel</string>
+    <string name="menu_next_article">Järgmine artikkel</string>
+    <string name="no_more_articles">Rohkem artikleid ei ole</string>
+    <string name="title_swipe_article_navigation">Artiklite sirvimine pühkides</string>
+    <string name="menu_subtitle_swipe_article_navigation">Luba/keela järgmisele/eelmisele artiklile pühkimine ekraaniservadelt artikli lehel</string>
+    <string name="swipe_article_navigation_enabled">Artiklite sirvimine pühkides on lubatud</string>
+    <string name="swipe_article_navigation_disabled">Artiklite sirvimine pühkides on keelatud</string>
 </resources>

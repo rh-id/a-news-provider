@@ -72,6 +72,18 @@ public class PagedRssItemsCmd extends BaseRssItemsCmd {
         return mRssItems;
     }
 
+    /**
+     * Returns the id of the currently selected rss channel, or null when the list
+     * shows all channels (no selection). Mirrors what loadItems() passes to the
+     * DAO as the channel filter, so callers outside the command hierarchy (e.g.
+     * the item detail page's neighbor navigation) walk exactly the current list.
+     *
+     * @return the selected channel id, or null in all-channels mode
+     */
+    public Long getSelectedChannelId() {
+        return mSelectedRssChannel.isPresent() ? mSelectedRssChannel.get().id : null;
+    }
+
     @NonNull
     @Override
     protected ArrayList<RssItem> loadItems() {
