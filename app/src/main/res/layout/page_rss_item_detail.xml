@@ -40,7 +40,10 @@
                 <ScrollView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:layout_margin="@dimen/text_margin">
+                    android:layout_marginStart="@dimen/text_margin"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginEnd="@dimen/text_margin"
+                    android:layout_marginBottom="@dimen/text_margin">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -54,21 +57,36 @@
                             android:layout_height="200dp"
                             android:layout_margin="@dimen/text_margin" />
 
-                        <com.google.android.material.chip.ChipGroup
-                            android:id="@+id/container_categories"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="@dimen/text_margin"
-                            android:layout_marginEnd="@dimen/text_margin"
-                            app:chipSpacingHorizontal="8dp"
-                            app:chipSpacingVertical="8dp"
-                            android:visibility="gone" />
-
                         <com.google.android.material.textview.MaterialTextView
                             android:id="@+id/text_content"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:textSize="18sp" />
+
+                        <!-- filed-under footer: single-line strip below the content,
+                             chips never wrap, overflow scrolls horizontally; each chip
+                             carries its own 8dp end margin -->
+                        <HorizontalScrollView
+                            android:id="@+id/scroll_categories"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/text_margin"
+                            android:layout_marginTop="8dp"
+                            android:layout_marginEnd="@dimen/text_margin"
+                            android:layout_marginBottom="0dp"
+                            android:fadingEdgeLength="24dp"
+                            android:requiresFadingEdge="horizontal"
+                            android:scrollbars="none"
+                            android:visibility="gone">
+
+                            <LinearLayout
+                                android:id="@+id/container_categories"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:paddingStart="0dp"
+                                android:paddingEnd="0dp" />
+                        </HorizontalScrollView>
                     </LinearLayout>
                 </ScrollView>
             </LinearLayout>

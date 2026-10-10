@@ -17,6 +17,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.MimeTypeMap;
 import android.widget.Button;
+import android.widget.HorizontalScrollView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -30,7 +32,6 @@ import androidx.core.view.ViewCompat;
 import com.android.volley.toolbox.ImageLoader;
 import com.android.volley.toolbox.NetworkImageView;
 import com.google.android.material.chip.Chip;
-import com.google.android.material.chip.ChipGroup;
 
 import java.io.Serializable;
 import java.util.List;
@@ -66,6 +67,12 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
 
     private static final String TAG = RssItemDetailPage.class.getName();
     private static final int REQUEST_CODE_PERMISSION_WRITE_EXTERNAL_STORAGE = 1;
+
+    /**
+     * Uniform gap between category chips in the detail strip, applied as marginEnd
+     * on every chip (including the last) - same spacing as the list-row strip.
+     */
+    private static final float CHIP_SPACING_DP = 8f;
 
     @NavInject
     private AppBarSV mAppBarSV;
@@ -168,8 +175,9 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
             textView.setText(HtmlCompat.fromHtml(desc, HtmlCompat.FROM_HTML_MODE_LEGACY));
             textView.setMovementMethod(LinkMovementMethod.getInstance());
         }
-        ChipGroup containerCategories = view.findViewById(R.id.container_categories);
-        bindCategoryChips(activity, containerCategories);
+        HorizontalScrollView scrollCategories = view.findViewById(R.id.scroll_categories);
+        LinearLayout containerCategories = view.findViewById(R.id.container_categories);
+        bindCategoryChips(activity, scrollCategories, containerCategories);
         Button fabOpenLink = view.findViewById(R.id.fab_open_link);
         fabOpenLink.setOnClickListener(this);
         Button fabOpenVideo = view.findViewById(R.id.fab_open_video);
@@ -184,17 +192,25 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
     }
 
     /**
-     * Fills the detail page's category chip group. The full list is shown and chips
-     * may wrap freely; the group stays hidden when the item has no categories.
+     * Fills the detail page's single-line category chip strip. Chips never wrap and
+     * overflow scrolls horizontally (same pattern as the list-row strip); the strip
+     * stays hidden when the item has no categories.
      *
-     * @param activity           the current activity, used to inflate the chips
-     * @param containerCategories the chip group hosting the category chips
+     * @param activity            the current activity, used to inflate the chips
+     * @param scrollCategories    the strip's scroll container
+     * @param containerCategories the container hosting the chips
      */
-    private void bindCategoryChips(Activity activity, ChipGroup containerCategories) {
+    private void bindCategoryChips(Activity activity, HorizontalScrollView scrollCategories,
+                                   LinearLayout containerCategories) {
+        containerCategories.removeAllViews();
         List<String> categories = RssItemCategories.parse(mRssItem.categories);
         if (categories.isEmpty()) {
+            scrollCategories.setVisibility(View.GONE);
             return;
         }
+        scrollCategories.setVisibility(View.VISIBLE);
+        int chipSpacingPx = (int) (CHIP_SPACING_DP
+                * activity.getResources().getDisplayMetrics().density + 0.5f);
         for (String category : categories) {
             Chip chip = new Chip(activity);
             chip.setText(category);
@@ -204,13 +220,17 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
             // 48dp TOUCH target via Material's touch delegate; the visual pill keeps
             // the ~32dp Material default height (text stays at the 14sp chip default)
             chip.setEnsureMinTouchTargetSize(true);
+            // deterministic, uniform 8dp gap on every chip (including the last)
+            LinearLayout.LayoutParams chipLayoutParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            chipLayoutParams.setMarginEnd(chipSpacingPx);
+            chip.setLayoutParams(chipLayoutParams);
             chip.setContentDescription(
                     activity.getString(R.string.search_articles_in_category, category));
             chip.setOnClickListener(v -> mNavigator.push(Routes.SEARCH_RSS_PAGE,
                     SearchRssPage.Args.withSearchTerm(category), null, null));
             containerCategories.addView(chip);
         }
-        containerCategories.setVisibility(View.VISIBLE);
     }
 
     @Override
