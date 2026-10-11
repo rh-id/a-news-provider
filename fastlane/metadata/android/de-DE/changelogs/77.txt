@@ -1,0 +1,10 @@
+Release 2.2.0+77
+
+Funktionen:
+* Material You dynamische Farben: Die App folgt nun ab Android 12 den Farben des Hintergrundbilds
+* Artikel beim Scrollen als gelesen markieren (optionale Einstellung)
+* Feed-Kategorien werden erkannt und als durchsuchbare, anklickbare Chips angezeigt
+* Navigation zum nächsten oder vorherigen Artikel aus der Artikelansicht
+
+Fehlerbehebungen:
+* Kategorien in der Artikelansicht werden als kompakter Streifen unter dem Inhalt angezeigt

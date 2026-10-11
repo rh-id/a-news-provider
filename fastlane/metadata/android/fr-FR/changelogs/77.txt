@@ -1,0 +1,10 @@
+Version 2.2.0+77
+
+Fonctionnalités :
+* Couleurs dynamiques Material You : l'application suit désormais les couleurs du fond d'écran sur Android 12 et versions ultérieures
+* Marquer les articles comme lus pendant le défilement (paramètre optionnel)
+* Les catégories des flux sont analysées et affichées sous forme de puces cliquables et consultables
+* Navigation vers l'article suivant ou précédent depuis la page de l'article
+
+Corrections :
+* Les catégories de la page de l'article sont affichées sous forme de bande compacte sous le contenu

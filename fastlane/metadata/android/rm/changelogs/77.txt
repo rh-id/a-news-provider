@@ -1,0 +1,10 @@
+Ediziun 2.2.0+77
+
+Funcziuns:
+* Colurs dinamicas Material You: l'app suonda ussa las colurs dal fund sin Android 12 u pli nov
+* Marcar articuls sco legids cun scrollear (parameters opziunal)
+* Categorias da feeds vegnan identifitgadas e mussadas sco chips che ins po cliccar e tschertgar
+* Navigar a l'articul prox u a l'articul precedent ord la vista da l'articul
+
+Corecziuns:
+* Categorias en la vista da l'articul vegnan ussa mussadas sco ina zona compacta sut il cuntegn

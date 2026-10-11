@@ -1,0 +1,10 @@
+Rilascio 2.2.0+77
+
+Funzionalità:
+* Colori dinamici Material You: l'app segue ora i colori dello sfondo su Android 12 e versioni successive
+* Contrassegna gli articoli come letti durante lo scorrimento (impostazione opzionale)
+* Le categorie dei feed vengono riconosciute e mostrate come chip cliccabili e ricercabili
+* Navigazione all'articolo successivo o precedente dalla pagina dell'articolo
+
+Correzioni:
+* Le categorie nella pagina dell'articolo sono mostrate come striscia compatta sotto il contenuto

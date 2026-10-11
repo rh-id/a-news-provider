@@ -1,0 +1,10 @@
+Utgivelse 2.2.0+77
+
+Funksjoner:
+* Material You dynamiske farger: appen følger nå bakgrunnsfargene på Android 12 og nyere
+* Marker artikler som lest under blaing (valgfri innstilling)
+* Strømkategorier gjenkjennes og vises som søkbare, klikkbare etiketter
+* Naviger til neste eller forrige artikkel fra artikkelvisningen
+
+Feilrettinger:
+* Kategorier i artikkelvisningen vises nå som en kompakt stripe under innholdet

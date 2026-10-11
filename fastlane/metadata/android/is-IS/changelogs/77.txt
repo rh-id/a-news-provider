@@ -1,0 +1,10 @@
+Útgáfa 2.2.0+77
+
+Eiginleikar:
+* Material You litir: forritið fylgir nú litum veggfóðurs á Android 12 og nýrri
+* Merkja greinar sem lesnar við skrun (valkvæð stilling)
+* Flokkar strauma eru greindir og birtir sem leitanlegar, smellanlegar merkingar
+* Fara í næstu eða fyrri grein frá greinasíðunni
+
+Villuleiðréttingar:
+* Flokkar á greinasíðu birtast nú sem þétt borði undir efnið

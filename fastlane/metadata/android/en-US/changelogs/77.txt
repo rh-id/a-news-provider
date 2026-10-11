@@ -1,0 +1,10 @@
+Release 2.2.0+77
+
+Features:
+* Material You dynamic color: the app now follows the wallpaper colors on Android 12 and newer
+* Mark items as read while scrolling (opt-in setting)
+* Feed categories are parsed and shown as searchable, clickable chips
+* Navigate to the next or previous article from the article detail page
+
+Fixes:
+* Categories on the article detail page are shown as a compact strip below the content

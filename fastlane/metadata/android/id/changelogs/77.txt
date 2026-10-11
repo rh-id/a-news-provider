@@ -1,0 +1,10 @@
+Rilis 2.2.0+77
+
+Fitur:
+* Warna dinamis Material You: aplikasi kini mengikuti warna wallpaper di Android 12 dan yang lebih baru
+* Menandai item sebagai sudah dibaca saat menggulir (pengaturan opsional)
+* Kategori feed diurai dan ditampilkan sebagai chip yang bisa diklik dan dicari
+* Navigasi ke artikel berikutnya atau sebelumnya dari halaman detail artikel
+
+Perbaikan:
+* Kategori di halaman detail artikel kini ditampilkan sebagai strip ringkas di bawah konten

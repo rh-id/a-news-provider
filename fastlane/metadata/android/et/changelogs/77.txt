@@ -1,0 +1,10 @@
+Versioon 2.2.0+77
+
+Funktsioonid:
+* Material You dünaamilised värvid: rakendus järgib nüüd Android 12 ja uuematel taustapildi värve
+* Artiklite märkimine kerimisel loetuks (valikuline seadistus)
+* Voo kategooriad tuvastatakse ja kuvatakse otsitavate, klõpsatavate siltidena
+* Artikli vaatest liikumine järgmise või eelmise artikli juurde
+
+Parandused:
+* Artikli vaates kuvatakse kategooriad nüüd sisu all kompaktse ribana
