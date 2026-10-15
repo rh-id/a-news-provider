@@ -41,4 +41,4 @@
 - ILogger is a CompositeLogger (Android + File `cacheDir/alogger/app.log` + Toast) — don't use `Log`/`System.out` directly; use the provided `ILogger`.
 - Volley cache dir is `cacheDir/volley` (20 MiB); ImageLoader LruCache holds 20 bitmaps — mind memory when adding image surfaces.
 - Dynamic color is force-applied via theme overlay in `MainActivity` (M2 parent kept) — don't switch the app to a M3 theme parent without handling the M2 status-bar bridge.
-- `.serena/` directory is untracked in git (has its own `.gitignore`); keep memory churn out of commits unless asked.
+- `.serena/memories/*.md` ARE tracked in git (only `.serena/cache/` and `.serena/project.local.yml` are gitignored) — commit memory updates together with the related change, as `chore(serena): ...` or bundled into a `docs:` commit.
