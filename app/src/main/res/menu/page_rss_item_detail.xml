@@ -35,5 +35,9 @@
             android:icon="@drawable/ic_download_black"
             android:title="@string/menu_download_video"
             app:showAsAction="collapseActionView" />
+        <item
+            android:id="@+id/menu_reading_settings"
+            android:title="@string/reading_settings"
+            app:showAsAction="collapseActionView" />
     </group>
 </menu>

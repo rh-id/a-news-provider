@@ -19,7 +19,7 @@
 
 ## Instrumented Tests (`gradlew connectedCheck`)
 - **:app** (`app/src/androidTest/java/m/co/rh/id/a_news_provider/`):
-  - `AppSvTest.java`, `AppPageTest.java` — page smoke tests (Espresso).
+  - `AppSVTest.java`, `AppPageTest.java` — page smoke tests (Espresso).
   - `AccessibilityAuditTest.java` — TalkBack/Accessibility Scanner audit checks (feed row state descriptions, custom actions, touch targets).
   - `OpmlParserTest.java`, `base/AppSharedPreferencesTest.java`.
   - `app/provider/repository/RssRepositoryTest.java` — in-memory Room via ProviderDbRule; includes next/prev neighbor-query tests (list walking, edges, pubDate fallback, tie-breaks, filter respect).

@@ -40,6 +40,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import m.co.rh.id.a_news_provider.R;
@@ -54,6 +55,7 @@ import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.EditRssLinkSVDialog;
+import m.co.rh.id.a_news_provider.app.util.ReadingTypography;
 import m.co.rh.id.a_news_provider.app.util.UiUtils;
 import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
@@ -193,6 +195,23 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
                                 updateFavoriteIcon(mRssItem.isFavorite);
                             }
                         }));
+        // SettingsPage can be pushed on top of this page (menu_reading_settings) and
+        // a-navigator's popInternal only disposes the popped route, so this page's
+        // retained View is re-shown without createView() re-running. Without this
+        // subscription the article would come back with stale typography. Each
+        // subject replays its current value, so this also fires once up front and
+        // keeps the initial application in one place.
+        mRxDisposer.add("readingTypography.changed",
+                Flowable.combineLatest(mAppSharedPreferences.getReadingFontSizeFlow(),
+                                mAppSharedPreferences.getReadingFontFamilyFlow(),
+                                mAppSharedPreferences.getReadingLineSpacingFlow(),
+                                mAppSharedPreferences.getIsReadingJustificationFlow(),
+                                ReadingTypography::of)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(typography -> {
+                            typography.applyToBody(view.findViewById(R.id.text_content));
+                            typography.applyToTitle(view.findViewById(R.id.text_title));
+                        }));
         Button fabOpenLink = view.findViewById(R.id.fab_open_link);
         fabOpenLink.setOnClickListener(this);
         Button fabOpenVideo = view.findViewById(R.id.fab_open_video);
@@ -259,6 +278,12 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         }
         ScrollView scrollView = view.findViewById(R.id.scroll_content);
         scrollView.scrollTo(0, 0);
+        // the user's reading preferences are the last word on how the article
+        // renders: apply them after every bind so a freshly bound item never shows
+        // the layout's hardcoded 24sp/18sp baseline
+        ReadingTypography typography = ReadingTypography.from(mAppSharedPreferences);
+        typography.applyToBody(view.findViewById(R.id.text_content));
+        typography.applyToTitle(view.findViewById(R.id.text_title));
     }
 
     /**
@@ -399,6 +424,11 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
                         REQUEST_CODE_PERMISSION_WRITE_EXTERNAL_STORAGE);
             }
 
+        } else if (id == R.id.menu_reading_settings) {
+            // door into the reading settings while the article stays behind it;
+            // the mRxDisposer subscription in createView() re-applies the new
+            // typography when this page is shown again on pop
+            mNavigator.push(Routes.SETTINGS_PAGE);
         }
         return false;
     }

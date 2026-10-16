@@ -42,6 +42,18 @@ public class AppSharedPreferences {
     private SerialBehaviorSubject<Boolean> mSwipeArticleNavigationEnabled;
     private String mSwipeArticleNavigationEnabledKey;
 
+    private SerialBehaviorSubject<Integer> mReadingFontSize;
+    private String mReadingFontSizeKey;
+
+    private SerialBehaviorSubject<Integer> mReadingFontFamily;
+    private String mReadingFontFamilyKey;
+
+    private SerialBehaviorSubject<Integer> mReadingLineSpacing;
+    private String mReadingLineSpacingKey;
+
+    private SerialBehaviorSubject<Boolean> mReadingJustification;
+    private String mReadingJustificationKey;
+
     private boolean mShowCaseRssChannelList;
     private String mShowCaseRssChannelListKey;
 
@@ -70,6 +82,10 @@ public class AppSharedPreferences {
         mDynamicColorsEnabled = new SerialBehaviorSubject<>();
         mMarkReadOnScroll = new SerialBehaviorSubject<>();
         mSwipeArticleNavigationEnabled = new SerialBehaviorSubject<>();
+        mReadingFontSize = new SerialBehaviorSubject<>();
+        mReadingFontFamily = new SerialBehaviorSubject<>();
+        mReadingLineSpacing = new SerialBehaviorSubject<>();
+        mReadingJustification = new SerialBehaviorSubject<>();
         initValue();
     }
 
@@ -92,6 +108,14 @@ public class AppSharedPreferences {
                 + ".markReadOnScroll";
         mSwipeArticleNavigationEnabledKey = SHARED_PREFERENCES_NAME
                 + ".swipeArticleNavigationEnabled";
+        mReadingFontSizeKey = SHARED_PREFERENCES_NAME
+                + ".readingFontSize";
+        mReadingFontFamilyKey = SHARED_PREFERENCES_NAME
+                + ".readingFontFamily";
+        mReadingLineSpacingKey = SHARED_PREFERENCES_NAME
+                + ".readingLineSpacing";
+        mReadingJustificationKey = SHARED_PREFERENCES_NAME
+                + ".readingJustification";
         mShowCaseRssChannelListKey = SHARED_PREFERENCES_NAME
                 + ".showCaseRssChannelList";
         mShowCaseRssItemListKey = SHARED_PREFERENCES_NAME
@@ -130,6 +154,15 @@ public class AppSharedPreferences {
         boolean swipeArticleNavigationEnabled = mSharedPreferences.getBoolean(
                 mSwipeArticleNavigationEnabledKey, true);
         swipeArticleNavigationEnabled(swipeArticleNavigationEnabled);
+        // reading typography: all four store an INDEX into the arrays on
+        // app/util/ReadingTypography (never a raw sp/px/multiplier value), so one
+        // array stays the single source of truth. :base cannot reference the :app
+        // constants, so the defaults are repeated as literals here and must be kept
+        // in sync with DEFAULT_FONT_SIZE_INDEX / DEFAULT_LINE_SPACING_INDEX.
+        readingFontSize(mSharedPreferences.getInt(mReadingFontSizeKey, 2));
+        readingFontFamily(mSharedPreferences.getInt(mReadingFontFamilyKey, 0));
+        readingLineSpacing(mSharedPreferences.getInt(mReadingLineSpacingKey, 1));
+        readingJustification(mSharedPreferences.getBoolean(mReadingJustificationKey, false));
         boolean showCaseRssChannelList = mSharedPreferences.getBoolean(mShowCaseRssChannelListKey, false);
         setShowCaseRssChannelList(showCaseRssChannelList);
         boolean showCaseRssItemList = mSharedPreferences.getBoolean(mShowCaseRssItemListKey, false);
@@ -334,6 +367,101 @@ public class AppSharedPreferences {
 
     public Flowable<Boolean> getIsSwipeArticleNavigationEnabledFlow() {
         return Flowable.fromObservable(mSwipeArticleNavigationEnabled.getSubject(), BackpressureStrategy.BUFFER);
+    }
+
+    /**
+     * Article body text size, as an index into the app's font-size steps. Default
+     * 2 (the 18sp the detail layouts already ship with).
+     */
+    private void readingFontSize(int index) {
+        mReadingFontSize.onNext(index);
+        mExecutorService.execute(() ->
+                mSharedPreferences.edit().putInt(mReadingFontSizeKey, index)
+                        .commit());
+    }
+
+    public Integer getReadingFontSize() {
+        return mReadingFontSize.getValue();
+    }
+
+    public void setReadingFontSize(int index) {
+        readingFontSize(index);
+    }
+
+    public Flowable<Integer> getReadingFontSizeFlow() {
+        return Flowable.fromObservable(mReadingFontSize.getSubject(), BackpressureStrategy.BUFFER);
+    }
+
+    /**
+     * Article body font family, as an index into the app's family list. Default 0
+     * (the platform sans the detail layouts already ship with).
+     */
+    private void readingFontFamily(int index) {
+        mReadingFontFamily.onNext(index);
+        mExecutorService.execute(() ->
+                mSharedPreferences.edit().putInt(mReadingFontFamilyKey, index)
+                        .commit());
+    }
+
+    public Integer getReadingFontFamily() {
+        return mReadingFontFamily.getValue();
+    }
+
+    public void setReadingFontFamily(int index) {
+        readingFontFamily(index);
+    }
+
+    public Flowable<Integer> getReadingFontFamilyFlow() {
+        return Flowable.fromObservable(mReadingFontFamily.getSubject(), BackpressureStrategy.BUFFER);
+    }
+
+    /**
+     * Article body line spacing, as an index into the app's line-spacing steps.
+     * Default 1 (a 1.0 multiplier, i.e. untouched leading).
+     */
+    private void readingLineSpacing(int index) {
+        mReadingLineSpacing.onNext(index);
+        mExecutorService.execute(() ->
+                mSharedPreferences.edit().putInt(mReadingLineSpacingKey, index)
+                        .commit());
+    }
+
+    public Integer getReadingLineSpacing() {
+        return mReadingLineSpacing.getValue();
+    }
+
+    public void setReadingLineSpacing(int index) {
+        readingLineSpacing(index);
+    }
+
+    public Flowable<Integer> getReadingLineSpacingFlow() {
+        return Flowable.fromObservable(mReadingLineSpacing.getSubject(), BackpressureStrategy.BUFFER);
+    }
+
+    /**
+     * Whether the article body is justified (both edges flush). Opt-in: default
+     * false, because a narrow column without hyphenation opens whitespace rivers.
+     * Only takes effect on API 26+, where justification exists at all; the pref is
+     * still persisted on older devices so a later upgrade activates it.
+     */
+    private void readingJustification(boolean enabled) {
+        mReadingJustification.onNext(enabled);
+        mExecutorService.execute(() ->
+                mSharedPreferences.edit().putBoolean(mReadingJustificationKey, enabled)
+                        .commit());
+    }
+
+    public boolean isReadingJustification() {
+        Boolean value = mReadingJustification.getValue();
+        return value != null && value;
+    }
+
+    public void setReadingJustification(boolean enabled) {
+        readingJustification(enabled);
+    }
+
+    public Flowable<Boolean> getIsReadingJustificationFlow() {
+        return Flowable.fromObservable(mReadingJustification.getSubject(), BackpressureStrategy.BUFFER);
     }
 
     public void setShowCaseRssChannelList(boolean show) {
