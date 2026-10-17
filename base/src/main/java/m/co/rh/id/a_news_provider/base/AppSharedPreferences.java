@@ -12,6 +12,21 @@ import m.co.rh.id.aprovider.Provider;
 
 public class AppSharedPreferences {
     private static final String SHARED_PREFERENCES_NAME = "RssSharedPreferences";
+
+    /**
+     * "Open links in" mode (issue #35): open article and feed links in the
+     * device default browser via a raw {@code ACTION_VIEW} intent. This is the
+     * default so existing users keep the exact behavior they always had.
+     */
+    public static final int MODE_DEFAULT_BROWSER = 0;
+    /**
+     * "Open links in" mode (issue #35): open links in a Custom Tabs session of a
+     * browser that declares Custom Tabs support. When no such browser is
+     * installed the launcher falls back to {@link #MODE_DEFAULT_BROWSER} at click
+     * time (see app/util/OpenLinkPolicy).
+     */
+    public static final int MODE_CUSTOM_TABS = 1;
+
     private ExecutorService mExecutorService;
     private SharedPreferences mSharedPreferences;
 
@@ -54,6 +69,9 @@ public class AppSharedPreferences {
     private SerialBehaviorSubject<Boolean> mReadingJustification;
     private String mReadingJustificationKey;
 
+    private SerialBehaviorSubject<Integer> mOpenLinksMode;
+    private String mOpenLinksModeKey;
+
     private boolean mShowCaseRssChannelList;
     private String mShowCaseRssChannelListKey;
 
@@ -86,6 +104,7 @@ public class AppSharedPreferences {
         mReadingFontFamily = new SerialBehaviorSubject<>();
         mReadingLineSpacing = new SerialBehaviorSubject<>();
         mReadingJustification = new SerialBehaviorSubject<>();
+        mOpenLinksMode = new SerialBehaviorSubject<>();
         initValue();
     }
 
@@ -116,6 +135,8 @@ public class AppSharedPreferences {
                 + ".readingLineSpacing";
         mReadingJustificationKey = SHARED_PREFERENCES_NAME
                 + ".readingJustification";
+        mOpenLinksModeKey = SHARED_PREFERENCES_NAME
+                + ".openLinksMode";
         mShowCaseRssChannelListKey = SHARED_PREFERENCES_NAME
                 + ".showCaseRssChannelList";
         mShowCaseRssItemListKey = SHARED_PREFERENCES_NAME
@@ -163,6 +184,9 @@ public class AppSharedPreferences {
         readingFontFamily(mSharedPreferences.getInt(mReadingFontFamilyKey, 0));
         readingLineSpacing(mSharedPreferences.getInt(mReadingLineSpacingKey, 1));
         readingJustification(mSharedPreferences.getBoolean(mReadingJustificationKey, false));
+        // "Open links in" defaults to the raw ACTION_VIEW behavior (0); existing
+        // users therefore see no change when upgrading (issue #35)
+        openLinksMode(mSharedPreferences.getInt(mOpenLinksModeKey, MODE_DEFAULT_BROWSER));
         boolean showCaseRssChannelList = mSharedPreferences.getBoolean(mShowCaseRssChannelListKey, false);
         setShowCaseRssChannelList(showCaseRssChannelList);
         boolean showCaseRssItemList = mSharedPreferences.getBoolean(mShowCaseRssItemListKey, false);
@@ -462,6 +486,31 @@ public class AppSharedPreferences {
 
     public Flowable<Boolean> getIsReadingJustificationFlow() {
         return Flowable.fromObservable(mReadingJustification.getSubject(), BackpressureStrategy.BUFFER);
+    }
+
+    /**
+     * "Open links in" preference (issue #35): {@link #MODE_DEFAULT_BROWSER} (the
+     * pre-existing raw ACTION_VIEW behavior, default) or {@link #MODE_CUSTOM_TABS}.
+     * Read at CLICK time by the link launcher, never cached while binding views.
+     */
+    private void openLinksMode(int mode) {
+        mOpenLinksMode.onNext(mode);
+        mExecutorService.execute(() ->
+                mSharedPreferences.edit().putInt(mOpenLinksModeKey, mode)
+                        .commit());
+    }
+
+    public int getOpenLinksMode() {
+        Integer value = mOpenLinksMode.getValue();
+        return value == null ? MODE_DEFAULT_BROWSER : value;
+    }
+
+    public void setOpenLinksMode(int mode) {
+        openLinksMode(mode);
+    }
+
+    public Flowable<Integer> getOpenLinksModeFlow() {
+        return Flowable.fromObservable(mOpenLinksMode.getSubject(), BackpressureStrategy.BUFFER);
     }
 
     public void setShowCaseRssChannelList(boolean show) {

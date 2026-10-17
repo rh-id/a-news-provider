@@ -25,12 +25,12 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * Instrumented tests for the AppSharedPreferences notification-permission state
- * (issue #51), the auto mark-read retention window (issue #47) and the four
- * reading-typography preferences (issue #29): asserts the fresh-install
- * defaults, the set/get round-trip of each new field, that every Flowable
- * replays its current value and emits on change, and that state persists through
- * a fresh provider instance (re-read from the shared preferences file, mirroring
- * a process restart).
+ * (issue #51), the auto mark-read retention window (issue #47), the four
+ * reading-typography preferences (issue #29) and the open-links mode preference
+ * (issue #35): asserts the fresh-install defaults, the set/get round-trip of each
+ * new field, that every Flowable replays its current value and emits on change,
+ * and that state persists through a fresh provider instance (re-read from the
+ * shared preferences file, mirroring a process restart).
  */
 @RunWith(AndroidJUnit4.class)
 public class AppSharedPreferencesTest {
@@ -279,6 +279,59 @@ public class AppSharedPreferencesTest {
         mAppSharedPreferences.setReadingFontFamily(1);
         assertEquals("a family change must not disturb the font size",
                 Integer.valueOf(0), mAppSharedPreferences.getReadingFontSize());
+    }
+
+    // ========================================================================
+    // open links (issue #35)
+    //
+    // "Open links in": MODE_DEFAULT_BROWSER (the raw ACTION_VIEW behavior every
+    // existing user already had) or MODE_CUSTOM_TABS. The constants live on
+    // AppSharedPreferences itself, so they are referenced directly here.
+    // ========================================================================
+
+    @Test
+    public void testOpenLinksModeFreshInstallDefault() {
+        assertEquals("Open links must default to the default-browser mode",
+                AppSharedPreferences.MODE_DEFAULT_BROWSER,
+                mAppSharedPreferences.getOpenLinksMode());
+    }
+
+    @Test
+    public void testOpenLinksModeRoundTrip() {
+        mAppSharedPreferences.setOpenLinksMode(AppSharedPreferences.MODE_CUSTOM_TABS);
+        assertEquals(AppSharedPreferences.MODE_CUSTOM_TABS,
+                mAppSharedPreferences.getOpenLinksMode());
+        mAppSharedPreferences.setOpenLinksMode(AppSharedPreferences.MODE_DEFAULT_BROWSER);
+        assertEquals("switching back must restore the default-browser mode",
+                AppSharedPreferences.MODE_DEFAULT_BROWSER,
+                mAppSharedPreferences.getOpenLinksMode());
+    }
+
+    @Test
+    public void testOpenLinksModeFlowEmitsUpdates() {
+        TestSubscriber<Integer> testSubscriber =
+                mAppSharedPreferences.getOpenLinksModeFlow().test();
+
+        // SerialBehaviorSubject replays the current value on subscribe
+        assertEquals(Integer.valueOf(AppSharedPreferences.MODE_DEFAULT_BROWSER),
+                testSubscriber.values().get(0));
+
+        mAppSharedPreferences.setOpenLinksMode(AppSharedPreferences.MODE_CUSTOM_TABS);
+
+        testSubscriber.assertValueCount(2);
+        assertEquals(Integer.valueOf(AppSharedPreferences.MODE_CUSTOM_TABS),
+                testSubscriber.values().get(1));
+    }
+
+    @Test
+    public void testOpenLinksModeSurvivesNewProviderInstance() {
+        mAppSharedPreferences.setOpenLinksMode(AppSharedPreferences.MODE_CUSTOM_TABS);
+        // the setter persists synchronously via the direct executor, so the write
+        // has landed before dispose() runs
+        mProvider.dispose();
+        mProvider = Provider.createProvider(mContext, new PrefsTestProviderModule());
+        AppSharedPreferences reloaded = mProvider.get(AppSharedPreferences.class);
+        assertEquals(AppSharedPreferences.MODE_CUSTOM_TABS, reloaded.getOpenLinksMode());
     }
 
     private static class PrefsTestProviderModule implements ProviderModule {

@@ -11,6 +11,7 @@
   - `provider/notifier/RssChangeNotifierTest.java` — Rx notifier behavior.
   - `provider/command/SearchRssItemsCmdTest.java`, `provider/command/RedirectDuplicateCheckerTest.java`, `provider/command/MarkItemsReadOnScrollCmdTest.java`.
   - `base/util/UrlNormalizerTest.java`, `app/util/NotificationPermissionPolicyTest.java` (test classes live in :app even for :base code).
+  - `app/util/OpenLinkPolicyTest.java` — "Open links in" decision/fallback logic (pure JVM, no Android deps).
   - Note: the old unit `RssRepositoryTest` was moved to androidTest (in-memory Room, real DAO queries incl. neighbor queries); `RssChannelStateNotifierTest` was removed.
 - **:component-network** (`component-network/src/test/java/m/co/rh/id/a_news_provider/component/network/`):
   - `parser/RssFeedParserTest.java` — 19 tests: RSS 2.0 / Atom / RDF parsing, enclosure image/video, media:content (image/video/medium-video), image+thumbnail, unknown root tag, malformed XML, empty feed, rss-without-channel, categories. Uses silent anonymous `ILogger` stub and anonymous `Provider` stub.

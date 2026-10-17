@@ -10,6 +10,7 @@ espresso = "3.7.0"
 rxjava = "3.1.12" # 3.1.12 is the final 3.x release (RxJava 4 is alpha-only, not on Maven Central); 3.x requires Android API 21+
 rxandroid = "3.0.2"
 androidx-annotation = "1.11.0"
+androidx-browser = "1.9.0" # 1.10.0+ raised minSdk to 23; this app is minSdk 21
 material = "1.13.0"
 constraintlayout = "2.2.2"
 drawerlayout = "1.2.0"
@@ -40,6 +41,7 @@ android-showcase = { group = "com.github.rh-id", name = "AndroidShowCase", versi
 rxjava = { group = "io.reactivex.rxjava3", name = "rxjava", version.ref = "rxjava" }
 rxandroid = { group = "io.reactivex.rxjava3", name = "rxandroid", version.ref = "rxandroid" }
 androidx-annotation = { group = "androidx.annotation", name = "annotation", version.ref = "androidx-annotation" }
+androidx-browser = { group = "androidx.browser", name = "browser", version.ref = "androidx-browser" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 androidx-drawerlayout = { group = "androidx.drawerlayout", name = "drawerlayout", version.ref = "drawerlayout" }

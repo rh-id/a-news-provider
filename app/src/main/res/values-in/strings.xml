@@ -175,4 +175,8 @@
     <string name="menu_reading_justification">Perataan teks</string>
     <string name="reading_justification_left">Rata kiri</string>
     <string name="reading_justification_justified">Dibuat rata</string>
+    <string name="menu_open_links_in">Buka link dengan</string>
+    <string name="open_links_default_browser">Browser bawaan</string>
+    <string name="open_links_custom_tabs">Custom Tabs</string>
+    <string name="error_open_link">Gagal membuka link</string>
 </resources>

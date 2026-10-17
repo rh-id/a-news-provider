@@ -178,4 +178,8 @@
     <string name="menu_reading_justification">Textajafna</string>
     <string name="reading_justification_left">Vinsjumargraða</string>
     <string name="reading_justification_justified">Jafnað beggja vegna</string>
+    <string name="menu_open_links_in">Opna tengla með</string>
+    <string name="open_links_default_browser">Sjálfgefinn vafri</string>
+    <string name="open_links_custom_tabs">Custom Tabs</string>
+    <string name="error_open_link">Tókst ekki að opna tengil</string>
 </resources>

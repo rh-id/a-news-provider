@@ -177,4 +177,8 @@
     <string name="menu_reading_justification">Text alignment</string>
     <string name="reading_justification_left">Left aligned</string>
     <string name="reading_justification_justified">Justified</string>
+    <string name="menu_open_links_in">Open links in</string>
+    <string name="open_links_default_browser">Default browser</string>
+    <string name="open_links_custom_tabs">Custom Tabs</string>
+    <string name="error_open_link">Failed to open link</string>
 </resources>

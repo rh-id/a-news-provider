@@ -178,4 +178,8 @@
     <string name="menu_reading_justification">Tekstjustering</string>
     <string name="reading_justification_left">Venstrestilt</string>
     <string name="reading_justification_justified">Blokkjustert</string>
+    <string name="menu_open_links_in">Åpne lenker med</string>
+    <string name="open_links_default_browser">Standardnettleser</string>
+    <string name="open_links_custom_tabs">Custom Tabs</string>
+    <string name="error_open_link">Klarte ikke å åpne lenke</string>
 </resources>

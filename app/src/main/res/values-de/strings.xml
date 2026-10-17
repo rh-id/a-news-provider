@@ -178,4 +178,8 @@
     <string name="menu_reading_justification">Textausrichtung</string>
     <string name="reading_justification_left">Linksbündig</string>
     <string name="reading_justification_justified">Blocksatz</string>
+    <string name="menu_open_links_in">Links öffnen mit</string>
+    <string name="open_links_default_browser">Standardbrowser</string>
+    <string name="open_links_custom_tabs">Custom Tabs</string>
+    <string name="error_open_link">Link konnte nicht geöffnet werden</string>
 </resources>

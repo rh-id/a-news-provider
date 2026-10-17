@@ -29,6 +29,7 @@ A simple and easy to use RSS aggregator that deliver news to your smartphone.
   <li>Rename, pause (mute), or delete feeds — paused feeds keep their history but stop syncing and notifying (their unread counts may still decrease via the optional auto mark-read setting)</li>
   <li>Support editing feed item link</li>
   <li>Copy feed item links and channel links to clipboard</li>
+  <li>"Open links in" setting: default browser (default) or browser Custom Tabs (opt-in, falls back to the default browser when Custom Tabs isn't supported)</li>
   <li>Offline/online detection with SnackBar feedback; syncs run automatically once the device is back online</li>
   <li>Simple interface to add and read your news</li>
   <li>Theme selection: follow system, light, or dark mode, plus Material You dynamic color on Android 12 and above (on by default)</li>

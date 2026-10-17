@@ -175,4 +175,8 @@
     <string name="menu_reading_justification">文本对齐</string>
     <string name="reading_justification_left">左对齐</string>
     <string name="reading_justification_justified">两端对齐</string>
+    <string name="menu_open_links_in">打开链接方式</string>
+    <string name="open_links_default_browser">默认浏览器</string>
+    <string name="open_links_custom_tabs">Custom Tabs</string>
+    <string name="error_open_link">无法打开链接</string>
 </resources>

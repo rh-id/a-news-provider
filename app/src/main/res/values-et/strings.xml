@@ -178,4 +178,8 @@
     <string name="menu_reading_justification">Teksti joondus</string>
     <string name="reading_justification_left">Vasakule joondatud</string>
     <string name="reading_justification_justified">Rööpjoondatud</string>
+    <string name="menu_open_links_in">Linkide avamine</string>
+    <string name="open_links_default_browser">Vaikimisi brauser</string>
+    <string name="open_links_custom_tabs">Custom Tabs</string>
+    <string name="error_open_link">Linki avamine ebaõnnestus</string>
 </resources>

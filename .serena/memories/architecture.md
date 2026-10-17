@@ -42,7 +42,7 @@ UI retrieves command from Provider and executes; DB-threaded work runs on a shar
 ## Reactive Layer
 - `RssChangeNotifier` (`app/.../app/provider/notifier/`) — Rx event hub: new/updated/deleted channels, synced items, updated items, mark-read events.
 - `RssChannelStateNotifier` — selected channel + unread-count state.
-- `AppSharedPreferences` (`base/.../base/AppSharedPreferences.java`) — exposes prefs (theme, dynamic color, sync interval, one-hand mode, download-image, swipe article navigation, mark-read-on-scroll, auto mark-read retention days, showcase flags) as Rx flows via `SerialBehaviorSubject` (merged its former mQuery field into the subject in 2026-10).
+- `AppSharedPreferences` (`base/.../base/AppSharedPreferences.java`) — exposes prefs (theme, dynamic color, sync interval, one-hand mode, download-image, swipe article navigation, mark-read-on-scroll, auto mark-read retention days, open-links mode, showcase flags) as Rx flows via `SerialBehaviorSubject` (merged its former mQuery field into the subject in 2026-10).
 - `DeviceStatusNotifier` (`base/.../base/provider/notifier/`) — ConnectivityManager callback → `BehaviorSubject<Boolean>` online state; UI shows SnackBar offline feedback.
 - `MainApplication` installs `RxJavaPlugins.setErrorHandler` (logs undeliverable errors) + default uncaught-exception handler (logs, disposes provider).
 

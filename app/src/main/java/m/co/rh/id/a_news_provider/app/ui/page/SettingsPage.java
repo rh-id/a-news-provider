@@ -25,6 +25,7 @@ import m.co.rh.id.a_news_provider.app.ui.component.settings.LicensesMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.LogMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.MarkReadOnScrollMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.OneHandModeMenuSV;
+import m.co.rh.id.a_news_provider.app.ui.component.settings.OpenLinksInMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.ReadingFontFamilyMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.ReadingFontSizeMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.ReadingJustificationMenuSV;
@@ -71,6 +72,8 @@ public class SettingsPage extends StatefulView<Activity> implements RssSyncMenuS
         mStatefulViews.add(markReadOnScrollMenuSV);
         SwipeArticleNavigationMenuSV swipeArticleNavigationMenuSV = new SwipeArticleNavigationMenuSV();
         mStatefulViews.add(swipeArticleNavigationMenuSV);
+        OpenLinksInMenuSV openLinksInMenuSV = new OpenLinksInMenuSV();
+        mStatefulViews.add(openLinksInMenuSV);
         ThemeMenuSV themeMenuSV = new ThemeMenuSV();
         mStatefulViews.add(themeMenuSV);
         ReadingFontSizeMenuSV readingFontSizeMenuSV = new ReadingFontSizeMenuSV();

@@ -256,6 +256,9 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         if (desc != null && !desc.isEmpty()) {
             textView.setText(HtmlCompat.fromHtml(desc, HtmlCompat.FROM_HTML_MODE_LEGACY));
             textView.setMovementMethod(LinkMovementMethod.getInstance());
+            // the description's URLSpans would fire a raw ACTION_VIEW internally;
+            // swap them for spans that honor the "Open links in" preference (issue #35)
+            UiUtils.routeUrlSpans(textView);
         } else {
             // clear leftover content when re-binding to an item without a description
             textView.setText("");
@@ -354,10 +357,10 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
     public void onClick(View view) {
         int viewId = view.getId();
         if (viewId == R.id.text_title || viewId == R.id.fab_open_link) {
-            Activity activity = UiUtils.getActivity(view);
-            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(mRssItem.link));
-            activity.startActivity(browserIntent);
+            UiUtils.openLink(UiUtils.getActivity(view), mRssItem.link);
         } else if (viewId == R.id.fab_open_video) {
+            // media enclosure / YouTube deep link: deliberately EXCLUDED from the
+            // "Open links in" setting (issue #35) - a Custom Tab would regress them
             Activity activity = UiUtils.getActivity(view);
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(mRssItem.mediaVideo));
             activity.startActivity(browserIntent);

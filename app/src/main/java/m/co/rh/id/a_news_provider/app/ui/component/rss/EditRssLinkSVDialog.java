@@ -1,9 +1,6 @@
 package m.co.rh.id.a_news_provider.app.ui.component.rss;
 
 import android.app.Activity;
-import android.content.ActivityNotFoundException;
-import android.content.Intent;
-import android.net.Uri;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
@@ -167,11 +164,8 @@ public class EditRssLinkSVDialog extends StatefulViewDialog<Activity> implements
     }
 
     private void openUrl(Activity activity, String url) {
-        try {
-            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-            activity.startActivity(browserIntent);
-        } catch (ActivityNotFoundException activityNotFoundException) {
-            mLogger.e(TAG, activityNotFoundException.getMessage(), activityNotFoundException);
+        if (!UiUtils.openLink(activity, url)) {
+            mLogger.e(TAG, mSvProvider.getContext().getString(R.string.error_open_link));
         }
     }
 

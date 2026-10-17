@@ -86,6 +86,8 @@ dependencies {
     implementation project(path: ':component-network')
 
     implementation libs.material
+    // pinned 1.9.0: 1.10.0+ raised minSdk to 23, this app is minSdk 21
+    implementation libs.androidx.browser
     implementation libs.androidx.constraintlayout
     implementation libs.androidx.drawerlayout
     implementation libs.androidx.recyclerview

@@ -181,4 +181,8 @@
     <string name="menu_reading_justification">Allineamento del testo</string>
     <string name="reading_justification_left">Allineato a sinistra</string>
     <string name="reading_justification_justified">Giustificato</string>
+    <string name="menu_open_links_in">Apri i link con</string>
+    <string name="open_links_default_browser">Browser predefinito</string>
+    <string name="open_links_custom_tabs">Custom Tabs</string>
+    <string name="error_open_link">Apertura del link non riuscita</string>
 </resources>

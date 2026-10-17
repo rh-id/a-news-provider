@@ -400,6 +400,9 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
         if (message != null) {
             Linkify.addLinks(message, Linkify.WEB_URLS);
             message.setMovementMethod(LinkMovementMethod.getInstance());
+            // Linkify attached raw URLSpans; swap them for spans that honor the
+            // "Open links in" preference (issue #35), TalkBack link semantics intact
+            UiUtils.routeUrlSpans(message);
         }
     }
 

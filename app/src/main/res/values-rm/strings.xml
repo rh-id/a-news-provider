@@ -178,4 +178,8 @@
     <string name="menu_reading_justification">Alignament dal text</string>
     <string name="reading_justification_left">Alinà a man</string>
     <string name="reading_justification_justified">Giustificà</string>
+    <string name="menu_open_links_in">Avrir las colliaziuns cun</string>
+    <string name="open_links_default_browser">Browser normal</string>
+    <string name="open_links_custom_tabs">Custom Tabs</string>
+    <string name="error_open_link">Betg reussì da avrir la colliaziun</string>
 </resources>
