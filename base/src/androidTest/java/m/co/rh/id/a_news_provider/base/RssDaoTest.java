@@ -26,7 +26,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Instrumented test suite for {@link RssDao}, split in three sections:
  * <p>
- * 1. Search queries ({@code searchRssItemsWithLimit} / {@code searchRssItemsWithLimitAsc}):
+ * 1. Search queries ({@code searchRssItemsPageDesc} / {@code searchRssItemsPageAsc}):
  * LIKE matching, wildcard escaping, state filters, limits and sort order.
  * <p>
  * 2. Duplicate detection ({@link RssDao#findRssChannelByUrlVariants(String, String)}):
@@ -71,8 +71,8 @@ public class RssDaoTest {
                 "http://test.com/3", createDate(2026, 1, 3));
         mRssDao.insertRssChannel(rssChannel, titleItem, descriptionItem, otherItem);
 
-        List<RssItem> results = mRssDao.searchRssItemsWithLimit(
-                "bitcoin", null, null, null, 100);
+        List<RssItem> results = mRssDao.searchRssItemsPageDesc(
+                "bitcoin", null, null, null, null, null, 100);
 
         assertEquals(2, results.size());
         assertEquals("Market news", results.get(0).title);
@@ -88,8 +88,8 @@ public class RssDaoTest {
                 "http://test.com/2", createDate(2026, 1, 2));
         mRssDao.insertRssChannel(rssChannel, saleItem, otherItem);
 
-        List<RssItem> results = mRssDao.searchRssItemsWithLimit(
-                "50\\% off", null, null, null, 100);
+        List<RssItem> results = mRssDao.searchRssItemsPageDesc(
+                "50\\% off", null, null, null, null, null, 100);
 
         assertEquals(1, results.size());
         assertEquals("50% off", results.get(0).title);
@@ -106,8 +106,8 @@ public class RssDaoTest {
                 "http://test.com/3", createDate(2026, 1, 3));
         mRssDao.insertRssChannel(rssChannel, tileItem, taleItem, otherItem);
 
-        List<RssItem> results = mRssDao.searchRssItemsWithLimit(
-                "t_le", null, null, null, 100);
+        List<RssItem> results = mRssDao.searchRssItemsPageDesc(
+                "t_le", null, null, null, null, null, 100);
 
         assertEquals(2, results.size());
         assertEquals("tale of two cities", results.get(0).title);
@@ -129,24 +129,24 @@ public class RssDaoTest {
         favoriteItem.isFavorite = true;
         mRssDao.updateRssItem(favoriteItem);
 
-        List<RssItem> unreadResults = mRssDao.searchRssItemsWithLimit(
-                "news", null, 0, null, 100);
+        List<RssItem> unreadResults = mRssDao.searchRssItemsPageDesc(
+                "news", null, 0, null, null, null, 100);
         assertEquals(2, unreadResults.size());
         assertEquals("favorite news", unreadResults.get(0).title);
         assertEquals("unread news", unreadResults.get(1).title);
 
-        List<RssItem> readResults = mRssDao.searchRssItemsWithLimit(
-                "news", null, 1, null, 100);
+        List<RssItem> readResults = mRssDao.searchRssItemsPageDesc(
+                "news", null, 1, null, null, null, 100);
         assertEquals(1, readResults.size());
         assertEquals("read news", readResults.get(0).title);
 
-        List<RssItem> favoriteResults = mRssDao.searchRssItemsWithLimit(
-                "news", null, null, 1, 100);
+        List<RssItem> favoriteResults = mRssDao.searchRssItemsPageDesc(
+                "news", null, null, 1, null, null, 100);
         assertEquals(1, favoriteResults.size());
         assertEquals("favorite news", favoriteResults.get(0).title);
 
-        List<RssItem> unreadFavoriteResults = mRssDao.searchRssItemsWithLimit(
-                "news", null, 0, 1, 100);
+        List<RssItem> unreadFavoriteResults = mRssDao.searchRssItemsPageDesc(
+                "news", null, 0, 1, null, null, 100);
         assertEquals(1, unreadFavoriteResults.size());
         assertEquals("favorite news", unreadFavoriteResults.get(0).title);
     }
@@ -166,15 +166,15 @@ public class RssDaoTest {
                 "http://test.com/5", createDate(2026, 1, 5));
         mRssDao.insertRssChannel(rssChannel, item1, item2, item3, item4, item5);
 
-        List<RssItem> newestResults = mRssDao.searchRssItemsWithLimit(
-                "bitcoin", null, null, null, 3);
+        List<RssItem> newestResults = mRssDao.searchRssItemsPageDesc(
+                "bitcoin", null, null, null, null, null, 3);
         assertEquals(3, newestResults.size());
         assertEquals("bitcoin news 5", newestResults.get(0).title);
         assertEquals("bitcoin news 4", newestResults.get(1).title);
         assertEquals("bitcoin news 3", newestResults.get(2).title);
 
-        List<RssItem> oldestResults = mRssDao.searchRssItemsWithLimitAsc(
-                "bitcoin", null, null, null, 3);
+        List<RssItem> oldestResults = mRssDao.searchRssItemsPageAsc(
+                "bitcoin", null, null, null, null, null, 3);
         assertEquals(3, oldestResults.size());
         assertEquals("bitcoin news 1", oldestResults.get(0).title);
         assertEquals("bitcoin news 2", oldestResults.get(1).title);
@@ -194,18 +194,18 @@ public class RssDaoTest {
         mRssDao.insertRssChannel(channel1, channel1Item);
         mRssDao.insertRssChannel(channel2, channel2Item, channel2OtherItem);
 
-        List<RssItem> allResults = mRssDao.searchRssItemsWithLimit(
-                "bitcoin", null, null, null, 100);
+        List<RssItem> allResults = mRssDao.searchRssItemsPageDesc(
+                "bitcoin", null, null, null, null, null, 100);
         assertEquals(2, allResults.size());
         assertEquals("bitcoin in feed 2", allResults.get(0).title);
         assertEquals("bitcoin in feed 1", allResults.get(1).title);
 
-        List<RssItem> channel1Results = mRssDao.searchRssItemsWithLimit(
-                "bitcoin", channel1.id, null, null, 100);
+        List<RssItem> channel1Results = mRssDao.searchRssItemsPageDesc(
+                "bitcoin", channel1.id, null, null, null, null, 100);
         assertEquals(1, channel1Results.size());
         assertEquals("bitcoin in feed 1", channel1Results.get(0).title);
-        assertTrue(mRssDao.searchRssItemsWithLimit(
-                "bitcoin", channel2.id, null, null, 100).size() == 1);
+        assertTrue(mRssDao.searchRssItemsPageDesc(
+                "bitcoin", channel2.id, null, null, null, null, 100).size() == 1);
     }
 
     // ==================================================================================

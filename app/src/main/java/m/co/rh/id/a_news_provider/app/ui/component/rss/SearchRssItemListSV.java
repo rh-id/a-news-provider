@@ -50,6 +50,23 @@ public class SearchRssItemListSV extends StatefulView<Activity> implements Requi
     private SerialBehaviorSubject<String> mQuerySubject;
     private transient boolean mIsUpdateQueryText;
 
+    /**
+     * Suppresses the programmatic spinner callbacks fired when the filter
+     * Spinner's saved selection is applied: AdapterView always delivers at
+     * least one {@code onItemSelected} during the first layout pass after
+     * {@code setAdapter}/{@code setSelection}, regardless of user input.
+     * Routing that programmatic callback into {@code setFilterType} would
+     * reset the keyset cursor with a FRESH load and collapse the accumulated
+     * search results window back to one page. The flag is set in
+     * {@link #createView(Activity)} BEFORE the adapter and saved selection
+     * are wired, and consumed (reset) by the first spinner callback: a
+     * Spinner must be laid out on screen before it can receive user input,
+     * so the initial programmatic callback is guaranteed to have fired and
+     * cleared the flag before any genuine user selection can reach the
+     * listener.
+     */
+    private transient boolean mSuppressSpinnerSelection;
+
     public SearchRssItemListSV() {
         this(null);
     }
@@ -88,9 +105,11 @@ public class SearchRssItemListSV extends StatefulView<Activity> implements Requi
                 }
             };
         }
+        // mark-read (manual and auto retention) changes item visibility, not the
+        // list context: refresh the same window instead of resetting pagination
         mRxDisposer.add("mSearchRssItemsCmd.itemsMarkedRead",
                 mSvProvider.get(RssChangeNotifier.class).getItemsMarkedRead()
-                        .subscribe(channelId -> mSearchRssItemsCmd.reload(),
+                        .subscribe(channelId -> mSearchRssItemsCmd.load(),
                                 throwable ->
                                         mSvProvider.get(ILogger.class).e(TAG,
                                                 mSvProvider.getContext()
@@ -98,19 +117,21 @@ public class SearchRssItemListSV extends StatefulView<Activity> implements Requi
         );
         mRxDisposer.add("mSearchRssItemsCmd.itemsMarkedReadAuto",
                 mSvProvider.get(RssChangeNotifier.class).getItemsMarkedReadAuto()
-                        .subscribe(channelId -> mSearchRssItemsCmd.reload(),
+                        .subscribe(channelId -> mSearchRssItemsCmd.load(),
                                 throwable ->
                                         mSvProvider.get(ILogger.class).e(TAG,
                                                 mSvProvider.getContext()
                                                         .getString(R.string.error_message, throwable.getMessage())))
         );
+        // favorite toggle while the favorites filter is active changes list
+        // membership, not the context: refresh the same window
         mRxDisposer.add("mRssChangeNotifier.updatedRssItem.favoriteFilter",
                 mSvProvider.get(RssChangeNotifier.class).getUpdatedRssItem()
                         .subscribe(rssItem -> {
                             if (mSearchRssItemsCmd.getFilterType()
                                     .orElse(BaseRssItemsCmd.FILTER_BY_NONE)
                                     == BaseRssItemsCmd.FILTER_BY_FAVORITE) {
-                                mSearchRssItemsCmd.reload();
+                                mSearchRssItemsCmd.load();
                             }
                         })
         );
@@ -133,17 +154,29 @@ public class SearchRssItemListSV extends StatefulView<Activity> implements Requi
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(activity,
                 R.array.array_filter_by, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        // arm BEFORE the adapter/selection wiring: AdapterView fires at least
+        // one programmatic onItemSelected on attach/layout, which must not
+        // reach setFilterType (see mSuppressSpinnerSelection)
+        mSuppressSpinnerSelection = true;
         spinnerFilterBy.setAdapter(adapter);
         mSearchRssItemsCmd.getFilterType()
                 .ifPresent(spinnerFilterBy::setSelection);
         spinnerFilterBy.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (mSuppressSpinnerSelection) {
+                    mSuppressSpinnerSelection = false;
+                    return;
+                }
                 mSearchRssItemsCmd.setFilterType(position);
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
+                if (mSuppressSpinnerSelection) {
+                    mSuppressSpinnerSelection = false;
+                    return;
+                }
                 mSearchRssItemsCmd.setFilterType(null);
             }
         });
@@ -266,9 +299,14 @@ public class SearchRssItemListSV extends StatefulView<Activity> implements Requi
         }
     }
 
+    /**
+     * Pull-to-refresh entry: re-queries the current window from the top (items
+     * may have been marked read meanwhile) without collapsing the accumulated
+     * pagination.
+     */
     public void refresh() {
         if (mSearchRssItemsCmd != null) {
-            mSearchRssItemsCmd.reload();
+            mSearchRssItemsCmd.load();
         }
     }
 }

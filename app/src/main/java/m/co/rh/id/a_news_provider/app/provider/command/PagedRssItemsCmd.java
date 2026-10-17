@@ -1,6 +1,7 @@
 package m.co.rh.id.a_news_provider.app.provider.command;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,28 +44,37 @@ public class PagedRssItemsCmd extends BaseRssItemsCmd {
                         mRssChannelStateNotifier.selectedRssChannel()
                                 .observeOn(Schedulers.from(mExecutorService)),
                         (rssModel, rssChannelOptional) -> {
+                            // Maps each combineLatest emission to the load mode it
+                            // requires (null = no load at all):
+                            // - a channel switch (or first selection) changes the query
+                            //   context: FRESH, the old keyset cursor must be dropped
+                            // - a sync-driven re-emission while ALL channels are shown
+                            //   keeps the context: REFRESH, preserving the accumulated
+                            //   window the user may have scrolled deep into
+                            // - a re-emission of the SAME selected channel needs no
+                            //   reload (the all-channels path above is what reacts to
+                            //   sync results)
                             if (rssChannelOptional.isPresent()) {
-                                if (mSelectedRssChannel.isPresent()) {
-                                    if (mSelectedRssChannel.get().id.equals(rssChannelOptional.get().id)) {
-                                        // no need to load if same
-                                        mSelectedRssChannel = rssChannelOptional;
-                                        return false;
-                                    }
+                                if (mSelectedRssChannel.isPresent()
+                                        && mSelectedRssChannel.get().id.equals(rssChannelOptional.get().id)) {
+                                    // no need to load if same
+                                    mSelectedRssChannel = rssChannelOptional;
+                                    return null;
                                 }
                                 mSelectedRssChannel = rssChannelOptional;
-                                return true;
+                                return LoadMode.FRESH;
                             }
                             mSelectedRssChannel = rssChannelOptional;
-                            return true;
+                            return LoadMode.REFRESH;
                         }
                 )
-                        .doOnNext(aBoolean -> {
-                            if (aBoolean) {
-                                executeLoad();
+                        .doOnNext(loadMode -> {
+                            if (loadMode != null) {
+                                executeLoad(loadMode);
                             } else {
                                 mIsLoadingSubject.onNext(false);
                             }
-                        }).flatMap(aBoolean ->
+                        }).flatMap(loadMode ->
                         Flowable.fromObservable(mItemsSubject, BackpressureStrategy.BUFFER));
     }
 
@@ -84,9 +94,14 @@ public class PagedRssItemsCmd extends BaseRssItemsCmd {
         return mSelectedRssChannel.isPresent() ? mSelectedRssChannel.get().id : null;
     }
 
+    /**
+     * Loads one keyset page of the current context. A null cursor loads the
+     * first page; the keyset cursor (effective sort date + unique id) is passed
+     * straight through to the DAO so page boundaries stay stable.
+     */
     @NonNull
     @Override
-    protected ArrayList<RssItem> loadItems() {
+    protected ArrayList<RssItem> loadItems(@Nullable Long cursorSortKey, @Nullable Long cursorId, int limit) {
         Long channelId = mSelectedRssChannel.isPresent() ? mSelectedRssChannel.get().id : null;
         Integer filterType = getFilterTypeValue();
         Integer isRead = toIsRead(filterType);
@@ -94,8 +109,8 @@ public class PagedRssItemsCmd extends BaseRssItemsCmd {
         Integer sortOrder = getSortOrderValue();
         boolean asc = sortOrder != null && sortOrder == SORT_ORDER_OLDEST;
         List<RssItem> list = asc
-                ? mRssDao.findRssItemsWithLimitAsc(channelId, isRead, isFavorite, mLimit)
-                : mRssDao.findRssItemsWithLimit(channelId, isRead, isFavorite, mLimit);
+                ? mRssDao.findRssItemsPageAsc(channelId, isRead, isFavorite, cursorSortKey, cursorId, limit)
+                : mRssDao.findRssItemsPageDesc(channelId, isRead, isFavorite, cursorSortKey, cursorId, limit);
         ArrayList<RssItem> rssItemArrayList = new ArrayList<>();
         if (list != null && !list.isEmpty()) {
             rssItemArrayList.addAll(list);

@@ -31,10 +31,10 @@
 - **WorkManager default initializer is removed** (manifest `tools:node="remove"` on InitializationProvider) — `MainApplication` provides the config manually. Don't re-add default init.
 - `MainApplication` installs a crash handler that disposes the whole Provider before delegating — keep provider disposal idempotent.
 - Read/favorite state syncs **by item link** across channels (`updateRssItemsIsReadByLink` etc.) — same article in multiple feeds shares state. Preserve this when touching item updates.
-- Feed lists use `LIMIT`-based paging (`findRssItemsWithLimit/Asc`) — no androidx.paging.
+- Feed lists use keyset (cursor) pagination at page size 100 (`findRssItemsPageDesc/Asc`, `searchRssItemsPageDesc/Asc`; nullable cursor = first page) — no androidx.paging.
 - `RssDateParser.parsePubDate/parseUpdated` return null on failure and log — callers must null-check.
 - `RssFeedParser` throws on unrecognized root tag — new feed formats require explicit parser support + tests.
-- Next/prev article neighbor queries use `COALESCE(pub_date, created_date_time)` with created_date_time tiebreak — keep ordering semantics if touching those DAO queries.
+- List order + neighbor navigation + keyset cursor all use `(COALESCE(pub_date, created_date_time), id)` — `id` is the unique tiebreaker (created_date_time is not unique). Keep the three in sync if touching those DAO queries. Filter/sort/query/channel changes must do a FRESH load (cursor reset); mark-read/favorite/pull-to-refresh use REFRESH (window-preserving) — see `BaseRssItemsCmd`.
 - Detail-page next/prev navigation requires a-navigator ≥ v0.0.73 (view-stack safe `replace()`); older versions desync the view stack and crash on back-press.
 - Release signing depends on env vars (`SIGNING_KEY` etc.); local unsigned release builds are expected when unset.
 - Changelog for release workflow is keyed by **versionCode** file name in `fastlane/metadata/android/en-US/changelogs/`.

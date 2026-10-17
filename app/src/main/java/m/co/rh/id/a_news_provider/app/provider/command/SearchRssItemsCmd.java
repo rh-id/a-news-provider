@@ -1,6 +1,7 @@
 package m.co.rh.id.a_news_provider.app.provider.command;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +31,9 @@ public class SearchRssItemsCmd extends BaseRssItemsCmd {
     }
 
     /**
-     * Sets the search query, then reloads the results from the beginning.
+     * Sets the search query, then reloads the results from the beginning
+     * (fresh keyset load - a new query context invalidates any previous page
+     * cursor).
      * Does nothing if the query is unchanged from the current value.
      *
      * @param query the search query to set
@@ -57,9 +60,14 @@ public class SearchRssItemsCmd extends BaseRssItemsCmd {
         return Flowable.fromObservable(mItemsSubject, BackpressureStrategy.BUFFER);
     }
 
+    /**
+     * Loads one keyset page of the search results. A null cursor loads the
+     * first page; the keyset cursor (effective sort date + unique id) is passed
+     * straight through to the DAO so page boundaries stay stable.
+     */
     @NonNull
     @Override
-    protected ArrayList<RssItem> loadItems() {
+    protected ArrayList<RssItem> loadItems(@Nullable Long cursorSortKey, @Nullable Long cursorId, int limit) {
         String query = mQuerySubject.getValue();
         if (query == null || query.isEmpty()) {
             return new ArrayList<>();
@@ -70,8 +78,8 @@ public class SearchRssItemsCmd extends BaseRssItemsCmd {
         Integer sortOrder = getSortOrderValue();
         boolean asc = sortOrder != null && sortOrder == SORT_ORDER_OLDEST;
         List<RssItem> list = asc
-                ? mRssDao.searchRssItemsWithLimitAsc(escapeLikeQuery(query), null, isRead, isFavorite, mLimit)
-                : mRssDao.searchRssItemsWithLimit(escapeLikeQuery(query), null, isRead, isFavorite, mLimit);
+                ? mRssDao.searchRssItemsPageAsc(escapeLikeQuery(query), null, isRead, isFavorite, cursorSortKey, cursorId, limit)
+                : mRssDao.searchRssItemsPageDesc(escapeLikeQuery(query), null, isRead, isFavorite, cursorSortKey, cursorId, limit);
         ArrayList<RssItem> rssItemArrayList = new ArrayList<>();
         if (list != null && !list.isEmpty()) {
             rssItemArrayList.addAll(list);

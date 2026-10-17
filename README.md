@@ -84,7 +84,7 @@ Sync operations are executed as WorkManager chains with a `NetworkType.CONNECTED
 
 *   Room database `a-news-provider.db` (version 11, with migrations from version 1 to 11). Entities: `RssChannel`, `RssItem`, and `AndroidNotification`.
 *   Read and favorite state is synced across channels by item link, so the same article shared by multiple feeds keeps its state.
-*   Feed lists are paginated using `LIMIT`-based queries (no androidx.paging).
+*   Feed lists are paginated with keyset (cursor) queries at a page size of 100 — each page continues strictly after the last loaded row's `(COALESCE(pub_date, created_date_time), id)` position, so page boundaries stay stable under concurrent inserts and there are no LIMIT-offset duplicates or skips (still no androidx.paging).
 
 ### Networking (Volley)
 

@@ -37,16 +37,18 @@ import static org.junit.Assert.*;
  * window, against a real in-memory Room database (no mocking framework - Mockito
  * is unreliable on ART).
  * <p>
- * Two sections:
+ * Main sections:
  * <ul>
  *     <li>static helper tests ({@code applyItemState}, {@code unionMissingFavorites},
  *     {@code buildUnreadCountMap}) which need no instance or database,</li>
  *     <li>{@link RssRepository#persist(RssModel)} tests which exercise the merge,
  *     state carry-over, favorites union and URL normalization behavior through real
- *     DAO rows (absorbing the former RssRepositoryPersistDuplicateTest), plus
- *     {@link RssRepository#markOldItemsRead(long)} tests for the unread retention
+ *     DAO rows (absorbing the former RssRepositoryPersistDuplicateTest),</li>
+ *     <li>{@link RssRepository#markOldItemsRead(long)} tests for the unread retention
  *     window (cutoff boundary, favorite immunity, cross-channel link consistency,
- *     null/empty-link exclusion, paused-channel aging).</li>
+ *     null/empty-link exclusion, paused-channel aging),</li>
+ *     <li>neighbor navigation queries (next/previous article lookups) and keyset
+ *     (cursor) pagination walks, including tied-sort-key page boundaries.</li>
  * </ul>
  */
 @RunWith(AndroidJUnit4.class)
@@ -962,20 +964,20 @@ public class RssRepositoryTest {
         mRssDao.insertRssChannel(channel, plainItem, categorizedItem);
 
         // substring match against the categories column only
-        List<RssItem> byCategory = mRssDao.searchRssItemsWithLimit(
-                "growth", null, null, null, 10);
+        List<RssItem> byCategory = mRssDao.searchRssItemsPageDesc(
+                "growth", null, null, null, null, null, 10);
         assertEquals(1, byCategory.size());
         assertEquals("http://test.com/markets", byCategory.get(0).link);
 
         // a chip-tapped term containing % and _ arrives pre-escaped and must stay
         // literal (match exactly, not act as wildcards)
-        List<RssItem> byEscapedCategory = mRssDao.searchRssItemsWithLimit(
-                "50\\%\\_growth", null, null, null, 10);
+        List<RssItem> byEscapedCategory = mRssDao.searchRssItemsPageDesc(
+                "50\\%\\_growth", null, null, null, null, null, 10);
         assertEquals(1, byEscapedCategory.size());
         assertEquals("http://test.com/markets", byEscapedCategory.get(0).link);
 
-        List<RssItem> ascByCategory = mRssDao.searchRssItemsWithLimitAsc(
-                "50\\%\\_growth", null, null, null, 10);
+        List<RssItem> ascByCategory = mRssDao.searchRssItemsPageAsc(
+                "50\\%\\_growth", null, null, null, null, null, 10);
         assertEquals(1, ascByCategory.size());
         assertEquals("http://test.com/markets", ascByCategory.get(0).link);
     }
@@ -999,21 +1001,21 @@ public class RssRepositoryTest {
         // walking the newest-first list order: the older neighbor of the middle
         // item is the oldest one
         RssItem older = mRssDao.findOlderRssItem(null, null, null,
-                middle.pubDate.getTime(), middle.createdDateTime.getTime());
+                middle.pubDate.getTime(), middle.id);
         assertNotNull(older);
         assertEquals("http://test.com/oldest", older.link);
 
         // and the newer neighbor of the middle item is the newest one
         RssItem newer = mRssDao.findNewerRssItem(null, null, null,
-                middle.pubDate.getTime(), middle.createdDateTime.getTime());
+                middle.pubDate.getTime(), middle.id);
         assertNotNull(newer);
         assertEquals("http://test.com/newest", newer.link);
 
         // edges: nothing exists beyond the oldest / newest item
         assertNull(mRssDao.findOlderRssItem(null, null, null,
-                oldest.pubDate.getTime(), oldest.createdDateTime.getTime()));
+                oldest.pubDate.getTime(), oldest.id));
         assertNull(mRssDao.findNewerRssItem(null, null, null,
-                newest.pubDate.getTime(), newest.createdDateTime.getTime()));
+                newest.pubDate.getTime(), newest.id));
     }
 
     @Test
@@ -1026,9 +1028,9 @@ public class RssRepositoryTest {
         // the strict compound comparison must exclude the anchor row itself,
         // even when it is the only row in the table
         assertNull(mRssDao.findOlderRssItem(null, null, null,
-                item.pubDate.getTime(), item.createdDateTime.getTime()));
+                item.pubDate.getTime(), item.id));
         assertNull(mRssDao.findNewerRssItem(null, null, null,
-                item.pubDate.getTime(), item.createdDateTime.getTime()));
+                item.pubDate.getTime(), item.id));
     }
 
     @Test
@@ -1044,37 +1046,40 @@ public class RssRepositoryTest {
         // COALESCE(pub_date, created_date_time) falls back to created_date_time,
         // matching the home list ordering for items without a publication date
         RssItem newerOfOlder = mRssDao.findNewerRssItem(null, null, null,
-                older.createdDateTime.getTime(), older.createdDateTime.getTime());
+                older.createdDateTime.getTime(), older.id);
         assertNotNull(newerOfOlder);
         assertEquals("http://test.com/newer", newerOfOlder.link);
 
         RssItem olderOfNewer = mRssDao.findOlderRssItem(null, null, null,
-                newer.createdDateTime.getTime(), newer.createdDateTime.getTime());
+                newer.createdDateTime.getTime(), newer.id);
         assertNotNull(olderOfNewer);
         assertEquals("http://test.com/older", olderOfNewer.link);
     }
 
     @Test
-    public void testFindNeighborUsesCreatedDateTimeAsTiebreaker() {
+    public void testFindNeighborUsesIdAsTiebreaker() {
         RssChannel channel = createRssChannel("http://test.com/feed", "Feed");
         long base = System.currentTimeMillis();
         RssItem first = createRssItem("first", "http://test.com/first");
         first.pubDate = new Date(base);
-        first.createdDateTime = new Date(base - 1000);
+        // deliberately conflicting created dates: the created_date_time order
+        // here CONTRADICTS the id (insert) order, so the assertions below prove
+        // id - not created_date_time - decides the neighbor order
+        first.createdDateTime = new Date(base + 5000);
         RssItem second = createRssItem("second", "http://test.com/second");
         second.pubDate = new Date(base); // same pub date as first
         second.createdDateTime = new Date(base);
         mRssDao.insertRssChannel(channel, first, second);
 
-        // equal primary sort key: the created_date_time tiebreaker decides the
-        // order, exactly as the list queries' secondary ORDER BY does
+        // equal primary sort key: the unique id tiebreaker decides the order,
+        // exactly as the list queries' secondary ORDER BY does
         RssItem newer = mRssDao.findNewerRssItem(null, null, null,
-                first.pubDate.getTime(), first.createdDateTime.getTime());
+                first.pubDate.getTime(), first.id);
         assertNotNull(newer);
         assertEquals("http://test.com/second", newer.link);
 
         RssItem older = mRssDao.findOlderRssItem(null, null, null,
-                second.pubDate.getTime(), second.createdDateTime.getTime());
+                second.pubDate.getTime(), second.id);
         assertNotNull(older);
         assertEquals("http://test.com/first", older.link);
     }
@@ -1099,24 +1104,192 @@ public class RssRepositoryTest {
 
         // the channel filter must exclude the newer item of channel B
         RssItem older = mRssDao.findOlderRssItem(channelA.id, null, null,
-                aMiddle.pubDate.getTime(), aMiddle.createdDateTime.getTime());
+                aMiddle.pubDate.getTime(), aMiddle.id);
         assertNotNull(older);
         assertEquals("http://test.com/a-old", older.link);
 
         // unread-only home list: the newer read item must be filtered out
         RssItem newerUnread = mRssDao.findNewerRssItem(channelA.id, 0, null,
-                aMiddle.pubDate.getTime(), aMiddle.createdDateTime.getTime());
+                aMiddle.pubDate.getTime(), aMiddle.id);
         assertNull("Read newer item must be filtered out", newerUnread);
         RssItem olderUnread = mRssDao.findOlderRssItem(channelA.id, 0, null,
-                aMiddle.pubDate.getTime(), aMiddle.createdDateTime.getTime());
+                aMiddle.pubDate.getTime(), aMiddle.id);
         assertNotNull(olderUnread);
         assertEquals("http://test.com/a-old", olderUnread.link);
 
         // favorites-only home list: only the favorited neighbor remains
         RssItem olderFavorite = mRssDao.findOlderRssItem(channelA.id, null, 1,
-                aMiddle.pubDate.getTime(), aMiddle.createdDateTime.getTime());
+                aMiddle.pubDate.getTime(), aMiddle.id);
         assertNotNull(olderFavorite);
         assertEquals("http://test.com/a-old", olderFavorite.link);
+    }
+
+    // ==================================================================================
+    // Section 8: keyset (cursor) pagination
+    // ==================================================================================
+
+    /**
+     * Walks the keyset pages of the given query direction, collecting every row
+     * exactly once. Page size 3 against 10/7 rows forces three page boundaries,
+     * including boundaries inside a block of identical sort keys where a
+     * non-unique tiebreaker would skip or duplicate rows.
+     */
+    private List<RssItem> walkKeysetPages(KeysetPageLoader loader) {
+        List<RssItem> all = new ArrayList<>();
+        Long cursorSortKey = null;
+        Long cursorId = null;
+        while (true) {
+            List<RssItem> page = loader.load(cursorSortKey, cursorId);
+            if (page.isEmpty()) {
+                break;
+            }
+            all.addAll(page);
+            RssItem last = page.get(page.size() - 1);
+            cursorSortKey = last.pubDate != null
+                    ? last.pubDate.getTime() : last.createdDateTime.getTime();
+            cursorId = last.id;
+        }
+        return all;
+    }
+
+    private interface KeysetPageLoader {
+        List<RssItem> load(Long cursorSortKey, Long cursorId);
+    }
+
+    @Test
+    public void testKeysetPaginationWalksAllRowsWithTiedPubDates() {
+        RssChannel channel = createRssChannel("http://test.com/feed", "Feed");
+        Date sameDate = new Date(System.currentTimeMillis());
+        List<RssItem> items = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            RssItem item = createRssItem("item" + i, "http://test.com/" + i);
+            item.pubDate = sameDate; // ALL rows share the primary sort key
+            items.add(item);
+        }
+        mRssDao.insertRssChannel(channel, items.toArray(new RssItem[0]));
+
+        // newest first: 10 rows in pages of 3 - every boundary falls inside the
+        // identical-date block, so the id tiebreaker carries the cursor
+        List<RssItem> descWalk = walkKeysetPages((cursorSortKey, cursorId) ->
+                mRssDao.findRssItemsPageDesc(null, null, null, cursorSortKey, cursorId, 3));
+        assertEquals("no row may be skipped or duplicated across boundaries",
+                10, descWalk.size());
+        for (int i = 0; i < descWalk.size(); i++) {
+            assertEquals("http://test.com/" + (9 - i), descWalk.get(i).link);
+            if (i > 0) {
+                assertTrue("DESC list must have strictly decreasing ids",
+                        descWalk.get(i - 1).id > descWalk.get(i).id);
+            }
+        }
+
+        // oldest first: same rows in reverse
+        List<RssItem> ascWalk = walkKeysetPages((cursorSortKey, cursorId) ->
+                mRssDao.findRssItemsPageAsc(null, null, null, cursorSortKey, cursorId, 3));
+        assertEquals(10, ascWalk.size());
+        for (int i = 0; i < ascWalk.size(); i++) {
+            assertEquals("http://test.com/" + i, ascWalk.get(i).link);
+            if (i > 0) {
+                assertTrue("ASC list must have strictly increasing ids",
+                        ascWalk.get(i - 1).id < ascWalk.get(i).id);
+            }
+        }
+    }
+
+    @Test
+    public void testKeysetListOrderMatchesNeighborNavigationOrder() {
+        RssChannel channel = createRssChannel("http://test.com/feed", "Feed");
+        long base = System.currentTimeMillis();
+        RssItem a = createRssItem("a", "http://test.com/a");
+        a.pubDate = new Date(base);
+        RssItem b = createRssItem("b", "http://test.com/b");
+        b.pubDate = new Date(base); // ties a and c on the primary sort key
+        RssItem c = createRssItem("c", "http://test.com/c");
+        c.pubDate = new Date(base);
+        RssItem d = createRssItem("d", "http://test.com/d");
+        d.pubDate = new Date(base - 1000);
+        RssItem e = createRssItem("e", "http://test.com/e"); // no pubDate: created date orders
+        e.createdDateTime = new Date(base - 2000);
+        mRssDao.insertRssChannel(channel, a, b, c, d, e);
+
+        // the DESC list, walked in single steps via findOlderRssItem from the
+        // first row, must reproduce the keyset-paginated list exactly
+        List<RssItem> pagedList = walkKeysetPages((cursorSortKey, cursorId) ->
+                mRssDao.findRssItemsPageDesc(null, null, null, cursorSortKey, cursorId, 2));
+        assertEquals(5, pagedList.size());
+
+        List<RssItem> neighborWalk = new ArrayList<>();
+        RssItem cursor = pagedList.get(0);
+        neighborWalk.add(cursor);
+        while (true) {
+            RssItem older = mRssDao.findOlderRssItem(null, null, null,
+                    cursor.pubDate != null ? cursor.pubDate.getTime()
+                            : cursor.createdDateTime.getTime(),
+                    cursor.id);
+            if (older == null) {
+                break;
+            }
+            neighborWalk.add(older);
+            cursor = older;
+        }
+        assertEquals("neighbor navigation must walk the visible list order",
+                linksOf(pagedList), linksOf(neighborWalk));
+
+        // and the ASC list against findNewerRssItem from the last row
+        List<RssItem> pagedListAsc = walkKeysetPages((cursorSortKey, cursorId) ->
+                mRssDao.findRssItemsPageAsc(null, null, null, cursorSortKey, cursorId, 2));
+        assertEquals(5, pagedListAsc.size());
+        List<RssItem> neighborWalkAsc = new ArrayList<>();
+        cursor = pagedListAsc.get(0);
+        neighborWalkAsc.add(cursor);
+        while (true) {
+            RssItem newer = mRssDao.findNewerRssItem(null, null, null,
+                    cursor.pubDate != null ? cursor.pubDate.getTime()
+                            : cursor.createdDateTime.getTime(),
+                    cursor.id);
+            if (newer == null) {
+                break;
+            }
+            neighborWalkAsc.add(newer);
+            cursor = newer;
+        }
+        assertEquals(linksOf(pagedListAsc), linksOf(neighborWalkAsc));
+    }
+
+    @Test
+    public void testSearchKeysetPaginationWalksAllMatches() {
+        RssChannel channel = createRssChannel("http://test.com/feed", "Feed");
+        Date sameDate = new Date(System.currentTimeMillis());
+        List<RssItem> items = new ArrayList<>();
+        for (int i = 0; i < 7; i++) {
+            RssItem item = createRssItem("bitcoin report " + i, "http://test.com/" + i);
+            item.pubDate = sameDate; // tied sort keys across page boundaries
+            items.add(item);
+        }
+        RssItem nonMatch = createRssItem("weather today", "http://test.com/weather");
+        nonMatch.pubDate = sameDate;
+        items.add(nonMatch);
+        mRssDao.insertRssChannel(channel, items.toArray(new RssItem[0]));
+
+        List<RssItem> walk = walkKeysetPages((cursorSortKey, cursorId) ->
+                mRssDao.searchRssItemsPageDesc("bitcoin", null, null, null,
+                        cursorSortKey, cursorId, 3));
+
+        assertEquals("all 7 matches across the page boundaries, nothing else",
+                7, walk.size());
+        for (int i = 0; i < walk.size(); i++) {
+            assertEquals("http://test.com/" + (6 - i), walk.get(i).link);
+            if (i > 0) {
+                assertTrue(walk.get(i - 1).id > walk.get(i).id);
+            }
+        }
+    }
+
+    private List<String> linksOf(List<RssItem> rssItems) {
+        List<String> links = new ArrayList<>();
+        for (RssItem rssItem : rssItems) {
+            links.add(rssItem.link);
+        }
+        return links;
     }
 
     private RssItem findItemByLink(List<RssItem> rssItems, String link) {

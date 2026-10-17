@@ -54,6 +54,23 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
     private transient RecyclerView.OnScrollListener mOnScrollListener;
     private transient RssItemRecyclerViewAdapter mRssItemRecyclerViewAdapter;
 
+    /**
+     * Suppresses the programmatic spinner callbacks fired when the filter
+     * Spinner's saved selection is applied: AdapterView always delivers at
+     * least one {@code onItemSelected} during the first layout pass after
+     * {@code setAdapter}/{@code setSelection}, regardless of user input.
+     * Routing that programmatic callback into {@code setFilterType} would
+     * reset the keyset cursor with a FRESH load on every list (re-)entry and
+     * collapse the app-scoped command's accumulated window back to one page.
+     * The flag is set in {@link #createView(Activity)} BEFORE the adapter and
+     * saved selection are wired, and consumed (reset) by the first spinner
+     * callback: a Spinner must be laid out on screen before it can receive
+     * user input, so the initial programmatic callback is guaranteed to have
+     * fired and cleared the flag before any genuine user selection can reach
+     * the listener.
+     */
+    private transient boolean mSuppressSpinnerSelection;
+
     @Override
     public void provideComponent(Provider provider) {
         mSvProvider = provider.get(StatefulViewProvider.class);
@@ -84,9 +101,11 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
                 }
             };
         }
+        // mark-read (manual and auto retention) changes item visibility, not the
+        // list context: refresh the same window instead of resetting pagination
         mRxDisposer.add("mPagedRssItemsCmd.itemsMarkedRead",
                 mSvProvider.get(RssChangeNotifier.class).getItemsMarkedRead()
-                        .subscribe(channelId -> mPagedRssItemsCmd.reload(),
+                        .subscribe(channelId -> mPagedRssItemsCmd.load(),
                                 throwable ->
                                         mSvProvider.get(ILogger.class).e(TAG,
                                                 mSvProvider.getContext()
@@ -94,19 +113,21 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
         );
         mRxDisposer.add("mPagedRssItemsCmd.itemsMarkedReadAuto",
                 mSvProvider.get(RssChangeNotifier.class).getItemsMarkedReadAuto()
-                        .subscribe(channelId -> mPagedRssItemsCmd.reload(),
+                        .subscribe(channelId -> mPagedRssItemsCmd.load(),
                                 throwable ->
                                         mSvProvider.get(ILogger.class).e(TAG,
                                                 mSvProvider.getContext()
                                                         .getString(R.string.error_message, throwable.getMessage())))
         );
+        // favorite toggle while the favorites filter is active changes list
+        // membership, not the context: refresh the same window
         mRxDisposer.add("mRssChangeNotifier.updatedRssItem.favoriteFilter",
                 mSvProvider.get(RssChangeNotifier.class).getUpdatedRssItem()
                         .subscribe(rssItem -> {
                             if (mPagedRssItemsCmd.getFilterType()
                                     .orElse(BaseRssItemsCmd.FILTER_BY_NONE)
                                     == BaseRssItemsCmd.FILTER_BY_FAVORITE) {
-                                mPagedRssItemsCmd.reload();
+                                mPagedRssItemsCmd.load();
                             }
                         })
         );
@@ -189,17 +210,29 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(activity,
                 R.array.array_filter_by, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        // arm BEFORE the adapter/selection wiring: AdapterView fires at least
+        // one programmatic onItemSelected on attach/layout, which must not
+        // reach setFilterType (see mSuppressSpinnerSelection)
+        mSuppressSpinnerSelection = true;
         spinnerFilterBy.setAdapter(adapter);
         mPagedRssItemsCmd.getFilterType()
                 .ifPresent(spinnerFilterBy::setSelection);
         spinnerFilterBy.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (mSuppressSpinnerSelection) {
+                    mSuppressSpinnerSelection = false;
+                    return;
+                }
                 mPagedRssItemsCmd.setFilterType(position);
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
+                if (mSuppressSpinnerSelection) {
+                    mSuppressSpinnerSelection = false;
+                    return;
+                }
                 mPagedRssItemsCmd.setFilterType(null);
             }
         });
@@ -297,9 +330,14 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
         }
     }
 
+    /**
+     * Pull-to-refresh entry: re-queries the current window from the top (sync
+     * may have added or removed items) without collapsing the accumulated
+     * pagination.
+     */
     public void refresh() {
         if (mPagedRssItemsCmd != null) {
-            mPagedRssItemsCmd.reload();
+            mPagedRssItemsCmd.load();
         }
     }
 

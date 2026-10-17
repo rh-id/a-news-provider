@@ -41,13 +41,16 @@ public class RssQueryCmd {
     /**
      * Finds the rss item directly older than the given anchor item, applying the
      * same optional channel/read/favorite filters as the home list (see
-     * {@link PagedRssItemsCmd#loadItems()}). Absence is a normal outcome at the
-     * edge of the list, hence the Optional instead of a nullable emission.
+     * {@link PagedRssItemsCmd#loadItems(Long, Long, int)}). The anchor position is
+     * the item's effective sort date plus its unique id - exactly the list's two
+     * sort keys, so navigation walks the visible list order one row at a time.
+     * Absence is a normal outcome at the edge of the list, hence the Optional
+     * instead of a nullable emission.
      *
      * @param channelId  optional channel id filter, null to include all channels
      * @param isRead     optional read-state filter, null to include read and unread items
      * @param isFavorite optional favorite filter, null to include favorite and non-favorite items
-     * @param anchorItem the item to walk from, its effective date is the anchor
+     * @param anchorItem the item to walk from, its effective date and id are the anchor
      * @return Single emitting the closest older rss item, or empty when the anchor
      * is the oldest matching item
      */
@@ -55,20 +58,23 @@ public class RssQueryCmd {
                                                       Integer isFavorite, RssItem anchorItem) {
         return Single.fromCallable(() ->
                 findNeighbor(mRssDao.findOlderRssItem(channelId, isRead, isFavorite,
-                        anchorEffectiveDate(anchorItem), anchorCreated(anchorItem))))
+                        anchorEffectiveDate(anchorItem), anchorId(anchorItem))))
                 .subscribeOn(Schedulers.from(mExecutorService));
     }
 
     /**
      * Finds the rss item directly newer than the given anchor item, applying the
      * same optional channel/read/favorite filters as the home list (see
-     * {@link PagedRssItemsCmd#loadItems()}). Absence is a normal outcome at the
-     * edge of the list, hence the Optional instead of a nullable emission.
+     * {@link PagedRssItemsCmd#loadItems(Long, Long, int)}). The anchor position is
+     * the item's effective sort date plus its unique id - exactly the list's two
+     * sort keys, so navigation walks the visible list order one row at a time.
+     * Absence is a normal outcome at the edge of the list, hence the Optional
+     * instead of a nullable emission.
      *
      * @param channelId  optional channel id filter, null to include all channels
      * @param isRead     optional read-state filter, null to include read and unread items
      * @param isFavorite optional favorite filter, null to include favorite and non-favorite items
-     * @param anchorItem the item to walk from, its effective date is the anchor
+     * @param anchorItem the item to walk from, its effective date and id are the anchor
      * @return Single emitting the closest newer rss item, or empty when the anchor
      * is the newest matching item
      */
@@ -76,7 +82,7 @@ public class RssQueryCmd {
                                                       Integer isFavorite, RssItem anchorItem) {
         return Single.fromCallable(() ->
                 findNeighbor(mRssDao.findNewerRssItem(channelId, isRead, isFavorite,
-                        anchorEffectiveDate(anchorItem), anchorCreated(anchorItem))))
+                        anchorEffectiveDate(anchorItem), anchorId(anchorItem))))
                 .subscribeOn(Schedulers.from(mExecutorService));
     }
 
@@ -110,13 +116,17 @@ public class RssQueryCmd {
     }
 
     /**
-     * Returns the anchor item's created date tiebreaker in epoch millis, or 0 when
-     * unset (rows inserted through the DAO always carry one; 0 keeps the query total).
+     * Returns the anchor item's id, the list order's unique tiebreaker. The old
+     * created_date_time tiebreaker was not unique (same-millisecond inserts when
+     * a sync batch is persisted), which could skip a same-millisecond row during
+     * neighbor navigation; id is the unique autoincrement primary key assigned in
+     * insert order, and the list queries' secondary ORDER BY uses the same key.
      *
-     * @param anchorItem the item to take the created date from
-     * @return the created date in epoch millis, or 0 when unset
+     * @param anchorItem the item to take the id from
+     * @return the item's id, or 0 when unset (rows inserted through the DAO always
+     * carry one; 0 keeps the query total)
      */
-    private static long anchorCreated(RssItem anchorItem) {
-        return anchorItem.createdDateTime != null ? anchorItem.createdDateTime.getTime() : 0L;
+    private static long anchorId(RssItem anchorItem) {
+        return anchorItem.id != null ? anchorItem.id : 0L;
     }
 }

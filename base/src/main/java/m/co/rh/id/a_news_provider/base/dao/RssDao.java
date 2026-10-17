@@ -20,7 +20,7 @@ public abstract class RssDao {
     /**
      * Maximum number of links bound per UPDATE statement. SQLite older than 3.32
      * (Android 11 and below) allows at most 999 host parameters per query, and the
-     * caller's page size starts at 1000 (see BaseRssItemsCmd.mLimit), so 500 keeps
+     * caller's keyset page size is 100 (see BaseRssItemsCmd.PAGE_SIZE), so 500 keeps
      * every chunk safely within the limit while halving the number of statements.
      */
     private static final int MARK_READ_BY_LINKS_CHUNK_SIZE = 500;
@@ -136,108 +136,158 @@ public abstract class RssDao {
     public abstract List<ChannelUnreadCount> countUnReadRssItemsByChannel();
 
     /**
-     * Finds rss items filtered by optional channel, read and favorite state,
-     * ordered by newest first and limited to the given count.
+     * Loads one keyset-pagination page of rss items filtered by optional channel,
+     * read and favorite state, newest first. A null cursor loads the first page;
+     * otherwise the page starts strictly after the cursor row in the list's order,
+     * which keeps page boundaries stable under concurrent inserts (no LIMIT-offset
+     * duplicates or skips).
+     * <p>
+     * The cursor predicate spells out the tuple comparison of the list's two sort
+     * keys - (COALESCE(pub_date, created_date_time), id) &lt; cursor - because SQLite
+     * row-values are unavailable on the framework SQLite shipped with old API levels.
+     * The second sort key is id, not created_date_time: created_date_time is not
+     * unique (same-millisecond inserts happen when a sync batch is persisted), and a
+     * non-unique tiebreaker makes the strict cursor comparison skip every row that
+     * shares the boundary value on the next page. id is the unique autoincrement
+     * primary key, so every row has a well-defined position. The visible order is
+     * unchanged by this choice: created_date_time is assigned at insert time in id
+     * order (see {@link #insertRssItem(RssItem...)}), so rows without a feed pub
+     * date keep their insertion order either way.
      * This method must be called on a background thread.
      *
-     * @param channelId   optional channel id filter, null to include all channels
-     * @param isRead      optional read-state filter, null to include read and unread items
-     * @param isFavorite  optional favorite filter, null to include favorite and non-favorite items
-     * @param limit       maximum number of items to return
-     * @return list of rss items matching the filters, newest first
+     * @param channelId    optional channel id filter, null to include all channels
+     * @param isRead       optional read-state filter, null to include read and unread items
+     * @param isFavorite   optional favorite filter, null to include favorite and non-favorite items
+     * @param afterSortKey COALESCE(pub_date, created_date_time) of the last
+     *                     already-loaded row in epoch millis, null to load the first page
+     * @param afterId      id of the last already-loaded row, ignored when afterSortKey is null
+     * @param limit        maximum number of items to return
+     * @return list of rss items matching the filters, newest first,
+     * continuing after the cursor row
      */
-    @Query("SELECT * FROM rss_item WHERE (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) ORDER BY COALESCE(pub_date, created_date_time) DESC, created_date_time DESC LIMIT :limit")
-    public abstract List<RssItem> findRssItemsWithLimit(Long channelId, Integer isRead, Integer isFavorite, int limit);
+    @Query("SELECT * FROM rss_item WHERE (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) AND (:afterSortKey IS NULL OR COALESCE(pub_date, created_date_time) < :afterSortKey OR (COALESCE(pub_date, created_date_time) = :afterSortKey AND id < :afterId)) ORDER BY COALESCE(pub_date, created_date_time) DESC, id DESC LIMIT :limit")
+    public abstract List<RssItem> findRssItemsPageDesc(Long channelId, Integer isRead, Integer isFavorite, Long afterSortKey, Long afterId, int limit);
 
     /**
-     * Finds rss items filtered by optional channel, read and favorite state,
-     * ordered by oldest first and limited to the given count.
+     * Loads one keyset-pagination page of rss items filtered by optional channel,
+     * read and favorite state, oldest first. A null cursor loads the first page;
+     * otherwise the page starts strictly after the cursor row in the list's order.
+     * See {@link #findRssItemsPageDesc(Long, Integer, Integer, Long, Long, int)} for
+     * the cursor mechanics and the id-tiebreaker rationale.
      * This method must be called on a background thread.
      *
-     * @param channelId   optional channel id filter, null to include all channels
-     * @param isRead      optional read-state filter, null to include read and unread items
-     * @param isFavorite  optional favorite filter, null to include favorite and non-favorite items
-     * @param limit       maximum number of items to return
-     * @return list of rss items matching the filters, oldest first
+     * @param channelId    optional channel id filter, null to include all channels
+     * @param isRead       optional read-state filter, null to include read and unread items
+     * @param isFavorite   optional favorite filter, null to include favorite and non-favorite items
+     * @param afterSortKey COALESCE(pub_date, created_date_time) of the last
+     *                     already-loaded row in epoch millis, null to load the first page
+     * @param afterId      id of the last already-loaded row, ignored when afterSortKey is null
+     * @param limit        maximum number of items to return
+     * @return list of rss items matching the filters, oldest first,
+     * continuing after the cursor row
      */
-    @Query("SELECT * FROM rss_item WHERE (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) ORDER BY COALESCE(pub_date, created_date_time) ASC, created_date_time ASC LIMIT :limit")
-    public abstract List<RssItem> findRssItemsWithLimitAsc(Long channelId, Integer isRead, Integer isFavorite, int limit);
+    @Query("SELECT * FROM rss_item WHERE (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) AND (:afterSortKey IS NULL OR COALESCE(pub_date, created_date_time) > :afterSortKey OR (COALESCE(pub_date, created_date_time) = :afterSortKey AND id > :afterId)) ORDER BY COALESCE(pub_date, created_date_time) ASC, id ASC LIMIT :limit")
+    public abstract List<RssItem> findRssItemsPageAsc(Long channelId, Integer isRead, Integer isFavorite, Long afterSortKey, Long afterId, int limit);
 
     /**
      * Finds the rss item directly older than the given anchor position, using the
-     * same optional filters and ordering as {@link #findRssItemsWithLimit(Long, Integer, Integer, int)}.
+     * same optional filters and ordering as
+     * {@link #findRssItemsPageDesc(Long, Integer, Integer, Long, Long, int)}.
      * The compound predicate spells out the tuple comparison of the list's two sort
-     * keys - (COALESCE(pub_date, created_date_time), created_date_time) &lt; anchor -
-     * because SQLite row-values are unavailable on the framework SQLite shipped with
-     * old API levels. Returns the anchor's next row in the newest-first list order.
+     * keys - (COALESCE(pub_date, created_date_time), id) &lt; anchor - because SQLite
+     * row-values are unavailable on the framework SQLite shipped with old API levels.
+     * The tiebreaker is id, not created_date_time: created_date_time is not unique
+     * (same-millisecond inserts happen when a sync batch is persisted), which made
+     * neighbor navigation skip same-millisecond rows; id is the unique autoincrement
+     * primary key, and the list queries' secondary ORDER BY uses the same key, so
+     * navigation walks exactly the visible list order.
+     * Returns the anchor's next row in the newest-first list order.
      * This method must be called on a background thread.
      *
-     * @param channelId     optional channel id filter, null to include all channels
-     * @param isRead        optional read-state filter, null to include read and unread items
-     * @param isFavorite    optional favorite filter, null to include favorite and non-favorite items
-     * @param anchorDate    the anchor item's effective date (pub_date, falling back to
-     *                      created_date_time) in epoch millis
-     * @param anchorCreated the anchor item's created date tiebreaker in epoch millis
+     * @param channelId  optional channel id filter, null to include all channels
+     * @param isRead     optional read-state filter, null to include read and unread items
+     * @param isFavorite optional favorite filter, null to include favorite and non-favorite items
+     * @param anchorDate the anchor item's effective date (pub_date, falling back to
+     *                   created_date_time) in epoch millis
+     * @param anchorId   the anchor item's id (unique autoincrement primary key)
      * @return the closest older rss item, or null when the anchor is the oldest matching item
      */
-    @Query("SELECT * FROM rss_item WHERE (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) AND (COALESCE(pub_date, created_date_time) < :anchorDate OR (COALESCE(pub_date, created_date_time) = :anchorDate AND created_date_time < :anchorCreated)) ORDER BY COALESCE(pub_date, created_date_time) DESC, created_date_time DESC LIMIT 1")
-    public abstract RssItem findOlderRssItem(Long channelId, Integer isRead, Integer isFavorite, long anchorDate, long anchorCreated);
+    @Query("SELECT * FROM rss_item WHERE (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) AND (COALESCE(pub_date, created_date_time) < :anchorDate OR (COALESCE(pub_date, created_date_time) = :anchorDate AND id < :anchorId)) ORDER BY COALESCE(pub_date, created_date_time) DESC, id DESC LIMIT 1")
+    public abstract RssItem findOlderRssItem(Long channelId, Integer isRead, Integer isFavorite, long anchorDate, long anchorId);
 
     /**
      * Finds the rss item directly newer than the given anchor position, using the
-     * same optional filters and ordering as {@link #findRssItemsWithLimitAsc(Long, Integer, Integer, int)}.
+     * same optional filters and ordering as
+     * {@link #findRssItemsPageAsc(Long, Integer, Integer, Long, Long, int)}.
      * The compound predicate spells out the tuple comparison of the list's two sort
-     * keys - (COALESCE(pub_date, created_date_time), created_date_time) &gt; anchor -
-     * because SQLite row-values are unavailable on the framework SQLite shipped with
-     * old API levels. Returns the anchor's next row in the oldest-first list order.
+     * keys - (COALESCE(pub_date, created_date_time), id) &gt; anchor - because SQLite
+     * row-values are unavailable on the framework SQLite shipped with old API levels.
+     * The tiebreaker is id, not created_date_time: created_date_time is not unique
+     * (same-millisecond inserts happen when a sync batch is persisted), which made
+     * neighbor navigation skip same-millisecond rows; id is the unique autoincrement
+     * primary key, and the list queries' secondary ORDER BY uses the same key, so
+     * navigation walks exactly the visible list order.
+     * Returns the anchor's next row in the oldest-first list order.
      * This method must be called on a background thread.
      *
-     * @param channelId     optional channel id filter, null to include all channels
-     * @param isRead        optional read-state filter, null to include read and unread items
-     * @param isFavorite    optional favorite filter, null to include favorite and non-favorite items
-     * @param anchorDate    the anchor item's effective date (pub_date, falling back to
-     *                      created_date_time) in epoch millis
-     * @param anchorCreated the anchor item's created date tiebreaker in epoch millis
+     * @param channelId  optional channel id filter, null to include all channels
+     * @param isRead     optional read-state filter, null to include read and unread items
+     * @param isFavorite optional favorite filter, null to include favorite and non-favorite items
+     * @param anchorDate the anchor item's effective date (pub_date, falling back to
+     *                   created_date_time) in epoch millis
+     * @param anchorId   the anchor item's id (unique autoincrement primary key)
      * @return the closest newer rss item, or null when the anchor is the newest matching item
      */
-    @Query("SELECT * FROM rss_item WHERE (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) AND (COALESCE(pub_date, created_date_time) > :anchorDate OR (COALESCE(pub_date, created_date_time) = :anchorDate AND created_date_time > :anchorCreated)) ORDER BY COALESCE(pub_date, created_date_time) ASC, created_date_time ASC LIMIT 1")
-    public abstract RssItem findNewerRssItem(Long channelId, Integer isRead, Integer isFavorite, long anchorDate, long anchorCreated);
+    @Query("SELECT * FROM rss_item WHERE (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) AND (COALESCE(pub_date, created_date_time) > :anchorDate OR (COALESCE(pub_date, created_date_time) = :anchorDate AND id > :anchorId)) ORDER BY COALESCE(pub_date, created_date_time) ASC, id ASC LIMIT 1")
+    public abstract RssItem findNewerRssItem(Long channelId, Integer isRead, Integer isFavorite, long anchorDate, long anchorId);
 
     /**
-     * Searches rss items matching the given query against title, description, or
-     * categories,
-     * filtered by optional channel, read and favorite state,
-     * ordered by newest first and limited to the given count.
+     * Searches one keyset-pagination page of rss items matching the given query
+     * against title, description, or categories, filtered by optional channel, read
+     * and favorite state, newest first. A null cursor loads the first page; otherwise
+     * the page starts strictly after the cursor row in the list's order. See
+     * {@link #findRssItemsPageDesc(Long, Integer, Integer, Long, Long, int)} for the
+     * cursor mechanics and the id-tiebreaker rationale.
      * The query must be pre-escaped for LIKE wildcards by the caller.
      * This method must be called on a background thread.
      *
-     * @param query       pre-escaped search query matched against title, description, and categories
-     * @param channelId   optional channel id filter, null to include all channels
-     * @param isRead      optional read-state filter, null to include read and unread items
-     * @param isFavorite  optional favorite filter, null to include favorite and non-favorite items
-     * @param limit       maximum number of items to return
-     * @return list of rss items matching the query, newest first
+     * @param query        pre-escaped search query matched against title, description, and categories
+     * @param channelId    optional channel id filter, null to include all channels
+     * @param isRead       optional read-state filter, null to include read and unread items
+     * @param isFavorite   optional favorite filter, null to include favorite and non-favorite items
+     * @param afterSortKey COALESCE(pub_date, created_date_time) of the last
+     *                     already-loaded row in epoch millis, null to load the first page
+     * @param afterId      id of the last already-loaded row, ignored when afterSortKey is null
+     * @param limit        maximum number of items to return
+     * @return list of rss items matching the query, newest first,
+     * continuing after the cursor row
      */
-    @Query("SELECT * FROM rss_item WHERE (title LIKE '%' || :query || '%' ESCAPE '\\' OR description LIKE '%' || :query || '%' ESCAPE '\\' OR categories LIKE '%' || :query || '%' ESCAPE '\\') AND (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) ORDER BY COALESCE(pub_date, created_date_time) DESC, created_date_time DESC LIMIT :limit")
-    public abstract List<RssItem> searchRssItemsWithLimit(String query, Long channelId, Integer isRead, Integer isFavorite, int limit);
+    @Query("SELECT * FROM rss_item WHERE (title LIKE '%' || :query || '%' ESCAPE '\\' OR description LIKE '%' || :query || '%' ESCAPE '\\' OR categories LIKE '%' || :query || '%' ESCAPE '\\') AND (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) AND (:afterSortKey IS NULL OR COALESCE(pub_date, created_date_time) < :afterSortKey OR (COALESCE(pub_date, created_date_time) = :afterSortKey AND id < :afterId)) ORDER BY COALESCE(pub_date, created_date_time) DESC, id DESC LIMIT :limit")
+    public abstract List<RssItem> searchRssItemsPageDesc(String query, Long channelId, Integer isRead, Integer isFavorite, Long afterSortKey, Long afterId, int limit);
 
     /**
-     * Searches rss items matching the given query against title, description, or
-     * categories,
-     * filtered by optional channel, read and favorite state,
-     * ordered by oldest first and limited to the given count.
+     * Searches one keyset-pagination page of rss items matching the given query
+     * against title, description, or categories, filtered by optional channel, read
+     * and favorite state, oldest first. A null cursor loads the first page; otherwise
+     * the page starts strictly after the cursor row in the list's order. See
+     * {@link #findRssItemsPageDesc(Long, Integer, Integer, Long, Long, int)} for the
+     * cursor mechanics and the id-tiebreaker rationale.
      * The query must be pre-escaped for LIKE wildcards by the caller.
      * This method must be called on a background thread.
      *
-     * @param query       pre-escaped search query matched against title, description, and categories
-     * @param channelId   optional channel id filter, null to include all channels
-     * @param isRead      optional read-state filter, null to include read and unread items
-     * @param isFavorite  optional favorite filter, null to include favorite and non-favorite items
-     * @param limit       maximum number of items to return
-     * @return list of rss items matching the query, oldest first
+     * @param query        pre-escaped search query matched against title, description, and categories
+     * @param channelId    optional channel id filter, null to include all channels
+     * @param isRead       optional read-state filter, null to include read and unread items
+     * @param isFavorite   optional favorite filter, null to include favorite and non-favorite items
+     * @param afterSortKey COALESCE(pub_date, created_date_time) of the last
+     *                     already-loaded row in epoch millis, null to load the first page
+     * @param afterId      id of the last already-loaded row, ignored when afterSortKey is null
+     * @param limit        maximum number of items to return
+     * @return list of rss items matching the query, oldest first,
+     * continuing after the cursor row
      */
-    @Query("SELECT * FROM rss_item WHERE (title LIKE '%' || :query || '%' ESCAPE '\\' OR description LIKE '%' || :query || '%' ESCAPE '\\' OR categories LIKE '%' || :query || '%' ESCAPE '\\') AND (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) ORDER BY COALESCE(pub_date, created_date_time) ASC, created_date_time ASC LIMIT :limit")
-    public abstract List<RssItem> searchRssItemsWithLimitAsc(String query, Long channelId, Integer isRead, Integer isFavorite, int limit);
+    @Query("SELECT * FROM rss_item WHERE (title LIKE '%' || :query || '%' ESCAPE '\\' OR description LIKE '%' || :query || '%' ESCAPE '\\' OR categories LIKE '%' || :query || '%' ESCAPE '\\') AND (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) AND (:afterSortKey IS NULL OR COALESCE(pub_date, created_date_time) > :afterSortKey OR (COALESCE(pub_date, created_date_time) = :afterSortKey AND id > :afterId)) ORDER BY COALESCE(pub_date, created_date_time) ASC, id ASC LIMIT :limit")
+    public abstract List<RssItem> searchRssItemsPageAsc(String query, Long channelId, Integer isRead, Integer isFavorite, Long afterSortKey, Long afterId, int limit);
 
     /**
      * Marks all rss items as read.
@@ -275,10 +325,11 @@ public abstract class RssDao {
      * Marks unread rss items as read when their link matches one of the given links,
      * splitting the links into chunks of {@link #MARK_READ_BY_LINKS_CHUNK_SIZE}.
      * Chunking is required because SQLite older than 3.32 (Android 11 and below)
-     * allows at most 999 host parameters per query while the caller's page size
-     * starts at 1000 and doubles (BaseRssItemsCmd.mLimit). Since link is unindexed,
-     * each UPDATE is a full table scan, so chunking also bounds the work per
-     * statement. The {@code is_read = 0} guard makes repeated calls idempotent.
+     * allows at most 999 host parameters per query while the caller's keyset page
+     * size is 100 (BaseRssItemsCmd.PAGE_SIZE) and the full item table can be much
+     * larger. Since link is unindexed, each UPDATE is a full table scan, so chunking
+     * also bounds the work per statement. The {@code is_read = 0} guard makes
+     * repeated calls idempotent.
      * This method must be called on a background thread.
      *
      * @param links the links of the rss items to mark as read
