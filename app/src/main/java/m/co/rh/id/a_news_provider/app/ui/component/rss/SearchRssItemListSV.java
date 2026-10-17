@@ -76,8 +76,7 @@ public class SearchRssItemListSV extends StatefulView<Activity> implements Requi
             mSearchRssItemsCmd.setQuery(query);
         }
         mRxDisposer = mSvProvider.get(RxDisposer.class);
-        mRssItemRecyclerViewAdapter = new RssItemRecyclerViewAdapter(
-                mSearchRssItemsCmd, mNavigator, this);
+        mRssItemRecyclerViewAdapter = new RssItemRecyclerViewAdapter(mNavigator, this);
         if (mOnScrollListener == null) {
             mOnScrollListener = new RecyclerView.OnScrollListener() {
                 @Override
@@ -121,7 +120,7 @@ public class SearchRssItemListSV extends StatefulView<Activity> implements Requi
     protected View createView(Activity activity, ViewGroup container) {
         View view = activity.getLayoutInflater().inflate(R.layout.list_search_rss, container, false);
         RecyclerView recyclerView = view.findViewById(R.id.recyclerView);
-        recyclerView.setAdapter(mRssItemRecyclerViewAdapter);
+        recyclerView.setAdapter(mRssItemRecyclerViewAdapter.getConcatAdapter());
         recyclerView.addOnScrollListener(mOnScrollListener);
         RecyclerView.LayoutManager layoutManager;
         if (activity.getResources().getBoolean(R.bool.is_landscape)) {
@@ -197,7 +196,7 @@ public class SearchRssItemListSV extends StatefulView<Activity> implements Requi
         mRxDisposer.add("mSearchRssItemsCmd.getResults",
                 mSearchRssItemsCmd.getResults()
                         .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(rssItems -> mRssItemRecyclerViewAdapter.notifyItemsChanged(),
+                        .subscribe(rssItems -> mRssItemRecyclerViewAdapter.submitItems(rssItems),
                                 throwable ->
                                         mSvProvider.get(ILogger.class).e(TAG,
                                                 mSvProvider.getContext()

@@ -68,8 +68,7 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
         mMarkItemsReadOnScrollCmd = mSvProvider.get(MarkItemsReadOnScrollCmd.class);
         mHandler = mSvProvider.get(Handler.class);
         mRxDisposer = mSvProvider.get(RxDisposer.class);
-        mRssItemRecyclerViewAdapter = new RssItemRecyclerViewAdapter(
-                mPagedRssItemsCmd, mNavigator, this);
+        mRssItemRecyclerViewAdapter = new RssItemRecyclerViewAdapter(mNavigator, this);
         if (mOnScrollListener == null) {
             mOnScrollListener = new RecyclerView.OnScrollListener() {
                 @Override
@@ -177,7 +176,7 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
     protected View createView(Activity activity, ViewGroup container) {
         View view = activity.getLayoutInflater().inflate(R.layout.list_rss_item, container, false);
         RecyclerView recyclerView = view.findViewById(R.id.recyclerView);
-        recyclerView.setAdapter(mRssItemRecyclerViewAdapter);
+        recyclerView.setAdapter(mRssItemRecyclerViewAdapter.getConcatAdapter());
         recyclerView.addOnScrollListener(mOnScrollListener);
         RecyclerView.LayoutManager layoutManager;
         if (activity.getResources().getBoolean(R.bool.is_landscape)) {
@@ -243,7 +242,7 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
                         .debounce(100, TimeUnit.MILLISECONDS)
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(rssItems -> {
-                                    mRssItemRecyclerViewAdapter.notifyItemsChanged();
+                                    mRssItemRecyclerViewAdapter.submitItems(rssItems);
                                     if (!rssItems.isEmpty()) {
                                         if (!mAppSharedPreferences.isShowCaseRssItemList()) {
                                             mHandler
