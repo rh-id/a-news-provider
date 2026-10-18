@@ -80,6 +80,14 @@
         <item quantity="other">%d dager</item>
     </plurals>
     <string name="error_auto_mark_read_failed">Kunne ikke merke automatisk som lest</string>
+    <string name="menu_keep_read_items">Behold leste elementer</string>
+    <plurals name="keep_read_items_after_x_days">
+        <item quantity="one">Slett leste elementer som ikke lenger er i strømmen etter %d dag</item>
+        <item quantity="other">Slett leste elementer som ikke lenger er i strømmen etter %d dager</item>
+    </plurals>
+    <string name="keep_read_items_off">Av</string>
+    <string name="keep_read_items_period_in_day">Periode for å beholde leste elementer i dager</string>
+    <string name="error_prune_old_items_failed">Kunne ikke rydde gamle elementer</string>
     <string name="one_hand_mode_activated">Enhåndsbetjening aktivert</string>
     <string name="one_hand_mode_deactivated">Enhåndsbetjening deaktivert</string>
     <string name="http_not_allowed">HTTP ikke tillatt, bruk HTTPS i stedet</string>

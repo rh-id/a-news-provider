@@ -277,6 +277,48 @@ public class RssChangeNotifierTest {
         assertEquals(Long.valueOf(1L), autoSubscriber.values().get(0).orElse(null));
     }
 
+    @Test
+    public void testItemsPrunedAutoEmitsNull() {
+        RssChangeNotifier notifier = new RssChangeNotifier();
+
+        TestSubscriber<Optional<Long>> testSubscriber = notifier.getItemsPrunedAuto().test();
+
+        notifier.itemsPrunedAuto(null);
+
+        testSubscriber.assertValueCount(1);
+        assertEquals(Optional.empty(), testSubscriber.values().get(0));
+    }
+
+    @Test
+    public void testItemsPrunedAutoEmitsChannelId() {
+        RssChangeNotifier notifier = new RssChangeNotifier();
+
+        TestSubscriber<Optional<Long>> testSubscriber = notifier.getItemsPrunedAuto().test();
+
+        notifier.itemsPrunedAuto(1L);
+
+        testSubscriber.assertValueCount(1);
+        assertEquals(Long.valueOf(1L), testSubscriber.values().get(0).orElse(null));
+    }
+
+    @Test
+    public void testPruneIsSeparateFromMarkReadStreams() {
+        RssChangeNotifier notifier = new RssChangeNotifier();
+
+        TestSubscriber<Optional<Long>> pruneSubscriber = notifier.getItemsPrunedAuto().test();
+        TestSubscriber<Optional<Long>> autoMarkSubscriber = notifier.getItemsMarkedReadAuto().test();
+        TestSubscriber<Optional<Long>> userInitiatedSubscriber = notifier.getItemsMarkedRead().test();
+
+        notifier.itemsPrunedAuto(1L);
+
+        // the prune event must not leak into either mark-read stream (only the
+        // list windows that show read items reload on it)
+        pruneSubscriber.assertValueCount(1);
+        assertEquals(Long.valueOf(1L), pruneSubscriber.values().get(0).orElse(null));
+        autoMarkSubscriber.assertValueCount(0);
+        userInitiatedSubscriber.assertValueCount(0);
+    }
+
     // ==================================================================================
     // Section 2: RssChannelStateNotifier tests
     // ==================================================================================

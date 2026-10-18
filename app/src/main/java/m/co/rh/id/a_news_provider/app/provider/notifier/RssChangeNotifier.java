@@ -13,9 +13,10 @@ import m.co.rh.id.a_news_provider.base.model.RssModel;
 
 /**
  * A hub for RSS change events. Emits events when RSS models are added, synced, or updated,
- * and when RSS items are marked as read (user-initiated via
+ * when RSS items are marked as read (user-initiated via
  * {@link #itemsMarkedRead(Long)} or auto-aged by the unread retention window via
- * {@link #itemsMarkedReadAuto(Long)}).
+ * {@link #itemsMarkedReadAuto(Long)}), and when the read-item retention window prunes
+ * the archive (auto, via {@link #itemsPrunedAuto(Long)}).
  */
 public class RssChangeNotifier {
     private final PublishSubject<Optional<RssModel>> mAddedRssModelPublishSubject;
@@ -25,6 +26,7 @@ public class RssChangeNotifier {
     private final PublishSubject<Optional<RssChannel>> mDeletedRssChannelPublishSubject;
     private final PublishSubject<Optional<Long>> mItemsMarkedReadSubject;
     private final PublishSubject<Optional<Long>> mItemsMarkedReadAutoSubject;
+    private final PublishSubject<Optional<Long>> mItemsPrunedAutoSubject;
 
     public RssChangeNotifier() {
         mAddedRssModelPublishSubject = PublishSubject.create();
@@ -34,6 +36,7 @@ public class RssChangeNotifier {
         mDeletedRssChannelPublishSubject = PublishSubject.create();
         mItemsMarkedReadSubject = PublishSubject.create();
         mItemsMarkedReadAutoSubject = PublishSubject.create();
+        mItemsPrunedAutoSubject = PublishSubject.create();
     }
 
     /**
@@ -106,6 +109,21 @@ public class RssChangeNotifier {
     }
 
     /**
+     * Emits an auto-prune event raised by the read-item retention window
+     * (issue #37: read, non-favorite items that fell out of their feed are deleted
+     * at the end of a sync once older than the configured keep-read-items days).
+     * Kept separate from the mark-read events so each background maintenance pass
+     * has its own stream. Deleting read items cannot change unread counts, so no
+     * unread-count refresh is wired - only open list windows showing read items
+     * need reloading, and they subscribe to this event.
+     *
+     * @param channelId the channel id of the pruned items, null for all channels
+     */
+    public void itemsPrunedAuto(Long channelId) {
+        mItemsPrunedAutoSubject.onNext(Optional.ofNullable(channelId));
+    }
+
+    /**
      * Provides a Flowable stream of new RSS model events.
      *
      * @return Flowable that emits optional RSS models
@@ -166,5 +184,14 @@ public class RssChangeNotifier {
      */
     public Flowable<Optional<Long>> getItemsMarkedReadAuto() {
         return Flowable.fromObservable(mItemsMarkedReadAutoSubject, BackpressureStrategy.BUFFER);
+    }
+
+    /**
+     * Provides a Flowable stream of auto-prune events (read-item retention window).
+     *
+     * @return Flowable that emits the optional channel id of the pruned items, empty for all channels
+     */
+    public Flowable<Optional<Long>> getItemsPrunedAuto() {
+        return Flowable.fromObservable(mItemsPrunedAutoSubject, BackpressureStrategy.BUFFER);
     }
 }

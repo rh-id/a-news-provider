@@ -119,6 +119,16 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
                                                 mSvProvider.getContext()
                                                         .getString(R.string.error_message, throwable.getMessage())))
         );
+        // auto-pruned read items (keep-read-items window) leave visible gaps in
+        // windows that show read items: refresh the same window
+        mRxDisposer.add("mPagedRssItemsCmd.itemsPrunedAuto",
+                mSvProvider.get(RssChangeNotifier.class).getItemsPrunedAuto()
+                        .subscribe(channelId -> mPagedRssItemsCmd.load(),
+                                throwable ->
+                                        mSvProvider.get(ILogger.class).e(TAG,
+                                                mSvProvider.getContext()
+                                                        .getString(R.string.error_message, throwable.getMessage())))
+        );
         // favorite toggle while the favorites filter is active changes list
         // membership, not the context: refresh the same window
         mRxDisposer.add("mRssChangeNotifier.updatedRssItem.favoriteFilter",

@@ -836,6 +836,37 @@ public abstract class RssDao {
     public abstract int markOldItemsRead(long cutoffMillis);
 
     /**
+     * Prunes the read-item archive (issue #37 phase 2): deletes read, non-favorite
+     * rss items whose {@code updated_date_time} is strictly before the given cutoff.
+     * The criterion is the upsert retention's "last seen in feed" stamp, NOT the
+     * publication date: {@link #upsertRssItemsForChannel(RssChannel, List)} re-stamps
+     * every item still carried by its feed on every sync, so items still present in
+     * a feed are never pruned - only items that fell out of a feed and then aged out
+     * get deleted. Pruning by pub_date would delete items still in the feed, which
+     * would come back UNREAD on the next sync and re-notify (the pre-retention
+     * reinsertion trap). Unread items are NEVER deleted: compose with the unread
+     * retention window {@link #markOldItemsRead(long)}, which ages unread to read at
+     * the end of a sync - this prune then removes them in a later sync once aged.
+     * Favorites are NEVER deleted, whatever their age. The scope is deliberately
+     * PER ROW, not per link: the same story syndicated in two feeds has per-copy
+     * last-seen stamps, so one copy can be pruned while the other is retained -
+     * each copy ages by its own feed's behavior. Only read, non-favorite rows are
+     * ever affected, so no unread resurrection or state corruption is possible.
+     * Paused channels are included
+     * on purpose: the setting is a global opt-in, and a paused feed keeps its
+     * history only until it ages out under the same window (same precedent as
+     * {@link #markOldItemsRead(long)}, which already affects paused channels). When
+     * the keep-read-items setting is off (default) this method is never called, so
+     * nothing is ever deleted.
+     * This method must be called on a background thread.
+     *
+     * @param cutoffMillis epoch millis; items strictly older than this are deleted
+     * @return the number of deleted rows
+     */
+    @Query("DELETE FROM rss_item WHERE is_read = 1 AND is_favorite = 0 AND updated_date_time < :cutoffMillis")
+    public abstract int deleteOldReadRssItems(long cutoffMillis);
+
+    /**
      * Updates the favorite state of rss items matching the given link.
      * This method must be called on a background thread.
      *

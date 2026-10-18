@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
@@ -29,7 +30,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * Instrumented test suite for {@link RssDao}, split in five sections:
+ * Instrumented test suite for {@link RssDao}, split in six sections:
  * <p>
  * 1. Search queries ({@code searchRssItemsPageDesc} / {@code searchRssItemsPageAsc}):
  * LIKE matching, wildcard escaping, state filters, limits and sort order.
@@ -54,6 +55,11 @@ import static org.junit.Assert.fail;
  * preserving id/state/created stamp, retains items missing from the feed untouched,
  * and collapses intra-batch duplicates; the updated-since queries expose the
  * "last seen in feed" meaning of updated_date_time for the notification guard.
+ * <p>
+ * 6. Keep-read-items pruning (issue #37 phase 2): {@code deleteOldReadRssItems}
+ * deletes only old READ non-favorite rows (by the last-seen stamp), keeps unread
+ * items and favorites whatever their age, keeps recently-seen rows, is counted
+ * across all channels and includes paused channels (global opt-in window).
  */
 @RunWith(AndroidJUnit4.class)
 public class RssDaoTest {
@@ -1074,6 +1080,120 @@ public class RssDaoTest {
 
         // since 0 includes everything (the workers' missing-key fallback behaves the same)
         assertEquals(2, mRssDao.findRssItemsByChannelIdUpdatedSince(rssChannel.id, 0L).size());
+    }
+
+    // ==================================================================================
+    // Section 6: keep-read-items pruning (issue #37 phase 2)
+    // ==================================================================================
+
+    /**
+     * Backdates a row's updated_date_time via raw SQL: the public DAO surface only
+     * ever STAMPS updated_date_time to "now" (insert / upsert / updateRssItem), so
+     * tests simulate "not seen in a feed since" by writing the stamp directly
+     * instead of adding a production backdoor.
+     */
+    private void backdateUpdated(long itemId, long updatedMillis) {
+        mAppDatabase.getOpenHelper().getWritableDatabase().execSQL(
+                "UPDATE rss_item SET updated_date_time = ? WHERE id = ?",
+                new Object[]{updatedMillis, itemId});
+    }
+
+    @Test
+    public void deleteOldReadRssItems_deletesOnlyOldReadNonFavorites() {
+        RssChannel rssChannel = createRssChannel("http://test.com/feed", "Feed");
+        RssItem oldRead = createRssItem("old read", "desc",
+                "http://test.com/old-read", createDate(2026, 1, 1));
+        RssItem oldFavorite = createRssItem("old favorite", "desc",
+                "http://test.com/old-favorite", createDate(2026, 1, 1));
+        RssItem oldUnread = createRssItem("old unread", "desc",
+                "http://test.com/old-unread", createDate(2026, 1, 1));
+        RssItem recentRead = createRssItem("recent read", "desc",
+                "http://test.com/recent-read", createDate(2026, 1, 1));
+        RssItem atCutoffRead = createRssItem("at cutoff read", "desc",
+                "http://test.com/at-cutoff-read", createDate(2026, 1, 1));
+        mRssDao.insertRssChannel(rssChannel, oldRead, oldFavorite, oldUnread, recentRead, atCutoffRead);
+        oldRead.isRead = true;
+        mRssDao.updateRssItem(oldRead);
+        oldFavorite.isRead = true;
+        oldFavorite.isFavorite = true; // favorites must survive the prune, even read+old
+        mRssDao.updateRssItem(oldFavorite);
+        atCutoffRead.isRead = true;
+        mRssDao.updateRssItem(atCutoffRead);
+
+        long cutoff = System.currentTimeMillis();
+        // the old rows get stamps strictly before the cutoff
+        backdateUpdated(oldRead.id, cutoff - TimeUnit.DAYS.toMillis(30));
+        backdateUpdated(oldFavorite.id, cutoff - TimeUnit.DAYS.toMillis(30));
+        backdateUpdated(oldUnread.id, cutoff - TimeUnit.DAYS.toMillis(30));
+        backdateUpdated(atCutoffRead.id, cutoff); // exactly AT the cutoff: strict < keeps it
+        // recently-seen read row: (re-)stamped AFTER the cutoff capture, as the
+        // sync upsert would re-stamp an item still carried by its feed
+        recentRead.isRead = true;
+        mRssDao.updateRssItem(recentRead);
+
+        int deleted = mRssDao.deleteOldReadRssItems(cutoff);
+
+        assertEquals("Only the old read non-favorite is deleted", 1, deleted);
+        List<RssItem> stored = mRssDao.findRssItemsByChannelId(rssChannel.id);
+        assertEquals(4, stored.size());
+        assertNull("Old read non-favorite must be deleted", findByTitle(stored, "old read"));
+        assertNotNull("Old READ FAVORITE must never be deleted", findByTitle(stored, "old favorite"));
+        assertNotNull("Old UNREAD item must never be deleted", findByTitle(stored, "old unread"));
+        assertNotNull("Recently-seen read item must be kept (re-stamped by every sync)",
+                findByTitle(stored, "recent read"));
+        assertNotNull("Item stamped exactly AT the cutoff must be kept (strict <)",
+                findByTitle(stored, "at cutoff read"));
+    }
+
+    @Test
+    public void deleteOldReadRssItems_countsAcrossAllChannels() {
+        RssChannel channel1 = createRssChannel("http://test.com/feed1", "Feed 1");
+        RssChannel channel2 = createRssChannel("http://test.com/feed2", "Feed 2");
+        RssItem c1Old = createRssItem("c1 old", "desc",
+                "http://test.com/c1-old", createDate(2026, 1, 1));
+        RssItem c2Old = createRssItem("c2 old", "desc",
+                "http://test.com/c2-old", createDate(2026, 1, 1));
+        RssItem c2OldUnread = createRssItem("c2 old unread", "desc",
+                "http://test.com/c2-old-unread", createDate(2026, 1, 1));
+        mRssDao.insertRssChannel(channel1, c1Old);
+        mRssDao.insertRssChannel(channel2, c2Old, c2OldUnread);
+        c1Old.isRead = true;
+        mRssDao.updateRssItem(c1Old);
+        c2Old.isRead = true;
+        mRssDao.updateRssItem(c2Old);
+
+        long cutoff = System.currentTimeMillis();
+        backdateUpdated(c1Old.id, cutoff - TimeUnit.DAYS.toMillis(90));
+        backdateUpdated(c2Old.id, cutoff - TimeUnit.DAYS.toMillis(90));
+        backdateUpdated(c2OldUnread.id, cutoff - TimeUnit.DAYS.toMillis(90));
+
+        int deleted = mRssDao.deleteOldReadRssItems(cutoff);
+
+        assertEquals("The window is global: both old read non-favorites are counted",
+                2, deleted);
+        assertTrue(mRssDao.findRssItemsByChannelId(channel1.id).isEmpty());
+        assertEquals("Only the unread row of channel 2 survives",
+                1, mRssDao.findRssItemsByChannelId(channel2.id).size());
+    }
+
+    @Test
+    public void deleteOldReadRssItems_includesPausedChannelItems() {
+        RssChannel pausedChannel = createRssChannel("http://test.com/feed", "Paused feed");
+        pausedChannel.isPaused = true;
+        RssItem oldRead = createRssItem("old read", "desc",
+                "http://test.com/old-read", createDate(2026, 1, 1));
+        mRssDao.insertRssChannel(pausedChannel, oldRead);
+        oldRead.isRead = true;
+        mRssDao.updateRssItem(oldRead);
+
+        long cutoff = System.currentTimeMillis();
+        backdateUpdated(oldRead.id, cutoff - TimeUnit.DAYS.toMillis(30));
+
+        int deleted = mRssDao.deleteOldReadRssItems(cutoff);
+
+        assertEquals("Paused channels age under the same global window", 1, deleted);
+        assertTrue("The aged row of the paused channel is gone",
+                mRssDao.findRssItemsByChannelId(pausedChannel.id).isEmpty());
     }
 
     private RssChannel createRssChannel(String url, String feedName) {

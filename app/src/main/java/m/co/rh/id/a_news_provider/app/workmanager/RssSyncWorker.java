@@ -82,6 +82,7 @@ public class RssSyncWorker extends Worker {
         }
 
         autoMarkOldItemsRead(provider, rssRepository);
+        pruneOldItems(provider, rssRepository);
 
         Data outputData = new Data.Builder()
                 .putLongArray(ConstantsKey.KEY_LONG_CHANNEL_IDS, channelIds)
@@ -120,6 +121,44 @@ public class RssSyncWorker extends Worker {
             provider.get(ILogger.class)
                     .e(TAG, getApplicationContext()
                                     .getString(R.string.error_auto_mark_read_failed),
+                            throwable);
+        }
+    }
+
+    /**
+     * Keep-read-items retention window (issue #37 phase 2): at the end of the sync,
+     * read non-favorite items that no longer appear in their feed are deleted once
+     * their last-seen-in-feed stamp (updated_date_time) is older than the configured
+     * number of days. Runs AFTER {@link #autoMarkOldItemsRead(Provider, RssRepository)}
+     * so the two windows compose (unread ages to read, a later sync prunes it once
+     * aged) and inside this worker like that pass - no chained worker, before the
+     * output data is built. Items still present in a feed are re-stamped by the
+     * upsert every sync and never pruned. Deleting read rows cannot change unread
+     * counts, so no unread-count refresh runs; only open list windows showing read
+     * items must reload, which the {@code itemsPrunedAuto} event triggers. A failure
+     * here must never fail the sync, hence the catch-all. Paused channels are
+     * included by design (the setting is a global opt-in).
+     *
+     * @param provider      the app provider
+     * @param rssRepository the repository used to run the prune update
+     */
+    private void pruneOldItems(Provider provider, RssRepository rssRepository) {
+        try {
+            AppSharedPreferences appSharedPreferences = provider.get(AppSharedPreferences.class);
+            int keepReadItemsDays = appSharedPreferences.getKeepReadItemsDays();
+            if (keepReadItemsDays <= 0) {
+                return;
+            }
+            long cutoffMillis = System.currentTimeMillis()
+                    - TimeUnit.DAYS.toMillis(keepReadItemsDays);
+            int rowsDeleted = rssRepository.pruneOldReadItems(cutoffMillis);
+            if (rowsDeleted > 0) {
+                provider.get(RssChangeNotifier.class).itemsPrunedAuto(null);
+            }
+        } catch (Throwable throwable) {
+            provider.get(ILogger.class)
+                    .e(TAG, getApplicationContext()
+                                    .getString(R.string.error_prune_old_items_failed),
                             throwable);
         }
     }

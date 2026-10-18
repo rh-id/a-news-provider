@@ -80,6 +80,13 @@
         <item quantity="other">%d 天</item>
     </plurals>
     <string name="error_auto_mark_read_failed">自动标为已读失败</string>
+    <string name="menu_keep_read_items">保留已读条目</string>
+    <plurals name="keep_read_items_after_x_days">
+        <item quantity="other">%d 天后删除不再出现在订阅源中的已读条目</item>
+    </plurals>
+    <string name="keep_read_items_off">关闭</string>
+    <string name="keep_read_items_period_in_day">保留已读条目期限（天）</string>
+    <string name="error_prune_old_items_failed">清理旧条目失败</string>
     <string name="one_hand_mode_activated">单手模式已开启</string>
     <string name="one_hand_mode_deactivated">单手模式已关闭</string>
     <string name="http_not_allowed">不允许使用 HTTP，请改用 HTTPS</string>

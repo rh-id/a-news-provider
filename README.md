@@ -24,10 +24,10 @@ A simple and easy to use RSS aggregator that deliver news to your smartphone.
   <li>Sort items by newest or oldest, and mark all items as read (globally or per channel)</li>
   <li>Configurable periodic background sync with a 1-24 hours interval (default: every 6 hours, can be toggled off)</li>
   <li>Optional unread retention window: auto mark items as read after 7/14/30/90 days at the end of each sync (off by default, favorites are never auto-read)</li>
-  <li>Feed sync keeps your history: items that drop out of a feed's current list stay in the app (with their read/favorite state) instead of being deleted on the next sync, and sync notifications reflect the latest feed content</li>
+  <li>Feed sync keeps your history: items that drop out of a feed's current list stay in the app (with their read/favorite state) instead of being deleted on the next sync, and sync notifications reflect the latest feed content; optional keep-read-items window auto-deletes read, non-favorite items that no longer appear in their feed after 7/14/30/90 days (off by default; unread items and favorites are never auto-deleted; applies to paused feeds too)</li>
   <li>Opt-in "mark as read on scroll" setting: items scrolled past in the list are marked as read automatically (off by default)</li>
   <li>Per-channel grouped sync notifications with unread counts (requires the Notifications permission on Android 13+)</li>
-  <li>Rename, pause (mute), or delete feeds — paused feeds keep their history but stop syncing and notifying (their unread counts may still decrease via the optional auto mark-read setting)</li>
+  <li>Rename, pause (mute), or delete feeds — paused feeds keep their history but stop syncing and notifying (their unread counts may still decrease via the optional auto mark-read setting, and read items may be pruned via the optional keep-read-items setting)</li>
   <li>Support editing feed item link</li>
   <li>Copy feed item links and channel links to clipboard</li>
   <li>"Open links in" setting: default browser (default) or browser Custom Tabs (opt-in, falls back to the default browser when Custom Tabs isn't supported)</li>

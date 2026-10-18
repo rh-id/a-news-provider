@@ -80,6 +80,14 @@
         <item quantity="other">%d dis</item>
     </plurals>
     <string name="error_auto_mark_read_failed">Errur cun marcar automatic sco legì</string>
+    <string name="menu_keep_read_items">Arcunar elements legids</string>
+    <plurals name="keep_read_items_after_x_days">
+        <item quantity="one">Stizzar elements legids che n\'èn betg pli en il feed suenter %d di</item>
+        <item quantity="other">Stizzar elements legids che n\'èn betg pli en il feed suenter %d dis</item>
+    </plurals>
+    <string name="keep_read_items_off">Deactivà</string>
+    <string name="keep_read_items_period_in_day">Interval per arcunar elements legids en dis</string>
+    <string name="error_prune_old_items_failed">Errur cun stizzar elements vegls</string>
     <string name="one_hand_mode_activated">Modus d\'in maun activà</string>
     <string name="one_hand_mode_deactivated">Modus d\'in maun deactivà</string>
     <string name="http_not_allowed">HTTP betg permess, fa diever da HTTPS</string>

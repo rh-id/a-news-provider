@@ -25,13 +25,13 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * Instrumented tests for the AppSharedPreferences notification-permission state
- * (issue #51), the auto mark-read retention window (issue #47), the four
- * reading-typography preferences (issue #29), the open-links mode preference
- * (issue #35) and the duplicate-story collapsing preference (issue #45): asserts
- * the fresh-install defaults, the set/get round-trip of each new field, that every
- * Flowable replays its current value and emits on change, and that state persists
- * through a fresh provider instance (re-read from the shared preferences file,
- * mirroring a process restart).
+ * (issue #51), the auto mark-read retention window (issue #47), the keep-read-items
+ * retention window (issue #37), the four reading-typography preferences (issue #29),
+ * the open-links mode preference (issue #35) and the duplicate-story collapsing
+ * preference (issue #45): asserts the fresh-install defaults, the set/get round-trip
+ * of each new field, that every Flowable replays its current value and emits on
+ * change, and that state persists through a fresh provider instance (re-read from
+ * the shared preferences file, mirroring a process restart).
  */
 @RunWith(AndroidJUnit4.class)
 public class AppSharedPreferencesTest {
@@ -140,6 +140,52 @@ public class AppSharedPreferencesTest {
         mProvider = Provider.createProvider(mContext, new PrefsTestProviderModule());
         AppSharedPreferences reloaded = mProvider.get(AppSharedPreferences.class);
         assertEquals(Integer.valueOf(30), reloaded.getAutoMarkReadDays());
+    }
+
+    // ========================================================================
+    // keep-read-items retention window (issue #37)
+    // ========================================================================
+
+    @Test
+    public void testKeepReadItemsDaysFreshInstallDefault() {
+        assertEquals("Keep-read-items must default to off (0)",
+                Integer.valueOf(0), mAppSharedPreferences.getKeepReadItemsDays());
+    }
+
+    @Test
+    public void testKeepReadItemsDaysRoundTrip() {
+        mAppSharedPreferences.setKeepReadItemsDays(7);
+        assertEquals(Integer.valueOf(7), mAppSharedPreferences.getKeepReadItemsDays());
+        mAppSharedPreferences.setKeepReadItemsDays(90);
+        assertEquals(Integer.valueOf(90), mAppSharedPreferences.getKeepReadItemsDays());
+        mAppSharedPreferences.setKeepReadItemsDays(0);
+        assertEquals("Setting 0 must turn the feature back off",
+                Integer.valueOf(0), mAppSharedPreferences.getKeepReadItemsDays());
+    }
+
+    @Test
+    public void testKeepReadItemsDaysFlowEmitsUpdates() {
+        TestSubscriber<Integer> testSubscriber =
+                mAppSharedPreferences.getKeepReadItemsDaysFlow().test();
+
+        // SerialBehaviorSubject replays the current value on subscribe
+        assertEquals(Integer.valueOf(0), testSubscriber.values().get(0));
+
+        mAppSharedPreferences.setKeepReadItemsDays(14);
+
+        testSubscriber.assertValueCount(2);
+        assertEquals(Integer.valueOf(14), testSubscriber.values().get(1));
+    }
+
+    @Test
+    public void testKeepReadItemsDaysSurvivesNewProviderInstance() {
+        mAppSharedPreferences.setKeepReadItemsDays(30);
+        // the setter persists synchronously via the direct executor, so the write
+        // has landed before dispose() runs
+        mProvider.dispose();
+        mProvider = Provider.createProvider(mContext, new PrefsTestProviderModule());
+        AppSharedPreferences reloaded = mProvider.get(AppSharedPreferences.class);
+        assertEquals(Integer.valueOf(30), reloaded.getKeepReadItemsDays());
     }
 
     // ========================================================================

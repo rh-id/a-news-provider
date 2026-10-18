@@ -585,7 +585,8 @@ public class RssRepositoryTest {
     }
 
     // ==================================================================================
-    // Section 3: markOldItemsRead (unread retention window)
+    // Section 3: retention windows - markOldItemsRead (unread) and
+    // pruneOldReadItems (read items, thin DAO passthrough)
     // ==================================================================================
 
     @Test
@@ -699,6 +700,50 @@ public class RssRepositoryTest {
         int rowsUpdated = mRssRepository.markOldItemsRead(cutoff);
 
         assertEquals("Already-read rows must not be counted", 0, rowsUpdated);
+    }
+
+    /**
+     * Backdates a row's updated_date_time via raw SQL: the public DAO surface only
+     * ever STAMPS updated_date_time to "now" (insert / upsert / updateRssItem), so
+     * tests simulate "not seen in a feed since" by writing the stamp directly.
+     */
+    private void backdateUpdated(long itemId, long updatedMillis) {
+        mAppDatabase.getOpenHelper().getWritableDatabase().execSQL(
+                "UPDATE rss_item SET updated_date_time = ? WHERE id = ?",
+                new Object[]{updatedMillis, itemId});
+    }
+
+    @Test
+    public void testPruneOldReadItemsDeletesOnlyOldReadNonFavorites() {
+        // thin passthrough over RssDao.deleteOldReadRssItems (keep-read-items
+        // window, issue #37): the prune criterion is the last-seen-in-feed stamp,
+        // so old unread items and old favorites survive while the old read
+        // non-favorite is deleted and the deleted-row count comes back
+        RssChannel channel = createRssChannel("http://test.com/feed", "Feed");
+        RssItem oldRead = createRssItem("old read", "http://test.com/old-read");
+        RssItem oldUnread = createRssItem("old unread", "http://test.com/old-unread");
+        RssItem oldFavorite = createRssItem("old favorite", "http://test.com/old-favorite");
+        oldFavorite.isFavorite = true;
+        mRssDao.insertRssChannel(channel, oldRead, oldUnread, oldFavorite);
+        oldRead.isRead = true;
+        mRssDao.updateRssItem(oldRead);
+
+        long cutoff = System.currentTimeMillis();
+        backdateUpdated(oldRead.id, cutoff - 1000);
+        backdateUpdated(oldUnread.id, cutoff - 1000);
+        backdateUpdated(oldFavorite.id, cutoff - 1000);
+
+        int deleted = mRssRepository.pruneOldReadItems(cutoff);
+
+        assertEquals("Only the old read non-favorite is deleted", 1, deleted);
+        List<RssItem> storedItems = mRssDao.findRssItemsByChannelId(channel.id);
+        assertEquals(2, storedItems.size());
+        assertNull("Old read non-favorite must be pruned",
+                findItemByLink(storedItems, "http://test.com/old-read"));
+        assertNotNull("Old unread must never be pruned",
+                findItemByLink(storedItems, "http://test.com/old-unread"));
+        assertNotNull("Favorites must never be pruned",
+                findItemByLink(storedItems, "http://test.com/old-favorite"));
     }
 
     // ==================================================================================

@@ -82,6 +82,15 @@
         <item quantity="other">%d jours</item>
     </plurals>
     <string name="error_auto_mark_read_failed">Échec du marquage automatique comme lu</string>
+    <string name="menu_keep_read_items">Conserver les articles lus</string>
+    <plurals name="keep_read_items_after_x_days">
+        <item quantity="one">Supprimer les articles lus absents du flux après %d jour</item>
+        <item quantity="many">Supprimer les articles lus absents du flux après %d de jours</item>
+        <item quantity="other">Supprimer les articles lus absents du flux après %d jours</item>
+    </plurals>
+    <string name="keep_read_items_off">Désactivé</string>
+    <string name="keep_read_items_period_in_day">Durée de conservation des articles lus en jours</string>
+    <string name="error_prune_old_items_failed">Échec du nettoyage des anciens articles</string>
     <string name="one_hand_mode_activated">Mode une main activé</string>
     <string name="one_hand_mode_deactivated">Mode une main désactivé</string>
     <string name="http_not_allowed">HTTP non autorisé, utilisez HTTPS à la place</string>

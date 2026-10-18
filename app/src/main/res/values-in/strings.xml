@@ -78,6 +78,13 @@
         <item quantity="other">%d hari</item>
     </plurals>
     <string name="error_auto_mark_read_failed">Gagal menandai otomatis sebagai terbaca</string>
+    <string name="menu_keep_read_items">Simpan Item Terbaca</string>
+    <plurals name="keep_read_items_after_x_days">
+        <item quantity="other">Hapus item terbaca yang tidak ada lagi di feed setelah %d hari</item>
+    </plurals>
+    <string name="keep_read_items_off">Mati</string>
+    <string name="keep_read_items_period_in_day">Periode penyimpanan item terbaca dalam hari</string>
+    <string name="error_prune_old_items_failed">Gagal menghapus item lama</string>
     <string name="one_hand_mode_activated">Mode satu tangan diaktifkan</string>
     <string name="one_hand_mode_deactivated">Mode satu tangan dinonaktifkan</string>
     <string name="http_not_allowed">HTTP tidak diizinkan gunakan HTTPS sebagai gantinya</string>

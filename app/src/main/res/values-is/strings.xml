@@ -80,6 +80,14 @@
         <item quantity="other">%d daga</item>
     </plurals>
     <string name="error_auto_mark_read_failed">Mistókst að merkja sjálfvirkt sem lesið</string>
+    <string name="menu_keep_read_items">Geyma lesið efni</string>
+    <plurals name="keep_read_items_after_x_days">
+        <item quantity="one">Eyða lesnu efni sem er ekki lengur í straumi eftir %d dag</item>
+        <item quantity="other">Eyða lesnu efni sem er ekki lengur í straumi eftir %d daga</item>
+    </plurals>
+    <string name="keep_read_items_off">Óvirkt</string>
+    <string name="keep_read_items_period_in_day">Tímabil til að geyma lesið efni í dögum</string>
+    <string name="error_prune_old_items_failed">Mistókst að hreinsa eldri efni</string>
     <string name="one_hand_mode_activated">Einnhendarstilling virkjuð</string>
     <string name="one_hand_mode_deactivated">Einnhendarstilling afvirkjuð</string>
     <string name="http_not_allowed">HTTP ekki leyft, notaðu HTTPS í staðinn</string>

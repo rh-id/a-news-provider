@@ -110,6 +110,22 @@ public class RssRepository {
     }
 
     /**
+     * Keep-read-items retention window (issue #37): deletes read, non-favorite RSS
+     * items whose last-seen-in-feed stamp (updated_date_time) is older than the
+     * given cutoff. Unread items and favorites are never deleted; paused channels
+     * are included (global opt-in window). Called at the end of a sync by
+     * RssSyncWorker, right after the optional auto mark-read pass, so the two
+     * windows compose (unread ages to read, then a later sync prunes it once aged).
+     * This method must be called on a background thread.
+     *
+     * @param cutoffMillis epoch millis; items strictly older than this are deleted
+     * @return the number of deleted rows
+     */
+    public int pruneOldReadItems(long cutoffMillis) {
+        return mRssDao.deleteOldReadRssItems(cutoffMillis);
+    }
+
+    /**
      * Updates the isFavorite status of an RSS item in the database.
      * This method must be called on a background thread.
      *

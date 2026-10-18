@@ -42,6 +42,9 @@ public class AppSharedPreferences {
     private SerialBehaviorSubject<Integer> mAutoMarkReadDays;
     private String mAutoMarkReadDaysKey;
 
+    private SerialBehaviorSubject<Integer> mKeepReadItemsDays;
+    private String mKeepReadItemsDaysKey;
+
     private SerialBehaviorSubject<Integer> mSelectedTheme;
     private String mSelectedThemeKey;
 
@@ -98,6 +101,7 @@ public class AppSharedPreferences {
         mEnablePeriodicSync = new SerialBehaviorSubject<>();
         mPeriodicSyncRssHour = new SerialBehaviorSubject<>();
         mAutoMarkReadDays = new SerialBehaviorSubject<>();
+        mKeepReadItemsDays = new SerialBehaviorSubject<>();
         mSelectedTheme = new SerialBehaviorSubject<>();
         mOneHandMode = new SerialBehaviorSubject<>();
         mDynamicColorsEnabled = new SerialBehaviorSubject<>();
@@ -121,6 +125,8 @@ public class AppSharedPreferences {
                 + ".periodicSyncRssHour";
         mAutoMarkReadDaysKey = SHARED_PREFERENCES_NAME
                 + ".autoMarkReadDays";
+        mKeepReadItemsDaysKey = SHARED_PREFERENCES_NAME
+                + ".keepReadItemsDays";
         mSelectedThemeKey = SHARED_PREFERENCES_NAME
                 + ".selectedTheme";
         mOneHandModeKey = SHARED_PREFERENCES_NAME
@@ -162,6 +168,9 @@ public class AppSharedPreferences {
         int autoMarkReadDays = mSharedPreferences.getInt(
                 mAutoMarkReadDaysKey, 0);
         autoMarkReadDays(autoMarkReadDays);
+        int keepReadItemsDays = mSharedPreferences.getInt(
+                mKeepReadItemsDaysKey, 0);
+        keepReadItemsDays(keepReadItemsDays);
         boolean periodicSyncInit = mSharedPreferences.getBoolean(mPeriodicSyncInitKey, false);
         setPeriodicSyncInit(periodicSyncInit);
 
@@ -266,6 +275,32 @@ public class AppSharedPreferences {
 
     public Flowable<Integer> getAutoMarkReadDaysFlow() {
         return Flowable.fromObservable(mAutoMarkReadDays.getSubject(), BackpressureStrategy.BUFFER);
+    }
+
+    /**
+     * Read-item retention window in days (issue #37): read, non-favorite items that
+     * no longer appear in their feed are deleted at the end of a sync once their
+     * last-seen stamp is older than this. 0 (default) turns the feature off - with
+     * upsert retention on, the archive would otherwise grow forever. Unread items
+     * and favorites are never deleted; paused feeds age under the same window.
+     */
+    private void keepReadItemsDays(int days) {
+        mKeepReadItemsDays.onNext(days);
+        mExecutorService.execute(() ->
+                mSharedPreferences.edit().putInt(mKeepReadItemsDaysKey, days)
+                        .commit());
+    }
+
+    public Integer getKeepReadItemsDays() {
+        return mKeepReadItemsDays.getValue();
+    }
+
+    public void setKeepReadItemsDays(int days) {
+        keepReadItemsDays(days);
+    }
+
+    public Flowable<Integer> getKeepReadItemsDaysFlow() {
+        return Flowable.fromObservable(mKeepReadItemsDays.getSubject(), BackpressureStrategy.BUFFER);
     }
 
     public boolean isPeriodicSyncInit() {

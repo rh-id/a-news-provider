@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import m.co.rh.id.a_news_provider.app.MainActivity;
+import m.co.rh.id.a_news_provider.app.ui.component.settings.KeepReadItemsMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.LicensesMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.LogMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.ReadingFontFamilyMenuSV;
@@ -100,6 +101,16 @@ public class AppSVTest {
         testApplication.unregisterActivityLifecycleCallbacks(navigator);
         testApplication.unregisterComponentCallbacks(navigator);
         testApplication.deleteDatabase(dbName);
+    }
+
+    // ========================================================================
+    // keep-read-items settings row (issue #37 phase 2)
+    // ========================================================================
+
+    @Test
+    public void keepReadItemsMenuSv_displayed() {
+        runMenuSvTest("keepReadItemsMenuSv_displayed", new KeepReadItemsMenuSV(),
+                () -> assertTitleAndSubtitleDisplayed(R.string.menu_keep_read_items));
     }
 
     // ========================================================================

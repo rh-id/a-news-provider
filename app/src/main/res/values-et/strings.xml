@@ -80,6 +80,14 @@
         <item quantity="other">%d päeva</item>
     </plurals>
     <string name="error_auto_mark_read_failed">Automaatne loetuks märkimine ebaõnnestus</string>
+    <string name="menu_keep_read_items">Säilita loetuid</string>
+    <plurals name="keep_read_items_after_x_days">
+        <item quantity="one">Kustuta loetud artiklid, mida voo enam ei sisalda, pärast %d päev</item>
+        <item quantity="other">Kustuta loetud artiklid, mida voo enam ei sisalda, pärast %d päeva</item>
+    </plurals>
+    <string name="keep_read_items_off">Väljalülitatud</string>
+    <string name="keep_read_items_period_in_day">Loetute säilitamise intervall päevades</string>
+    <string name="error_prune_old_items_failed">Vanade artiklite kärpimine ebaõnnestus</string>
     <string name="one_hand_mode_activated">Ühekäerežiim aktiveeritud</string>
     <string name="one_hand_mode_deactivated">Ühekäerežiim deaktiveeritud</string>
     <string name="http_not_allowed">HTTP pole lubatud, kasutage HTTPS-i</string>

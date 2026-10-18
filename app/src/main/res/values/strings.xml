@@ -82,6 +82,14 @@
         <item quantity="other">%d days</item>
     </plurals>
     <string name="error_auto_mark_read_failed">Failed to auto mark read</string>
+    <string name="menu_keep_read_items">Keep Read Items</string>
+    <plurals name="keep_read_items_after_x_days">
+        <item quantity="one">Delete read items no longer in their feed after %d day</item>
+        <item quantity="other">Delete read items no longer in their feed after %d days</item>
+    </plurals>
+    <string name="keep_read_items_off">Off</string>
+    <string name="keep_read_items_period_in_day">Keep read items period in days</string>
+    <string name="error_prune_old_items_failed">Failed to prune old items</string>
     <string name="one_hand_mode_activated">One hand mode activated</string>
     <string name="one_hand_mode_deactivated">One hand mode deactivated</string>
     <string name="http_not_allowed">HTTP not allowed use HTTPS instead</string>

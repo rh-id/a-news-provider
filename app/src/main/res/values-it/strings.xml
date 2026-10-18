@@ -82,6 +82,15 @@
         <item quantity="other">%d giorni</item>
     </plurals>
     <string name="error_auto_mark_read_failed">Segnatura automatica come letto non riuscita</string>
+    <string name="menu_keep_read_items">Mantieni elementi letti</string>
+    <plurals name="keep_read_items_after_x_days">
+        <item quantity="one">Elimina gli elementi letti non più presenti nel feed dopo %d giorno</item>
+        <item quantity="many">Elimina gli elementi letti non più presenti nel feed dopo %d di giorni</item>
+        <item quantity="other">Elimina gli elementi letti non più presenti nel feed dopo %d giorni</item>
+    </plurals>
+    <string name="keep_read_items_off">Disattivato</string>
+    <string name="keep_read_items_period_in_day">Periodo di conservazione degli elementi letti in giorni</string>
+    <string name="error_prune_old_items_failed">Rimozione degli elementi datati non riuscita</string>
     <string name="one_hand_mode_activated">Modalità a una mano attivata</string>
     <string name="one_hand_mode_deactivated">Modalità a una mano disattivata</string>
     <string name="http_not_allowed">HTTP non consentito, usa HTTPS</string>

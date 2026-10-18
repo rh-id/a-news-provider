@@ -80,6 +80,14 @@
         <item quantity="other">%d Tage</item>
     </plurals>
     <string name="error_auto_mark_read_failed">Automatisches Als-gelesen-Markieren fehlgeschlagen</string>
+    <string name="menu_keep_read_items">Gelesene aufbewahren</string>
+    <plurals name="keep_read_items_after_x_days">
+        <item quantity="one">Gelesene Artikel, die nicht mehr im Feed sind, nach %d Tag löschen</item>
+        <item quantity="other">Gelesene Artikel, die nicht mehr im Feed sind, nach %d Tagen löschen</item>
+    </plurals>
+    <string name="keep_read_items_off">Aus</string>
+    <string name="keep_read_items_period_in_day">Zeitraum für das Aufbewahren gelesener Artikel in Tagen</string>
+    <string name="error_prune_old_items_failed">Aufräumen alter Artikel fehlgeschlagen</string>
     <string name="one_hand_mode_activated">Einhand-Modus aktiviert</string>
     <string name="one_hand_mode_deactivated">Einhand-Modus deaktiviert</string>
     <string name="http_not_allowed">HTTP nicht erlaubt, verwenden Sie stattdessen HTTPS</string>
