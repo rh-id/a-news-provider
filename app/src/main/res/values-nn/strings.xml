@@ -104,6 +104,8 @@
     <string name="menu_subtitle_mark_read_on_scroll">Aktiver/deaktiver merking som lese ved rulling</string>
     <string name="mark_read_on_scroll_enabled">Merking som lese ved rulling aktivert</string>
     <string name="mark_read_on_scroll_disabled">Merking som lese ved rulling deaktivert</string>
+    <string name="title_collapse_duplicate_stories">Grupper duplikathistoriar</string>
+    <string name="menu_subtitle_collapse_duplicate_stories">Vis historiar som blir delt av fleire strøymer berre éin gong i lista over alle strøymer</string>
     <string name="image">Bilete</string>
     <string name="menu_import_opml">Importer OPML-fil</string>
     <string name="open_video">Opna video</string>
@@ -131,6 +133,10 @@
     <plurals name="new_items_available">
         <item quantity="one">%d nytt element</item>
         <item quantity="other">%d nye element</item>
+    </plurals>
+    <plurals name="also_in_n_feeds">
+        <item quantity="one">Også i %d strøm</item>
+        <item quantity="other">Også i %d strøymer</item>
     </plurals>
     <string name="menu_search">Søk</string>
     <string name="search_hint">Søk etter artiklar…</string>

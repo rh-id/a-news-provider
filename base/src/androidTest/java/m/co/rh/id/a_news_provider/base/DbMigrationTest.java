@@ -363,6 +363,48 @@ public class DbMigrationTest {
     }
 
     // ==================================================================================
+    // MIGRATION_11_12: index_rss_item_link index for cross-feed dedup queries
+    // ==================================================================================
+
+    @Test
+    public void migrate11to12_createsLinkIndex() throws IOException {
+        SupportSQLiteDatabase db = helper.createDatabase(TEST_DB, 11);
+        // seeded using the exact version-11 schema: same columns as version 10,
+        // no link index yet - duplicate links across channels are legal rows
+        insertRssChannel(db, 1, "Feed A", "https://a.com/feed");
+        insertRssChannel(db, 2, "Feed B", "https://b.com/feed");
+        insertRssItem(db, 11, 1, "https://shared.com/post-1", false, false);
+        insertRssItem(db, 12, 2, "https://shared.com/post-1", true, false);
+        insertRssItem(db, 13, 2, null, false, false);
+        db.close();
+
+        SupportSQLiteDatabase migrated = helper.runMigrationsAndValidate(TEST_DB, 12,
+                true, DbMigration.MIGRATION_11_12);
+
+        try {
+            // the index exists under Room's default name - runMigrationsAndValidate
+            // already verified it matches the exported schema, this names it explicitly
+            assertEquals(1, readLong(migrated,
+                    "SELECT COUNT(name) FROM sqlite_master " +
+                            "WHERE type = 'index' AND name = 'index_rss_item_link'"));
+            // the index is on the link column of rss_item
+            assertEquals(1, readLong(migrated,
+                    "SELECT COUNT(name) FROM sqlite_master " +
+                            "WHERE type = 'index' AND name = 'index_rss_item_link' " +
+                            "AND tbl_name = 'rss_item'"));
+            // the index is non-unique: the duplicate-link rows above still coexist
+            assertEquals(2, readLong(migrated,
+                    "SELECT COUNT(id) FROM rss_item WHERE link = 'https://shared.com/post-1'"));
+            // data survived the migration untouched
+            assertEquals(3, readLong(migrated, "SELECT COUNT(id) FROM rss_item"));
+            assertEquals(1, readLong(migrated,
+                    "SELECT is_read FROM rss_item WHERE id = 12"));
+        } finally {
+            migrated.close();
+        }
+    }
+
+    // ==================================================================================
     // helpers: seed rows using the exact version-8 schema, read values after migration
     // ==================================================================================
 

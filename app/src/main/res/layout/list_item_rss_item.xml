@@ -36,6 +36,46 @@
             app:layout_constraintTop_toBottomOf="@id/text_date"
             tools:text="BREAKING NEWS" />
 
+        <!-- duplicate-story badge + sources expansion (issue #45): GONE for rows
+             without known duplicates, in which case its collapsed point sits at the
+             title's bottom edge and the category strip below keeps its original
+             position - identical layout to the pre-badge rows -->
+        <LinearLayout
+            android:id="@+id/container_duplicates"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/text_margin"
+            android:layout_marginEnd="@dimen/text_margin"
+            android:orientation="vertical"
+            android:visibility="gone"
+            app:layout_constraintEnd_toStartOf="@id/button_favorite"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/text_title">
+
+            <!-- same default chip style as the category chips; the count is the
+                 absolute number of copies sharing this story's link -->
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_duplicates"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:clickable="true"
+                android:focusable="true"
+                app:chipEndPadding="8dp"
+                app:chipStartPadding="8dp"
+                app:ensureMinTouchTargetSize="true"
+                tools:text="×3" />
+
+            <!-- inline expansion listing the OTHER copies (feed name + date),
+                 display-only, rebuilt per expansion -->
+            <LinearLayout
+                android:id="@+id/container_copies"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone" />
+        </LinearLayout>
+
         <HorizontalScrollView
             android:id="@+id/scroll_categories"
             android:layout_width="0dp"
@@ -48,7 +88,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@id/button_favorite"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/text_title"
+            app:layout_constraintTop_toBottomOf="@id/container_duplicates"
             app:layout_constraintVertical_bias="0">
 
             <!-- single-line strip: chips never wrap, overflow scrolls horizontally;

@@ -106,6 +106,8 @@
     <string name="menu_subtitle_mark_read_on_scroll">Enable/Disable marking items as read when scrolled past</string>
     <string name="mark_read_on_scroll_enabled">Mark as read on scroll enabled</string>
     <string name="mark_read_on_scroll_disabled">Mark as read on scroll disabled</string>
+    <string name="title_collapse_duplicate_stories">Collapse Duplicate Stories</string>
+    <string name="menu_subtitle_collapse_duplicate_stories">Show stories shared by multiple feeds only once in the all-feeds list</string>
     <string name="image">Image</string>
     <string name="menu_import_opml">Import OPML file</string>
     <string name="open_video">Open video</string>
@@ -131,6 +133,10 @@
     <plurals name="new_items_available">
         <item quantity="one">%d new item</item>
         <item quantity="other">%d new items</item>
+    </plurals>
+    <plurals name="also_in_n_feeds">
+        <item quantity="one">Also in %d feed</item>
+        <item quantity="other">Also in %d feeds</item>
     </plurals>
     <string name="menu_search">Search</string>
     <string name="search_hint">Search articles…</string>

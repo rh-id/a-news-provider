@@ -54,6 +54,9 @@ public class AppSharedPreferences {
     private SerialBehaviorSubject<Boolean> mMarkReadOnScroll;
     private String mMarkReadOnScrollKey;
 
+    private SerialBehaviorSubject<Boolean> mCollapseDuplicateStories;
+    private String mCollapseDuplicateStoriesKey;
+
     private SerialBehaviorSubject<Boolean> mSwipeArticleNavigationEnabled;
     private String mSwipeArticleNavigationEnabledKey;
 
@@ -99,6 +102,7 @@ public class AppSharedPreferences {
         mOneHandMode = new SerialBehaviorSubject<>();
         mDynamicColorsEnabled = new SerialBehaviorSubject<>();
         mMarkReadOnScroll = new SerialBehaviorSubject<>();
+        mCollapseDuplicateStories = new SerialBehaviorSubject<>();
         mSwipeArticleNavigationEnabled = new SerialBehaviorSubject<>();
         mReadingFontSize = new SerialBehaviorSubject<>();
         mReadingFontFamily = new SerialBehaviorSubject<>();
@@ -125,6 +129,8 @@ public class AppSharedPreferences {
                 + ".dynamicColorsEnabled";
         mMarkReadOnScrollKey = SHARED_PREFERENCES_NAME
                 + ".markReadOnScroll";
+        mCollapseDuplicateStoriesKey = SHARED_PREFERENCES_NAME
+                + ".collapseDuplicateStories";
         mSwipeArticleNavigationEnabledKey = SHARED_PREFERENCES_NAME
                 + ".swipeArticleNavigationEnabled";
         mReadingFontSizeKey = SHARED_PREFERENCES_NAME
@@ -169,6 +175,13 @@ public class AppSharedPreferences {
         dynamicColorsEnabled(dynamicColorsEnabled);
         boolean markReadOnScroll = mSharedPreferences.getBoolean(mMarkReadOnScrollKey, false);
         markReadOnScroll(markReadOnScroll);
+        // collapse duplicate stories defaults to ON (issue #45): the same story
+        // syndicated by several feeds used to repeat once per feed in the
+        // all-channels list, and collapsing is the expected news-reader behavior;
+        // users who prefer the raw per-feed rows can switch it off in settings
+        boolean collapseDuplicateStories = mSharedPreferences.getBoolean(
+                mCollapseDuplicateStoriesKey, true);
+        collapseDuplicateStories(collapseDuplicateStories);
         // swipe article navigation defaults to ON: the left-edge swipe-right
         // (back) gesture has always been there, so the mirrored swipe-left
         // (next) starts enabled and users can turn the pair off in settings
@@ -365,6 +378,35 @@ public class AppSharedPreferences {
 
     public Flowable<Boolean> getIsMarkReadOnScrollFlow() {
         return Flowable.fromObservable(mMarkReadOnScroll.getSubject(), BackpressureStrategy.BUFFER);
+    }
+
+    /**
+     * Cross-feed duplicate story collapsing (issue #45): when on, the all-channels
+     * home list groups rss items sharing a link into ONE row (the newest copy,
+     * badged with the total copy count) instead of repeating the story once per
+     * feed. Default ON. Deliberately re-read at every list load instead of
+     * observed reactively: the grouped and flat queries produce different keyset
+     * cursors, so switching modes mid-window requires a fresh load, which the next
+     * list load (or a REFRESH) provides naturally.
+     */
+    private void collapseDuplicateStories(boolean collapse) {
+        mCollapseDuplicateStories.onNext(collapse);
+        mExecutorService.execute(() ->
+                mSharedPreferences.edit().putBoolean(mCollapseDuplicateStoriesKey, collapse)
+                        .commit());
+    }
+
+    public boolean isCollapseDuplicateStories() {
+        Boolean value = mCollapseDuplicateStories.getValue();
+        return value == null || value;
+    }
+
+    public void setCollapseDuplicateStories(boolean collapse) {
+        collapseDuplicateStories(collapse);
+    }
+
+    public Flowable<Boolean> getIsCollapseDuplicateStoriesFlow() {
+        return Flowable.fromObservable(mCollapseDuplicateStories.getSubject(), BackpressureStrategy.BUFFER);
     }
 
     /**

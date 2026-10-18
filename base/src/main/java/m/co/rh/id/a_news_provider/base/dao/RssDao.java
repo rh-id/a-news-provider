@@ -4,15 +4,19 @@ import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
+import androidx.room.RoomWarnings;
 import androidx.room.Transaction;
 import androidx.room.Update;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.a_news_provider.base.model.ChannelUnreadCount;
+import m.co.rh.id.a_news_provider.base.model.LinkCount;
 
 @Dao
 public abstract class RssDao {
@@ -24,6 +28,16 @@ public abstract class RssDao {
      * every chunk safely within the limit while halving the number of statements.
      */
     private static final int MARK_READ_BY_LINKS_CHUNK_SIZE = 500;
+
+    /**
+     * Maximum number of links bound per COUNT statement of
+     * {@link #countRssItemsByLinks(List)}. Same 999-host-parameter ceiling as
+     * {@link #MARK_READ_BY_LINKS_CHUNK_SIZE}, but here the caller is the
+     * all-channels list window (issue #45), which grows by pages of 100 and can
+     * exceed 1000 accumulated rows in REFRESH mode, so the chunking is not
+     * theoretical - it is the steady state for a deep scroll.
+     */
+    private static final int COUNT_BY_LINKS_CHUNK_SIZE = 500;
 
     @Query("SELECT * FROM rss_channel ORDER BY feed_name")
     public abstract List<RssChannel> loadAllRssChannel();
@@ -190,6 +204,103 @@ public abstract class RssDao {
     public abstract List<RssItem> findRssItemsPageAsc(Long channelId, Integer isRead, Integer isFavorite, Long afterSortKey, Long afterId, int limit);
 
     /**
+     * Loads one keyset-pagination page of rss items GROUPED BY LINK, filtered by
+     * optional channel, read and favorite state, newest first. Used by the
+     * all-channels view of the home list (issue #45): rows sharing a link - the
+     * same story syndicated by several feeds - collapse into ONE list row, the
+     * group's representative, so each story appears once no matter how many feeds
+     * carry it. The non-grouped counterpart is
+     * {@link #findRssItemsPageDesc(Long, Integer, Integer, Long, Long, int)}.
+     * <p>
+     * Grouping expression: {@code COALESCE(NULLIF(link, ''), 'rss_item#' || id)}.
+     * A plain GROUP BY link would collapse ALL null-link rows into a single group
+     * and all empty-string links into another one (GROUP BY treats NULLs as one
+     * group, and '' = '') - the same trap the {@link #markOldItemsRead(long)} query
+     * guards against. NULLIF(link,'') rewrites the empty string to NULL first so
+     * the COALESCE falls through to the per-row-unique {@code 'rss_item#' || id}
+     * sentinel, giving every invalid-link row its own singleton group; valid links
+     * pass through unchanged.
+     * <p>
+     * Representative row = the group's NEWEST copy (tiebreak: highest id). The
+     * single 1-argument MAX aggregate over the zero-padded composite string
+     * {@code printf('%015d_%015d', max(COALESCE(pub_date, created_date_time), 0), id)}
+     * activates SQLite's bare-column special case (needs SQLite &ge; 3.7.11; API 21
+     * ships 3.8.4.3, so this is safe): every bare column of the result - id, link,
+     * title, the effective date, ... - is taken from the row that produced the
+     * maximum, making the representative fully deterministic. Both decimal fields
+     * are zero-padded to 15 digits so the BINARY string comparison matches the
+     * intended numeric (effectiveDate, id) comparison; the inner 2-ARGUMENT max is
+     * SQLite's scalar max, clamping pre-1970 (negative epoch) dates to 0 so no
+     * minus sign can break the zero-padding alignment. NO window function is used:
+     * those require SQLite 3.25 / API 30.
+     * <p>
+     * The HAVING clause carries the keyset cursor predicate against the
+     * representative's bare columns (the COALESCE expression is spelled out again -
+     * the select alias cannot be referenced there): groups whose representative
+     * sits at or before the cursor position in the list's order are skipped. See
+     * {@link #findRssItemsPageDesc(Long, Integer, Integer, Long, Long, int)} for
+     * the cursor mechanics and the id-tiebreaker rationale; ORDER BY and cursor use
+     * the exact same two keys, so keyset pagination walks the collapsed list
+     * without repeating or skipping groups across page boundaries.
+     * <p>
+     * Filters apply at COPY level BEFORE grouping: {@code is_read = :isRead} and
+     * {@code is_favorite = :isFavorite} restrict the candidate copies first, so a
+     * group survives when at least one matching copy exists and its representative
+     * is the newest MATCHING copy. This query is only meant for the all-channels
+     * view (grouping is meaningless within a single channel where a link is
+     * already unique after MIGRATION_8_9); the channelId parameter exists so the
+     * command can keep one query shape.
+     * <p>
+     * The select's extra {@code rep_sort_key} column is the aggregate that anchors
+     * the bare-column special case; it is deliberately NOT a field of
+     * {@link RssItem}, hence the RoomWarnings.QUERY_MISMATCH suppression. Room
+     * ignores unmapped cursor columns. The suppression (instead of
+     * &#64;RewriteQueriesToDropUnusedColumns) is deliberate: a query rewrite that
+     * drops the MAX aggregate would silently disable the bare-column special case.
+     * This method must be called on a background thread.
+     *
+     * @param channelId    optional channel id filter, null to include all channels
+     * @param isRead       optional read-state filter, null to include read and unread items
+     * @param isFavorite   optional favorite filter, null to include favorite and non-favorite items
+     * @param afterSortKey COALESCE(pub_date, created_date_time) of the last
+     *                     already-loaded group representative in epoch millis,
+     *                     null to load the first page
+     * @param afterId      id of the last already-loaded group representative,
+     *                     ignored when afterSortKey is null
+     * @param limit        maximum number of groups to return
+     * @return one representative per link group matching the filters, newest first,
+     * continuing after the cursor group
+     */
+    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
+    @Query("SELECT *, MAX(printf('%015d_%015d', max(COALESCE(pub_date, created_date_time), 0), id)) AS rep_sort_key FROM rss_item WHERE (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) GROUP BY COALESCE(NULLIF(link, ''), 'rss_item#' || id) HAVING (:afterSortKey IS NULL OR COALESCE(pub_date, created_date_time) < :afterSortKey OR (COALESCE(pub_date, created_date_time) = :afterSortKey AND id < :afterId)) ORDER BY COALESCE(pub_date, created_date_time) DESC, id DESC LIMIT :limit")
+    public abstract List<RssItem> findRssItemsPageGroupedByLinkDesc(Long channelId, Integer isRead, Integer isFavorite, Long afterSortKey, Long afterId, int limit);
+
+    /**
+     * Loads one keyset-pagination page of rss items GROUPED BY LINK, oldest first -
+     * the ASC mirror of
+     * {@link #findRssItemsPageGroupedByLinkDesc(Long, Integer, Integer, Long, Long, int)}.
+     * See that method for the full rationale of the grouping expression, the
+     * printf-based deterministic representative, the copy-level filters and the
+     * HAVING-carried keyset cursor; only the comparison directions differ.
+     * This method must be called on a background thread.
+     *
+     * @param channelId    optional channel id filter, null to include all channels
+     * @param isRead       optional read-state filter, null to include read and unread items
+     * @param isFavorite   optional favorite filter, null to include favorite and non-favorite items
+     * @param afterSortKey COALESCE(pub_date, created_date_time) of the last
+     *                     already-loaded group representative in epoch millis,
+     *                     null to load the first page
+     * @param afterId      id of the last already-loaded group representative,
+     *                     ignored when afterSortKey is null
+     * @param limit        maximum number of groups to return
+     * @return one representative per link group matching the filters, oldest first,
+     * continuing after the cursor group
+     */
+    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
+    @Query("SELECT *, MAX(printf('%015d_%015d', max(COALESCE(pub_date, created_date_time), 0), id)) AS rep_sort_key FROM rss_item WHERE (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) GROUP BY COALESCE(NULLIF(link, ''), 'rss_item#' || id) HAVING (:afterSortKey IS NULL OR COALESCE(pub_date, created_date_time) > :afterSortKey OR (COALESCE(pub_date, created_date_time) = :afterSortKey AND id > :afterId)) ORDER BY COALESCE(pub_date, created_date_time) ASC, id ASC LIMIT :limit")
+    public abstract List<RssItem> findRssItemsPageGroupedByLinkAsc(Long channelId, Integer isRead, Integer isFavorite, Long afterSortKey, Long afterId, int limit);
+
+    /**
      * Finds the rss item directly older than the given anchor position, using the
      * same optional filters and ordering as
      * {@link #findRssItemsPageDesc(Long, Integer, Integer, Long, Long, int)}.
@@ -240,6 +351,64 @@ public abstract class RssDao {
      */
     @Query("SELECT * FROM rss_item WHERE (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) AND (COALESCE(pub_date, created_date_time) > :anchorDate OR (COALESCE(pub_date, created_date_time) = :anchorDate AND id > :anchorId)) ORDER BY COALESCE(pub_date, created_date_time) ASC, id ASC LIMIT 1")
     public abstract RssItem findNewerRssItem(Long channelId, Integer isRead, Integer isFavorite, long anchorDate, long anchorId);
+
+    /**
+     * Finds the link-GROUP directly older than the given anchor position - the
+     * grouped counterpart of
+     * {@link #findOlderRssItem(Long, Integer, Integer, long, long)} used by the
+     * item detail page when the home list shows the collapsed all-channels view
+     * (issue #45). GROUP BY expression, printf-anchored deterministic
+     * representative (newest copy of the group, tiebreak by id) and copy-level
+     * filters are EXACTLY the ones of
+     * {@link #findRssItemsPageGroupedByLinkDesc(Long, Integer, Integer, Long, Long, int)}
+     * - only the keyset predicate is anchored at the current item instead of a
+     * page cursor. Because every key matches, navigation walks exactly the
+     * collapsed list order: the returned group is the previous visible row of the
+     * grouped list, and its representative is what the list itself displayed.
+     * The anchor passed in must itself be a representative row of the grouped
+     * list (its effective date + id), otherwise the walk lands between groups.
+     * This method must be called on a background thread.
+     *
+     * @param channelId  optional channel id filter, null to include all channels
+     * @param isRead     optional read-state filter, null to include read and unread items
+     * @param isFavorite optional favorite filter, null to include favorite and non-favorite items
+     * @param anchorDate the anchor's effective date (pub_date, falling back to
+     *                   created_date_time) in epoch millis
+     * @param anchorId   the anchor's id (unique autoincrement primary key)
+     * @return the representative of the closest older link group, or null when the
+     * anchor is the oldest visible group
+     */
+    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
+    @Query("SELECT *, MAX(printf('%015d_%015d', max(COALESCE(pub_date, created_date_time), 0), id)) AS rep_sort_key FROM rss_item WHERE (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) GROUP BY COALESCE(NULLIF(link, ''), 'rss_item#' || id) HAVING (COALESCE(pub_date, created_date_time) < :anchorDate OR (COALESCE(pub_date, created_date_time) = :anchorDate AND id < :anchorId)) ORDER BY COALESCE(pub_date, created_date_time) DESC, id DESC LIMIT 1")
+    public abstract RssItem findOlderRssItemGroupedByLink(Long channelId, Integer isRead, Integer isFavorite, long anchorDate, long anchorId);
+
+    /**
+     * Finds the link-GROUP directly newer than the given anchor position - the
+     * grouped counterpart of
+     * {@link #findNewerRssItem(Long, Integer, Integer, long, long)}, ASC mirror of
+     * {@link #findOlderRssItemGroupedByLink(Long, Integer, Integer, long, long)}.
+     * GROUP BY expression, printf-anchored deterministic representative
+     * (newest copy of the group, tiebreak by id) and copy-level filters are EXACTLY
+     * the ones of
+     * {@link #findRssItemsPageGroupedByLinkAsc(Long, Integer, Integer, Long, Long, int)},
+     * so navigation walks exactly the collapsed list order: the returned group is
+     * the next visible row of the grouped list. The anchor passed in must itself be
+     * a representative row of the grouped list (its effective date + id), otherwise
+     * the walk lands between groups.
+     * This method must be called on a background thread.
+     *
+     * @param channelId  optional channel id filter, null to include all channels
+     * @param isRead     optional read-state filter, null to include read and unread items
+     * @param isFavorite optional favorite filter, null to include favorite and non-favorite items
+     * @param anchorDate the anchor's effective date (pub_date, falling back to
+     *                   created_date_time) in epoch millis
+     * @param anchorId   the anchor's id (unique autoincrement primary key)
+     * @return the representative of the closest newer link group, or null when the
+     * anchor is the newest visible group
+     */
+    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
+    @Query("SELECT *, MAX(printf('%015d_%015d', max(COALESCE(pub_date, created_date_time), 0), id)) AS rep_sort_key FROM rss_item WHERE (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) GROUP BY COALESCE(NULLIF(link, ''), 'rss_item#' || id) HAVING (COALESCE(pub_date, created_date_time) > :anchorDate OR (COALESCE(pub_date, created_date_time) = :anchorDate AND id > :anchorId)) ORDER BY COALESCE(pub_date, created_date_time) ASC, id ASC LIMIT 1")
+    public abstract RssItem findNewerRssItemGroupedByLink(Long channelId, Integer isRead, Integer isFavorite, long anchorDate, long anchorId);
 
     /**
      * Searches one keyset-pagination page of rss items matching the given query
@@ -327,8 +496,9 @@ public abstract class RssDao {
      * Chunking is required because SQLite older than 3.32 (Android 11 and below)
      * allows at most 999 host parameters per query while the caller's keyset page
      * size is 100 (BaseRssItemsCmd.PAGE_SIZE) and the full item table can be much
-     * larger. Since link is unindexed, each UPDATE is a full table scan, so chunking
-     * also bounds the work per statement. The {@code is_read = 0} guard makes
+     * larger. link matches go through the link index (MIGRATION_11_12); before
+     * that index existed each UPDATE was a full table scan, so chunking also
+     * bounded the work per statement. The {@code is_read = 0} guard makes
      * repeated calls idempotent.
      * This method must be called on a background thread.
      *
@@ -347,6 +517,71 @@ public abstract class RssDao {
         }
         return totalRows;
     }
+
+    /**
+     * Counts, per link, how many rss_item rows (channel copies) carry it. Backs the
+     * "Also in N feeds" duplicate badge of the collapsed all-channels list (issue
+     * #45): each representative row of
+     * {@link #findRssItemsPageGroupedByLinkDesc(Long, Integer, Integer, Long, Long, int)}
+     * reports the absolute number of copies its link has across ALL channels,
+     * regardless of any active read/favorite filter.
+     * <p>
+     * Null/empty input entries are dropped BEFORE the query: a null link can never
+     * match the IN clause anyway, but an empty-string link WOULD match and count
+     * every empty-link row of the table as copies of each other - they are not
+     * (see the singleton-group rationale on
+     * {@link #findRssItemsPageGroupedByLinkDesc(Long, Integer, Integer, Long, Long, int)}).
+     * Returns an empty list for null/empty input.
+     * <p>
+     * The links are chunked at {@link #COUNT_BY_LINKS_CHUNK_SIZE} per statement for
+     * the same host-parameter ceiling as {@link #markItemsReadByLinks(List)} - the
+     * caller's window can exceed 1000 links after a deep scroll in REFRESH mode,
+     * and SQLite older than 3.32 (Android 11 and below) allows at most 999 host
+     * parameters per query.
+     * This method must be called on a background thread.
+     *
+     * @param links the links to count copies for, may contain null/empty entries
+     *              (ignored)
+     * @return one {@link LinkCount} per distinct valid link that has at least one
+     * row, empty when no input link matches
+     */
+    @Transaction
+    public List<LinkCount> countRssItemsByLinks(List<String> links) {
+        if (links == null || links.isEmpty()) {
+            return Collections.emptyList();
+        }
+        ArrayList<String> validLinks = new ArrayList<>(links.size());
+        for (String link : links) {
+            if (link != null && !link.isEmpty()) {
+                validLinks.add(link);
+            }
+        }
+        if (validLinks.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<LinkCount> result = new ArrayList<>();
+        for (int i = 0; i < validLinks.size(); i += COUNT_BY_LINKS_CHUNK_SIZE) {
+            int end = Math.min(i + COUNT_BY_LINKS_CHUNK_SIZE, validLinks.size());
+            List<LinkCount> chunkResult =
+                    countRssItemsByLinksChunk(validLinks.subList(i, end));
+            if (chunkResult != null && !chunkResult.isEmpty()) {
+                result.addAll(chunkResult);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Counts copies for one chunk of at most {@link #COUNT_BY_LINKS_CHUNK_SIZE}
+     * links. Protected chunk method of {@link #countRssItemsByLinks(List)}, which
+     * owns the null/empty filtering and the chunk loop.
+     * This method must be called on a background thread.
+     *
+     * @param links the non-empty links of this chunk
+     * @return one {@link LinkCount} per link of the chunk that has at least one row
+     */
+    @Query("SELECT link, COUNT(*) AS cnt FROM rss_item WHERE link IN (:links) GROUP BY link")
+    protected abstract List<LinkCount> countRssItemsByLinksChunk(List<String> links);
 
     /**
      * Auto mark-read (unread retention window): marks unread, non-favorite rss items

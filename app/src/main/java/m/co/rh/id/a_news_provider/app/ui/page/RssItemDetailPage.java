@@ -475,6 +475,17 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
      * order: in a newest-first list "next" walks to the older item, and the
      * mapping inverts when the list is sorted oldest-first. At the edges of the
      * list a short toast is shown and the page stays put.
+     * <p>
+     * Duplicate-story collapsing (issue #45): when the home list shows the
+     * collapsed all-channels view (no channel selected AND the collapse setting
+     * on), the GROUPED neighbor queries are used so next/previous walks exactly
+     * the visible collapsed order - each step lands on the neighboring group's
+     * representative, skipping the duplicate copies the list hides. In every
+     * other context (a channel is selected, or collapsing is off) the anchor item
+     * itself is a plain list row and the flat neighbor queries apply. The anchor
+     * is always the item the page currently shows, which the list itself
+     * dispatched here - a representative in grouped contexts, a plain row
+     * otherwise - so both walks are exact.
      *
      * @param next true to walk to the next article, false for the previous one
      */
@@ -487,9 +498,18 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         boolean asc = sortOrder != null && sortOrder == BaseRssItemsCmd.SORT_ORDER_OLDEST;
         // newest-first (DESC) list: next = older neighbor; oldest-first (ASC): next = newer
         boolean findOlder = next != asc;
-        Single<Optional<RssItem>> neighborSingle = findOlder
-                ? mRssQueryCmd.findOlderRssItem(channelId, isRead, isFavorite, mRssItem)
-                : mRssQueryCmd.findNewerRssItem(channelId, isRead, isFavorite, mRssItem);
+        boolean collapsedListContext = channelId == null
+                && mAppSharedPreferences.isCollapseDuplicateStories();
+        Single<Optional<RssItem>> neighborSingle;
+        if (collapsedListContext) {
+            neighborSingle = findOlder
+                    ? mRssQueryCmd.findOlderRssItemGroupedByLink(channelId, isRead, isFavorite, mRssItem)
+                    : mRssQueryCmd.findNewerRssItemGroupedByLink(channelId, isRead, isFavorite, mRssItem);
+        } else {
+            neighborSingle = findOlder
+                    ? mRssQueryCmd.findOlderRssItem(channelId, isRead, isFavorite, mRssItem)
+                    : mRssQueryCmd.findNewerRssItem(channelId, isRead, isFavorite, mRssItem);
+        }
         mRxDisposer.add(next ? "navigateToNeighbor_next" : "navigateToNeighbor_prev",
                 neighborSingle
                         .observeOn(AndroidSchedulers.mainThread())

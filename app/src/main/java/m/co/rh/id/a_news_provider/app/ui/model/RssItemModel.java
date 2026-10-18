@@ -10,4 +10,11 @@ public class RssItemModel {
     public boolean isRead;
     public boolean isFavorite;
     public Long id;
+    /**
+     * Absolute number of copies (rss_item rows across ALL channels) sharing this
+     * story's link, filled by PagedRssItemsCmd only when the all-channels view
+     * runs the link-grouped queries (issue #45). Values &lt;= 1 mean "no known
+     * duplicates" and hide the badge.
+     */
+    public int duplicateCount;
 }

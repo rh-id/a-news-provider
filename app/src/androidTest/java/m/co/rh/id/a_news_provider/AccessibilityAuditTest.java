@@ -24,6 +24,8 @@ import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import com.google.android.material.chip.Chip;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -71,7 +73,9 @@ import m.co.rh.id.aprovider.ProviderRegistry;
  * description), the row state description (stateDescription on API 30+, content
  * description fallback below), the state-correct custom accessibility action
  * labels, that performing the custom actions flips the state in memory and in
- * the database, the drawer channel row actions and the 48dp touch target sizes.
+ * the database, the duplicate-story badge (plural content description over the
+ * other copies, 48dp touch target, hidden on singleton rows), the drawer channel
+ * row actions and the 48dp touch target sizes.
  */
 @RunWith(AndroidJUnit4.class)
 public class AccessibilityAuditTest {
@@ -290,6 +294,46 @@ public class AccessibilityAuditTest {
                     && findActionByLabel(rowNode.getActionList(),
                     mTargetContext.getString(R.string.favorite_add)) == null;
         });
+    }
+
+    @Test
+    public void testRssItemRow_duplicateBadgeExposesPluralDescriptionAndTouchTarget() {
+        // a story with 3 copies: badge visible, counts as "also in 2 feeds" spoken,
+        // and at least 48dp tall (Material's ensureMinTouchTargetSize measurement)
+        RssItem duplicateItem = createRssItem("duplicated item", false, false);
+        duplicateItem.duplicateCount = 3;
+        RssItem soloItem = createRssItem("solo item", false, false);
+        soloItem.duplicateCount = 1;
+        TestSvPage page = launchBoundRows(duplicateItem, soloItem);
+        View duplicatedRow = page.getChildViews().get(0);
+        View soloRow = page.getChildViews().get(1);
+
+        Chip chipDuplicates = duplicatedRow.findViewById(R.id.chip_duplicates);
+        assertNotNull("Badge chip missing on the duplicated row", chipDuplicates);
+        awaitOnMain("Badge never became visible with its content description", () ->
+                chipDuplicates.getVisibility() == View.VISIBLE
+                        && chipDuplicates.getContentDescription() != null);
+        // the badge text is the absolute copy count...
+        assertEquals("×3", chipDuplicates.getText().toString());
+        // ...while the spoken form counts the OTHER copies (3 - 1)
+        assertEquals(mTargetContext.getResources().getQuantityString(
+                        R.plurals.also_in_n_feeds, 2, 2),
+                chipDuplicates.getContentDescription().toString());
+        // actionable for TalkBack
+        assertTrue("Badge must be clickable", chipDuplicates.isClickable());
+        assertTrue("Badge must be focusable", chipDuplicates.isFocusable());
+        awaitOnMain("Badge never got laid out", () ->
+                chipDuplicates.getWidth() > 0 && chipDuplicates.getHeight() > 0);
+        float minTouchSize = 48f * chipDuplicates.getResources()
+                .getDisplayMetrics().density;
+        assertTrue("chip_duplicates height must be at least 48dp",
+                chipDuplicates.getHeight() >= minTouchSize);
+
+        // a row without known duplicates must not show the badge at all
+        View soloContainer = soloRow.findViewById(R.id.container_duplicates);
+        assertNotNull(soloContainer);
+        awaitOnMain("Badge container on a singleton row never collapsed", () ->
+                soloContainer.getVisibility() == View.GONE);
     }
 
     // ========================================================================

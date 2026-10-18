@@ -209,6 +209,19 @@ public class RssRepository {
     }
 
     /**
+     * Finds the RSS channel with the given id. Backs the duplicate-story sources
+     * expansion (issue #45), which maps the channel ids of an item's cross-feed
+     * copies to displayable feed names.
+     * This method must be called on a background thread.
+     *
+     * @param id the channel id to find
+     * @return the channel, or null when no channel with this id exists
+     */
+    public RssChannel findRssChannelById(long id) {
+        return mRssDao.findRssChannelById(id);
+    }
+
+    /**
      * Deletes an RSS channel from the database.
      * This method must be called on a background thread.
      *

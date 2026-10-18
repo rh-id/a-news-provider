@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.AutoMarkReadMenuSV;
+import m.co.rh.id.a_news_provider.app.ui.component.settings.CollapseDuplicateStoriesMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.DownloadImageMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.LicensesMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.LogMenuSV;
@@ -70,6 +71,9 @@ public class SettingsPage extends StatefulView<Activity> implements RssSyncMenuS
         mStatefulViews.add(autoMarkReadMenuSV);
         MarkReadOnScrollMenuSV markReadOnScrollMenuSV = new MarkReadOnScrollMenuSV();
         mStatefulViews.add(markReadOnScrollMenuSV);
+        CollapseDuplicateStoriesMenuSV collapseDuplicateStoriesMenuSV =
+                new CollapseDuplicateStoriesMenuSV();
+        mStatefulViews.add(collapseDuplicateStoriesMenuSV);
         SwipeArticleNavigationMenuSV swipeArticleNavigationMenuSV = new SwipeArticleNavigationMenuSV();
         mStatefulViews.add(swipeArticleNavigationMenuSV);
         OpenLinksInMenuSV openLinksInMenuSV = new OpenLinksInMenuSV();

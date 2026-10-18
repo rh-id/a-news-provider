@@ -104,6 +104,8 @@
     <string name="menu_subtitle_mark_read_on_scroll">Aktivieren/deaktivieren des Als-gelesen-Markierens beim Scrollen</string>
     <string name="mark_read_on_scroll_enabled">Als gelesen markieren beim Scrollen aktiviert</string>
     <string name="mark_read_on_scroll_disabled">Als gelesen markieren beim Scrollen deaktiviert</string>
+    <string name="title_collapse_duplicate_stories">Duplikate zusammenfassen</string>
+    <string name="menu_subtitle_collapse_duplicate_stories">Beiträge, die von mehreren Feeds geteilt werden, in der Gesamtliste nur einmal anzeigen</string>
     <string name="image">Bild</string>
     <string name="menu_import_opml">OPML-Datei importieren</string>
     <string name="open_video">Video öffnen</string>
@@ -131,6 +133,10 @@
     <plurals name="new_items_available">
         <item quantity="one">%d neuer Eintrag</item>
         <item quantity="other">%d neue Einträge</item>
+    </plurals>
+    <plurals name="also_in_n_feeds">
+        <item quantity="one">Auch in %d Feed</item>
+        <item quantity="other">Auch in %d Feeds</item>
     </plurals>
     <string name="menu_search">Suchen</string>
     <string name="search_hint">Artikel suchen…</string>

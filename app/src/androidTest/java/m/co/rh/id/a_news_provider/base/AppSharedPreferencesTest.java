@@ -26,11 +26,12 @@ import static org.junit.Assert.assertTrue;
 /**
  * Instrumented tests for the AppSharedPreferences notification-permission state
  * (issue #51), the auto mark-read retention window (issue #47), the four
- * reading-typography preferences (issue #29) and the open-links mode preference
- * (issue #35): asserts the fresh-install defaults, the set/get round-trip of each
- * new field, that every Flowable replays its current value and emits on change,
- * and that state persists through a fresh provider instance (re-read from the
- * shared preferences file, mirroring a process restart).
+ * reading-typography preferences (issue #29), the open-links mode preference
+ * (issue #35) and the duplicate-story collapsing preference (issue #45): asserts
+ * the fresh-install defaults, the set/get round-trip of each new field, that every
+ * Flowable replays its current value and emits on change, and that state persists
+ * through a fresh provider instance (re-read from the shared preferences file,
+ * mirroring a process restart).
  */
 @RunWith(AndroidJUnit4.class)
 public class AppSharedPreferencesTest {
@@ -332,6 +333,53 @@ public class AppSharedPreferencesTest {
         mProvider = Provider.createProvider(mContext, new PrefsTestProviderModule());
         AppSharedPreferences reloaded = mProvider.get(AppSharedPreferences.class);
         assertEquals(AppSharedPreferences.MODE_CUSTOM_TABS, reloaded.getOpenLinksMode());
+    }
+
+    // ========================================================================
+    // collapse duplicate stories (issue #45)
+    //
+    // Cross-feed duplicate collapsing of the all-channels list. Default ON:
+    // repeating the same story once per feed is the noise this feature removes,
+    // and the OFF path stays available in settings.
+    // ========================================================================
+
+    @Test
+    public void testCollapseDuplicateStoriesFreshInstallDefault() {
+        assertTrue("Duplicate collapsing must default to ON",
+                mAppSharedPreferences.isCollapseDuplicateStories());
+    }
+
+    @Test
+    public void testCollapseDuplicateStoriesRoundTrip() {
+        mAppSharedPreferences.setCollapseDuplicateStories(false);
+        assertFalse(mAppSharedPreferences.isCollapseDuplicateStories());
+        mAppSharedPreferences.setCollapseDuplicateStories(true);
+        assertTrue(mAppSharedPreferences.isCollapseDuplicateStories());
+    }
+
+    @Test
+    public void testCollapseDuplicateStoriesFlowEmitsUpdates() {
+        TestSubscriber<Boolean> testSubscriber =
+                mAppSharedPreferences.getIsCollapseDuplicateStoriesFlow().test();
+
+        // SerialBehaviorSubject replays the current value on subscribe
+        assertEquals(Boolean.TRUE, testSubscriber.values().get(0));
+
+        mAppSharedPreferences.setCollapseDuplicateStories(false);
+
+        testSubscriber.assertValueCount(2);
+        assertEquals(Boolean.FALSE, testSubscriber.values().get(1));
+    }
+
+    @Test
+    public void testCollapseDuplicateStoriesSurvivesNewProviderInstance() {
+        mAppSharedPreferences.setCollapseDuplicateStories(false);
+        // the setter persists synchronously via the direct executor, so the write
+        // has landed before dispose() runs
+        mProvider.dispose();
+        mProvider = Provider.createProvider(mContext, new PrefsTestProviderModule());
+        AppSharedPreferences reloaded = mProvider.get(AppSharedPreferences.class);
+        assertFalse(reloaded.isCollapseDuplicateStories());
     }
 
     private static class PrefsTestProviderModule implements ProviderModule {

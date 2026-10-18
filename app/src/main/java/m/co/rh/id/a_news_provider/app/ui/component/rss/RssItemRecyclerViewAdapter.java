@@ -121,7 +121,8 @@ public class RssItemRecyclerViewAdapter {
                      * the detail page on row tap: title, link, description, pubDate (with
                      * createdDateTime as the displayed-date fallback in
                      * {@link RssItemSV}), mediaImage, mediaVideo, categories, isRead
-                     * (bold) and isFavorite (star). {@code updatedDateTime} is
+                     * (bold), isFavorite (star) and duplicateCount (the duplicate-story
+                     * badge, issue #45). {@code updatedDateTime} is
                      * deliberately excluded: it is bumped on every DB write (mark-read,
                      * favorite toggle) without ever being rendered, so comparing it would
                      * rebind every touched row and defeat the purpose of diffing.
@@ -144,7 +145,8 @@ public class RssItemRecyclerViewAdapter {
                                 && Objects.equals(oldItem.mediaVideo, newItem.mediaVideo)
                                 && Objects.equals(oldItem.categories, newItem.categories)
                                 && oldItem.isRead == newItem.isRead
-                                && oldItem.isFavorite == newItem.isFavorite;
+                                && oldItem.isFavorite == newItem.isFavorite
+                                && oldItem.duplicateCount == newItem.duplicateCount;
                     }
                 };
 

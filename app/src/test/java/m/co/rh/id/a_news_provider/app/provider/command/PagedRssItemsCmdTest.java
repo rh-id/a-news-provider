@@ -20,16 +20,26 @@ import io.reactivex.rxjava3.processors.BehaviorProcessor;
 import io.reactivex.rxjava3.processors.PublishProcessor;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChannelStateNotifier;
+import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
+import m.co.rh.id.a_news_provider.base.model.LinkCount;
 import m.co.rh.id.a_news_provider.base.model.RssModel;
 import m.co.rh.id.a_news_provider.test.util.DirectExecutorService;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.aprovider.Provider;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -37,7 +47,10 @@ import static org.mockito.Mockito.when;
  * a channel switch must trigger a FRESH keyset load (cursor reset), while a
  * sync-driven re-emission in all-channels mode must trigger a REFRESH that
  * preserves the accumulated window, and a re-emission of the same selected
- * channel must not load at all.
+ * channel must not load at all. Plus the duplicate-story collapsing branch
+ * (issue #45): with the setting on and all channels shown, loadItems() must use
+ * the link-grouped DAO queries and fill duplicateCount per row, while a selected
+ * channel (or the setting off) must keep the flat queries.
  */
 public class PagedRssItemsCmdTest {
 
@@ -46,6 +59,7 @@ public class PagedRssItemsCmdTest {
     private ILogger mMockLogger;
     private RssChangeNotifier mMockChangeNotifier;
     private RssChannelStateNotifier mMockChannelStateNotifier;
+    private AppSharedPreferences mMockSharedPreferences;
     private PublishProcessor<Optional<RssModel>> mRssModelProcessor;
     private BehaviorProcessor<Optional<RssChannel>> mChannelSubject;
     private RecordingPagedRssItemsCmd mCmd;
@@ -91,12 +105,14 @@ public class PagedRssItemsCmdTest {
         mMockLogger = mock(ILogger.class);
         mMockChangeNotifier = mock(RssChangeNotifier.class);
         mMockChannelStateNotifier = mock(RssChannelStateNotifier.class);
+        mMockSharedPreferences = mock(AppSharedPreferences.class);
         ExecutorService executorService = new DirectExecutorService();
         when(mMockProvider.get(ExecutorService.class)).thenReturn(executorService);
         when(mMockProvider.get(RssDao.class)).thenReturn(mMockRssDao);
         when(mMockProvider.get(ILogger.class)).thenReturn(mMockLogger);
         when(mMockProvider.get(RssChangeNotifier.class)).thenReturn(mMockChangeNotifier);
         when(mMockProvider.get(RssChannelStateNotifier.class)).thenReturn(mMockChannelStateNotifier);
+        when(mMockProvider.get(AppSharedPreferences.class)).thenReturn(mMockSharedPreferences);
 
         mRssModelProcessor = PublishProcessor.create();
         mChannelSubject = BehaviorProcessor.createDefault(Optional.empty());
@@ -190,5 +206,102 @@ public class PagedRssItemsCmdTest {
         mRssModelProcessor.onNext(Optional.of(new RssModel(
                 channel(42), new ArrayList<>())));
         assertEquals(4, mCmd.mRequests.size());
+    }
+
+    // ==================================================================================
+    // Duplicate-story collapsing branch (issue #45)
+    // ==================================================================================
+
+    @Test
+    public void loadItems_collapseOnAndAllChannelsUsesGroupedQueriesAndFillsCounts() {
+        when(mMockSharedPreferences.isCollapseDuplicateStories()).thenReturn(true);
+        ArrayList<RssItem> groupedPage = new ArrayList<>();
+        RssItem repA = item(1, 1000);
+        repA.link = "http://test.com/a";
+        RssItem repB = item(2, 900);
+        repB.link = "http://test.com/b";
+        groupedPage.add(repA);
+        groupedPage.add(repB);
+        // the command's initial filter is FILTER_BY_UNREAD, so loadItems() derives
+        // isRead = 0 / isFavorite = null; spelling the full argument contract out
+        // makes a filter-plumbing regression fail here, not silently in production
+        when(mMockRssDao.findRssItemsPageGroupedByLinkDesc(
+                isNull(), eq(0), isNull(), isNull(), isNull(), eq(BaseRssItemsCmd.PAGE_SIZE)))
+                .thenReturn(groupedPage);
+        // only link A has copies; link B's group is a singleton and must default to 1
+        List<LinkCount> counts = new ArrayList<>();
+        LinkCount countA = new LinkCount();
+        countA.link = "http://test.com/a";
+        countA.cnt = 3;
+        counts.add(countA);
+        when(mMockRssDao.countRssItemsByLinks(anyList())).thenReturn(counts);
+
+        // the REAL loadItems must run: a plain (non-recording) command instance
+        PagedRssItemsCmd cmd = new PagedRssItemsCmd(mMockProvider);
+        mDisposable = cmd.getRssItems().subscribe(items -> {
+            // drain the stream
+        });
+
+        // initial all-channels emission: REFRESH with an empty accumulator = one page
+        ArrayList<RssItem> items = cmd.getAllRssItems();
+        assertEquals(2, items.size());
+        assertEquals(3, items.get(0).duplicateCount);
+        assertEquals(1, items.get(1).duplicateCount);
+        verify(mMockRssDao).findRssItemsPageGroupedByLinkDesc(
+                isNull(), eq(0), isNull(), isNull(), isNull(), eq(BaseRssItemsCmd.PAGE_SIZE));
+        verify(mMockRssDao).countRssItemsByLinks(anyList());
+        verify(mMockRssDao, never()).findRssItemsPageDesc(
+                any(), any(), any(), any(), any(), anyInt());
+    }
+
+    @Test
+    public void loadItems_collapseOffUsesFlatQueriesAndLeavesCountsZero() {
+        when(mMockSharedPreferences.isCollapseDuplicateStories()).thenReturn(false);
+        ArrayList<RssItem> flatPage = new ArrayList<>();
+        RssItem flatItem = item(7, 1000);
+        flatItem.link = "http://test.com/a";
+        flatPage.add(flatItem);
+        when(mMockRssDao.findRssItemsPageDesc(
+                isNull(), eq(0), isNull(), isNull(), isNull(), eq(BaseRssItemsCmd.PAGE_SIZE)))
+                .thenReturn(flatPage);
+
+        PagedRssItemsCmd cmd = new PagedRssItemsCmd(mMockProvider);
+        mDisposable = cmd.getRssItems().subscribe(items -> {
+            // drain the stream
+        });
+
+        ArrayList<RssItem> items = cmd.getAllRssItems();
+        assertEquals(1, items.size());
+        // not a grouped load: duplicateCount stays at its field default
+        assertEquals(0, items.get(0).duplicateCount);
+        verify(mMockRssDao).findRssItemsPageDesc(
+                isNull(), eq(0), isNull(), isNull(), isNull(), eq(BaseRssItemsCmd.PAGE_SIZE));
+        verify(mMockRssDao, never()).findRssItemsPageGroupedByLinkDesc(
+                any(), any(), any(), any(), any(), anyInt());
+        verify(mMockRssDao, never()).countRssItemsByLinks(anyList());
+    }
+
+    @Test
+    public void loadItems_selectedChannelOverridesCollapseSetting() {
+        // setting ON, but a channel is selected: grouping only ever happens in
+        // the all-channels view, the flat query must win
+        when(mMockSharedPreferences.isCollapseDuplicateStories()).thenReturn(true);
+        PagedRssItemsCmd cmd = new PagedRssItemsCmd(mMockProvider);
+        mDisposable = cmd.getRssItems().subscribe(items -> {
+            // drain the stream
+        });
+
+        // initial emission: all channels (grouped query runs once here)
+        verify(mMockRssDao, times(1)).findRssItemsPageGroupedByLinkDesc(
+                any(), any(), any(), any(), any(), anyInt());
+
+        // channel switch: FRESH load for channel 42 through the FLAT query
+        mChannelSubject.onNext(Optional.of(channel(42)));
+        verify(mMockRssDao, times(1)).findRssItemsPageDesc(
+                eq(42L), eq(0), isNull(), isNull(), isNull(), eq(BaseRssItemsCmd.PAGE_SIZE));
+        // the grouped query ran ONLY for the initial all-channels load
+        verify(mMockRssDao, times(1)).findRssItemsPageGroupedByLinkDesc(
+                any(), any(), any(), any(), any(), anyInt());
+        verify(mMockRssDao, never()).countRssItemsByLinks(anyList());
     }
 }

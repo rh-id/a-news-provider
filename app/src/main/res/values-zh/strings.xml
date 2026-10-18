@@ -104,6 +104,8 @@
     <string name="menu_subtitle_mark_read_on_scroll">启用/停用滚动时标为已读</string>
     <string name="mark_read_on_scroll_enabled">滚动时标为已读已启用</string>
     <string name="mark_read_on_scroll_disabled">滚动时标为已读已停用</string>
+    <string name="title_collapse_duplicate_stories">合并重复故事</string>
+    <string name="menu_subtitle_collapse_duplicate_stories">在全部订阅源列表中，多个订阅源转发的相同故事只显示一次</string>
     <string name="image">图片</string>
     <string name="menu_import_opml">导入 OPML 文件</string>
     <string name="open_video">打开视频</string>
@@ -128,6 +130,9 @@
 
     <plurals name="new_items_available">
         <item quantity="other">%d 条新内容</item>
+    </plurals>
+    <plurals name="also_in_n_feeds">
+        <item quantity="other">另见 %d 个订阅源</item>
     </plurals>
     <string name="menu_search">搜索</string>
     <string name="search_hint">搜索文章…</string>
