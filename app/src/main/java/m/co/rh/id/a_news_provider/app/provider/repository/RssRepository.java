@@ -2,7 +2,6 @@ package m.co.rh.id.a_news_provider.app.provider.repository;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,7 +17,8 @@ import m.co.rh.id.aprovider.Provider;
 /**
  * Repository for handling RSS feed persistence logic.
  * Moved from RssRequest to separate network layer from app layer.
- * Preserves read and favorite item state across feed syncs.
+ * Preserves read and favorite item state across feed syncs and retains items
+ * that fall out of a feed's current list instead of deleting them (issue #37).
  */
 public class RssRepository {
     private final RssDao mRssDao;
@@ -31,12 +31,17 @@ public class RssRepository {
 
     /**
      * Persists a parsed RSS feed model to the database, handling merge logic for existing channels.
-     * Read and favorite states are carried over to matching items and favorited items that
-     * are no longer part of the parsed feed are kept in the persisted result.
+     * Existing channels are upserted item-by-item inside a single DAO transaction: items are
+     * matched by link (or by a title/pub-date tuple for linkless items), matched rows keep their
+     * id and read/favorite state while their feed fields are refreshed, and items that are no
+     * longer part of the parsed feed are retained (never deleted). The DAO transaction is the
+     * single source of truth for the state merge; see
+     * {@link RssDao#upsertRssItemsForChannel(RssChannel, List)} for the full retention semantics.
      * This method must be called on a background thread.
      *
      * @param parsed the parsed RSS feed model from the network response
      * @return the persisted model with database ID populated, containing the merged item list
+     * (persisted parsed items followed by the retained items the feed no longer carries)
      */
     public RssModel persist(RssModel parsed) {
         RssChannel responseRssChannel = parsed.getRssChannel();
@@ -50,21 +55,11 @@ public class RssRepository {
             mRssDao.insertRssChannel(parsed.getRssChannel(), parsed.getRssItems().toArray(new RssItem[0]));
             return parsed;
         } else {
-            // Existing channel - preserve certain fields, merge item state and keep favorites
+            // Existing channel - preserve channel fields and upsert items atomically
             copyPreservedFields(rssChannel, responseRssChannel);
-
-            ArrayList<RssItem> rssItemsFromModel = parsed.getRssItems();
-            List<RssItem> rssItemList = mRssDao.findRssItemsByChannelId(rssChannel.id);
-
-            // Apply read and favorite state from DB to new items based on link matching
-            applyItemState(rssItemList, rssItemsFromModel);
-
-            // Union favorites that are no longer part of the parsed feed
-            ArrayList<RssItem> mergedItems = unionMissingFavorites(rssItemList, rssItemsFromModel);
-
-            RssModel result = new RssModel(responseRssChannel, mergedItems);
-            mRssDao.updateRssChannel(responseRssChannel, result.getRssItems().toArray(new RssItem[0]));
-            return result;
+            List<RssItem> persistedItems =
+                    mRssDao.upsertRssItemsForChannel(responseRssChannel, parsed.getRssItems());
+            return new RssModel(responseRssChannel, new ArrayList<>(persistedItems));
         }
     }
 
@@ -77,79 +72,6 @@ public class RssRepository {
         toUpdate.feedName = fromDb.feedName;
         toUpdate.createdDateTime = fromDb.createdDateTime;
         toUpdate.updatedDateTime = fromDb.updatedDateTime;
-    }
-
-    /**
-     * Package-visible helper for testing - applies read and favorite state from DB items
-     * to parsed items by matching links. If an item with the same link exists in the DB,
-     * its isRead and isFavorite values are carried over to the parsed item.
-     *
-     * @param dbItems     items from the database with item state
-     * @param parsedItems newly parsed items to update with item state
-     */
-    static void applyItemState(List<RssItem> dbItems, ArrayList<RssItem> parsedItems) {
-        if (dbItems == null || dbItems.isEmpty() || parsedItems == null || parsedItems.isEmpty()) {
-            return;
-        }
-
-        HashMap<String, RssItem> linkItemMap = new HashMap<>();
-        for (RssItem rssItem : dbItems) {
-            if (rssItem.link != null && !rssItem.link.isEmpty()) {
-                linkItemMap.put(rssItem.link, rssItem);
-            }
-        }
-
-        for (RssItem rssItemFromModel : parsedItems) {
-            if (rssItemFromModel.link != null && !rssItemFromModel.link.isEmpty()) {
-                RssItem dbItem = linkItemMap.get(rssItemFromModel.link);
-                if (dbItem != null) {
-                    rssItemFromModel.isRead = dbItem.isRead;
-                    rssItemFromModel.isFavorite = dbItem.isFavorite;
-                }
-            }
-        }
-    }
-
-    /**
-     * Package-visible helper for testing - unions favorited DB items that are missing
-     * from the parsed items into a merged list. Matching is done by link, and
-     * null/empty-link favorites are always included since they can never match the
-     * parsed feed. Each unioned favorite gets its id cleared so a new id is generated
-     * on reinsert.
-     *
-     * @param dbItems     items from the database
-     * @param parsedItems newly parsed items from the feed
-     * @return merged list of parsed items plus favorited DB items missing from the feed
-     */
-    static ArrayList<RssItem> unionMissingFavorites(List<RssItem> dbItems, List<RssItem> parsedItems) {
-        HashSet<String> parsedLinks = new HashSet<>();
-        if (parsedItems != null) {
-            for (RssItem parsedItem : parsedItems) {
-                if (parsedItem.link != null && !parsedItem.link.isEmpty()) {
-                    parsedLinks.add(parsedItem.link);
-                }
-            }
-        }
-
-        ArrayList<RssItem> mergedItems = new ArrayList<>();
-        if (parsedItems != null) {
-            mergedItems.addAll(parsedItems);
-        }
-        if (dbItems != null) {
-            for (RssItem dbItem : dbItems) {
-                if (!dbItem.isFavorite) {
-                    continue;
-                }
-                boolean linkMissing = dbItem.link == null || dbItem.link.isEmpty()
-                        || !parsedLinks.contains(dbItem.link);
-                if (linkMissing) {
-                    // id is cleared so a new one is generated on reinsert
-                    dbItem.id = null;
-                    mergedItems.add(dbItem);
-                }
-            }
-        }
-        return mergedItems;
     }
 
     /**

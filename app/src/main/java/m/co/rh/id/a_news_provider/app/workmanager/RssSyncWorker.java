@@ -39,6 +39,10 @@ public class RssSyncWorker extends Worker {
     @NonNull
     @Override
     public Result doWork() {
+        // Captured before any network request so chained workers can filter on
+        // "touched by THIS sync": upsert stamps synced rows with updated_date_time
+        // >= this value, retained rows keep their older stamp (issue #37).
+        long syncStartMillis = System.currentTimeMillis();
         Provider provider = BaseApplication.of(getApplicationContext()).getProvider();
         RssDao rssDao = provider.get(RssDao.class);
         RssRepository rssRepository = provider.get(RssRepository.class);
@@ -81,6 +85,7 @@ public class RssSyncWorker extends Worker {
 
         Data outputData = new Data.Builder()
                 .putLongArray(ConstantsKey.KEY_LONG_CHANNEL_IDS, channelIds)
+                .putLong(ConstantsKey.KEY_LONG_SYNC_START_MILLIS, syncStartMillis)
                 .build();
         return Result.success(outputData);
     }

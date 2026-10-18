@@ -33,6 +33,13 @@ public class RssSyncChangeNotifierWorker extends Worker {
         if (channelIds == null || channelIds.length <= 0) {
             return Result.failure();
         }
+        // Same since-guard as RssSyncNotificationWorker (issue #37): this payload feeds
+        // HomePage's link-baseline diff, and retained items (kept in the DB with their
+        // old updated_date_time when they fall out of a feed) must not be re-announced
+        // as new after the upgrade. Fallback 0 = old include-everything behavior for
+        // in-flight work enqueued before this key existed.
+        long syncStartMillis =
+                getInputData().getLong(ConstantsKey.KEY_LONG_SYNC_START_MILLIS, 0L);
         Provider provider = BaseApplication.of(getApplicationContext()).getProvider();
         RssDao rssDao = provider.get(RssDao.class);
         RssChangeNotifier rssChangeNotifier = provider.get(RssChangeNotifier.class);
@@ -45,7 +52,8 @@ public class RssSyncChangeNotifierWorker extends Worker {
             if (rssChannel == null) {
                 continue;
             }
-            List<RssItem> rssItems = rssDao.findRssItemsByChannelId(channelId);
+            List<RssItem> rssItems =
+                    rssDao.findRssItemsByChannelIdUpdatedSince(channelId, syncStartMillis);
             ArrayList<RssItem> rssItemArrayList = new ArrayList<>();
             rssItemArrayList.addAll(rssItems);
             rssModels.add(new RssModel(rssChannel, rssItemArrayList));
@@ -54,6 +62,7 @@ public class RssSyncChangeNotifierWorker extends Worker {
 
         Data outputData = new Data.Builder()
                 .putLongArray(ConstantsKey.KEY_LONG_CHANNEL_IDS, channelIds)
+                .putLong(ConstantsKey.KEY_LONG_SYNC_START_MILLIS, syncStartMillis)
                 .build();
         return Result.success(outputData);
     }

@@ -32,18 +32,18 @@ import m.co.rh.id.aprovider.ProviderRegistry;
 import static org.junit.Assert.*;
 
 /**
- * Instrumented tests for RssRepository covering persistence item-state merging,
- * favorites union, unread-count map building and the auto mark-read retention
- * window, against a real in-memory Room database (no mocking framework - Mockito
- * is unreliable on ART).
+ * Instrumented tests for RssRepository covering persistence item retention,
+ * unread-count map building and the auto mark-read retention window, against a
+ * real in-memory Room database (no mocking framework - Mockito is unreliable on ART).
  * <p>
  * Main sections:
  * <ul>
- *     <li>static helper tests ({@code applyItemState}, {@code unionMissingFavorites},
- *     {@code buildUnreadCountMap}) which need no instance or database,</li>
- *     <li>{@link RssRepository#persist(RssModel)} tests which exercise the merge,
- *     state carry-over, favorites union and URL normalization behavior through real
- *     DAO rows (absorbing the former RssRepositoryPersistDuplicateTest),</li>
+ *     <li>static helper tests ({@code buildUnreadCountMap}) which need no instance or
+ *     database,</li>
+ *     <li>{@link RssRepository#persist(RssModel)} tests which exercise the upsert
+ *     retention merge (issue #37): state carry-over, original-id retention of items
+ *     missing from the feed, feed-field refresh and URL normalization behavior
+ *     through real DAO rows (absorbing the former RssRepositoryPersistDuplicateTest),</li>
  *     <li>{@link RssRepository#markOldItemsRead(long)} tests for the unread retention
  *     window (cutoff boundary, favorite immunity, cross-channel link consistency,
  *     null/empty-link exclusion, paused-channel aging),</li>
@@ -81,262 +81,7 @@ public class RssRepositoryTest {
     }
 
     // ==================================================================================
-    // Section 1: static helper applyItemState
-    // ==================================================================================
-
-    @Test
-    public void testApplyItemStateMatchingLinksCarryOver() {
-        // Create DB items with read and favorite state
-        List<RssItem> dbItems = new ArrayList<>();
-        RssItem dbItem1 = new RssItem();
-        dbItem1.link = "http://test.com/item1";
-        dbItem1.isRead = true;
-        dbItem1.isFavorite = true;
-        dbItems.add(dbItem1);
-
-        RssItem dbItem2 = new RssItem();
-        dbItem2.link = "http://test.com/item2";
-        dbItem2.isRead = false;
-        dbItem2.isFavorite = false;
-        dbItems.add(dbItem2);
-
-        // Create parsed items
-        ArrayList<RssItem> parsedItems = new ArrayList<>();
-        RssItem parsedItem1 = new RssItem();
-        parsedItem1.link = "http://test.com/item1";
-        parsedItem1.isRead = false; // Initially false
-        parsedItem1.isFavorite = false; // Initially false
-        parsedItems.add(parsedItem1);
-
-        RssItem parsedItem2 = new RssItem();
-        parsedItem2.link = "http://test.com/item2";
-        parsedItem2.isRead = true; // Initially true
-        parsedItem2.isFavorite = true; // Initially true
-        parsedItems.add(parsedItem2);
-
-        RssItem parsedItem3 = new RssItem();
-        parsedItem3.link = "http://test.com/item3";
-        parsedItem3.isRead = false; // No match in DB
-        parsedItem3.isFavorite = true; // No match in DB
-        parsedItems.add(parsedItem3);
-
-        // Apply item state
-        RssRepository.applyItemState(dbItems, parsedItems);
-
-        // Verify read and favorite state was carried over for matching links
-        assertTrue("Item 1 should have isRead=true from DB", parsedItem1.isRead);
-        assertTrue("Item 1 should have isFavorite=true from DB", parsedItem1.isFavorite);
-        assertFalse("Item 2 should have isRead=false from DB", parsedItem2.isRead);
-        assertFalse("Item 2 should have isFavorite=false from DB", parsedItem2.isFavorite);
-        assertFalse("Item 3 should keep default isRead=false (no DB match)", parsedItem3.isRead);
-        assertTrue("Item 3 should keep isFavorite=true (no DB match)", parsedItem3.isFavorite);
-    }
-
-    @Test
-    public void testApplyItemStateWithNullDbItems() {
-        ArrayList<RssItem> parsedItems = new ArrayList<>();
-        RssItem parsedItem = new RssItem();
-        parsedItem.link = "http://test.com/item1";
-        parsedItem.isRead = false;
-        parsedItems.add(parsedItem);
-
-        // Should not throw exception
-        RssRepository.applyItemState(null, parsedItems);
-
-        assertFalse("Item should keep default value", parsedItem.isRead);
-    }
-
-    @Test
-    public void testApplyItemStateWithEmptyDbItems() {
-        List<RssItem> dbItems = new ArrayList<>();
-
-        ArrayList<RssItem> parsedItems = new ArrayList<>();
-        RssItem parsedItem = new RssItem();
-        parsedItem.link = "http://test.com/item1";
-        parsedItem.isRead = false;
-        parsedItems.add(parsedItem);
-
-        RssRepository.applyItemState(dbItems, parsedItems);
-
-        assertFalse("Item should keep default value", parsedItem.isRead);
-    }
-
-    @Test
-    public void testApplyItemStateWithNullParsedItems() {
-        List<RssItem> dbItems = new ArrayList<>();
-        RssItem dbItem = new RssItem();
-        dbItem.link = "http://test.com/item1";
-        dbItem.isRead = true;
-        dbItems.add(dbItem);
-
-        // Should not throw exception
-        RssRepository.applyItemState(dbItems, null);
-    }
-
-    @Test
-    public void testApplyItemStateWithNullLinks() {
-        List<RssItem> dbItems = new ArrayList<>();
-        RssItem dbItem1 = new RssItem();
-        dbItem1.link = null; // Null link in DB
-        dbItem1.isRead = true;
-        dbItems.add(dbItem1);
-
-        RssItem dbItem2 = new RssItem();
-        dbItem2.link = ""; // Empty link in DB
-        dbItem2.isRead = true;
-        dbItems.add(dbItem2);
-
-        ArrayList<RssItem> parsedItems = new ArrayList<>();
-        RssItem parsedItem1 = new RssItem();
-        parsedItem1.link = null; // Null link in parsed
-        parsedItem1.isRead = false;
-        parsedItems.add(parsedItem1);
-
-        RssItem parsedItem2 = new RssItem();
-        parsedItem2.link = ""; // Empty link in parsed
-        parsedItem2.isRead = false;
-        parsedItems.add(parsedItem2);
-
-        RssRepository.applyItemState(dbItems, parsedItems);
-
-        // Null/empty links should not affect read state
-        assertFalse("Null link should not be updated", parsedItem1.isRead);
-        assertFalse("Empty link should not be updated", parsedItem2.isRead);
-    }
-
-    @Test
-    public void testApplyItemStateWithDuplicateLinks() {
-        // Test behavior when multiple items have the same link
-        List<RssItem> dbItems = new ArrayList<>();
-        RssItem dbItem1 = new RssItem();
-        dbItem1.link = "http://test.com/duplicate";
-        dbItem1.isRead = true;
-        dbItems.add(dbItem1);
-
-        RssItem dbItem2 = new RssItem();
-        dbItem2.link = "http://test.com/duplicate"; // Same link
-        dbItem2.isRead = false;
-        dbItems.add(dbItem2);
-
-        ArrayList<RssItem> parsedItems = new ArrayList<>();
-        RssItem parsedItem = new RssItem();
-        parsedItem.link = "http://test.com/duplicate";
-        parsedItem.isRead = false;
-        parsedItems.add(parsedItem);
-
-        RssRepository.applyItemState(dbItems, parsedItems);
-
-        // The last matching item in DB should determine the read state
-        // HashMap.put() will overwrite with the last value
-        assertFalse("Should take last DB value for duplicate link", parsedItem.isRead);
-    }
-
-    @Test
-    public void testApplyItemStatePreservesOtherFields() {
-        List<RssItem> dbItems = new ArrayList<>();
-        RssItem dbItem = new RssItem();
-        dbItem.link = "http://test.com/item1";
-        dbItem.isRead = true;
-        dbItem.isFavorite = true;
-        dbItem.title = "DB Title";
-        dbItem.description = "DB Description";
-        dbItems.add(dbItem);
-
-        ArrayList<RssItem> parsedItems = new ArrayList<>();
-        RssItem parsedItem = new RssItem();
-        parsedItem.link = "http://test.com/item1";
-        parsedItem.isRead = false;
-        parsedItem.isFavorite = false;
-        parsedItem.title = "Parsed Title";
-        parsedItem.description = "Parsed Description";
-        parsedItems.add(parsedItem);
-
-        RssRepository.applyItemState(dbItems, parsedItems);
-
-        assertEquals("Only isRead/isFavorite should change, title should stay", "Parsed Title", parsedItem.title);
-        assertEquals("Only isRead/isFavorite should change, description should stay", "Parsed Description", parsedItem.description);
-        assertTrue("isRead should be updated", parsedItem.isRead);
-        assertTrue("isFavorite should be updated", parsedItem.isFavorite);
-    }
-
-    @Test
-    public void testApplyItemStateWithMultipleMixedCases() {
-        // Test a comprehensive scenario with multiple items, some matching, some not
-        List<RssItem> dbItems = new ArrayList<>();
-
-        RssItem db1 = new RssItem();
-        db1.link = "http://test.com/1";
-        db1.isRead = true;
-        dbItems.add(db1);
-
-        RssItem db2 = new RssItem();
-        db2.link = "http://test.com/2";
-        db2.isRead = false;
-        dbItems.add(db2);
-
-        RssItem db3 = new RssItem();
-        db3.link = "http://test.com/3";
-        db3.isRead = true;
-        dbItems.add(db3);
-
-        ArrayList<RssItem> parsedItems = new ArrayList<>();
-
-        RssItem p1 = new RssItem();
-        p1.link = "http://test.com/1";
-        p1.isRead = false;
-        parsedItems.add(p1);
-
-        RssItem p2 = new RssItem();
-        p2.link = "http://test.com/2";
-        p2.isRead = true;
-        parsedItems.add(p2);
-
-        RssItem p4 = new RssItem();
-        p4.link = "http://test.com/4"; // Not in DB
-        p4.isRead = false;
-        parsedItems.add(p4);
-
-        RssItem p3 = new RssItem();
-        p3.link = "http://test.com/3";
-        p3.isRead = false;
-        parsedItems.add(p3);
-
-        RssRepository.applyItemState(dbItems, parsedItems);
-
-        assertTrue("Item 1: isRead should be true from DB", p1.isRead);
-        assertFalse("Item 2: isRead should be false from DB", p2.isRead);
-        assertFalse("Item 4: isRead should keep default (no DB match)", p4.isRead);
-        assertTrue("Item 3: isRead should be true from DB", p3.isRead);
-    }
-
-    @Test
-    public void testApplyItemStateCaseSensitiveLinks() {
-        // Test if link matching is case-sensitive (it should be for URLs)
-        List<RssItem> dbItems = new ArrayList<>();
-        RssItem dbItem = new RssItem();
-        dbItem.link = "http://test.com/Item";
-        dbItem.isRead = true;
-        dbItems.add(dbItem);
-
-        ArrayList<RssItem> parsedItems = new ArrayList<>();
-        RssItem parsedItem1 = new RssItem();
-        parsedItem1.link = "http://test.com/Item"; // Exact match
-        parsedItem1.isRead = false;
-        parsedItems.add(parsedItem1);
-
-        RssItem parsedItem2 = new RssItem();
-        parsedItem2.link = "http://test.com/item"; // Different case
-        parsedItem2.isRead = false;
-        parsedItems.add(parsedItem2);
-
-        RssRepository.applyItemState(dbItems, parsedItems);
-
-        assertTrue("Exact case match should update isRead", parsedItem1.isRead);
-        assertFalse("Different case should not match", parsedItem2.isRead);
-    }
-
-    // ==================================================================================
-    // Section 2: static helper buildUnreadCountMap
+    // Section 1: static helper buildUnreadCountMap
     // ==================================================================================
 
     @Test
@@ -498,108 +243,7 @@ public class RssRepositoryTest {
     }
 
     // ==================================================================================
-    // Section 3: static helper unionMissingFavorites
-    // ==================================================================================
-
-    @Test
-    public void testUnionMissingFavoritesKeepsFavoritedItemAbsentFromFeed() {
-        List<RssItem> dbItems = new ArrayList<>();
-        RssItem dbItem1 = new RssItem();
-        dbItem1.id = 10L;
-        dbItem1.link = "http://test.com/item1";
-        dbItem1.isFavorite = true;
-        dbItems.add(dbItem1);
-
-        ArrayList<RssItem> parsedItems = new ArrayList<>();
-        RssItem parsedItem = new RssItem();
-        parsedItem.link = "http://test.com/item2";
-        parsedItems.add(parsedItem);
-
-        ArrayList<RssItem> mergedItems = RssRepository.unionMissingFavorites(dbItems, parsedItems);
-
-        assertEquals("Merged list should contain parsed item and unioned favorite", 2, mergedItems.size());
-        assertSame("Parsed item should come first", parsedItem, mergedItems.get(0));
-        assertSame("Favorited DB item should be unioned", dbItem1, mergedItems.get(1));
-        assertNull("Unioned favorite id should be cleared", mergedItems.get(1).id);
-    }
-
-    @Test
-    public void testUnionMissingFavoritesSkipsNonFavoritedItemAbsentFromFeed() {
-        List<RssItem> dbItems = new ArrayList<>();
-        RssItem dbItem1 = new RssItem();
-        dbItem1.id = 10L;
-        dbItem1.link = "http://test.com/item1";
-        dbItem1.isFavorite = false;
-        dbItems.add(dbItem1);
-
-        ArrayList<RssItem> parsedItems = new ArrayList<>();
-        RssItem parsedItem = new RssItem();
-        parsedItem.link = "http://test.com/item2";
-        parsedItems.add(parsedItem);
-
-        ArrayList<RssItem> mergedItems = RssRepository.unionMissingFavorites(dbItems, parsedItems);
-
-        assertEquals("Non-favorited DB item should not be unioned", 1, mergedItems.size());
-        assertSame("Only the parsed item should remain", parsedItem, mergedItems.get(0));
-    }
-
-    @Test
-    public void testUnionMissingFavoritesSkipsFavoriteStillInFeed() {
-        List<RssItem> dbItems = new ArrayList<>();
-        RssItem dbItem1 = new RssItem();
-        dbItem1.id = 10L;
-        dbItem1.link = "http://test.com/item1";
-        dbItem1.isFavorite = true;
-        dbItems.add(dbItem1);
-
-        ArrayList<RssItem> parsedItems = new ArrayList<>();
-        RssItem parsedItem = new RssItem();
-        parsedItem.link = "http://test.com/item1"; // Same link as favorited DB item
-        parsedItems.add(parsedItem);
-
-        ArrayList<RssItem> mergedItems = RssRepository.unionMissingFavorites(dbItems, parsedItems);
-
-        assertEquals("Favorite still in feed should not be duplicated", 1, mergedItems.size());
-        assertSame(parsedItem, mergedItems.get(0));
-    }
-
-    @Test
-    public void testUnionMissingFavoritesIncludesNullLinkFavorite() {
-        List<RssItem> dbItems = new ArrayList<>();
-        RssItem dbItem1 = new RssItem();
-        dbItem1.id = 10L;
-        dbItem1.link = null; // Null link cannot match the feed
-        dbItem1.isFavorite = true;
-        dbItems.add(dbItem1);
-
-        RssItem dbItem2 = new RssItem();
-        dbItem2.id = 11L;
-        dbItem2.link = ""; // Empty link cannot match the feed
-        dbItem2.isFavorite = true;
-        dbItems.add(dbItem2);
-
-        ArrayList<RssItem> parsedItems = new ArrayList<>();
-        RssItem parsedItem = new RssItem();
-        parsedItem.link = "http://test.com/item2";
-        parsedItems.add(parsedItem);
-
-        ArrayList<RssItem> mergedItems = RssRepository.unionMissingFavorites(dbItems, parsedItems);
-
-        assertEquals("Null and empty link favorites should be included", 3, mergedItems.size());
-        assertNull("Null link favorite id should be cleared", mergedItems.get(1).id);
-        assertNull("Empty link favorite id should be cleared", mergedItems.get(2).id);
-    }
-
-    @Test
-    public void testUnionMissingFavoritesWithNullInputs() {
-        ArrayList<RssItem> mergedItems = RssRepository.unionMissingFavorites(null, null);
-
-        assertNotNull("Merged list should not be null", mergedItems);
-        assertTrue("Merged list should be empty", mergedItems.isEmpty());
-    }
-
-    // ==================================================================================
-    // Section 4: persist() against the real in-memory database
+    // Section 2: persist() against the real in-memory database
     // (absorbs the former RssRepositoryPersistDuplicateTest)
     // ==================================================================================
 
@@ -618,9 +262,13 @@ public class RssRepositoryTest {
 
         RssModel result = mRssRepository.persist(new RssModel(parsedChannel, parsedItems));
 
-        assertTrue("isRead should carry over by link", parsedItem.isRead);
-        assertTrue("isFavorite should carry over by link", parsedItem.isFavorite);
-        assertEquals("Result should carry the parsed items", 1, result.getRssItems().size());
+        // the upsert updates the stored row in place; the returned model exposes the
+        // authoritative persisted row with the carried-over state (the parsed object
+        // is discarded)
+        assertEquals("Result should carry the matched row", 1, result.getRssItems().size());
+        assertTrue("isRead should carry over by link", result.getRssItems().get(0).isRead);
+        assertTrue("isFavorite should carry over by link", result.getRssItems().get(0).isFavorite);
+        assertEquals("Matched row keeps its id", dbItem.id, result.getRssItems().get(0).id);
 
         // database state: still a single channel, the stored item keeps the carried state
         List<RssChannel> channels = mRssDao.loadAllRssChannel();
@@ -632,7 +280,7 @@ public class RssRepositoryTest {
     }
 
     @Test
-    public void testPersistUnionsFavoritedItemMissingFromFeed() {
+    public void testPersistRetainsFavoritedItemMissingFromFeedWithOriginalId() {
         RssChannel dbChannel = createRssChannel("http://test.com/feed", "Feed");
         RssItem dbItem = createRssItem("item1", "http://test.com/item1");
         dbItem.isFavorite = true;
@@ -647,15 +295,13 @@ public class RssRepositoryTest {
 
         RssModel result = mRssRepository.persist(new RssModel(parsedChannel, parsedItems));
 
-        // merged list: parsed item first, then the unioned favorite; its stale id was
-        // cleared and the DAO reinsert assigns the fresh id visible in the result
+        // merged list: parsed item first, then the retained favorite with its
+        // ORIGINAL id - upsert retention keeps the row (no id-clearing reinsert)
         assertEquals("Returned model should carry the merged list", 2, result.getRssItems().size());
         assertEquals("http://test.com/item2", result.getRssItems().get(0).link);
         assertEquals("http://test.com/item1", result.getRssItems().get(1).link);
-        assertTrue("Persisted missing item should stay favorited", result.getRssItems().get(1).isFavorite);
-        assertNotNull("Persisted missing item must have been reinserted",
-                result.getRssItems().get(1).id);
-        assertNotEquals("Reinserted favorite must get a NEW id, not the stale one",
+        assertTrue("Retained missing item should stay favorited", result.getRssItems().get(1).isFavorite);
+        assertEquals("Retained favorite keeps its original id",
                 originalFavoriteId, result.getRssItems().get(1).id);
 
         // channel identity must be preserved by the merge (no duplicate row)
@@ -666,17 +312,18 @@ public class RssRepositoryTest {
         assertEquals("Merge must preserve createdDateTime",
                 dbChannel.createdDateTime, channels.get(0).createdDateTime);
 
-        // database state: unioned favorite was reinserted with a new id
+        // database state: the favorite row is retained untouched with its original id
         List<RssItem> storedItems = mRssDao.findRssItemsByChannelId(channels.get(0).id);
         assertEquals(2, storedItems.size());
         RssItem storedFavorite = findItemByLink(storedItems, "http://test.com/item1");
         assertNotNull(storedFavorite);
-        assertTrue("Reinserted favorite must keep isFavorite", storedFavorite.isFavorite);
-        assertNotEquals("Reinserted favorite must get a new id", originalFavoriteId, storedFavorite.id);
+        assertTrue("Retained favorite must keep isFavorite", storedFavorite.isFavorite);
+        assertEquals("Retained favorite must keep its original id",
+                originalFavoriteId, storedFavorite.id);
     }
 
     @Test
-    public void testPersistDoesNotUnionNonFavoritedItemMissingFromFeed() {
+    public void testPersistRetainsNonFavoritedItemMissingFromFeed() {
         RssChannel dbChannel = createRssChannel("http://test.com/feed", "Feed");
         RssItem dbItem = createRssItem("item1", "http://test.com/item1");
         dbItem.isFavorite = false;
@@ -689,15 +336,162 @@ public class RssRepositoryTest {
 
         RssModel result = mRssRepository.persist(new RssModel(parsedChannel, parsedItems));
 
-        assertEquals("Returned model should only contain parsed items", 1, result.getRssItems().size());
+        // returned model = parsed item first, then the retained row
+        assertEquals("Returned model should contain parsed + retained items",
+                2, result.getRssItems().size());
         assertEquals("http://test.com/item2", result.getRssItems().get(0).link);
+        assertEquals("http://test.com/item1", result.getRssItems().get(1).link);
+        assertEquals("Retained row keeps its original id",
+                dbItem.id, result.getRssItems().get(1).id);
 
-        // database state: the non-favorited item absent from the feed was dropped
+        // database state: the non-favorited item absent from the feed is RETAINED
         List<RssItem> storedItems = mRssDao.findRssItemsByChannelId(dbChannel.id);
-        assertEquals(1, storedItems.size());
-        assertEquals("http://test.com/item2", storedItems.get(0).link);
-        assertNull("Dropped non-favorited item must not be stored",
-                findItemByLink(storedItems, "http://test.com/item1"));
+        assertEquals(2, storedItems.size());
+        RssItem retainedItem = findItemByLink(storedItems, "http://test.com/item1");
+        assertNotNull("Non-favorited item missing from the feed must be retained", retainedItem);
+        assertEquals("Retained item keeps its original id", dbItem.id, retainedItem.id);
+    }
+
+    @Test
+    public void testPersistRefreshesFeedFieldsAndPreservesStableFields() {
+        RssChannel dbChannel = createRssChannel("http://test.com/feed", "Feed");
+        RssItem dbItem = createRssItem("old title", "http://test.com/item1");
+        dbItem.description = "old description";
+        dbItem.categories = "Stale";
+        dbItem.pubDate = new Date(1000L);
+        dbItem.isRead = true;
+        dbItem.isFavorite = true;
+        mRssDao.insertRssChannel(dbChannel, dbItem);
+        Long originalId = dbItem.id;
+        Date originalCreated = dbItem.createdDateTime;
+        Date originalUpdated = dbItem.updatedDateTime;
+        assertNotNull(originalId);
+        assertNotNull(originalCreated);
+        assertNotNull(originalUpdated);
+
+        RssChannel parsedChannel = createRssChannel("http://test.com/feed", "Feed");
+        ArrayList<RssItem> parsedItems = new ArrayList<>();
+        RssItem parsedItem = createRssItem("new title", "http://test.com/item1");
+        parsedItem.description = "new description";
+        parsedItem.categories = "Fresh\u001FTech";
+        parsedItem.pubDate = new Date(2000L);
+        parsedItems.add(parsedItem);
+
+        RssModel result = mRssRepository.persist(new RssModel(parsedChannel, parsedItems));
+
+        List<RssItem> storedItems = mRssDao.findRssItemsByChannelId(dbChannel.id);
+        assertEquals("Matched item must be updated in place, not duplicated", 1, storedItems.size());
+        RssItem stored = storedItems.get(0);
+        assertEquals("Title must be refreshed from the feed", "new title", stored.title);
+        assertEquals("Description must be refreshed from the feed", "new description", stored.description);
+        assertEquals("Categories must be refreshed from the feed", "Fresh\u001FTech", stored.categories);
+        assertEquals("Pub date must be refreshed from the feed", 2000L, stored.pubDate.getTime());
+        assertEquals("Id must be preserved", originalId, stored.id);
+        assertTrue("Read state must be preserved", stored.isRead);
+        assertTrue("Favorite state must be preserved", stored.isFavorite);
+        assertEquals("createdDateTime must be preserved", originalCreated, stored.createdDateTime);
+        assertNotNull("updatedDateTime must stay set", stored.updatedDateTime);
+        assertFalse("updatedDateTime must not be rolled back",
+                stored.updatedDateTime.before(originalUpdated));
+
+        // the returned model exposes the persisted row, not the parsed object
+        assertEquals(1, result.getRssItems().size());
+        assertEquals("Merged model carries the persisted row's id",
+                originalId, result.getRssItems().get(0).id);
+        assertEquals("new title", result.getRssItems().get(0).title);
+    }
+
+    @Test
+    public void testPersistReturnedModelIsParsedOrderThenRetained() {
+        RssChannel dbChannel = createRssChannel("http://test.com/feed", "Feed");
+        RssItem retained = createRssItem("retained", "http://test.com/retained");
+        mRssDao.insertRssChannel(dbChannel, retained);
+
+        RssChannel parsedChannel = createRssChannel("http://test.com/feed", "Feed");
+        ArrayList<RssItem> parsedItems = new ArrayList<>();
+        parsedItems.add(createRssItem("first", "http://test.com/first"));
+        parsedItems.add(createRssItem("second", "http://test.com/second"));
+        // the item matching the stored row comes LAST in feed order to prove the
+        // merged list keeps parsed order before appending retained rows
+        RssItem matched = createRssItem("retained", "http://test.com/retained");
+        parsedItems.add(matched);
+
+        RssModel result = mRssRepository.persist(new RssModel(parsedChannel, parsedItems));
+
+        assertEquals(3, result.getRssItems().size());
+        assertEquals("http://test.com/first", result.getRssItems().get(0).link);
+        assertEquals("http://test.com/second", result.getRssItems().get(1).link);
+        assertEquals("http://test.com/retained", result.getRssItems().get(2).link);
+        assertEquals("Matched row keeps its original id", retained.id, result.getRssItems().get(2).id);
+        List<RssItem> storedItems = mRssDao.findRssItemsByChannelId(dbChannel.id);
+        assertEquals(3, storedItems.size());
+    }
+
+    @Test
+    public void testPersistLinklessItemUpsertedNotDuplicated() {
+        RssChannel dbChannel = createRssChannel("http://test.com/feed", "Feed");
+        mRssDao.insertRssChannel(dbChannel);
+
+        ArrayList<RssItem> firstBatch = new ArrayList<>();
+        RssItem linkless = createRssItem("linkless item", null);
+        linkless.pubDate = new Date(1700000000000L);
+        firstBatch.add(linkless);
+        mRssRepository.persist(new RssModel(
+                createRssChannel("http://test.com/feed", "Feed"), firstBatch));
+
+        List<RssItem> afterFirst = mRssDao.findRssItemsByChannelId(dbChannel.id);
+        assertEquals("First persist inserts the linkless item", 1, afterFirst.size());
+        Long firstId = afterFirst.get(0).id;
+        assertNotNull(firstId);
+
+        // second sync carries the same linkless item again (the parser emits "" for
+        // RSS items without <link> and null for Atom entries) - the null-safe
+        // (title, pubDate) tuple key must match the stored row
+        ArrayList<RssItem> secondBatch = new ArrayList<>();
+        RssItem linklessAgain = createRssItem("linkless item", "");
+        linklessAgain.pubDate = new Date(1700000000000L);
+        secondBatch.add(linklessAgain);
+        RssModel result = mRssRepository.persist(new RssModel(
+                createRssChannel("http://test.com/feed", "Feed"), secondBatch));
+
+        List<RssItem> afterSecond = mRssDao.findRssItemsByChannelId(dbChannel.id);
+        assertEquals("Second persist must update in place, not duplicate", 1, afterSecond.size());
+        assertEquals("Same row keeps its original id", firstId, afterSecond.get(0).id);
+        assertEquals(1, result.getRssItems().size());
+    }
+
+    @Test
+    public void testPersistLinklessFavoriteNotDuplicated() {
+        RssChannel dbChannel = createRssChannel("http://test.com/feed", "Feed");
+        mRssDao.insertRssChannel(dbChannel);
+
+        ArrayList<RssItem> firstBatch = new ArrayList<>();
+        RssItem linklessFavorite = createRssItem("linkless favorite", null);
+        linklessFavorite.isFavorite = true;
+        firstBatch.add(linklessFavorite);
+        mRssRepository.persist(new RssModel(
+                createRssChannel("http://test.com/feed", "Feed"), firstBatch));
+
+        List<RssItem> afterFirst = mRssDao.findRssItemsByChannelId(dbChannel.id);
+        assertEquals(1, afterFirst.size());
+        Long favoriteId = afterFirst.get(0).id;
+        assertTrue(afterFirst.get(0).isFavorite);
+
+        // later syncs no longer mark the item favorite (parsed state is plain) - the
+        // stored favorite must be matched by the tuple key and updated in place,
+        // never duplicated (the old merge reinserted linkless favorites with a fresh
+        // id on EVERY sync)
+        ArrayList<RssItem> secondBatch = new ArrayList<>();
+        RssItem linklessAgain = createRssItem("linkless favorite", null);
+        secondBatch.add(linklessAgain);
+        RssModel result = mRssRepository.persist(new RssModel(
+                createRssChannel("http://test.com/feed", "Feed"), secondBatch));
+
+        List<RssItem> afterSecond = mRssDao.findRssItemsByChannelId(dbChannel.id);
+        assertEquals("Linkless favorite must not duplicate", 1, afterSecond.size());
+        assertEquals("Row identity is stable", favoriteId, afterSecond.get(0).id);
+        assertTrue("Favorite state must be preserved", afterSecond.get(0).isFavorite);
+        assertEquals(1, result.getRssItems().size());
     }
 
     @Test
@@ -775,23 +569,23 @@ public class RssRepositoryTest {
                 "Example feed", channels.get(0).feedName);
 
         // stored item state: read/favorite carried over by link, new item inserted,
-        // non-favorited item absent from the feed dropped
+        // non-favorited item absent from the feed retained (issue #37)
         List<RssItem> storedItems = mRssDao.findRssItemsByChannelId(channels.get(0).id);
-        assertEquals(2, storedItems.size());
+        assertEquals(3, storedItems.size());
         RssItem storedOverlapItem = findItemByLink(storedItems, "https://example.com/feed/item-1");
         assertNotNull(storedOverlapItem);
         assertTrue("Read state must carry over to the merged item", storedOverlapItem.isRead);
         assertTrue("Favorite state must carry over to the merged item", storedOverlapItem.isFavorite);
         assertNotNull("New item must be inserted",
                 findItemByLink(storedItems, "https://example.com/feed/item-3"));
-        assertNull("Dropped non-favorited item must not be stored",
+        assertNotNull("Item absent from the feed must be retained",
                 findItemByLink(storedItems, "https://example.com/feed/item-2"));
 
-        assertEquals("Returned model must carry the merged items", 2, result.getRssItems().size());
+        assertEquals("Returned model must carry the merged items", 3, result.getRssItems().size());
     }
 
     // ==================================================================================
-    // Section 5: markOldItemsRead (unread retention window)
+    // Section 3: markOldItemsRead (unread retention window)
     // ==================================================================================
 
     @Test
@@ -908,14 +702,15 @@ public class RssRepositoryTest {
     }
 
     // ==================================================================================
-    // Section 6: item categories (feed-provided, joined with the unit separator)
+    // Section 4: item categories (feed-provided, joined with the unit separator)
     // ==================================================================================
 
     @Test
-    public void testPersistStoresCategoriesThroughDeleteReinsert() {
-        // categories refresh from the feed on every sync: updateRssChannel deletes and
-        // reinserts all items, and unlike isRead/isFavorite nothing is carried over in
-        // applyItemState - the parsed feed's categories are the stored ones
+    public void testPersistStoresCategoriesThroughUpsert() {
+        // categories refresh from the feed on every sync: the upsert overwrites the
+        // feed-provided fields of the matched row, and unlike isRead/isFavorite
+        // nothing about categories is preserved - the parsed feed's categories are
+        // the stored ones
         RssChannel dbChannel = createRssChannel("http://test.com/feed", "Feed");
         RssItem dbItem = createRssItem("item1", "http://test.com/item1");
         mRssDao.insertRssChannel(dbChannel, dbItem);
@@ -929,9 +724,10 @@ public class RssRepositoryTest {
         mRssRepository.persist(new RssModel(parsedChannel, parsedItems));
 
         List<RssItem> storedItems = mRssDao.findRssItemsByChannelId(dbChannel.id);
-        assertEquals("Item must be reinserted", 1, storedItems.size());
-        assertEquals("Categories must ride the delete+reinsert path",
+        assertEquals("Item must be updated in place", 1, storedItems.size());
+        assertEquals("Categories must ride the upsert path",
                 "Tech\u001FNews", storedItems.get(0).categories);
+        assertEquals("Upsert must preserve the row id", dbItem.id, storedItems.get(0).id);
     }
 
     @Test
@@ -983,7 +779,7 @@ public class RssRepositoryTest {
     }
 
     // ==================================================================================
-    // Section 7: neighbor navigation (next/previous article lookups)
+    // Section 5: neighbor navigation (next/previous article lookups)
     // ==================================================================================
 
     @Test
@@ -1125,7 +921,7 @@ public class RssRepositoryTest {
     }
 
     // ==================================================================================
-    // Section 8: keyset (cursor) pagination
+    // Section 6: keyset (cursor) pagination
     // ==================================================================================
 
     /**

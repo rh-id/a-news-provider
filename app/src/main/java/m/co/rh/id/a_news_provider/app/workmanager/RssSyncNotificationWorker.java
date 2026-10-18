@@ -33,6 +33,14 @@ public class RssSyncNotificationWorker extends Worker {
         if (channelIds == null || channelIds.length <= 0) {
             return Result.failure();
         }
+        // Rows the just-finished sync touched (updated_date_time >= syncStart) are the
+        // only ones allowed to drive notifications: with upsert retention (issue #37)
+        // unread items that fell out of a feed are no longer deleted, so counting all
+        // unread rows would re-notify forever with a growing count (autoMarkReadDays
+        // defaults OFF). Fallback 0 keeps the old include-everything behavior for
+        // in-flight work enqueued before this key existed.
+        long syncStartMillis =
+                getInputData().getLong(ConstantsKey.KEY_LONG_SYNC_START_MILLIS, 0L);
         Provider provider = BaseApplication.of(getApplicationContext()).getProvider();
         AppNotificationHandler appNotificationHandler = provider.get(AppNotificationHandler.class);
         RssDao rssDao = provider.get(RssDao.class);
@@ -45,7 +53,8 @@ public class RssSyncNotificationWorker extends Worker {
             if (rssChannel == null) {
                 continue;
             }
-            List<RssItem> rssItems = rssDao.findRssItemsByChannelId(channelId);
+            List<RssItem> rssItems =
+                    rssDao.findUnreadRssItemsByChannelIdUpdatedSince(channelId, syncStartMillis);
             ArrayList<RssItem> rssItemArrayList = new ArrayList<>();
             rssItemArrayList.addAll(rssItems);
             rssModels.add(new RssModel(rssChannel, rssItemArrayList));
@@ -54,6 +63,7 @@ public class RssSyncNotificationWorker extends Worker {
 
         Data outputData = new Data.Builder()
                 .putLongArray(ConstantsKey.KEY_LONG_CHANNEL_IDS, channelIds)
+                .putLong(ConstantsKey.KEY_LONG_SYNC_START_MILLIS, syncStartMillis)
                 .build();
         return Result.success(outputData);
     }

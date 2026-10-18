@@ -11,6 +11,8 @@ import androidx.room.Update;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
@@ -61,6 +63,50 @@ public abstract class RssDao {
     @Query("SELECT * FROM rss_item WHERE channel_id = :channelId")
     public abstract List<RssItem> findRssItemsByChannelId(long channelId);
 
+    /**
+     * Finds the UNREAD rss items of a channel that were last touched by a sync at or
+     * after the given time, i.e. rows whose {@code updated_date_time} is at or after
+     * {@code sinceMillis}. Backs the sync notification guard (issue #37): since
+     * {@link #upsertRssItemsForChannel(RssChannel, List)} retains items that fall out
+     * of a feed instead of deleting them, counting ALL unread items of a channel
+     * would re-notify forever with a growing count. {@code updated_date_time} doubles
+     * as "last seen in a feed sync" for sync-touched rows, so this query returns
+     * exactly what the just-finished sync touched. Note that
+     * {@link #updateRssItem(RssItem)} (manual item edit) also stamps
+     * {@code updated_date_time}, so a manually-edited retained item can appear in one
+     * notification pass - accepted edge; the by-link state updates
+     * {@link #updateRssItemsIsReadByLink(boolean, String)} and
+     * {@link #updateRssItemsIsFavoriteByLink(boolean, String)} do NOT stamp, so
+     * read/favorite toggles never resurrect an item into the notification window.
+     * This method must be called on a background thread.
+     *
+     * @param channelId   the channel id of the items to find
+     * @param sinceMillis epoch millis lower bound (inclusive) on updated_date_time;
+     *                    pass the sync start captured by the sync worker
+     * @return the channel's unread items touched at or after the given time
+     */
+    @Query("SELECT * FROM rss_item WHERE channel_id = :channelId AND is_read = 0 AND updated_date_time >= :sinceMillis")
+    public abstract List<RssItem> findUnreadRssItemsByChannelIdUpdatedSince(long channelId, long sinceMillis);
+
+    /**
+     * Finds the rss items of a channel that were last touched by a sync at or after
+     * the given time, read or unread. The unfiltered counterpart of
+     * {@link #findUnreadRssItemsByChannelIdUpdatedSince(long, long)} - backs the sync
+     * change-notifier payload (issue #37) so the home list only re-processes rows the
+     * just-finished sync actually touched, and retained items (whose
+     * {@code updated_date_time} keeps the stamp of the last sync that carried them)
+     * are not announced as new after the upgrade. See that method for the full
+     * "last seen in a feed sync" semantics of {@code updated_date_time}.
+     * This method must be called on a background thread.
+     *
+     * @param channelId   the channel id of the items to find
+     * @param sinceMillis epoch millis lower bound (inclusive) on updated_date_time;
+     *                    pass the sync start captured by the sync worker
+     * @return the channel's items touched at or after the given time
+     */
+    @Query("SELECT * FROM rss_item WHERE channel_id = :channelId AND updated_date_time >= :sinceMillis")
+    public abstract List<RssItem> findRssItemsByChannelIdUpdatedSince(long channelId, long sinceMillis);
+
     @Query("SELECT COUNT(id) FROM rss_item")
     public abstract int countRssItem();
 
@@ -102,18 +148,201 @@ public abstract class RssDao {
         update(rssItem);
     }
 
+    /**
+     * Atomically upserts the parsed feed items of an existing channel, replacing the
+     * former delete-all-and-reinsert behavior of {@code updateRssChannel} (issue #37).
+     * Retention semantics: an item that falls out of the feed's current list is NOT
+     * deleted - it is retained in the database with its read/favorite state, its
+     * original id and its original timestamps, so history survives every sync (and
+     * item ids stay stable, which keeps detail-page reload-by-id working and stops
+     * the per-sync delete+reinsert row churn).
+     * <p>
+     * Matching, decided inside the transaction:
+     * <ul>
+     * <li>Items with a VALID link (non-null, non-empty) match an existing channel item
+     * by exact link. A match is updated IN PLACE: the feed-provided fields (title,
+     * link, description, pubDate, mediaImage, mediaVideo, categories) are overwritten
+     * from the parsed item while id, isRead, isFavorite and createdDateTime are
+     * preserved, and updatedDateTime is refreshed. No match means INSERT with
+     * createdDateTime = updatedDateTime = now (the same null-stamp pattern as
+     * {@link #insertRssItem(RssItem...)}).</li>
+     * <li>Items with an INVALID link (null or empty) can never match by link, so they
+     * match existing invalid-link channel items by the null-safe tuple key
+     * {@code title + '\u0000' + pubDate-millis (-1 when null)} and get the same
+     * update-in-place / insert treatment. This keeps linkless items from duplicating
+     * on every sync (the parser yields "" links for RSS items with an EMPTY
+     * &lt;link/&gt; element, null for items with NO &lt;link&gt; element, and null
+     * for Atom entries without an href - null and "" share one matching bucket) -
+     * under the former delete+reinsert merge, a linkless favorite was reinserted
+     * with a fresh id on every sync and accumulated forever. Accepted edge: several
+     * DISTINCT linkless items that also share a null/empty title and a null pubDate
+     * collapse onto a single row (key "\u0000-1") - bounded loss, stable across
+     * syncs.</li>
+     * <li>The match maps are maintained while the batch is processed, so a duplicate
+     * link (or duplicate invalid-link key) WITHIN one parsed batch updates the row
+     * persisted by the earlier copy instead of inserting it twice.</li>
+     * </ul>
+     * Unmatched database items are left COMPLETELY untouched - nothing is deleted
+     * here (deleting a feed's history remains {@link #deleteRssChannel(RssChannel)}'s
+     * job). As a consequence, {@code updated_date_time} for sync-touched items now
+     * doubles as "last seen in a feed sync": updated and inserted rows get the
+     * current stamp while retained rows keep the stamp of the last sync that carried
+     * them. The chained notification workers exploit this by only considering rows
+     * with {@code updated_date_time >= syncStart} (see
+     * {@link #findUnreadRssItemsByChannelIdUpdatedSince(long, long)}), so retained
+     * items are not re-announced as unread forever after the upgrade.
+     * <p>
+     * The SELECT-then-decide pattern (instead of SQLite's ON CONFLICT upsert) is
+     * deliberate: upsert and row-values are unavailable on the framework SQLite
+     * shipped with the minimum SDK (API 21), and the state merge needs the existing
+     * row's values (preserve isRead/isFavorite/createdDateTime) anyway.
+     * Note that {@link #updateRssItem(RssItem)} (manual item edit) also stamps
+     * {@code updated_date_time}, so a manually-edited retained item can appear in one
+     * notification pass - accepted edge; the by-link state updates
+     * {@link #updateRssItemsIsReadByLink(boolean, String)} and
+     * {@link #updateRssItemsIsFavoriteByLink(boolean, String)} do NOT stamp, so
+     * read/favorite toggles never resurrect an item into the notification window.
+     * This method must be called on a background thread.
+     *
+     * @param rssChannel  the existing channel to update (id must be set);
+     *                    updatedDateTime is refreshed like the former updateRssChannel
+     * @param parsedItems the freshly parsed feed items, in feed order
+     * @return the merged persisted rows in authoritative database form: updated and
+     * inserted items first (in parsed order), followed by the retained items the
+     * feed no longer carries (in database order). One row per DISTINCT item -
+     * intra-batch duplicates sharing a link (or an invalid-link tuple key) collapse
+     * onto the single persisted row they updated and appear once.
+     */
     @Transaction
-    public void updateRssChannel(RssChannel rssChannel, RssItem... rssItems) {
-        rssChannel.updatedDateTime = new Date();
+    public List<RssItem> upsertRssItemsForChannel(RssChannel rssChannel, List<RssItem> parsedItems) {
+        Date now = new Date();
+        rssChannel.updatedDateTime = now;
         update(rssChannel);
-        if (rssItems != null) {
-            // delete previous items
-            deleteRssItemsByChannelId(rssChannel.id);
-            for (RssItem rssItem : rssItems) {
-                rssItem.channelId = rssChannel.id;
+        List<RssItem> existingItems = findRssItemsByChannelId(rssChannel.id);
+        HashMap<String, RssItem> existingByLink = new HashMap<>();
+        HashMap<String, RssItem> existingByInvalidKey = new HashMap<>();
+        if (existingItems != null) {
+            for (RssItem existingItem : existingItems) {
+                if (hasValidLink(existingItem)) {
+                    existingByLink.put(existingItem.link, existingItem);
+                } else {
+                    existingByInvalidKey.put(invalidLinkKey(existingItem), existingItem);
+                }
             }
-            insertRssItem(rssItems);
         }
+        HashSet<Long> persistedBatchIds = new HashSet<>();
+        ArrayList<RssItem> persistedItems = new ArrayList<>();
+        if (parsedItems != null) {
+            for (RssItem parsedItem : parsedItems) {
+                RssItem persisted;
+                if (hasValidLink(parsedItem)) {
+                    RssItem matched = existingByLink.get(parsedItem.link);
+                    persisted = matched != null
+                            ? updateMatchedItem(matched, parsedItem, now)
+                            : insertItem(rssChannel.id, parsedItem, now);
+                    existingByLink.put(persisted.link, persisted);
+                } else {
+                    String key = invalidLinkKey(parsedItem);
+                    RssItem matched = existingByInvalidKey.get(key);
+                    persisted = matched != null
+                            ? updateMatchedItem(matched, parsedItem, now)
+                            : insertItem(rssChannel.id, parsedItem, now);
+                    existingByInvalidKey.put(invalidLinkKey(persisted), persisted);
+                }
+                // Only the FIRST persisted row per distinct id enters the returned
+                // list: two parsed items sharing a link (or an invalid-link tuple
+                // key) resolve to the same row, and appending it twice would
+                // misreport the merge. The set also anchors the retained-row
+                // filtering below (retained = existing rows never persisted here).
+                if (persisted.id != null && persistedBatchIds.add(persisted.id)) {
+                    persistedItems.add(persisted);
+                }
+            }
+        }
+        // Retained = existing rows the parsed feed no longer carries. Left untouched:
+        // no field, stamp or state is written, keeping "last seen in feed" intact.
+        ArrayList<RssItem> mergedItems = new ArrayList<>(persistedItems);
+        if (existingItems != null) {
+            for (RssItem existingItem : existingItems) {
+                if (!persistedBatchIds.contains(existingItem.id)) {
+                    mergedItems.add(existingItem);
+                }
+            }
+        }
+        return mergedItems;
+    }
+
+    /**
+     * Overwrites the feed-provided fields of an existing (matched) row from the
+     * parsed item, preserving id, isRead, isFavorite and createdDateTime, and
+     * refreshes updatedDateTime. Shared by the valid-link and invalid-link match
+     * paths of {@link #upsertRssItemsForChannel(RssChannel, List)}.
+     *
+     * @param matched    the existing database row to update in place
+     * @param parsedItem the parsed item carrying the fresh feed fields
+     * @param now        the shared sync timestamp for updated_date_time
+     * @return the updated row (same instance as {@code matched})
+     */
+    private RssItem updateMatchedItem(RssItem matched, RssItem parsedItem, Date now) {
+        matched.title = parsedItem.title;
+        matched.link = parsedItem.link;
+        matched.description = parsedItem.description;
+        matched.pubDate = parsedItem.pubDate;
+        matched.mediaImage = parsedItem.mediaImage;
+        matched.mediaVideo = parsedItem.mediaVideo;
+        matched.categories = parsedItem.categories;
+        matched.updatedDateTime = now;
+        update(matched);
+        return matched;
+    }
+
+    /**
+     * Inserts a parsed item that matched no existing row, stamping
+     * createdDateTime = updatedDateTime = now (the {@link #insertRssItem(RssItem...)}
+     * null-stamp pattern, applied unconditionally because a parsed item never
+     * carries stamps). Shared by the valid-link and invalid-link insert paths of
+     * {@link #upsertRssItemsForChannel(RssChannel, List)}.
+     *
+     * @param channelId  the channel the item belongs to
+     * @param parsedItem the parsed item to insert
+     * @param now        the shared sync timestamp
+     * @return the inserted row with its generated id
+     */
+    private RssItem insertItem(long channelId, RssItem parsedItem, Date now) {
+        parsedItem.channelId = channelId;
+        parsedItem.createdDateTime = now;
+        parsedItem.updatedDateTime = now;
+        parsedItem.id = insert(parsedItem);
+        return parsedItem;
+    }
+
+    /**
+     * True when the item's link is usable as a match key (non-null, non-empty).
+     * Rows failing this test are matched by the
+     * {@link #invalidLinkKey(RssItem)} tuple instead.
+     */
+    private static boolean hasValidLink(RssItem rssItem) {
+        return rssItem.link != null && !rssItem.link.isEmpty();
+    }
+
+    /**
+     * Null-safe tuple key for matching INVALID-link (null or empty) items:
+     * {@code title + '\u0000' + pubDate-millis}, the millis being -1 when the pub
+     * date is null. The '\u0000' separator cannot occur in real feed text, so
+     * distinct (title, pubDate) pairs always produce distinct keys (plain
+     * concatenation could collide: title "ab" with no date vs title "ab-" with
+     * date 1). Empty and null links deliberately share one matching space: the
+     * parser yields "" for an RSS item with an EMPTY &lt;link/&gt; element, null
+     * for an item with NO &lt;link&gt; element, and null for Atom entries without
+     * an href - all describe the same "this item has no link" state. Degenerate
+     * case: two distinct linkless items that also share a null/empty title and a
+     * null pubDate share the key "\u0000-1" and collapse onto one row (accepted,
+     * bounded, stable across syncs).
+     */
+    private static String invalidLinkKey(RssItem rssItem) {
+        String title = rssItem.title != null ? rssItem.title : "";
+        long pubDateMillis = rssItem.pubDate != null ? rssItem.pubDate.getTime() : -1L;
+        return title + '\u0000' + pubDateMillis;
     }
 
     @Insert

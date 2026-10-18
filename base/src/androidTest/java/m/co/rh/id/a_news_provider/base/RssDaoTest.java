@@ -29,7 +29,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * Instrumented test suite for {@link RssDao}, split in four sections:
+ * Instrumented test suite for {@link RssDao}, split in five sections:
  * <p>
  * 1. Search queries ({@code searchRssItemsPageDesc} / {@code searchRssItemsPageAsc}):
  * LIKE matching, wildcard escaping, state filters, limits and sort order.
@@ -47,6 +47,13 @@ import static org.junit.Assert.fail;
  * keyset pagination walks every group exactly once, the grouped neighbor queries walk
  * exactly the collapsed list order, and {@code countRssItemsByLinks} counts copies
  * per link across chunk boundaries.
+ * <p>
+ * 5. Upsert retention (issue #37) and updated-since queries:
+ * {@code upsertRssItemsForChannel} inserts new rows, updates matched rows in place
+ * (by link, or by the null-safe title/pubDate tuple for linkless items) while
+ * preserving id/state/created stamp, retains items missing from the feed untouched,
+ * and collapses intra-batch duplicates; the updated-since queries expose the
+ * "last seen in feed" meaning of updated_date_time for the notification guard.
  */
 @RunWith(AndroidJUnit4.class)
 public class RssDaoTest {
@@ -859,6 +866,214 @@ public class RssDaoTest {
                 assertEquals(1, linkCountResult.cnt);
             }
         }
+    }
+
+    // ==================================================================================
+    // Section 5: upsert retention (issue #37) and updated-since queries
+    // ==================================================================================
+
+    @Test
+    public void upsertRssItemsForChannel_insertsNewItemsWithStamps() {
+        RssChannel rssChannel = createRssChannel("http://test.com/feed", "Feed");
+        mRssDao.insertRssChannel(rssChannel);
+
+        ArrayList<RssItem> parsedItems = new ArrayList<>();
+        parsedItems.add(createRssItem("item", "desc", "http://test.com/item",
+                createDate(2026, 1, 1)));
+
+        List<RssItem> persisted = mRssDao.upsertRssItemsForChannel(rssChannel, parsedItems);
+
+        assertEquals(1, persisted.size());
+        assertNotNull("Inserted row must have a generated id", persisted.get(0).id);
+        assertEquals("Inserted row belongs to the channel", rssChannel.id, persisted.get(0).channelId);
+        assertNotNull("Inserted row must be stamped created_date_time", persisted.get(0).createdDateTime);
+        assertNotNull("Inserted row must be stamped updated_date_time", persisted.get(0).updatedDateTime);
+
+        List<RssItem> stored = mRssDao.findRssItemsByChannelId(rssChannel.id);
+        assertEquals(1, stored.size());
+        assertEquals(persisted.get(0).id, stored.get(0).id);
+        assertEquals(persisted.get(0).createdDateTime, stored.get(0).createdDateTime);
+    }
+
+    @Test
+    public void upsertRssItemsForChannel_updatesMatchedRowInPlacePreservingState() {
+        RssChannel rssChannel = createRssChannel("http://test.com/feed", "Feed");
+        RssItem original = createRssItem("old title", "old desc",
+                "http://test.com/item", createDate(2026, 1, 1));
+        original.isRead = true;
+        original.isFavorite = true;
+        mRssDao.insertRssChannel(rssChannel, original);
+        Long originalId = original.id;
+        Date originalCreated = original.createdDateTime;
+        Date originalUpdated = original.updatedDateTime;
+        assertNotNull(originalId);
+        assertNotNull(originalCreated);
+        assertNotNull(originalUpdated);
+
+        ArrayList<RssItem> parsedItems = new ArrayList<>();
+        RssItem parsed = createRssItem("new title", "new desc",
+                "http://test.com/item", createDate(2026, 2, 2));
+        parsed.mediaImage = "http://test.com/img.png";
+        parsed.categories = "Fresh\u001FTech";
+        parsedItems.add(parsed);
+
+        List<RssItem> persisted = mRssDao.upsertRssItemsForChannel(rssChannel, parsedItems);
+
+        assertEquals(1, persisted.size());
+        RssItem merged = persisted.get(0);
+        assertEquals("Matched row keeps its id", originalId, merged.id);
+        assertEquals("Title refreshed from the feed", "new title", merged.title);
+        assertEquals("Description refreshed from the feed", "new desc", merged.description);
+        assertEquals("Pub date refreshed from the feed", createDate(2026, 2, 2), merged.pubDate);
+        assertEquals("Media refreshed from the feed", "http://test.com/img.png", merged.mediaImage);
+        assertEquals("Categories refreshed from the feed", "Fresh\u001FTech", merged.categories);
+        assertTrue("Read state preserved", merged.isRead);
+        assertTrue("Favorite state preserved", merged.isFavorite);
+        assertEquals("created_date_time preserved", originalCreated, merged.createdDateTime);
+        assertNotNull("updated_date_time refreshed", merged.updatedDateTime);
+        assertFalse("updated_date_time not rolled back",
+                merged.updatedDateTime.before(originalUpdated));
+    }
+
+    @Test
+    public void upsertRssItemsForChannel_retainsItemsMissingFromFeedUntouched() {
+        RssChannel rssChannel = createRssChannel("http://test.com/feed", "Feed");
+        RssItem dropped = createRssItem("dropped", "desc",
+                "http://test.com/dropped", createDate(2026, 1, 1));
+        dropped.isRead = true;
+        dropped.isFavorite = true;
+        mRssDao.insertRssChannel(rssChannel, dropped);
+
+        ArrayList<RssItem> parsedItems = new ArrayList<>();
+        parsedItems.add(createRssItem("fresh", "desc",
+                "http://test.com/fresh", createDate(2026, 2, 1)));
+
+        List<RssItem> persisted = mRssDao.upsertRssItemsForChannel(rssChannel, parsedItems);
+
+        assertEquals("Persisted order: parsed rows first, then retained", 2, persisted.size());
+        assertEquals("http://test.com/fresh", persisted.get(0).link);
+        assertEquals("http://test.com/dropped", persisted.get(1).link);
+
+        List<RssItem> stored = mRssDao.findRssItemsByChannelId(rssChannel.id);
+        assertEquals(2, stored.size());
+        RssItem retained = findByTitle(stored, "dropped");
+        assertNotNull("Item missing from the feed must be retained", retained);
+        assertEquals("Retained row keeps its id", dropped.id, retained.id);
+        assertTrue(retained.isRead);
+        assertTrue(retained.isFavorite);
+        assertEquals("Retained row keeps its created stamp",
+                dropped.createdDateTime, retained.createdDateTime);
+        assertEquals("Retained row keeps its OLD updated stamp (last seen in feed)",
+                dropped.updatedDateTime, retained.updatedDateTime);
+    }
+
+    @Test
+    public void upsertRssItemsForChannel_intraBatchDuplicateLinkUpdatesSameRow() {
+        RssChannel rssChannel = createRssChannel("http://test.com/feed", "Feed");
+        mRssDao.insertRssChannel(rssChannel);
+
+        ArrayList<RssItem> parsedItems = new ArrayList<>();
+        parsedItems.add(createRssItem("first copy", "desc",
+                "http://test.com/dup", createDate(2026, 1, 1)));
+        parsedItems.add(createRssItem("second copy", "desc2",
+                "http://test.com/dup", createDate(2026, 1, 2)));
+
+        List<RssItem> persisted = mRssDao.upsertRssItemsForChannel(rssChannel, parsedItems);
+
+        assertEquals("Duplicate link within one batch must not insert twice", 1, persisted.size());
+        assertEquals("The later duplicate updates the just-persisted row",
+                "second copy", persisted.get(0).title);
+        assertEquals(createDate(2026, 1, 2), persisted.get(0).pubDate);
+        assertEquals("Only one row exists",
+                1, mRssDao.findRssItemsByChannelId(rssChannel.id).size());
+    }
+
+    @Test
+    public void upsertRssItemsForChannel_matchesLinklessItemsByTitleAndDate() {
+        RssChannel rssChannel = createRssChannel("http://test.com/feed", "Feed");
+        mRssDao.insertRssChannel(rssChannel);
+
+        // first sync: linkless item (the parser emits "" links for RSS items without
+        // <link> and null links for Atom entries)
+        ArrayList<RssItem> firstBatch = new ArrayList<>();
+        firstBatch.add(createRssItem("linkless", "desc", null, createDate(2026, 1, 1)));
+        List<RssItem> persistedFirst = mRssDao.upsertRssItemsForChannel(rssChannel, firstBatch);
+        assertEquals(1, persistedFirst.size());
+        Long firstId = persistedFirst.get(0).id;
+        assertNotNull(firstId);
+
+        // second sync: same title/pubDate, "" link spelling - must match the same row
+        ArrayList<RssItem> secondBatch = new ArrayList<>();
+        RssItem second = createRssItem("linkless", "desc updated", "", createDate(2026, 1, 1));
+        second.isFavorite = true; // feed-side state must NOT win over the stored row
+        secondBatch.add(second);
+        List<RssItem> persistedSecond = mRssDao.upsertRssItemsForChannel(rssChannel, secondBatch);
+
+        assertEquals(1, persistedSecond.size());
+        assertEquals("Linkless item matched by the (title, pubDate) tuple",
+                firstId, persistedSecond.get(0).id);
+        assertEquals("desc updated", persistedSecond.get(0).description);
+        assertFalse("Matched row keeps its own favorite state", persistedSecond.get(0).isFavorite);
+        assertEquals("Still exactly one row",
+                1, mRssDao.findRssItemsByChannelId(rssChannel.id).size());
+
+        // duplicate linkless entries within ONE batch also collapse into one row
+        ArrayList<RssItem> thirdBatch = new ArrayList<>();
+        thirdBatch.add(createRssItem("linkless", "d1", null, createDate(2026, 1, 1)));
+        thirdBatch.add(createRssItem("linkless", "d2", null, createDate(2026, 1, 1)));
+        List<RssItem> persistedThird = mRssDao.upsertRssItemsForChannel(rssChannel, thirdBatch);
+        assertEquals(1, persistedThird.size());
+        assertEquals(firstId, persistedThird.get(0).id);
+        assertEquals("d2", persistedThird.get(0).description);
+        assertEquals("Still exactly one row",
+                1, mRssDao.findRssItemsByChannelId(rssChannel.id).size());
+    }
+
+    @Test
+    public void updatedSinceQueries_includeTouchedItemsAndExcludeRetained()
+            throws InterruptedException {
+        RssChannel rssChannel = createRssChannel("http://test.com/feed", "Feed");
+        mRssDao.insertRssChannel(rssChannel);
+
+        // sync 1 touches both rows (upsert refreshes their updated_date_time)
+        ArrayList<RssItem> sync1 = new ArrayList<>();
+        sync1.add(createRssItem("a", "desc", "http://test.com/a", createDate(2026, 1, 1)));
+        sync1.add(createRssItem("b", "desc", "http://test.com/b", createDate(2026, 1, 2)));
+        mRssDao.upsertRssItemsForChannel(rssChannel, sync1);
+        // guarantee the sync-1 stamps are strictly in the past before sync 2 starts
+        Thread.sleep(5);
+
+        // sync 2 drops b: only a is parsed again, b is retained with its OLD stamp
+        long syncStart2 = System.currentTimeMillis();
+        ArrayList<RssItem> sync2 = new ArrayList<>();
+        sync2.add(createRssItem("a", "desc v2", "http://test.com/a", createDate(2026, 1, 1)));
+        List<RssItem> persisted = mRssDao.upsertRssItemsForChannel(rssChannel, sync2);
+        assertEquals("a updated + b retained", 2, persisted.size());
+
+        // the updated-since window sees exactly the rows sync 2 touched
+        List<RssItem> touched =
+                mRssDao.findRssItemsByChannelIdUpdatedSince(rssChannel.id, syncStart2);
+        assertEquals("Only the row touched by sync 2", 1, touched.size());
+        assertEquals("http://test.com/a", touched.get(0).link);
+        assertEquals("desc v2", touched.get(0).description);
+
+        // the retained row is invisible to the same window: its stamp is older
+        List<RssItem> unreadTouched =
+                mRssDao.findUnreadRssItemsByChannelIdUpdatedSince(rssChannel.id, syncStart2);
+        assertEquals(1, unreadTouched.size());
+        assertEquals("http://test.com/a", unreadTouched.get(0).link);
+
+        // read-state flips via markRssItemsReadByChannelId do NOT stamp
+        // updated_date_time, so the unread window drops the row while the unfiltered
+        // window keeps it
+        mRssDao.markRssItemsReadByChannelId(rssChannel.id);
+        assertTrue("Read rows leave the unread window",
+                mRssDao.findUnreadRssItemsByChannelIdUpdatedSince(rssChannel.id, syncStart2).isEmpty());
+        assertEquals("Unfiltered window still sees the touched row",
+                1, mRssDao.findRssItemsByChannelIdUpdatedSince(rssChannel.id, syncStart2).size());
+
+        // since 0 includes everything (the workers' missing-key fallback behaves the same)
+        assertEquals(2, mRssDao.findRssItemsByChannelIdUpdatedSince(rssChannel.id, 0L).size());
     }
 
     private RssChannel createRssChannel(String url, String feedName) {

@@ -308,7 +308,9 @@ public class HomePage extends StatefulView<Activity> implements RequireComponent
     /**
      * Track synced item links per channel against the last synced baseline
      *
-     * @param rssModels synced RSS models, each containing the full item list of a channel
+     * @param rssModels synced RSS models, each containing only the items the finished
+     *                  sync touched (updated_date_time >= sync start); items retained
+     *                  from earlier syncs are excluded from the payload
      * @return count of item links not present in the baseline
      */
     private int countNewSyncedItems(List<RssModel> rssModels) {
