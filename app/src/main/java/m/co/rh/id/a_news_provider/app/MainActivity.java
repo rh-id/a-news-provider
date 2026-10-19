@@ -5,6 +5,7 @@ import android.content.res.Configuration;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.util.TypedValue;
+import android.view.KeyEvent;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
@@ -21,8 +22,11 @@ import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.component.AppNotificationHandler;
 import m.co.rh.id.a_news_provider.app.provider.RxProviderModule;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
+import m.co.rh.id.a_news_provider.app.ui.KeyEventHandler;
 import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
+import m.co.rh.id.anavigator.NavRoute;
+import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.aprovider.Provider;
 
 public class MainActivity extends AppCompatActivity {
@@ -107,6 +111,37 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         // this is required to let navigator handle onActivityResult
         BaseApplication.of(this).getNavigator(this).onActivityResult(requestCode, resultCode, data);
+    }
+
+    // note: dialogs (StatefulViewDialog) own their window, so while a dialog has
+    // focus this Activity's onKeyDown does not fire and volume keys keep their
+    // normal behavior — acceptable, no article navigation while a dialog is open
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        // volume-key article navigation (issue #60): route to the top-of-stack page.
+        // onKeyDown (not dispatchKeyEvent) so focused text fields keep priority;
+        // repeatCount filter prevents held keys from machine-gunning navigation.
+        if (mAppSharedPreferences.isVolumeKeyNavigationEnabled()
+                && event.getRepeatCount() == 0
+                && (keyCode == KeyEvent.KEYCODE_VOLUME_UP
+                || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
+            // getCurrentRoute() is a stack peek and returns null while the route stack
+            // is empty (before the initial splash route is pushed, and around
+            // reBuildAllRoute() on uiMode changes) — mirror HomePage.isTopRoute()
+            NavRoute currentRoute = BaseApplication.of(this).getNavigator(this)
+                    .getCurrentRoute();
+            if (currentRoute == null) {
+                return super.onKeyDown(keyCode, event);
+            }
+            StatefulView<?> sv = currentRoute.getStatefulView();
+            if (sv instanceof KeyEventHandler) {
+                boolean handled = ((KeyEventHandler) sv).onKeyDown(keyCode, event);
+                if (handled) {
+                    return true; // suppress the volume change
+                }
+            }
+        }
+        return super.onKeyDown(keyCode, event);
     }
 
     @Override

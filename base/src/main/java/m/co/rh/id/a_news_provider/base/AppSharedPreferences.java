@@ -63,6 +63,9 @@ public class AppSharedPreferences {
     private SerialBehaviorSubject<Boolean> mSwipeArticleNavigationEnabled;
     private String mSwipeArticleNavigationEnabledKey;
 
+    private SerialBehaviorSubject<Boolean> mVolumeKeyNavigationEnabled;
+    private String mVolumeKeyNavigationEnabledKey;
+
     private SerialBehaviorSubject<Integer> mReadingFontSize;
     private String mReadingFontSizeKey;
 
@@ -108,6 +111,7 @@ public class AppSharedPreferences {
         mMarkReadOnScroll = new SerialBehaviorSubject<>();
         mCollapseDuplicateStories = new SerialBehaviorSubject<>();
         mSwipeArticleNavigationEnabled = new SerialBehaviorSubject<>();
+        mVolumeKeyNavigationEnabled = new SerialBehaviorSubject<>();
         mReadingFontSize = new SerialBehaviorSubject<>();
         mReadingFontFamily = new SerialBehaviorSubject<>();
         mReadingLineSpacing = new SerialBehaviorSubject<>();
@@ -139,6 +143,8 @@ public class AppSharedPreferences {
                 + ".collapseDuplicateStories";
         mSwipeArticleNavigationEnabledKey = SHARED_PREFERENCES_NAME
                 + ".swipeArticleNavigationEnabled";
+        mVolumeKeyNavigationEnabledKey = SHARED_PREFERENCES_NAME
+                + ".volumeKeyNavigationEnabled";
         mReadingFontSizeKey = SHARED_PREFERENCES_NAME
                 + ".readingFontSize";
         mReadingFontFamilyKey = SHARED_PREFERENCES_NAME
@@ -197,6 +203,14 @@ public class AppSharedPreferences {
         boolean swipeArticleNavigationEnabled = mSharedPreferences.getBoolean(
                 mSwipeArticleNavigationEnabledKey, true);
         swipeArticleNavigationEnabled(swipeArticleNavigationEnabled);
+        // volume key navigation defaults to ON (issue #60): a default-OFF toggle
+        // would effectively hide the feature from users, so it starts enabled for
+        // discoverability (same default-ON precedent as swipe-article-navigation
+        // above); it only takes over the volume keys on the article detail page
+        // and can be switched off in settings
+        boolean volumeKeyNavigationEnabled = mSharedPreferences.getBoolean(
+                mVolumeKeyNavigationEnabledKey, true);
+        volumeKeyNavigationEnabled(volumeKeyNavigationEnabled);
         // reading typography: all four store an INDEX into the arrays on
         // app/util/ReadingTypography (never a raw sp/px/multiplier value), so one
         // array stays the single source of truth. :base cannot reference the :app
@@ -468,6 +482,34 @@ public class AppSharedPreferences {
 
     public Flowable<Boolean> getIsSwipeArticleNavigationEnabledFlow() {
         return Flowable.fromObservable(mSwipeArticleNavigationEnabled.getSubject(), BackpressureStrategy.BUFFER);
+    }
+
+    /**
+     * Volume-key article navigation (issue #60), default ON: when enabled, the
+     * item detail page navigates to the next/previous article with the volume
+     * keys (volume down = next article, volume up = previous). On by default for
+     * discoverability (a default-OFF toggle would effectively hide the feature),
+     * mirroring the swipe-article-navigation default ON; it only takes over the
+     * volume keys on the article detail page and can be switched off in settings.
+     */
+    private void volumeKeyNavigationEnabled(boolean enabled) {
+        mVolumeKeyNavigationEnabled.onNext(enabled);
+        mExecutorService.execute(() ->
+                mSharedPreferences.edit().putBoolean(mVolumeKeyNavigationEnabledKey, enabled)
+                        .commit());
+    }
+
+    public boolean isVolumeKeyNavigationEnabled() {
+        Boolean value = mVolumeKeyNavigationEnabled.getValue();
+        return value != null && value;
+    }
+
+    public void setVolumeKeyNavigationEnabled(boolean enabled) {
+        volumeKeyNavigationEnabled(enabled);
+    }
+
+    public Flowable<Boolean> getIsVolumeKeyNavigationEnabledFlow() {
+        return Flowable.fromObservable(mVolumeKeyNavigationEnabled.getSubject(), BackpressureStrategy.BUFFER);
     }
 
     /**

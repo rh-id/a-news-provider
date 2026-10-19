@@ -27,8 +27,9 @@ import static org.junit.Assert.assertTrue;
  * Instrumented tests for the AppSharedPreferences notification-permission state
  * (issue #51), the auto mark-read retention window (issue #47), the keep-read-items
  * retention window (issue #37), the four reading-typography preferences (issue #29),
- * the open-links mode preference (issue #35) and the duplicate-story collapsing
- * preference (issue #45): asserts the fresh-install defaults, the set/get round-trip
+ * the open-links mode preference (issue #35), the duplicate-story collapsing
+ * preference (issue #45) and the volume-key navigation preference (issue #60):
+ * asserts the fresh-install defaults, the set/get round-trip
  * of each new field, that every Flowable replays its current value and emits on
  * change, and that state persists through a fresh provider instance (re-read from
  * the shared preferences file, mirroring a process restart).
@@ -426,6 +427,53 @@ public class AppSharedPreferencesTest {
         mProvider = Provider.createProvider(mContext, new PrefsTestProviderModule());
         AppSharedPreferences reloaded = mProvider.get(AppSharedPreferences.class);
         assertFalse(reloaded.isCollapseDuplicateStories());
+    }
+
+    // ========================================================================
+    // volume key navigation (issue #60)
+    //
+    // Volume-key next/previous article navigation on the detail page. Default
+    // ON for discoverability: a default-OFF toggle would effectively hide the
+    // feature, so it mirrors the swipe navigation default-ON precedent.
+    // ========================================================================
+
+    @Test
+    public void testVolumeKeyNavigationFreshInstallDefault() {
+        assertTrue("Volume key navigation must default to ON",
+                mAppSharedPreferences.isVolumeKeyNavigationEnabled());
+    }
+
+    @Test
+    public void testVolumeKeyNavigationRoundTrip() {
+        mAppSharedPreferences.setVolumeKeyNavigationEnabled(true);
+        assertTrue(mAppSharedPreferences.isVolumeKeyNavigationEnabled());
+        mAppSharedPreferences.setVolumeKeyNavigationEnabled(false);
+        assertFalse(mAppSharedPreferences.isVolumeKeyNavigationEnabled());
+    }
+
+    @Test
+    public void testVolumeKeyNavigationFlowEmitsUpdates() {
+        TestSubscriber<Boolean> testSubscriber =
+                mAppSharedPreferences.getIsVolumeKeyNavigationEnabledFlow().test();
+
+        // SerialBehaviorSubject replays the current value on subscribe
+        assertEquals(Boolean.TRUE, testSubscriber.values().get(0));
+
+        mAppSharedPreferences.setVolumeKeyNavigationEnabled(false);
+
+        testSubscriber.assertValueCount(2);
+        assertEquals(Boolean.FALSE, testSubscriber.values().get(1));
+    }
+
+    @Test
+    public void testVolumeKeyNavigationSurvivesNewProviderInstance() {
+        mAppSharedPreferences.setVolumeKeyNavigationEnabled(false);
+        // the setter persists synchronously via the direct executor, so the write
+        // has landed before dispose() runs
+        mProvider.dispose();
+        mProvider = Provider.createProvider(mContext, new PrefsTestProviderModule());
+        AppSharedPreferences reloaded = mProvider.get(AppSharedPreferences.class);
+        assertFalse(reloaded.isVolumeKeyNavigationEnabled());
     }
 
     private static class PrefsTestProviderModule implements ProviderModule {

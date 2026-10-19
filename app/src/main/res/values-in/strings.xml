@@ -163,6 +163,10 @@
     <string name="menu_subtitle_swipe_article_navigation">Aktif/nonaktifkan navigasi ke artikel berikutnya/sebelumnya dengan menggeser dari tepi layar di halaman artikel</string>
     <string name="swipe_article_navigation_enabled">Navigasi artikel dengan geser aktif</string>
     <string name="swipe_article_navigation_disabled">Navigasi artikel dengan geser nonaktif</string>
+    <string name="title_volume_key_navigation">Navigasi artikel dengan tombol volume</string>
+    <string name="menu_subtitle_volume_key_navigation">Aktif/nonaktifkan navigasi ke artikel berikutnya/sebelumnya menggunakan tombol volume di halaman artikel (Volume turun = berikutnya, Volume naik = sebelumnya)</string>
+    <string name="volume_key_navigation_enabled">Navigasi artikel dengan tombol volume aktif</string>
+    <string name="volume_key_navigation_disabled">Navigasi artikel dengan tombol volume nonaktif</string>
     <string name="reading_settings">Pengaturan bacaan</string>
     <string name="menu_reading_font_size">Ukuran font</string>
     <string name="reading_font_size_title">Ukuran font artikel</string>

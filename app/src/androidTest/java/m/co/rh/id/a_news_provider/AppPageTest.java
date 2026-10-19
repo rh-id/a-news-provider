@@ -13,6 +13,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.graphics.Rect;
 import android.os.SystemClock;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -33,6 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import m.co.rh.id.a_news_provider.app.MainActivity;
 import m.co.rh.id.a_news_provider.app.constants.Routes;
+import m.co.rh.id.a_news_provider.app.ui.KeyEventHandler;
 import m.co.rh.id.a_news_provider.app.ui.page.HomePage;
 import m.co.rh.id.a_news_provider.app.ui.page.RssItemDetailPage;
 import m.co.rh.id.a_news_provider.app.ui.page.SearchRssPage;
@@ -230,6 +232,97 @@ public class AppPageTest {
             awaitDisplayed(mainActivityScenario, R.id.text_title, "text_title");
             onView(withId(R.id.text_title)).check(matches(isDisplayed()));
             onView(withId(R.id.text_content)).check(matches(isDisplayed()));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            fail("Interrupted while waiting for the host page");
+        } finally {
+            mainActivityScenario.close();
+            testProvider.dispose();
+            testApplication.unregisterActivityLifecycleCallbacks(navigator);
+            testApplication.unregisterComponentCallbacks(navigator);
+            testApplication.deleteDatabase(dbName);
+        }
+    }
+
+    /**
+     * Volume-key article navigation smoke test (issue #60): the pushed
+     * {@link RssItemDetailPage} implements {@link KeyEventHandler} and consumes
+     * both volume keys on a plain ACTION_DOWN (volume down = next, volume up =
+     * previous). Only the interface contract is asserted (instanceof + returns
+     * true); the navigation itself reuses the exact navigateToNeighbor() path of
+     * the toolbar buttons and is not verified here, and the default-ON gating
+     * lives in MainActivity, which this private-navigator harness does not drive.
+     */
+    @Test
+    public void rssItemDetailPage_handlesVolumeKeys() {
+        String dbName = "rssItemDetailPage_handlesVolumeKeys";
+        TestApplication testApplication = (TestApplication) InstrumentationRegistry.getInstrumentation().getTargetContext().getApplicationContext();
+        Provider testProvider = Provider.createProvider(testApplication, new IntegrationTestAppProviderModule(testApplication, dbName));
+        RssChannel rssChannel = new RssChannel();
+        rssChannel.url = "https://detail.test.com/feed";
+        rssChannel.title = "Detail Test Feed";
+        rssChannel.feedName = "Detail Test Feed";
+        RssItem rssItem = new RssItem();
+        rssItem.title = "Detail Test Article";
+        rssItem.link = "https://detail.test.com/article";
+        rssItem.description = "<p>Article body rendered by the detail page.</p>";
+        testProvider.get(RssDao.class).insertRssChannel(rssChannel, rssItem);
+
+        CountDownLatch hostPageCreated = new CountDownLatch(1);
+        AtomicReference<StatefulView> detailPageRef = new AtomicReference<>();
+        Map<String, StatefulViewFactory<Activity, StatefulView>> navMap = new HashMap<>();
+        navMap.put(DETAIL_HOST_PAGE, (args, activity) -> {
+            hostPageCreated.countDown();
+            return new DetailHostPage();
+        });
+        navMap.put(Routes.RSS_ITEM_DETAIL_PAGE, (args, activity) -> {
+            RssItemDetailPage page = new RssItemDetailPage();
+            detailPageRef.set(page);
+            return page;
+        });
+        NavConfiguration.Builder<Activity, StatefulView> navBuilder =
+                new NavConfiguration.Builder<>(DETAIL_HOST_PAGE, navMap);
+        navBuilder.setRequiredComponent(testProvider);
+        NavConfiguration<Activity, StatefulView> navConfiguration = navBuilder.build();
+        Navigator navigator = new Navigator(MainActivity.class, navConfiguration);
+        testApplication.registerActivityLifecycleCallbacks(navigator);
+        testApplication.registerComponentCallbacks(navigator);
+        testApplication.setProvider(testProvider);
+        testProvider.get(ProviderRegistry.class).register(INavigator.class, () -> navigator);
+
+        ActivityScenario<MainActivity> mainActivityScenario = ActivityScenario.launch(MainActivity.class);
+        try {
+            // the Navigator creates routes on the main thread after a background
+            // load, so a cross-thread latch is the deterministic wait for the host
+            // page to exist before pushing onto it
+            if (!hostPageCreated.await(20, TimeUnit.SECONDS)) {
+                fail("Host page was not created");
+            }
+            InstrumentationRegistry.getInstrumentation().runOnMainSync(() ->
+                    navigator.push(Routes.RSS_ITEM_DETAIL_PAGE,
+                            RssItemDetailPage.Args.withRss(rssItem, rssChannel), null,
+                            RssItemDetailPage.detailPageRouteOptions()));
+
+            // the push runs a Material fade+slide transition that Espresso does not
+            // register as an idling resource, so wait for the article to actually
+            // come on screen before asserting on it
+            awaitDisplayed(mainActivityScenario, R.id.text_title, "text_title");
+            StatefulView detailPage = detailPageRef.get();
+            assertTrue("RssItemDetailPage must implement KeyEventHandler",
+                    detailPage instanceof KeyEventHandler);
+            AtomicBoolean downHandled = new AtomicBoolean(false);
+            AtomicBoolean upHandled = new AtomicBoolean(false);
+            // onKeyDown drives navigateToNeighbor (views, toasts, rx disposers),
+            // so run it on the main thread like every other page interaction here
+            InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
+                KeyEventHandler keyEventHandler = (KeyEventHandler) detailPageRef.get();
+                downHandled.set(keyEventHandler.onKeyDown(KeyEvent.KEYCODE_VOLUME_DOWN,
+                        new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_VOLUME_DOWN)));
+                upHandled.set(keyEventHandler.onKeyDown(KeyEvent.KEYCODE_VOLUME_UP,
+                        new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_VOLUME_UP)));
+            });
+            assertTrue("Volume Down must be consumed as next-article", downHandled.get());
+            assertTrue("Volume Up must be consumed as previous-article", upHandled.get());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             fail("Interrupted while waiting for the host page");

@@ -168,6 +168,10 @@
     <string name="menu_subtitle_swipe_article_navigation">Virkja/ávirkja flakk til næstu/fyrri greinar með stroku frá skjájaðrinum á greinasíðunni</string>
     <string name="swipe_article_navigation_enabled">Flakk milli greina með stroku virkjað</string>
     <string name="swipe_article_navigation_disabled">Flakk milli greina með stroku óvirkt</string>
+    <string name="title_volume_key_navigation">Flakk milli greina með hljóðstyrkstökkum</string>
+    <string name="menu_subtitle_volume_key_navigation">Virkja/ávirkja flakk til næstu/fyrri greinar með hljóðstyrkstökkum á greinasíðunni (hljóðstyrkur niður = næsta, hljóðstyrkur upp = fyrri)</string>
+    <string name="volume_key_navigation_enabled">Flakk milli greina með hljóðstyrkstökkum virkjað</string>
+    <string name="volume_key_navigation_disabled">Flakk milli greina með hljóðstyrkstökkum óvirkt</string>
     <string name="reading_settings">Lesturstillingar</string>
     <string name="menu_reading_font_size">Leturstærð</string>
     <string name="reading_font_size_title">Leturstærð greinar</string>

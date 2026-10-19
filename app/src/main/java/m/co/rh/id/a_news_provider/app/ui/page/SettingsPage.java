@@ -36,6 +36,7 @@ import m.co.rh.id.a_news_provider.app.ui.component.settings.RssSyncMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.SwipeArticleNavigationMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.ThemeMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.VersionMenuSV;
+import m.co.rh.id.a_news_provider.app.ui.component.settings.VolumeKeyNavigationMenuSV;
 import m.co.rh.id.a_news_provider.app.util.NotificationPermissionPolicy;
 import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
 import m.co.rh.id.alogger.ILogger;
@@ -79,6 +80,8 @@ public class SettingsPage extends StatefulView<Activity> implements RssSyncMenuS
         mStatefulViews.add(collapseDuplicateStoriesMenuSV);
         SwipeArticleNavigationMenuSV swipeArticleNavigationMenuSV = new SwipeArticleNavigationMenuSV();
         mStatefulViews.add(swipeArticleNavigationMenuSV);
+        VolumeKeyNavigationMenuSV volumeKeyNavigationMenuSV = new VolumeKeyNavigationMenuSV();
+        mStatefulViews.add(volumeKeyNavigationMenuSV);
         OpenLinksInMenuSV openLinksInMenuSV = new OpenLinksInMenuSV();
         mStatefulViews.add(openLinksInMenuSV);
         ThemeMenuSV themeMenuSV = new ThemeMenuSV();

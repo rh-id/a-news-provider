@@ -168,6 +168,10 @@
     <string name="menu_subtitle_swipe_article_navigation">Activar/deactivar la navigaziun tar l\'artitg suandant/precedent cun strischar dals urs da l\'ecran sin la pagina da l\'artitg</string>
     <string name="swipe_article_navigation_enabled">Navigaziun d\'artitgs cun strischar activada</string>
     <string name="swipe_article_navigation_disabled">Navigaziun d\'artitgs cun strischar deactivada</string>
+    <string name="title_volume_key_navigation">Navigaziun d\'artitgs cun las tastas da volum</string>
+    <string name="menu_subtitle_volume_key_navigation">Activar/deactivar la navigaziun tar l\'artitg suandant/precedent cun las tastas da volum sin la pagina da l\'artitg (volum giu = suandant, volum si = precedent)</string>
+    <string name="volume_key_navigation_enabled">Navigaziun d\'artitgs cun las tastas da volum activada</string>
+    <string name="volume_key_navigation_disabled">Navigaziun d\'artitgs cun las tastas da volum deactivada</string>
     <string name="reading_settings">Parameters da letura</string>
     <string name="menu_reading_font_size">Grandezza da la schrifta</string>
     <string name="reading_font_size_title">Grandezza da la schrifta da l\'artichel</string>

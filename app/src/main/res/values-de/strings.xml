@@ -168,6 +168,10 @@
     <string name="menu_subtitle_swipe_article_navigation">Aktivieren/deaktivieren des Blätterns zum nächsten/vorherigen Artikel durch Wischen vom Bildschirmrand auf der Artikelseite</string>
     <string name="swipe_article_navigation_enabled">Artikelnavigation durch Wischen aktiviert</string>
     <string name="swipe_article_navigation_disabled">Artikelnavigation durch Wischen deaktiviert</string>
+    <string name="title_volume_key_navigation">Artikelnavigation über Lautstärketasten</string>
+    <string name="menu_subtitle_volume_key_navigation">Aktivieren/deaktivieren des Blätterns zum nächsten/vorherigen Artikel über die Lautstärketasten auf der Artikelseite (Leiser = weiter, Lauter = zurück)</string>
+    <string name="volume_key_navigation_enabled">Artikelnavigation über Lautstärketasten aktiviert</string>
+    <string name="volume_key_navigation_disabled">Artikelnavigation über Lautstärketasten deaktiviert</string>
     <string name="reading_settings">Leseinstellungen</string>
     <string name="menu_reading_font_size">Schriftgröße</string>
     <string name="reading_font_size_title">Schriftgröße des Artikels</string>

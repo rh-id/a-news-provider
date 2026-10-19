@@ -173,6 +173,10 @@
     <string name="menu_subtitle_swipe_article_navigation">Attiva/disattiva la navigazione all\'articolo successivo/precedente scorrendo dai bordi dello schermo sulla pagina dell\'articolo</string>
     <string name="swipe_article_navigation_enabled">Navigazione tra articoli con scorrimento attivata</string>
     <string name="swipe_article_navigation_disabled">Navigazione tra articoli con scorrimento disattivata</string>
+    <string name="title_volume_key_navigation">Navigazione tra articoli con tasti del volume</string>
+    <string name="menu_subtitle_volume_key_navigation">Attiva/disattiva la navigazione all\'articolo successivo/precedente usando i tasti del volume sulla pagina dell\'articolo (volume giù = successivo, volume su = precedente)</string>
+    <string name="volume_key_navigation_enabled">Navigazione tra articoli con tasti del volume attivata</string>
+    <string name="volume_key_navigation_disabled">Navigazione tra articoli con tasti del volume disattivata</string>
     <string name="reading_settings">Impostazioni di lettura</string>
     <string name="menu_reading_font_size">Dimensione del testo</string>
     <string name="reading_font_size_title">Dimensione del testo dell\'articolo</string>

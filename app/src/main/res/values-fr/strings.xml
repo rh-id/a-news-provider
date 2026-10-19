@@ -173,6 +173,10 @@
     <string name="menu_subtitle_swipe_article_navigation">Activer/désactiver la navigation vers l\'article suivant/précédent en balayant depuis les bords de l\'écran sur la page de l\'article</string>
     <string name="swipe_article_navigation_enabled">Navigation entre articles par balayage activée</string>
     <string name="swipe_article_navigation_disabled">Navigation entre articles par balayage désactivée</string>
+    <string name="title_volume_key_navigation">Navigation entre articles par touches de volume</string>
+    <string name="menu_subtitle_volume_key_navigation">Activer/désactiver la navigation vers l\'article suivant/précédent à l\'aide des touches de volume sur la page de l\'article (Volume bas = suivant, Volume haut = précédent)</string>
+    <string name="volume_key_navigation_enabled">Navigation entre articles par touches de volume activée</string>
+    <string name="volume_key_navigation_disabled">Navigation entre articles par touches de volume désactivée</string>
     <string name="reading_settings">Paramètres de lecture</string>
     <string name="menu_reading_font_size">Taille du texte</string>
     <string name="reading_font_size_title">Taille du texte de l\'article</string>

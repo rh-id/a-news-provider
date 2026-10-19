@@ -168,6 +168,10 @@
     <string name="menu_subtitle_swipe_article_navigation">Aktiver/deaktiver navigering til neste/forrige artikkel ved å sveipe fra skjermkantene på artikelsiden</string>
     <string name="swipe_article_navigation_enabled">Artikkelnavigasjon ved sveip aktivert</string>
     <string name="swipe_article_navigation_disabled">Artikkelnavigasjon ved sveip deaktivert</string>
+    <string name="title_volume_key_navigation">Artikkelnavigasjon med volumknapper</string>
+    <string name="menu_subtitle_volume_key_navigation">Aktiver/deaktiver navigering til neste/forrige artikkel ved å bruke volumknappene på artikelsiden (volum ned = neste, volum opp = forrige)</string>
+    <string name="volume_key_navigation_enabled">Artikkelnavigasjon med volumknapper aktivert</string>
+    <string name="volume_key_navigation_disabled">Artikkelnavigasjon med volumknapper deaktivert</string>
     <string name="reading_settings">Les innstillinger</string>
     <string name="menu_reading_font_size">Tekststørrelse</string>
     <string name="reading_font_size_title">Tekststørrelse for artikkelen</string>

@@ -11,6 +11,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.text.method.LinkMovementMethod;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -55,6 +56,7 @@ import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.EditRssLinkSVDialog;
+import m.co.rh.id.a_news_provider.app.ui.KeyEventHandler;
 import m.co.rh.id.a_news_provider.app.util.ReadingTypography;
 import m.co.rh.id.a_news_provider.app.util.UiUtils;
 import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
@@ -72,7 +74,7 @@ import m.co.rh.id.anavigator.component.NavOnRequestPermissionResult;
 import m.co.rh.id.anavigator.component.RequireComponent;
 import m.co.rh.id.aprovider.Provider;
 
-public class RssItemDetailPage extends StatefulView<Activity> implements RequireComponent<Provider>, NavOnRequestPermissionResult, View.OnClickListener, Toolbar.OnMenuItemClickListener, AppBarSV.OnMenuCreated {
+public class RssItemDetailPage extends StatefulView<Activity> implements RequireComponent<Provider>, NavOnRequestPermissionResult, View.OnClickListener, Toolbar.OnMenuItemClickListener, AppBarSV.OnMenuCreated, KeyEventHandler {
 
     private static final String TAG = RssItemDetailPage.class.getName();
     private static final int REQUEST_CODE_PERMISSION_WRITE_EXTERNAL_STORAGE = 1;
@@ -104,6 +106,11 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
     private transient RssQueryCmd mRssQueryCmd;
     private transient MenuItem mToggleFavoriteMenuItem;
     private transient MenuItem mDownloadVideoMenuItem;
+    // in-flight guard for navigateToNeighbor: volume keys are easier to spam than
+    // the edge swipes, and each press is a db query followed by a full page
+    // replace — a second press while the first navigation resolves must not
+    // double-replace. transient: page fields participate in NavRoute serialization
+    private transient boolean mNeighborNavigationInProgress;
 
     public RssItemDetailPage() {
         mAppBarSV = new AppBarSV(R.menu.page_rss_item_detail);
@@ -351,6 +358,9 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         mRssQueryCmd = null;
         mToggleFavoriteMenuItem = null;
         mDownloadVideoMenuItem = null;
+        // protects against a late navigateToNeighbor callback after this page was
+        // already replaced by another detail page instance
+        mNeighborNavigationInProgress = false;
     }
 
     @Override
@@ -490,6 +500,10 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
      * @param next true to walk to the next article, false for the previous one
      */
     private void navigateToNeighbor(boolean next) {
+        if (mNeighborNavigationInProgress) {
+            return;
+        }
+        mNeighborNavigationInProgress = true;
         Integer filterType = mPagedRssItemsCmd.getFilterType().orElse(null);
         Integer isRead = BaseRssItemsCmd.toIsRead(filterType);
         Integer isFavorite = BaseRssItemsCmd.toIsFavorite(filterType);
@@ -521,8 +535,18 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
                                 Toast.makeText(mSvProvider.getContext(),
                                         R.string.no_more_articles, Toast.LENGTH_SHORT).show();
                             }
-                        }, throwable ->
-                                mLogger.e(TAG, throwable.getMessage(), throwable)));
+                            // reset here (end of onNext), NOT inside openNeighbor's
+                            // callbacks: openNeighbor's error branch only logs and
+                            // would never reset (stuck-guard risk). Resetting before
+                            // openNeighbor's async channel-query hop is safe because
+                            // openNeighbor subscribes under the single shared key
+                            // "openNeighbor_getRssChannelById", where a re-add
+                            // disposes the prior pending replace — no double-replace.
+                            mNeighborNavigationInProgress = false;
+                        }, throwable -> {
+                            mLogger.e(TAG, throwable.getMessage(), throwable);
+                            mNeighborNavigationInProgress = false;
+                        }));
     }
 
     /**
@@ -548,6 +572,26 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
                                         RssItemDetailPage.detailPageRouteOptions());
                             }
                         }));
+    }
+
+    /**
+     * Volume-key article navigation (issue #60), gated in MainActivity by the
+     * volumeKeyNavigationEnabled setting: volume down walks to the next article
+     * ("read forward"), volume up to the previous one. Reuses the exact path of
+     * the {@code menu_next_article}/{@code menu_previous_article} toolbar
+     * actions. Note: TalkBack's own volume-key reading shortcuts (a user setting)
+     * may consume volume keys before they reach the app — not a regression.
+     */
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            navigateToNeighbor(true); // volume down = next ("read forward")
+            return true;
+        } else if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+            navigateToNeighbor(false); // volume up = previous
+            return true;
+        }
+        return false;
     }
 
     private void downloadMediaFile() {

@@ -168,6 +168,10 @@
     <string name="menu_subtitle_swipe_article_navigation">Luba/keela järgmisele/eelmisele artiklile pühkimine ekraaniservadelt artikli lehel</string>
     <string name="swipe_article_navigation_enabled">Artiklite sirvimine pühkides on lubatud</string>
     <string name="swipe_article_navigation_disabled">Artiklite sirvimine pühkides on keelatud</string>
+    <string name="title_volume_key_navigation">Artiklite sirvimine helitugevuse nuppudega</string>
+    <string name="menu_subtitle_volume_key_navigation">Luba/keela liikumine järgmisele/eelmisele artiklile helitugevuse nuppudega artikli lehel (helitugevus alla = järgmine, helitugevus üles = eelmine)</string>
+    <string name="volume_key_navigation_enabled">Artiklite sirvimine helitugevuse nuppudega on lubatud</string>
+    <string name="volume_key_navigation_disabled">Artiklite sirvimine helitugevuse nuppudega on keelatud</string>
     <string name="reading_settings">Lugemise seaded</string>
     <string name="menu_reading_font_size">Fondi suurus</string>
     <string name="reading_font_size_title">Artikli fondi suurus</string>
