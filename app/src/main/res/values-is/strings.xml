@@ -165,7 +165,7 @@
     <string name="menu_next_article">Næsta grein</string>
     <string name="no_more_articles">Engar fleiri greinar</string>
     <string name="title_swipe_article_navigation">Flakk milli greina með stroku</string>
-    <string name="menu_subtitle_swipe_article_navigation">Virkja/ávirkja flakk til næstu/fyrri greinar með stroku frá skjájaðrinum á greinasíðunni</string>
+    <string name="menu_subtitle_swipe_article_navigation">Opna næstu grein með stroku til vinstri nálægt hægri jaðri skjásins</string>
     <string name="swipe_article_navigation_enabled">Flakk milli greina með stroku virkjað</string>
     <string name="swipe_article_navigation_disabled">Flakk milli greina með stroku óvirkt</string>
     <string name="title_volume_key_navigation">Flakk milli greina með hljóðstyrkstökkum</string>

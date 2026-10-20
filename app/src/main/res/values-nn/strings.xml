@@ -165,7 +165,7 @@
     <string name="menu_next_article">Neste artikkel</string>
     <string name="no_more_articles">Ingen fleire artiklar</string>
     <string name="title_swipe_article_navigation">Artikkelnavigasjon ved sveip</string>
-    <string name="menu_subtitle_swipe_article_navigation">Aktiver/deaktiver navigering til neste/førre artikkel ved å sveipe frå skjermkantane på artikelsida</string>
+    <string name="menu_subtitle_swipe_article_navigation">Opna neste artikkel ved å sveipe mot venstre nær høgre kant av skjermen</string>
     <string name="swipe_article_navigation_enabled">Artikkelnavigasjon ved sveip aktivert</string>
     <string name="swipe_article_navigation_disabled">Artikkelnavigasjon ved sveip deaktivert</string>
     <string name="title_volume_key_navigation">Artikkelnavigasjon med volumknappar</string>

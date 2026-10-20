@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.util.TypedValue;
 import android.view.KeyEvent;
 
+import androidx.activity.BackEventCompat;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -27,6 +28,7 @@ import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.anavigator.NavRoute;
 import m.co.rh.id.anavigator.StatefulView;
+import m.co.rh.id.anavigator.component.NavBackEvent;
 import m.co.rh.id.aprovider.Provider;
 
 public class MainActivity extends AppCompatActivity {
@@ -88,6 +90,33 @@ public class MainActivity extends AppCompatActivity {
                     public void handleOnBackPressed() {
                         BaseApplication.of(MainActivity.this)
                                 .getNavigator(MainActivity.this).onBackPressed();
+                    }
+
+                    @Override
+                    public void handleOnBackStarted(@NonNull BackEventCompat backEvent) {
+                        // forward gesture frames so the navigator can run its
+                        // predictive pop animation; no-op on the navigator's
+                        // side unless the top route is poppable
+                        BaseApplication.of(MainActivity.this)
+                                .getNavigator(MainActivity.this)
+                                .onBackStarted(toNavBackEvent(backEvent));
+                    }
+
+                    @Override
+                    public void handleOnBackProgressed(@NonNull BackEventCompat backEvent) {
+                        // per-frame progress updates for the predictive pop
+                        // animation (same no-op guarantee as onBackStarted)
+                        BaseApplication.of(MainActivity.this)
+                                .getNavigator(MainActivity.this)
+                                .onBackProgressed(toNavBackEvent(backEvent));
+                    }
+
+                    @Override
+                    public void handleOnBackCancelled() {
+                        // gesture released before commit: tell the navigator
+                        // to settle the pop animation back to the top route
+                        BaseApplication.of(MainActivity.this)
+                                .getNavigator(MainActivity.this).onBackCancelled();
                     }
                 });
         super.onCreate(savedInstanceState);
@@ -170,5 +199,13 @@ public class MainActivity extends AppCompatActivity {
         mProvider = null;
         mRebuildUi.onComplete();
         mRebuildUi = null;
+    }
+
+    // maps the androidx gesture frame onto the navigator's library-owned event
+    // carrier (a-navigator has no androidx.activity dependency, so it cannot
+    // accept BackEventCompat directly)
+    private static NavBackEvent toNavBackEvent(BackEventCompat backEvent) {
+        return new NavBackEvent(backEvent.getTouchX(),
+                backEvent.getTouchY(), backEvent.getProgress());
     }
 }

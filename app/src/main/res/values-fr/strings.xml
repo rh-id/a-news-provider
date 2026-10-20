@@ -170,7 +170,7 @@
     <string name="menu_next_article">Article suivant</string>
     <string name="no_more_articles">Plus d\'articles</string>
     <string name="title_swipe_article_navigation">Navigation entre articles par balayage</string>
-    <string name="menu_subtitle_swipe_article_navigation">Activer/désactiver la navigation vers l\'article suivant/précédent en balayant depuis les bords de l\'écran sur la page de l\'article</string>
+    <string name="menu_subtitle_swipe_article_navigation">Ouvrir l\'article suivant en balayant vers la gauche près du bord droit de l\'écran</string>
     <string name="swipe_article_navigation_enabled">Navigation entre articles par balayage activée</string>
     <string name="swipe_article_navigation_disabled">Navigation entre articles par balayage désactivée</string>
     <string name="title_volume_key_navigation">Navigation entre articles par touches de volume</string>

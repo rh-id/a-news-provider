@@ -160,7 +160,7 @@
     <string name="menu_next_article">下一篇文章</string>
     <string name="no_more_articles">没有更多文章</string>
     <string name="title_swipe_article_navigation">滑动切换文章</string>
-    <string name="menu_subtitle_swipe_article_navigation">启用/停用在文章页面从屏幕边缘滑动切换到上一篇/下一篇文章</string>
+    <string name="menu_subtitle_swipe_article_navigation">在屏幕右边缘附近向左滑动即可打开下一篇文章</string>
     <string name="swipe_article_navigation_enabled">滑动切换文章已启用</string>
     <string name="swipe_article_navigation_disabled">滑动切换文章已停用</string>
     <string name="title_volume_key_navigation">音量键切换文章</string>

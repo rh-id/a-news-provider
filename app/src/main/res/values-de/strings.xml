@@ -165,7 +165,7 @@
     <string name="menu_next_article">Nächster Artikel</string>
     <string name="no_more_articles">Keine weiteren Artikel</string>
     <string name="title_swipe_article_navigation">Artikelnavigation durch Wischen</string>
-    <string name="menu_subtitle_swipe_article_navigation">Aktivieren/deaktivieren des Blätterns zum nächsten/vorherigen Artikel durch Wischen vom Bildschirmrand auf der Artikelseite</string>
+    <string name="menu_subtitle_swipe_article_navigation">Nächsten Artikel durch Wischen nach links nahe dem rechten Bildschirmrand öffnen</string>
     <string name="swipe_article_navigation_enabled">Artikelnavigation durch Wischen aktiviert</string>
     <string name="swipe_article_navigation_disabled">Artikelnavigation durch Wischen deaktiviert</string>
     <string name="title_volume_key_navigation">Artikelnavigation über Lautstärketasten</string>

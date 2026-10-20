@@ -165,7 +165,7 @@
     <string name="menu_next_article">Artitg suandant</string>
     <string name="no_more_articles">Na plü artitgs</string>
     <string name="title_swipe_article_navigation">Navigaziun d\'artitgs cun strischar</string>
-    <string name="menu_subtitle_swipe_article_navigation">Activar/deactivar la navigaziun tar l\'artitg suandant/precedent cun strischar dals urs da l\'ecran sin la pagina da l\'artitg</string>
+    <string name="menu_subtitle_swipe_article_navigation">Avrir l\'artitg suandant cun strischar vers sanestra sper l\'ur dretg da l\'ecran</string>
     <string name="swipe_article_navigation_enabled">Navigaziun d\'artitgs cun strischar activada</string>
     <string name="swipe_article_navigation_disabled">Navigaziun d\'artitgs cun strischar deactivada</string>
     <string name="title_volume_key_navigation">Navigaziun d\'artitgs cun las tastas da volum</string>

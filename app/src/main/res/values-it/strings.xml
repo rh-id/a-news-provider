@@ -170,7 +170,7 @@
     <string name="menu_next_article">Articolo successivo</string>
     <string name="no_more_articles">Nessun altro articolo</string>
     <string name="title_swipe_article_navigation">Navigazione tra articoli con scorrimento</string>
-    <string name="menu_subtitle_swipe_article_navigation">Attiva/disattiva la navigazione all\'articolo successivo/precedente scorrendo dai bordi dello schermo sulla pagina dell\'articolo</string>
+    <string name="menu_subtitle_swipe_article_navigation">Apri l\'articolo successivo scorrendo verso sinistra vicino al bordo destro dello schermo</string>
     <string name="swipe_article_navigation_enabled">Navigazione tra articoli con scorrimento attivata</string>
     <string name="swipe_article_navigation_disabled">Navigazione tra articoli con scorrimento disattivata</string>
     <string name="title_volume_key_navigation">Navigazione tra articoli con tasti del volume</string>

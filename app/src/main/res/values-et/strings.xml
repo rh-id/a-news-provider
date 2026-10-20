@@ -165,7 +165,7 @@
     <string name="menu_next_article">Järgmine artikkel</string>
     <string name="no_more_articles">Rohkem artikleid ei ole</string>
     <string name="title_swipe_article_navigation">Artiklite sirvimine pühkides</string>
-    <string name="menu_subtitle_swipe_article_navigation">Luba/keela järgmisele/eelmisele artiklile pühkimine ekraaniservadelt artikli lehel</string>
+    <string name="menu_subtitle_swipe_article_navigation">Ava järgmine artikkel pühkides vasakule ekraani parema serva lähedal</string>
     <string name="swipe_article_navigation_enabled">Artiklite sirvimine pühkides on lubatud</string>
     <string name="swipe_article_navigation_disabled">Artiklite sirvimine pühkides on keelatud</string>
     <string name="title_volume_key_navigation">Artiklite sirvimine helitugevuse nuppudega</string>

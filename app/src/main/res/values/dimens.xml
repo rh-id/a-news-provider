@@ -3,4 +3,8 @@
     <dimen name="text_nav_menu">16sp</dimen>
     <!--Allowed height to collapse on one hand mode-->
     <dimen name="one_hand_collapsible_height">0dp</dimen>
+    <!-- article page right swipe strip inset (see page_rss_item_detail.xml):
+         must exceed the system back-gesture zone (measured ~25dp on the API 36
+         gesture-nav device) so the strip never competes with system back -->
+    <dimen name="swipe_region_inset">32dp</dimen>
 </resources>

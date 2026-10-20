@@ -92,17 +92,18 @@
                 </ScrollView>
             </LinearLayout>
 
-            <FrameLayout
-                android:id="@+id/container_swipe_region"
-                android:layout_width="50dp"
-                android:layout_height="match_parent"
-                android:background="@color/transparent" />
-
+            <!-- right-edge swipe strip, next-article gesture only: the old left
+                 strip (container_swipe_region) duplicated system back and was
+                 removed. marginEnd insets the strip beyond the system
+                 back-gesture zone (measured >= ~25dp on API 36 gesture-nav), so
+                 the touch target spans ~32-96dp from the edge where system
+                 back is not listening -->
             <FrameLayout
                 android:id="@+id/container_swipe_region_right"
-                android:layout_width="50dp"
+                android:layout_width="64dp"
                 android:layout_height="match_parent"
                 android:layout_gravity="end"
+                android:layout_marginEnd="@dimen/swipe_region_inset"
                 android:background="@color/transparent" />
         </FrameLayout>
     </LinearLayout>

@@ -107,7 +107,7 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
     private transient MenuItem mToggleFavoriteMenuItem;
     private transient MenuItem mDownloadVideoMenuItem;
     // in-flight guard for navigateToNeighbor: volume keys are easier to spam than
-    // the edge swipes, and each press is a db query followed by a full page
+    // the right-edge swipe, and each press is a db query followed by a full page
     // replace — a second press while the first navigation resolves must not
     // double-replace. transient: page fields participate in NavRoute serialization
     private transient boolean mNeighborNavigationInProgress;
@@ -146,17 +146,10 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         mPagedRssItemsCmd = provider.get(PagedRssItemsCmd.class);
         mSwipeGestureDetector = new SwipeGestureDetector(provider.getContext()) {
             @Override
-            public void onSwipeRight() {
-                // the setting gates the whole edge-gesture pair: back-swipe and
-                // next-swipe turn on and off together
-                if (mAppSharedPreferences.isSwipeArticleNavigationEnabled()) {
-                    mNavigator.pop();
-                }
-            }
-
-            @Override
             public void onSwipeLeft() {
-                // swipe left from the right edge = next article, same setting;
+                // swipe left near the right edge = next article; the rightward
+                // fling (pop) override was removed: it duplicated system back
+                // and its strip sat inside the system back-gesture zone
                 if (mAppSharedPreferences.isSwipeArticleNavigationEnabled()) {
                     navigateToNeighbor(true);
                 }
@@ -181,11 +174,11 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
             layoutId = R.layout.one_hand_mode_page_rss_item_detail;
         }
         View view = activity.getLayoutInflater().inflate(layoutId, container, false);
-        // edge gesture strips overlay the content sides; both directions are
-        // gated by the swipe setting (read live in the detector): fling outward
-        // from the left edge = back, fling left from the right edge = next
-        view.findViewById(R.id.container_swipe_region)
-                .setOnTouchListener(mSwipeGestureDetector);
+        // single right-edge strip overlaying the content side; fling left =
+        // next article (gated live by the swipe setting in the detector). The
+        // strip is inset beyond the system back-gesture zone (>= ~25dp measured
+        // on API 36) via layout_marginEnd, so it never steals system back
+        // touches at the very edge — there the system predictive back runs
         view.findViewById(R.id.container_swipe_region_right)
                 .setOnTouchListener(mSwipeGestureDetector);
         ViewGroup containerAppBar = view.findViewById(R.id.container_app_bar);
