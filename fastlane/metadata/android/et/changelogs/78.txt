@@ -1,0 +1,11 @@
+Versioon 2.3.0+78
+
+Funktsioonid:
+* Lugemise seaded: fondi suurus, fondiperekond, reavahedus, joondus
+* Uus seadistus Linkide avamine: Custom Tabs või vaikimisi brauser
+* Kõigi voogude loendis ilmuvad mitme voo jagatud lood vaid üks kord (silt loetleb teisi allikaid)
+* Loetuid säilivad nüüd syncide vahel; valikuline kustutamine 7-90 päeva pärast (lemmikud jäävad)
+* Jälgimisparameetrid eemaldatakse avatud või kopeeritud linkidelt
+
+Parandused:
+* Rakenduse ikoonil on monokroomne sümbol

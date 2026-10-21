@@ -1,0 +1,11 @@
+Release 2.3.0+78
+
+Features:
+* New reading settings: font size, family, line spacing and text alignment
+* New setting Open links in: custom tab or default browser
+* In the all-channels list, stories shared by several feeds appear once (badge lists other sources)
+* Read items survive syncs; optional auto-delete after 7-90 days (favorites and unread are never removed)
+* Tracking parameters are stripped from opened or copied links
+
+Fixes:
+* Dedicated monochrome glyph for the themed launcher icon

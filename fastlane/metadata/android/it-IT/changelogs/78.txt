@@ -1,0 +1,11 @@
+Rilascio 2.3.0+78
+
+Funzionalità:
+* Nuove impostazioni di lettura: dimensione, carattere, interlinea, allineamento
+* Apri i link con: Custom Tabs o il browser predefinito
+* Gli articoli condivisi da più feed appaiono una volta nell'elenco di tutti i feed
+* Gli elementi letti si conservano tra le sincronizzazioni; eliminazione facoltativa dopo 7-90 giorni
+* I parametri di tracciamento vengono rimossi dai link aperti o copiati
+
+Correzioni:
+* Glifo monocromatico dedicato per l'icona a tema

@@ -1,0 +1,11 @@
+Útgáfa 2.3.0+78
+
+Eiginleikar:
+* Lesturstillingar: leturstærð, leturfamilja, línuhæð, textajafna
+* Stilling Opna tengla með: Custom Tabs eða sjálfgefinn vafri
+* Fréttir sem mörg streymi deila birtast aðeins einu sinni í lista yfir öll streymi
+* Lesið efni geymist yfir samstillingu; valkvæð eyðing eftir 7-90 daga (eftirlæti aldrei eytt)
+* Rakningarbreytur fjarlægðar af opnuðum/afritaðum tenglum
+
+Villuleiðréttingar:
+* Þemaða táknmyndin fær sérhannað einlitað tákn

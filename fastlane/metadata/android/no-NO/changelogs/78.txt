@@ -1,0 +1,11 @@
+Utgivelse 2.3.0+78
+
+Funksjoner:
+* Nye lesinnstillinger: tekststørrelse, skrift, linjeavstand og justering
+* Åpne lenker med: Custom Tabs eller standardnettleseren
+* Historier som deles av flere strømmer vises kun én gang i listen over alle strømmer (etikett for kildene)
+* Leste elementer beholdes; valgfri sletting etter 7-90 dager (favoritter slettes aldri)
+* Sporingsparametere fjernes fra lenker som åpnes eller kopieres
+
+Feilrettinger:
+* Eget monokromt symbol for det tematiske appikonet

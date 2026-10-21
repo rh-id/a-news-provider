@@ -1,0 +1,11 @@
+Version 2.3.0+78
+
+Fonctionnalités :
+* Paramètres de lecture : taille du texte, police, interligne, alignement
+* Ouvrir les liens avec : Custom Tabs ou navigateur par défaut
+* Les articles partagés par plusieurs flux n'apparaissent qu'une fois dans la liste de tous les flux
+* Les articles lus sont conservés ; suppression facultative après 7-90 jours (hors favoris)
+* Paramètres de suivi retirés des liens ouverts ou copiés
+
+Corrections :
+* Glyphe monochrome dédié à l'icône adaptative

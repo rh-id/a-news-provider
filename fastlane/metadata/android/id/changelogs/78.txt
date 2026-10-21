@@ -1,0 +1,11 @@
+Rilis 2.3.0+78
+
+Fitur:
+* Pengaturan bacaan baru: ukuran, jenis, spasi baris dan perataan teks
+* Buka link dengan: Custom Tabs atau browser bawaan
+* Cerita yang dibagikan beberapa feed kini hanya tampil sekali di daftar semua feed (lencana sumber lain)
+* Item terbaca disimpan saat sinkron; opsional dihapus otomatis setelah 7-90 hari (favorit dan belum dibaca tidak dihapus)
+* Parameter pelacak dihapus dari tautan yang dibuka atau disalin
+
+Perbaikan:
+* Simbol monokrom khusus untuk ikon tematik

@@ -1,0 +1,11 @@
+Ediziun 2.3.0+78
+
+Funcziuns:
+* Parameters da letura: grandezza da la schrifta, schrifta, distanza tranter lines, alignament dal text
+* Avrir colliaziuns en Custom Tabs u browser normal
+* Reportaschas che plirs feeds divideschan cumparan be ina giada en la glista da tut ils feeds
+* Elements legids vegnan arcunads; stizzai opziunal suenter 7-90 dis (favurits restan)
+* Parametras da tracking vegnan allontanads da colliaziuns avertidas/copiads
+
+Corecziuns:
+* Glypha monocroma per l'icona adaptiva

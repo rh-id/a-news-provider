@@ -1,0 +1,11 @@
+Release 2.3.0+78
+
+Funktionen:
+* Neue Leseinstellungen: Schriftgröße, Schriftart, Zeilenabstand, Textausrichtung
+* Links öffnen mit: Custom Tabs oder Standardbrowser
+* Gesamtliste: Beiträge mehrerer Feeds nur einmal (Vermerk der weiteren Quellen)
+* Gelesene bleiben beim Sync erhalten; optionales Löschen nach 7-90 Tagen (Favoriten und Ungelesene bleiben)
+* Tracking-Parameter werden aus geöffneten/kopierten Links entfernt
+
+Fehlerbehebungen:
+* Monochrome Glyphe für das Launcher-Symbol
