@@ -112,6 +112,8 @@
     <string name="menu_subtitle_mark_read_on_scroll">Aktivieren/deaktivieren des Als-gelesen-Markierens beim Scrollen</string>
     <string name="mark_read_on_scroll_enabled">Als gelesen markieren beim Scrollen aktiviert</string>
     <string name="mark_read_on_scroll_disabled">Als gelesen markieren beim Scrollen deaktiviert</string>
+    <string name="title_strip_tracking_params">Tracking-Parameter entfernen</string>
+    <string name="menu_subtitle_strip_tracking_params">Entfernt Tracking-Parameter (utm_*, fbclid …) von Links beim Öffnen oder Kopieren. Deaktivieren, um Links unverändert zu lassen</string>
     <string name="title_collapse_duplicate_stories">Duplikate zusammenfassen</string>
     <string name="menu_subtitle_collapse_duplicate_stories">Beiträge, die von mehreren Feeds geteilt werden, in der Gesamtliste nur einmal anzeigen</string>
     <string name="image">Bild</string>

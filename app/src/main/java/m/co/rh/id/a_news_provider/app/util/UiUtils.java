@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
+import m.co.rh.id.a_news_provider.base.util.UrlSanitizer;
 
 public class UiUtils {
     public static void shareFile(Context context, File file, String chooserMessage) {
@@ -74,6 +75,11 @@ public class UiUtils {
      * browser - falls back to a raw ACTION_VIEW intent. ActivityNotFoundException
      * is swallowed here so every call site fails gracefully instead of crashing.
      * <p>
+     * When the strip-tracking-parameters toggle is on (issue #76, default on),
+     * tracking query parameters (utm_* / fbclid-style click ids) are removed from a
+     * LOCAL copy of the link before launch - the caller's
+     * {@code RssItem.link} is never mutated.
+     * <p>
      * The caller must pass an Activity (never the application context) so no
      * FLAG_ACTIVITY_NEW_TASK is needed and exit animations apply.
      *
@@ -85,9 +91,17 @@ public class UiUtils {
         if (activity == null || url == null || url.isEmpty()) {
             return false;
         }
-        Uri uri = Uri.parse(url);
         AppSharedPreferences appSharedPreferences = BaseApplication.of(activity)
                 .getProvider().get(AppSharedPreferences.class);
+        // strip tracking params at CLICK time (issue #76): sanitize a LOCAL copy
+        // only - RssItem.link is the cross-channel read/favorite/dedup key and is
+        // never written back. Read the toggle here too, so a settings change
+        // applies to the very next tap (same as the "Open links in" mode below).
+        String sanitizedUrl = appSharedPreferences.isStripTrackingParamsEnabled()
+                ? BaseApplication.of(activity).getProvider().get(UrlSanitizer.class)
+                .sanitize(url)
+                : url;
+        Uri uri = Uri.parse(sanitizedUrl);
         String customTabsPackageName = CustomTabsClient.getPackageName(activity, null);
         OpenLinkPolicy.Decision decision = OpenLinkPolicy.decide(
                 appSharedPreferences.getOpenLinksMode(), customTabsPackageName);

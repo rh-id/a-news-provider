@@ -64,6 +64,7 @@ import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.a_news_provider.base.entity.RssItemCategories;
 import m.co.rh.id.a_news_provider.base.ui.SwipeGestureDetector;
+import m.co.rh.id.a_news_provider.base.util.UrlSanitizer;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.NavRoute;
 import m.co.rh.id.anavigator.RouteOptions;
@@ -399,6 +400,12 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         } else if (id == R.id.menu_copy_link) {
             Context context = mSvProvider.getContext();
             String link = mRssItem.link;
+            // copy the SANITIZED link when the toggle is on (issue #76): a local
+            // copy only - mRssItem.link stays untouched as the read/favorite/
+            // dedup key. Read at click time, like openLink does.
+            if (mAppSharedPreferences.isStripTrackingParamsEnabled()) {
+                link = mSvProvider.get(UrlSanitizer.class).sanitize(link);
+            }
             boolean copied = UiUtils.copyToClipboard(context, context.getString(R.string.menu_copy_link), link);
             Toast.makeText(context,
                     copied ? R.string.copied_to_clipboard : android.R.string.cancel,

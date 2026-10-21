@@ -109,6 +109,8 @@
     <string name="menu_subtitle_mark_read_on_scroll">Aktifkan/nonaktifkan penandaan terbaca saat menggulir</string>
     <string name="mark_read_on_scroll_enabled">Tandai terbaca saat menggulir dinyalakan</string>
     <string name="mark_read_on_scroll_disabled">Tandai terbaca saat menggulir dimatikan</string>
+    <string name="title_strip_tracking_params">Hapus Parameter Pelacak</string>
+    <string name="menu_subtitle_strip_tracking_params">Hapus parameter pelacak (utm_*, fbclid, dll.) dari tautan saat dibuka atau disalin. Matikan agar tautan tidak diubah</string>
     <string name="title_collapse_duplicate_stories">Gabungkan Cerita Duplikat</string>
     <string name="menu_subtitle_collapse_duplicate_stories">Tampilkan cerita yang dibagikan beberapa feed hanya sekali di daftar semua feed</string>
     <string name="image">Gambar</string>

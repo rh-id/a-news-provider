@@ -112,6 +112,8 @@
     <string name="menu_subtitle_mark_read_on_scroll">Virkja/afvirkja merkingu sem lesið við skrun</string>
     <string name="mark_read_on_scroll_enabled">Merking sem lesið við skrun virkjuð</string>
     <string name="mark_read_on_scroll_disabled">Merking sem lesið við skrun afvirkjuð</string>
+    <string name="title_strip_tracking_params">Fjarlægja rakningarbreytur</string>
+    <string name="menu_subtitle_strip_tracking_params">Fjarlægir rakningarbreytur (utm_*, fbclid o.fl.) af tenglum þegar þeir eru opnaðir eða afritaðir. Slökktu á til að halda tenglum óbreyttum</string>
     <string name="title_collapse_duplicate_stories">Fella saman tvítekna frétt</string>
     <string name="menu_subtitle_collapse_duplicate_stories">Birta fréttir sem mörg streymi deila aðeins einu sinni í lista yfir öll streymi</string>
     <string name="image">Mynd</string>

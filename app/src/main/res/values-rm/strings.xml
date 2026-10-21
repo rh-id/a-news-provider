@@ -112,6 +112,8 @@
     <string name="menu_subtitle_mark_read_on_scroll">Activar/deactivar il marcar sco legì cun curriger</string>
     <string name="mark_read_on_scroll_enabled">Marcar sco legì cun curriger activà</string>
     <string name="mark_read_on_scroll_disabled">Marcar sco legì cun curriger deactivà</string>
+    <string name="title_strip_tracking_params">Allontanar parametras da tracking</string>
+    <string name="menu_subtitle_strip_tracking_params">Allontana parametras da tracking (utm_*, fbclid …) da colliaziuns cur ch\'els vegnan avertids u copiads. Deactivar per laschar las colliaziuns senza midament</string>
     <string name="title_collapse_duplicate_stories">Reunir reportaschas dublas</string>
     <string name="menu_subtitle_collapse_duplicate_stories">Mussar reportaschas che plirs feeds divideschan be ina giada en la glista da tut ils feeds</string>
     <string name="image">Grafica</string>

@@ -111,6 +111,8 @@
     <string name="menu_subtitle_mark_read_on_scroll">启用/停用滚动时标为已读</string>
     <string name="mark_read_on_scroll_enabled">滚动时标为已读已启用</string>
     <string name="mark_read_on_scroll_disabled">滚动时标为已读已停用</string>
+    <string name="title_strip_tracking_params">移除跟踪参数</string>
+    <string name="menu_subtitle_strip_tracking_params">在打开或复制链接时移除跟踪参数（utm_*、fbclid 等）。关闭后链接保持原样</string>
     <string name="title_collapse_duplicate_stories">合并重复故事</string>
     <string name="menu_subtitle_collapse_duplicate_stories">在全部订阅源列表中，多个订阅源转发的相同故事只显示一次</string>
     <string name="image">图片</string>

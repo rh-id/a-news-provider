@@ -60,6 +60,9 @@ public class AppSharedPreferences {
     private SerialBehaviorSubject<Boolean> mCollapseDuplicateStories;
     private String mCollapseDuplicateStoriesKey;
 
+    private SerialBehaviorSubject<Boolean> mStripTrackingParams;
+    private String mStripTrackingParamsKey;
+
     private SerialBehaviorSubject<Boolean> mSwipeArticleNavigationEnabled;
     private String mSwipeArticleNavigationEnabledKey;
 
@@ -110,6 +113,7 @@ public class AppSharedPreferences {
         mDynamicColorsEnabled = new SerialBehaviorSubject<>();
         mMarkReadOnScroll = new SerialBehaviorSubject<>();
         mCollapseDuplicateStories = new SerialBehaviorSubject<>();
+        mStripTrackingParams = new SerialBehaviorSubject<>();
         mSwipeArticleNavigationEnabled = new SerialBehaviorSubject<>();
         mVolumeKeyNavigationEnabled = new SerialBehaviorSubject<>();
         mReadingFontSize = new SerialBehaviorSubject<>();
@@ -141,6 +145,8 @@ public class AppSharedPreferences {
                 + ".markReadOnScroll";
         mCollapseDuplicateStoriesKey = SHARED_PREFERENCES_NAME
                 + ".collapseDuplicateStories";
+        mStripTrackingParamsKey = SHARED_PREFERENCES_NAME
+                + ".stripTrackingParams";
         mSwipeArticleNavigationEnabledKey = SHARED_PREFERENCES_NAME
                 + ".swipeArticleNavigationEnabled";
         mVolumeKeyNavigationEnabledKey = SHARED_PREFERENCES_NAME
@@ -197,6 +203,13 @@ public class AppSharedPreferences {
         boolean collapseDuplicateStories = mSharedPreferences.getBoolean(
                 mCollapseDuplicateStoriesKey, true);
         collapseDuplicateStories(collapseDuplicateStories);
+        // strip tracking params defaults to ON (issue #76): utm_*/fbclid-style
+        // parameters only serve advertising attribution and pollute links the
+        // user opens or copies; the stored link is never modified (display-time
+        // only), so users with edge-case feeds can switch it off in settings
+        boolean stripTrackingParams = mSharedPreferences.getBoolean(
+                mStripTrackingParamsKey, true);
+        stripTrackingParams(stripTrackingParams);
         // swipe article navigation defaults to ON: the left-edge swipe-right
         // (back) gesture has always been there, so the mirrored swipe-left
         // (next) starts enabled and users can turn the pair off in settings
@@ -456,6 +469,33 @@ public class AppSharedPreferences {
 
     public Flowable<Boolean> getIsCollapseDuplicateStoriesFlow() {
         return Flowable.fromObservable(mCollapseDuplicateStories.getSubject(), BackpressureStrategy.BUFFER);
+    }
+
+    /**
+     * Strip tracking parameters (issue #76): when on, tracking query parameters
+     * (utm_* / fbclid-style click ids) are removed from an item link at open/copy
+     * time. Default ON. Pure display-time: {@code RssItem.link} itself is never
+     * mutated - it is the cross-channel read/favorite/dedup key - so this only
+     * affects the string handed to the browser/clipboard.
+     */
+    private void stripTrackingParams(boolean enabled) {
+        mStripTrackingParams.onNext(enabled);
+        mExecutorService.execute(() ->
+                mSharedPreferences.edit().putBoolean(mStripTrackingParamsKey, enabled)
+                        .commit());
+    }
+
+    public boolean isStripTrackingParamsEnabled() {
+        Boolean value = mStripTrackingParams.getValue();
+        return value == null || value;
+    }
+
+    public void setStripTrackingParamsEnabled(boolean enabled) {
+        stripTrackingParams(enabled);
+    }
+
+    public Flowable<Boolean> getIsStripTrackingParamsEnabledFlow() {
+        return Flowable.fromObservable(mStripTrackingParams.getSubject(), BackpressureStrategy.BUFFER);
     }
 
     /**

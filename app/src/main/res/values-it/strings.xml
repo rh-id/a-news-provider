@@ -115,6 +115,8 @@
     <string name="menu_subtitle_mark_read_on_scroll">Abilita/disabilita la segnatura come letto durante lo scorrimento</string>
     <string name="mark_read_on_scroll_enabled">Segnatura come letto durante lo scorrimento abilitata</string>
     <string name="mark_read_on_scroll_disabled">Segnatura come letto durante lo scorrimento disabilitata</string>
+    <string name="title_strip_tracking_params">Rimuovi parametri di tracciamento</string>
+    <string name="menu_subtitle_strip_tracking_params">Rimuove i parametri di tracciamento (utm_*, fbclid…) dai link quando vengono aperti o copiati. Disattiva per lasciare i link invariati</string>
     <string name="title_collapse_duplicate_stories">Raggruppa articoli duplicati</string>
     <string name="menu_subtitle_collapse_duplicate_stories">Mostra una sola volta gli articoli condivisi da più feed nell\'elenco di tutti i feed</string>
     <string name="image">Immagine</string>

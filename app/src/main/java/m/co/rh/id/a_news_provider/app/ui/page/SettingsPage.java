@@ -33,6 +33,7 @@ import m.co.rh.id.a_news_provider.app.ui.component.settings.ReadingFontSizeMenuS
 import m.co.rh.id.a_news_provider.app.ui.component.settings.ReadingJustificationMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.ReadingLineSpacingMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.RssSyncMenuSV;
+import m.co.rh.id.a_news_provider.app.ui.component.settings.StripTrackingParamsMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.SwipeArticleNavigationMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.ThemeMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.VersionMenuSV;
@@ -84,6 +85,9 @@ public class SettingsPage extends StatefulView<Activity> implements RssSyncMenuS
         mStatefulViews.add(volumeKeyNavigationMenuSV);
         OpenLinksInMenuSV openLinksInMenuSV = new OpenLinksInMenuSV();
         mStatefulViews.add(openLinksInMenuSV);
+        // link-hygiene toggles sit next to the link-opening settings (issue #76)
+        StripTrackingParamsMenuSV stripTrackingParamsMenuSV = new StripTrackingParamsMenuSV();
+        mStatefulViews.add(stripTrackingParamsMenuSV);
         ThemeMenuSV themeMenuSV = new ThemeMenuSV();
         mStatefulViews.add(themeMenuSV);
         ReadingFontSizeMenuSV readingFontSizeMenuSV = new ReadingFontSizeMenuSV();

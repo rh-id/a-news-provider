@@ -28,6 +28,7 @@ import m.co.rh.id.a_news_provider.app.ui.page.SearchRssPage;
 import m.co.rh.id.a_news_provider.app.ui.page.SettingsPage;
 import m.co.rh.id.a_news_provider.app.ui.page.SplashPage;
 import m.co.rh.id.a_news_provider.base.util.UrlNormalizer;
+import m.co.rh.id.a_news_provider.base.util.UrlSanitizer;
 import m.co.rh.id.a_news_provider.base.provider.BaseProviderModule;
 import m.co.rh.id.a_news_provider.base.provider.DatabaseProviderModule;
 import m.co.rh.id.a_news_provider.component.network.provider.NetworkProviderModule;
@@ -66,6 +67,7 @@ public class AppProviderModule implements ProviderModule {
         providerRegistry.registerLazy(RssRepository.class, () -> new RssRepository(provider));
         providerRegistry.registerLazy(RssService.class, () -> new RssService(provider));
         providerRegistry.registerLazy(UrlNormalizer.class, UrlNormalizer::new);
+        providerRegistry.registerLazy(UrlSanitizer.class, UrlSanitizer::new);
         providerRegistry.registerLazy(RedirectDuplicateChecker.class, () -> new RedirectDuplicateChecker(provider));
 
         providerRegistry.registerPool(StatefulViewProvider.class, () -> new StatefulViewProvider(provider));

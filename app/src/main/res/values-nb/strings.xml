@@ -112,6 +112,8 @@
     <string name="menu_subtitle_mark_read_on_scroll">Aktiver/deaktiver merking som lest ved rulling</string>
     <string name="mark_read_on_scroll_enabled">Merking som lest ved rulling aktivert</string>
     <string name="mark_read_on_scroll_disabled">Merking som lest ved rulling deaktivert</string>
+    <string name="title_strip_tracking_params">Fjern sporingsparametere</string>
+    <string name="menu_subtitle_strip_tracking_params">Fjerner sporingsparametere (utm_*, fbclid …) fra lenker når de åpnes eller kopieres. Slå av for å la lenkene være uendret</string>
     <string name="title_collapse_duplicate_stories">Grupper duplikathistorier</string>
     <string name="menu_subtitle_collapse_duplicate_stories">Vis historier som deles av flere strømmer kun én gang i listen over alle strømmer</string>
     <string name="image">Bilde</string>

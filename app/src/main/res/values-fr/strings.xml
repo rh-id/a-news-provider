@@ -115,6 +115,8 @@
     <string name="menu_subtitle_mark_read_on_scroll">Activer/désactiver le marquage comme lu lors du défilement</string>
     <string name="mark_read_on_scroll_enabled">Marquage comme lu au défilement activé</string>
     <string name="mark_read_on_scroll_disabled">Marquage comme lu au défilement désactivé</string>
+    <string name="title_strip_tracking_params">Supprimer les paramètres de suivi</string>
+    <string name="menu_subtitle_strip_tracking_params">Supprime les paramètres de suivi (utm_*, fbclid…) des liens ouverts ou copiés. Désactivez pour garder les liens intacts</string>
     <string name="title_collapse_duplicate_stories">Regrouper les articles en double</string>
     <string name="menu_subtitle_collapse_duplicate_stories">Afficher une seule fois les articles partagés par plusieurs flux dans la liste de tous les flux</string>
     <string name="image">Image</string>
