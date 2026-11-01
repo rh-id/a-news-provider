@@ -6,6 +6,7 @@ import androidx.annotation.Nullable;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 import m.co.rh.id.alogger.ILogger;
 
@@ -35,7 +36,7 @@ class RssDateParser {
         };
         for (String format : formats) {
             try {
-                SimpleDateFormat simpleDateFormat = new SimpleDateFormat(format);
+                SimpleDateFormat simpleDateFormat = new SimpleDateFormat(format, Locale.US);
                 pubDate = simpleDateFormat.parse(dateText);
                 if (pubDate != null) break;
             } catch (Throwable throwable) {
@@ -77,7 +78,7 @@ class RssDateParser {
         }
         for (String format : formats) {
             try {
-                SimpleDateFormat simpleDateFormat = new SimpleDateFormat(format);
+                SimpleDateFormat simpleDateFormat = new SimpleDateFormat(format, Locale.US);
                 pubDate = simpleDateFormat.parse(dateText);
                 if (pubDate != null) break;
             } catch (Throwable throwable) {
