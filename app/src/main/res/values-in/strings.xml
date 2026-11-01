@@ -165,6 +165,11 @@
     <string name="menu_subtitle_swipe_article_navigation">Buka artikel berikutnya dengan menggeser ke kiri di dekat tepi kanan layar</string>
     <string name="swipe_article_navigation_enabled">Navigasi artikel dengan geser aktif</string>
     <string name="swipe_article_navigation_disabled">Navigasi artikel dengan geser nonaktif</string>
+    <string name="title_swipe_row_actions">Tindakan geser baris</string>
+    <string name="menu_subtitle_swipe_row_actions">Geser ke kanan untuk menandai sudah/belum dibaca, ke kiri untuk favorit</string>
+    <string name="swipe_row_actions_enabled">Tindakan geser diaktifkan</string>
+    <string name="swipe_row_actions_disabled">Tindakan geser dinonaktifkan</string>
+    <string name="undo">Urungkan</string>
     <string name="title_volume_key_navigation">Navigasi artikel dengan tombol volume</string>
     <string name="menu_subtitle_volume_key_navigation">Aktif/nonaktifkan navigasi ke artikel berikutnya/sebelumnya menggunakan tombol volume di halaman artikel (Volume turun = berikutnya, Volume naik = sebelumnya)</string>
     <string name="volume_key_navigation_enabled">Navigasi artikel dengan tombol volume aktif</string>

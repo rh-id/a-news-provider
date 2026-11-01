@@ -170,6 +170,11 @@
     <string name="menu_subtitle_swipe_article_navigation">Nächsten Artikel durch Wischen nach links nahe dem rechten Bildschirmrand öffnen</string>
     <string name="swipe_article_navigation_enabled">Artikelnavigation durch Wischen aktiviert</string>
     <string name="swipe_article_navigation_disabled">Artikelnavigation durch Wischen deaktiviert</string>
+    <string name="title_swipe_row_actions">Zeilen-Wischaktionen</string>
+    <string name="menu_subtitle_swipe_row_actions">Nach rechts wischen für gelesen/ungelesen, nach links für Favorit</string>
+    <string name="swipe_row_actions_enabled">Wischaktionen aktiviert</string>
+    <string name="swipe_row_actions_disabled">Wischaktionen deaktiviert</string>
+    <string name="undo">Rückgängig</string>
     <string name="title_volume_key_navigation">Artikelnavigation über Lautstärketasten</string>
     <string name="menu_subtitle_volume_key_navigation">Aktivieren/deaktivieren des Blätterns zum nächsten/vorherigen Artikel über die Lautstärketasten auf der Artikelseite (Leiser = weiter, Lauter = zurück)</string>
     <string name="volume_key_navigation_enabled">Artikelnavigation über Lautstärketasten aktiviert</string>

@@ -170,6 +170,11 @@
     <string name="menu_subtitle_swipe_article_navigation">Avrir l\'artitg suandant cun strischar vers sanestra sper l\'ur dretg da l\'ecran</string>
     <string name="swipe_article_navigation_enabled">Navigaziun d\'artitgs cun strischar activada</string>
     <string name="swipe_article_navigation_disabled">Navigaziun d\'artitgs cun strischar deactivada</string>
+    <string name="title_swipe_row_actions">Acziuns da swipar per lingias</string>
+    <string name="menu_subtitle_swipe_row_actions">Swipa a dretga per marcar legì/betg legì, a sanestra per preferì</string>
+    <string name="swipe_row_actions_enabled">Acziuns da swipar activadas</string>
+    <string name="swipe_row_actions_disabled">Acziuns da swipar deactivadas</string>
+    <string name="undo">Revocar</string>
     <string name="title_volume_key_navigation">Navigaziun d\'artitgs cun las tastas da volum</string>
     <string name="menu_subtitle_volume_key_navigation">Activar/deactivar la navigaziun tar l\'artitg suandant/precedent cun las tastas da volum sin la pagina da l\'artitg (volum giu = suandant, volum si = precedent)</string>
     <string name="volume_key_navigation_enabled">Navigaziun d\'artitgs cun las tastas da volum activada</string>

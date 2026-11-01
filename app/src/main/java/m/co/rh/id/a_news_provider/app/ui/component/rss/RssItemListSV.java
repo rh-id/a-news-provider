@@ -10,6 +10,7 @@ import android.widget.ImageButton;
 import android.widget.Spinner;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
@@ -28,6 +29,8 @@ import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.BaseRssItemsCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.MarkItemsReadOnScrollCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.PagedRssItemsCmd;
+import m.co.rh.id.a_news_provider.app.provider.command.UpdateRssItemIsFavoriteCmd;
+import m.co.rh.id.a_news_provider.app.provider.command.UpdateRssItemIsReadCmd;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
@@ -49,10 +52,13 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
     private transient AppSharedPreferences mAppSharedPreferences;
     private transient PagedRssItemsCmd mPagedRssItemsCmd;
     private transient MarkItemsReadOnScrollCmd mMarkItemsReadOnScrollCmd;
+    private transient UpdateRssItemIsReadCmd mUpdateRssItemIsReadCmd;
+    private transient UpdateRssItemIsFavoriteCmd mUpdateRssItemIsFavoriteCmd;
     private transient Handler mHandler;
     private transient RxDisposer mRxDisposer;
     private transient RecyclerView.OnScrollListener mOnScrollListener;
     private transient RssItemRecyclerViewAdapter mRssItemRecyclerViewAdapter;
+    private transient ItemTouchHelper mItemTouchHelper;
 
     /**
      * Suppresses the programmatic spinner callbacks fired when the filter
@@ -83,6 +89,8 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
         mPagedRssItemsCmd = provider.get(PagedRssItemsCmd.class);
         mPagedRssItemsCmd.load();
         mMarkItemsReadOnScrollCmd = mSvProvider.get(MarkItemsReadOnScrollCmd.class);
+        mUpdateRssItemIsReadCmd = mSvProvider.get(UpdateRssItemIsReadCmd.class);
+        mUpdateRssItemIsFavoriteCmd = mSvProvider.get(UpdateRssItemIsFavoriteCmd.class);
         mHandler = mSvProvider.get(Handler.class);
         mRxDisposer = mSvProvider.get(RxDisposer.class);
         mRssItemRecyclerViewAdapter = new RssItemRecyclerViewAdapter(mNavigator, this);
@@ -100,6 +108,19 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
                     }
                 }
             };
+        }
+        // built ONCE with the null-guard so a view rebuild (state restore, one-hand
+        // mode switch) never stacks a second helper on the same callback: attaching
+        // twice would double the swipe bookkeeping and leak the discarded instance
+        if (mItemTouchHelper == null) {
+            mItemTouchHelper = new ItemTouchHelper(new RssItemSwipeHelperCallback(
+                    mNavigator.getActivity(),
+                    mAppSharedPreferences,
+                    mUpdateRssItemIsReadCmd,
+                    mUpdateRssItemIsFavoriteCmd,
+                    mRssItemRecyclerViewAdapter,
+                    mPagedRssItemsCmd,
+                    mSvProvider.get(ILogger.class)));
         }
         // mark-read (manual and auto retention) changes item visibility, not the
         // list context: refresh the same window instead of resetting pagination
@@ -209,6 +230,7 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
         RecyclerView recyclerView = view.findViewById(R.id.recyclerView);
         recyclerView.setAdapter(mRssItemRecyclerViewAdapter.getConcatAdapter());
         recyclerView.addOnScrollListener(mOnScrollListener);
+        mItemTouchHelper.attachToRecyclerView(recyclerView);
         RecyclerView.LayoutManager layoutManager;
         if (activity.getResources().getBoolean(R.bool.is_landscape)) {
             layoutManager = new StaggeredGridLayoutManager(2, RecyclerView.VERTICAL);

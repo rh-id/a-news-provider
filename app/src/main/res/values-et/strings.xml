@@ -170,6 +170,11 @@
     <string name="menu_subtitle_swipe_article_navigation">Ava järgmine artikkel pühkides vasakule ekraani parema serva lähedal</string>
     <string name="swipe_article_navigation_enabled">Artiklite sirvimine pühkides on lubatud</string>
     <string name="swipe_article_navigation_disabled">Artiklite sirvimine pühkides on keelatud</string>
+    <string name="title_swipe_row_actions">Rea pühkimistoimingud</string>
+    <string name="menu_subtitle_swipe_row_actions">Pühkige paremale märkimiseks loetuks/loemata, vasakule lemmikuks</string>
+    <string name="swipe_row_actions_enabled">Pühkimistoimingud lubatud</string>
+    <string name="swipe_row_actions_disabled">Pühkimistoimingud keelatud</string>
+    <string name="undo">Võta tagasi</string>
     <string name="title_volume_key_navigation">Artiklite sirvimine helitugevuse nuppudega</string>
     <string name="menu_subtitle_volume_key_navigation">Luba/keela liikumine järgmisele/eelmisele artiklile helitugevuse nuppudega artikli lehel (helitugevus alla = järgmine, helitugevus üles = eelmine)</string>
     <string name="volume_key_navigation_enabled">Artiklite sirvimine helitugevuse nuppudega on lubatud</string>

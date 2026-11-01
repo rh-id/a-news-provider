@@ -175,6 +175,11 @@
     <string name="menu_subtitle_swipe_article_navigation">Apri l\'articolo successivo scorrendo verso sinistra vicino al bordo destro dello schermo</string>
     <string name="swipe_article_navigation_enabled">Navigazione tra articoli con scorrimento attivata</string>
     <string name="swipe_article_navigation_disabled">Navigazione tra articoli con scorrimento disattivata</string>
+    <string name="title_swipe_row_actions">Azioni di scorrimento delle righe</string>
+    <string name="menu_subtitle_swipe_row_actions">Scorri a destra per segnare letto/da leggere, a sinistra per i preferiti</string>
+    <string name="swipe_row_actions_enabled">Azioni di scorrimento attivate</string>
+    <string name="swipe_row_actions_disabled">Azioni di scorrimento disattivate</string>
+    <string name="undo">Annulla</string>
     <string name="title_volume_key_navigation">Navigazione tra articoli con tasti del volume</string>
     <string name="menu_subtitle_volume_key_navigation">Attiva/disattiva la navigazione all\'articolo successivo/precedente usando i tasti del volume sulla pagina dell\'articolo (volume giù = successivo, volume su = precedente)</string>
     <string name="volume_key_navigation_enabled">Navigazione tra articoli con tasti del volume attivata</string>

@@ -170,6 +170,11 @@
     <string name="menu_subtitle_swipe_article_navigation">Opna næstu grein með stroku til vinstri nálægt hægri jaðri skjásins</string>
     <string name="swipe_article_navigation_enabled">Flakk milli greina með stroku virkjað</string>
     <string name="swipe_article_navigation_disabled">Flakk milli greina með stroku óvirkt</string>
+    <string name="title_swipe_row_actions">Strjúkunaraðgerðir á línum</string>
+    <string name="menu_subtitle_swipe_row_actions">Strjúktu til hægri til að merkja lesið/ólesið, til vinstri fyrir eftirlæti</string>
+    <string name="swipe_row_actions_enabled">Strjúkunaraðgerðir virkar</string>
+    <string name="swipe_row_actions_disabled">Strjúkunaraðgerðir óvirkar</string>
+    <string name="undo">Afturkalla</string>
     <string name="title_volume_key_navigation">Flakk milli greina með hljóðstyrkstökkum</string>
     <string name="menu_subtitle_volume_key_navigation">Virkja/ávirkja flakk til næstu/fyrri greinar með hljóðstyrkstökkum á greinasíðunni (hljóðstyrkur niður = næsta, hljóðstyrkur upp = fyrri)</string>
     <string name="volume_key_navigation_enabled">Flakk milli greina með hljóðstyrkstökkum virkjað</string>

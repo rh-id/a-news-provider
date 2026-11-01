@@ -69,6 +69,9 @@ public class AppSharedPreferences {
     private SerialBehaviorSubject<Boolean> mVolumeKeyNavigationEnabled;
     private String mVolumeKeyNavigationEnabledKey;
 
+    private SerialBehaviorSubject<Boolean> mSwipeRowActionsEnabled;
+    private String mSwipeRowActionsEnabledKey;
+
     private SerialBehaviorSubject<Integer> mReadingFontSize;
     private String mReadingFontSizeKey;
 
@@ -116,6 +119,7 @@ public class AppSharedPreferences {
         mStripTrackingParams = new SerialBehaviorSubject<>();
         mSwipeArticleNavigationEnabled = new SerialBehaviorSubject<>();
         mVolumeKeyNavigationEnabled = new SerialBehaviorSubject<>();
+        mSwipeRowActionsEnabled = new SerialBehaviorSubject<>();
         mReadingFontSize = new SerialBehaviorSubject<>();
         mReadingFontFamily = new SerialBehaviorSubject<>();
         mReadingLineSpacing = new SerialBehaviorSubject<>();
@@ -151,6 +155,8 @@ public class AppSharedPreferences {
                 + ".swipeArticleNavigationEnabled";
         mVolumeKeyNavigationEnabledKey = SHARED_PREFERENCES_NAME
                 + ".volumeKeyNavigationEnabled";
+        mSwipeRowActionsEnabledKey = SHARED_PREFERENCES_NAME
+                + ".swipeRowActionsEnabled";
         mReadingFontSizeKey = SHARED_PREFERENCES_NAME
                 + ".readingFontSize";
         mReadingFontFamilyKey = SHARED_PREFERENCES_NAME
@@ -224,6 +230,14 @@ public class AppSharedPreferences {
         boolean volumeKeyNavigationEnabled = mSharedPreferences.getBoolean(
                 mVolumeKeyNavigationEnabledKey, true);
         volumeKeyNavigationEnabled(volumeKeyNavigationEnabled);
+        // swipe row actions default to ON (issue #32): a default-OFF toggle would
+        // effectively hide the feature from users (same discoverability precedent as
+        // swipe-article-navigation/volume-key-navigation above); it only acts on
+        // explicit list-row swipes (never taps/scrolls) and can be switched off in
+        // settings
+        boolean swipeRowActionsEnabled = mSharedPreferences.getBoolean(
+                mSwipeRowActionsEnabledKey, true);
+        swipeRowActionsEnabled(swipeRowActionsEnabled);
         // reading typography: all four store an INDEX into the arrays on
         // app/util/ReadingTypography (never a raw sp/px/multiplier value), so one
         // array stays the single source of truth. :base cannot reference the :app
@@ -550,6 +564,34 @@ public class AppSharedPreferences {
 
     public Flowable<Boolean> getIsVolumeKeyNavigationEnabledFlow() {
         return Flowable.fromObservable(mVolumeKeyNavigationEnabled.getSubject(), BackpressureStrategy.BUFFER);
+    }
+
+    /**
+     * Swipe row actions (issue #32), default ON: when enabled, rss item list rows
+     * support ItemTouchHelper swipe gestures (swipe right = toggle read/unread,
+     * swipe left = toggle favorite). On by default for discoverability (a default-OFF
+     * toggle would effectively hide the feature), mirroring the swipe-article-navigation
+     * and volume-key-navigation defaults; it only acts on explicit row swipes and can
+     * be switched off in settings.
+     */
+    private void swipeRowActionsEnabled(boolean enabled) {
+        mSwipeRowActionsEnabled.onNext(enabled);
+        mExecutorService.execute(() ->
+                mSharedPreferences.edit().putBoolean(mSwipeRowActionsEnabledKey, enabled)
+                        .commit());
+    }
+
+    public boolean isSwipeRowActionsEnabled() {
+        Boolean value = mSwipeRowActionsEnabled.getValue();
+        return value != null && value;
+    }
+
+    public void setSwipeRowActionsEnabled(boolean enabled) {
+        swipeRowActionsEnabled(enabled);
+    }
+
+    public Flowable<Boolean> getIsSwipeRowActionsEnabledFlow() {
+        return Flowable.fromObservable(mSwipeRowActionsEnabled.getSubject(), BackpressureStrategy.BUFFER);
     }
 
     /**

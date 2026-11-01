@@ -620,6 +620,18 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
         mRssItemSubject.onNext(rssItem);
     }
 
+    /**
+     * Read access to the currently bound rss item for the swipe callback
+     * ({@link RssItemSwipeHelperCallback}): the swipe gestures act on the row's
+     * in-memory state (read/favorite flag flip), which lives here in the row's
+     * subject - there was previously only the write-side {@link #setRssItem(RssItem)}.
+     *
+     * @return the currently bound rss item, or null before the first bind
+     */
+    RssItem getRssItem() {
+        return mRssItemSubject.getValue();
+    }
+
     @Override
     public boolean onLongClick(View view) {
         int id = view.getId();

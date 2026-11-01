@@ -175,6 +175,11 @@
     <string name="menu_subtitle_swipe_article_navigation">Ouvrir l\'article suivant en balayant vers la gauche près du bord droit de l\'écran</string>
     <string name="swipe_article_navigation_enabled">Navigation entre articles par balayage activée</string>
     <string name="swipe_article_navigation_disabled">Navigation entre articles par balayage désactivée</string>
+    <string name="title_swipe_row_actions">Actions de balayage des lignes</string>
+    <string name="menu_subtitle_swipe_row_actions">Balayez vers la droite pour marquer lu/non lu, vers la gauche pour les favoris</string>
+    <string name="swipe_row_actions_enabled">Actions de balayage activées</string>
+    <string name="swipe_row_actions_disabled">Actions de balayage désactivées</string>
+    <string name="undo">Annuler</string>
     <string name="title_volume_key_navigation">Navigation entre articles par touches de volume</string>
     <string name="menu_subtitle_volume_key_navigation">Activer/désactiver la navigation vers l\'article suivant/précédent à l\'aide des touches de volume sur la page de l\'article (Volume bas = suivant, Volume haut = précédent)</string>
     <string name="volume_key_navigation_enabled">Navigation entre articles par touches de volume activée</string>

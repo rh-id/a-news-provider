@@ -165,6 +165,11 @@
     <string name="menu_subtitle_swipe_article_navigation">在屏幕右边缘附近向左滑动即可打开下一篇文章</string>
     <string name="swipe_article_navigation_enabled">滑动切换文章已启用</string>
     <string name="swipe_article_navigation_disabled">滑动切换文章已停用</string>
+    <string name="title_swipe_row_actions">列表滑动操作</string>
+    <string name="menu_subtitle_swipe_row_actions">向右滑动标记已读/未读，向左滑动收藏</string>
+    <string name="swipe_row_actions_enabled">滑动操作已启用</string>
+    <string name="swipe_row_actions_disabled">滑动操作已停用</string>
+    <string name="undo">撤销</string>
     <string name="title_volume_key_navigation">音量键切换文章</string>
     <string name="menu_subtitle_volume_key_navigation">启用/停用在文章页面使用音量键切换到下一篇/上一篇文章（音量减小 = 下一篇，音量增大 = 上一篇）</string>
     <string name="volume_key_navigation_enabled">音量键切换文章已启用</string>

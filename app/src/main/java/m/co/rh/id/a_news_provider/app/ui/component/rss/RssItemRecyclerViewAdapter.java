@@ -98,6 +98,28 @@ public class RssItemRecyclerViewAdapter {
     }
 
     /**
+     * Notifies the items adapter that the row held by the given ViewHolder has changed
+     * and must be rebound. Required by the ItemTouchHelper contract
+     * ({@code RssItemSwipeHelperCallback}): after {@code onSwiped} the helper keeps the
+     * swiped child translated off-screen until the adapter announces a change - without
+     * this notification the row would stay invisible as a permanent blank slot.
+     * {@code notifyItemChanged} rebinds the row with the ALREADY synchronously mutated
+     * {@link RssItem} instance (the update commands flip the flag on the calling thread
+     * before persisting in the background, and {@link #submitItems(List)} shares the
+     * element references), which is the ONLY reliable read-state refresh here:
+     * {@code UpdateRssItemIsReadCmd} deliberately emits no {@code RssChangeNotifier}
+     * event, so nothing else would redraw the row.
+     *
+     * @param holder the ViewHolder that was swiped (or whose state was reverted)
+     */
+    void notifyItemChangedByHolder(RecyclerView.ViewHolder holder) {
+        int position = holder.getBindingAdapterPosition();
+        if (position != RecyclerView.NO_POSITION) {
+            mItemsAdapter.notifyItemChanged(position);
+        }
+    }
+
+    /**
      * The items rows. {@code getItemCount()} is exactly {@code getCurrentList().size()}
      * as required by ListAdapter's differ-dispatched operations; the empty row lives in
      * {@link EmptyStateAdapter} instead of a fake position here.
@@ -257,6 +279,17 @@ public class RssItemRecyclerViewAdapter {
 
         void setRssItem(RssItem rssItem) {
             mRssItemSV.setRssItem(rssItem);
+        }
+
+        /**
+         * Read access to the currently bound rss item for the swipe callback
+         * ({@code RssItemSwipeHelperCallback}), which needs the row's in-memory
+         * state to flip the read/favorite flag on.
+         *
+         * @return the currently bound rss item, or null before the first bind
+         */
+        RssItem getRssItem() {
+            return mRssItemSV.getRssItem();
         }
     }
 

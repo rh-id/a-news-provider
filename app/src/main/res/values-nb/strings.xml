@@ -170,6 +170,11 @@
     <string name="menu_subtitle_swipe_article_navigation">Åpne neste artikkel ved å sveipe mot venstre nær høyre kant av skjermen</string>
     <string name="swipe_article_navigation_enabled">Artikkelnavigasjon ved sveip aktivert</string>
     <string name="swipe_article_navigation_disabled">Artikkelnavigasjon ved sveip deaktivert</string>
+    <string name="title_swipe_row_actions">Sveipehandlinger på rader</string>
+    <string name="menu_subtitle_swipe_row_actions">Sveip til høyre for å merke lest/ulest, til venstre for favoritt</string>
+    <string name="swipe_row_actions_enabled">Sveipehandlinger aktivert</string>
+    <string name="swipe_row_actions_disabled">Sveipehandlinger deaktivert</string>
+    <string name="undo">Angre</string>
     <string name="title_volume_key_navigation">Artikkelnavigasjon med volumknapper</string>
     <string name="menu_subtitle_volume_key_navigation">Aktiver/deaktiver navigering til neste/forrige artikkel ved å bruke volumknappene på artikelsiden (volum ned = neste, volum opp = forrige)</string>
     <string name="volume_key_navigation_enabled">Artikkelnavigasjon med volumknapper aktivert</string>

@@ -169,6 +169,11 @@
     <string name="menu_subtitle_swipe_article_navigation">Open the next article by swiping left near the right edge of the screen</string>
     <string name="swipe_article_navigation_enabled">Swipe article navigation enabled</string>
     <string name="swipe_article_navigation_disabled">Swipe article navigation disabled</string>
+    <string name="title_swipe_row_actions">Swipe row actions</string>
+    <string name="menu_subtitle_swipe_row_actions">Swipe a row right to mark read/unread, left to favorite</string>
+    <string name="swipe_row_actions_enabled">Swipe actions enabled</string>
+    <string name="swipe_row_actions_disabled">Swipe actions disabled</string>
+    <string name="undo">Undo</string>
     <string name="title_volume_key_navigation">Volume Key Navigation</string>
     <string name="menu_subtitle_volume_key_navigation">Enable/Disable navigating to the next or previous article using the volume keys on the article page (Volume Down = next, Volume Up = previous)</string>
     <string name="volume_key_navigation_enabled">Volume key navigation enabled</string>
