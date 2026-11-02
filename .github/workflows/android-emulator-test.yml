@@ -39,21 +39,15 @@ jobs:
           api-level: ${{ matrix.api-level }}
           target: default
           arch: x86_64
-          force-avd-creation: false
-          # API 36: cold boot (-no-snapshot) to test whether the cached snapshot from the stop/start heap hack causes the missing window focus
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none ${{ matrix.api-level == 36 && '-no-snapshot' || '-no-snapshot-save' }}
-          disable-animations: true
-          script: |
-            adb shell getprop dalvik.vm.heapgrowthlimit
-            adb shell getprop dalvik.vm.heapsize
-            # API 36 boots cold with default heap props; skip the stop/start re-raise — its wait loop races the framework restart and kills the job
-            if [ "${{ matrix.api-level }}" != "36" ] && [ "$(adb shell getprop dalvik.vm.heapgrowthlimit | tr -d '\r')" != "256m" ]; then echo "heap props missing (snapshot load fallback) - re-raising dalvik heap"; n=0; until adb root || [ "$n" -ge 15 ]; do sleep 2; n=$((n+1)); done; adb wait-for-device; adb shell setprop dalvik.vm.heapgrowthlimit 256m; adb shell setprop dalvik.vm.heapsize 512m; adb shell stop; n=0; until [ "$(adb shell getprop init.svc.zygote | tr -d '\r')" != "running" ]; do sleep 1; n=$((n+1)); [ "$n" -ge 30 ] && break; done; adb shell start || true; n=0; until [ "$(adb shell getprop init.svc.zygote | tr -d '\r')" = "running" ] && [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = "1" ] && [ -n "$(adb shell pm path android | tr -d '\r')" ] || [ "$n" -ge 60 ]; do sleep 5; n=$((n+1)); done; [ "$(adb shell getprop init.svc.zygote | tr -d '\r')" = "running" ] && [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = "1" ]; fi
-            # ensure screen is on and keyguard dismissed so app windows gain focus (API 36 headless)
-            adb shell input keyevent KEYCODE_WAKEUP
-            adb shell wm dismiss-keyguard
-            adb shell settings put global stay_on_while_plugged_in 7
-            sleep 2
-            ./gradlew connectedCheck
-            adb -s emulator-5554 emu kill
-            n=0; until [ -z "$(pgrep -f '[q]emu-system')" ] || [ "$n" -ge 60 ]; do sleep 2; n=$((n+1)); done
-            pkill -9 -f '[c]rashpad_handler' || true
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: ./gradlew connectedCheck
+
+      - name: upload test reports
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: androidTest-results-${{ matrix.api-level }}
+          path: |
+            **/build/outputs/androidTest-results/connected/
+            **/build/reports/androidTests/connected/
+          if-no-files-found: ignore
