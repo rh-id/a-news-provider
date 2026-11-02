@@ -26,6 +26,7 @@ A simple and easy to use RSS aggregator that deliver news to your smartphone.
   <li>Optional unread retention window: auto mark items as read after 7/14/30/90 days at the end of each sync (off by default, favorites are never auto-read)</li>
   <li>Feed sync keeps your history: items that drop out of a feed's current list stay in the app (with their read/favorite state) instead of being deleted on the next sync, and sync notifications reflect the latest feed content; optional keep-read-items window auto-deletes read, non-favorite items that no longer appear in their feed after 7/14/30/90 days (off by default; unread items and favorites are never auto-deleted; applies to paused feeds too)</li>
   <li>Opt-in "mark as read on scroll" setting: items scrolled past in the list are marked as read automatically (off by default)</li>
+  <li>Opt-in duplicate story collapse in the all-feeds list: the same story syndicated by several feeds (same link <strong>or similar title</strong>) appears once with an "×N" badge that expands to the other feeds' names and dates</li>
   <li>Per-channel grouped sync notifications with unread counts (requires the Notifications permission on Android 13+)</li>
   <li>Rename, pause (mute), or delete feeds — paused feeds keep their history but stop syncing and notifying (their unread counts may still decrease via the optional auto mark-read setting, and read items may be pruned via the optional keep-read-items setting)</li>
   <li>Support editing feed item link</li>
@@ -83,8 +84,12 @@ Sync operations are executed as WorkManager chains with a `NetworkType.CONNECTED
 
 ### Persistence (Room)
 
-*   Room database `a-news-provider.db` (version 11, with migrations from version 1 to 11). Entities: `RssChannel`, `RssItem`, and `AndroidNotification`.
+*   Room database `a-news-provider.db` (version 13, with migrations from version 1 to 13). Entities: `RssChannel`, `RssItem`, and `AndroidNotification`.
 *   Read and favorite state is synced across channels by item link, so the same article shared by multiple feeds keeps its state.
+*   Duplicate story collapse (all-feeds list, opt-in in Settings): the same story syndicated by several feeds appears once with an "×N" badge that expands to the other feeds' names and dates. Copies are matched by the same link **or similar title** (normalized titles with token-set Jaccard similarity ≥ 0.8 are stamped with a shared `dedup_key` at sync time, issue #45). Accepted behaviors:
+    *   rows only receive their dedup key on their feed's next sync — there is no backfill, so not-yet-re-synced rows keep the exact-link collapse;
+    *   mark-as-read stays per-link, so near-duplicates with different links keep independent read state;
+    *   recurring identical titles across different feeds (column-style headlines) collapse into one row.
 *   Feed lists are paginated with keyset (cursor) queries at a page size of 100 — each page continues strictly after the last loaded row's `(COALESCE(pub_date, created_date_time), id)` position, so page boundaries stay stable under concurrent inserts and there are no LIMIT-offset duplicates or skips (still no androidx.paging).
 
 ### Networking (Volley)
@@ -141,7 +146,7 @@ This project is a standard multi-module Gradle project (Gradle 9.8.0 wrapper, An
 ### Testing
 
 *   **Unit tests:** cover the notifiers, repository, the RSS/Atom/RDF feed parser, and the date parser, using JUnit 4 (Mockito in `:app`, hand-written stubs in `:component-network`).
-*   **Instrumented tests:** page smoke tests via Espresso, command/repository/OPML/preferences tests against an in-memory Room database, accessibility audit tests, and a database migration test covering versions 1 through 11 (plus a dedicated 8→9 duplicate-merge case) using Room's `MigrationTestHelper`. Shared test doubles live in `app/src/sharedTest`, which is compiled into both the unit-test and instrumented-test source sets.
+*   **Instrumented tests:** page smoke tests via Espresso, command/repository/OPML/preferences tests against an in-memory Room database, accessibility audit tests, and a database migration test covering versions 1 through 13 (plus a dedicated 8→9 duplicate-merge case and a dedicated 12→13 dedup-key case) using Room's `MigrationTestHelper`. Shared test doubles live in `app/src/sharedTest`, which is compiled into both the unit-test and instrumented-test source sets.
 
 ### Accessibility
 

@@ -299,10 +299,14 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
     /**
      * Binds the duplicate-story badge (issue #45) for the given model. The badge
      * shows ONLY when the loaded page carried an absolute copy count &gt; 1 for a
-     * usable link - every other row keeps the exact pre-feature layout (the whole
-     * container collapses). The spoken form is the also_in_n_feeds plural over the
-     * OTHER copies (count - 1): the visible "×3" badge already says the story has
-     * 3 copies, so "also in 2 feeds" is what a screen reader must announce.
+     * row that is expandable - since phase 2 that is a row with a non-empty
+     * dedup_key (the copies expansion resolves the whole story cluster through
+     * the key, even when the row itself has no link) OR a non-null non-empty
+     * link (the phase-1 unkeyed rows) - every other row keeps the exact
+     * pre-feature layout (the whole container collapses). The spoken form is the
+     * also_in_n_feeds plural over the OTHER copies (count - 1): the visible "×3"
+     * badge already says the story has 3 copies, so "also in 2 feeds" is what a
+     * screen reader must announce.
      * Re-binding re-applies the expansion state from {@link #mExpandedItemIds}
      * (keyed by item id), so RecyclerView recycling neither loses nor leaks an
      * open expansion.
@@ -322,8 +326,9 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
                 && rssItemModel.id != null;
         if (hasDuplicates) {
             RssItem rssItem = mRssItemSubject.getValue();
-            hasDuplicates = rssItem != null && rssItem.link != null
-                    && !rssItem.link.isEmpty();
+            hasDuplicates = rssItem != null
+                    && ((rssItem.dedupKey != null && !rssItem.dedupKey.isEmpty())
+                    || (rssItem.link != null && !rssItem.link.isEmpty()));
         }
         if (!hasDuplicates) {
             mExpandedItemIds.remove(rssItemModel.id);
@@ -377,8 +382,10 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
      * the displayed row itself) off the main thread and renders them. The render
      * is dropped when the row was re-bound to another item meanwhile or the
      * expansion was closed - the recycled-view guard against stale async results.
-     * The load goes through {@link RssRepository#findRssItemsByLink(String)}
-     * (now backed by the rss_item.link index, migration 11→12) and
+     * The load goes through the two-tier copy lookup of
+     * {@link #buildOtherCopyLines(long)} (dedup-key cluster lookup for keyed
+     * rows, the link-indexed {@link RssRepository#findRssItemsByLink(String)}
+     * for unkeyed ones) and
      * {@link RssRepository#findRssChannelById(long)} to resolve feed names;
      * both are DAO-backed synchronous reads, hence the executor requirement.
      * Strictly display-only: no per-copy interaction in v1.
@@ -406,17 +413,31 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
 
     /**
      * Resolves the expansion's display lines on a background thread: one line per
-     * other copy, "feed name - date", dates in the row's date pattern.
+     * other copy, "feed name - date", dates in the row's date pattern. Since the
+     * phase-2 title-similarity collapse (issue #45), the copy lookup is two-tier
+     * like the counting: a bound row with a non-empty dedup_key resolves the
+     * WHOLE story cluster through
+     * {@link RssRepository#findRssItemsByDedupKey(String)} - copies with
+     * different links are part of the story and would be invisible to a per-link
+     * lookup - while an unkeyed row keeps the phase-1
+     * {@link RssRepository#findRssItemsByLink(String)}.
      *
      * @param itemId id of the currently bound item, excluded from the result
      * @return display lines for the other copies, in DAO result order
      */
     private List<String> buildOtherCopyLines(long itemId) {
         RssItem boundItem = mRssItemSubject.getValue();
-        if (boundItem == null || boundItem.link == null || boundItem.link.isEmpty()) {
+        if (boundItem == null) {
             return new ArrayList<>();
         }
-        List<RssItem> copies = mRssRepository.findRssItemsByLink(boundItem.link);
+        List<RssItem> copies;
+        if (boundItem.dedupKey != null && !boundItem.dedupKey.isEmpty()) {
+            copies = mRssRepository.findRssItemsByDedupKey(boundItem.dedupKey);
+        } else if (boundItem.link != null && !boundItem.link.isEmpty()) {
+            copies = mRssRepository.findRssItemsByLink(boundItem.link);
+        } else {
+            return new ArrayList<>();
+        }
         SimpleDateFormat dateFormat = new SimpleDateFormat(COPY_DATE_FORMAT);
         // feed-name lookups are memoized per call: several copies often share one feed
         Map<Long, String> channelNames = new HashMap<>();

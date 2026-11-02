@@ -18,6 +18,7 @@ import java.util.List;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.a_news_provider.base.model.ChannelUnreadCount;
+import m.co.rh.id.a_news_provider.base.model.KeyCount;
 import m.co.rh.id.a_news_provider.base.model.LinkCount;
 
 @Dao
@@ -40,6 +41,16 @@ public abstract class RssDao {
      * theoretical - it is the steady state for a deep scroll.
      */
     private static final int COUNT_BY_LINKS_CHUNK_SIZE = 500;
+
+    /**
+     * Maximum number of dedup cluster keys bound per COUNT statement of
+     * {@link #countRssItemsByDedupKeys(List)}. Same 999-host-parameter ceiling as
+     * {@link #COUNT_BY_LINKS_CHUNK_SIZE} (SQLite older than 3.32 / Android 11 and
+     * below), and the same caller shape: the all-channels list window (issue #45)
+     * grows by pages of 100 and exceeds 1000 accumulated rows on a deep scroll,
+     * so the chunking is the steady state there, not a theoretical safeguard.
+     */
+    private static final int COUNT_BY_KEYS_CHUNK_SIZE = 500;
 
     @Query("SELECT * FROM rss_channel ORDER BY feed_name")
     public abstract List<RssChannel> loadAllRssChannel();
@@ -161,7 +172,8 @@ public abstract class RssDao {
      * <ul>
      * <li>Items with a VALID link (non-null, non-empty) match an existing channel item
      * by exact link. A match is updated IN PLACE: the feed-provided fields (title,
-     * link, description, pubDate, mediaImage, mediaVideo, categories) are overwritten
+     * link, description, pubDate, mediaImage, mediaVideo, categories, dedupKey) are
+     * overwritten
      * from the parsed item while id, isRead, isFavorite and createdDateTime are
      * preserved, and updatedDateTime is refreshed. No match means INSERT with
      * createdDateTime = updatedDateTime = now (the same null-stamp pattern as
@@ -275,8 +287,13 @@ public abstract class RssDao {
     /**
      * Overwrites the feed-provided fields of an existing (matched) row from the
      * parsed item, preserving id, isRead, isFavorite and createdDateTime, and
-     * refreshes updatedDateTime. Shared by the valid-link and invalid-link match
-     * paths of {@link #upsertRssItemsForChannel(RssChannel, List)}.
+     * refreshes updatedDateTime. dedupKey is part of the copied set and is taken
+     * from the parsed item AUTHORITATIVELY (issue #45 phase 2): the repository
+     * assigned the key to the parsed item before this upsert ran, so the stored
+     * row always ends up with the current sync's key whatever a healing write
+     * wrote earlier in the same transaction - the upsert is the last writer.
+     * Shared by the valid-link and invalid-link match paths of
+     * {@link #upsertRssItemsForChannel(RssChannel, List)}.
      *
      * @param matched    the existing database row to update in place
      * @param parsedItem the parsed item carrying the fresh feed fields
@@ -291,6 +308,7 @@ public abstract class RssDao {
         matched.mediaImage = parsedItem.mediaImage;
         matched.mediaVideo = parsedItem.mediaVideo;
         matched.categories = parsedItem.categories;
+        matched.dedupKey = parsedItem.dedupKey;
         matched.updatedDateTime = now;
         update(matched);
         return matched;
@@ -433,22 +451,38 @@ public abstract class RssDao {
     public abstract List<RssItem> findRssItemsPageAsc(Long channelId, Integer isRead, Integer isFavorite, Long afterSortKey, Long afterId, int limit);
 
     /**
-     * Loads one keyset-pagination page of rss items GROUPED BY LINK, filtered by
-     * optional channel, read and favorite state, newest first. Used by the
-     * all-channels view of the home list (issue #45): rows sharing a link - the
-     * same story syndicated by several feeds - collapse into ONE list row, the
-     * group's representative, so each story appears once no matter how many feeds
-     * carry it. The non-grouped counterpart is
+     * Loads one keyset-pagination page of rss items GROUPED BY duplicate cluster
+     * (dedup_key, falling back to link), filtered by optional channel, read and
+     * favorite state, newest first. Used by the all-channels view of the home
+     * list (issue #45): rows that are the same story - sharing a link, or a
+     * dedup cluster key stamped by the repository when their normalized titles
+     * are similar - collapse into ONE list row, the group's representative, so
+     * each story appears once no matter how many feeds carry it. The
+     * non-grouped counterpart is
      * {@link #findRssItemsPageDesc(Long, Integer, Integer, Long, Long, int)}.
      * <p>
-     * Grouping expression: {@code COALESCE(NULLIF(link, ''), 'rss_item#' || id)}.
-     * A plain GROUP BY link would collapse ALL null-link rows into a single group
-     * and all empty-string links into another one (GROUP BY treats NULLs as one
-     * group, and '' = '') - the same trap the {@link #markOldItemsRead(long)} query
-     * guards against. NULLIF(link,'') rewrites the empty string to NULL first so
-     * the COALESCE falls through to the per-row-unique {@code 'rss_item#' || id}
-     * sentinel, giving every invalid-link row its own singleton group; valid links
-     * pass through unchanged.
+     * Grouping expression:
+     * {@code COALESCE(NULLIF(dedup_key, ''), NULLIF(link, ''), 'rss_item#' || id)}.
+     * The three tiers, in order: (1) rows carrying a non-null, non-empty
+     * dedup_key group by that cluster key REGARDLESS of their link - the phase-2
+     * title-similarity collapse: the repository stamps the same opaque key on
+     * every copy of a story at sync time (issue #45 phase 2), so copies with
+     * DIFFERENT links (wire syndications, tracking-parameter variants) still
+     * merge; (2) rows without a key keep the phase-1 exact-link grouping:
+     * NULLIF(link,'') rewrites the empty string to NULL so the COALESCE falls
+     * through - a plain GROUP BY link would instead collapse ALL null-link rows
+     * into a single group and all empty-string links into another one (GROUP BY
+     * treats NULLs as one group, and '' = '') - the same trap the
+     * {@link #markOldItemsRead(long)} query guards against; (3) rows with
+     * neither a key nor a valid link fall through to the per-row-unique
+     * {@code 'rss_item#' || id} sentinel, giving every invalid-link row its own
+     * singleton group. A single expression suffices for all three tiers because
+     * key-grouping and link-grouping never disagree: the repository guarantees
+     * that all rows sharing a link converge onto ONE dedup_key on every sync
+     * (the unconditional healing update
+     * {@link #updateRssItemsDedupKeyForLink(String, String)}), so the key tier
+     * already merges every same-link group, and keyless rows reproduce exactly
+     * the phase-1 behavior.
      * <p>
      * Representative row = the group's NEWEST copy (tiebreak: highest id). The
      * single 1-argument MAX aggregate over the zero-padded composite string
@@ -497,20 +531,23 @@ public abstract class RssDao {
      * @param afterId      id of the last already-loaded group representative,
      *                     ignored when afterSortKey is null
      * @param limit        maximum number of groups to return
-     * @return one representative per link group matching the filters, newest first,
-     * continuing after the cursor group
+     * @return one representative per story group (dedup key or link) matching the
+     * filters, newest first, continuing after the cursor group
      */
     @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Query("SELECT *, MAX(printf('%015d_%015d', max(COALESCE(pub_date, created_date_time), 0), id)) AS rep_sort_key FROM rss_item WHERE (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) GROUP BY COALESCE(NULLIF(link, ''), 'rss_item#' || id) HAVING (:afterSortKey IS NULL OR COALESCE(pub_date, created_date_time) < :afterSortKey OR (COALESCE(pub_date, created_date_time) = :afterSortKey AND id < :afterId)) ORDER BY COALESCE(pub_date, created_date_time) DESC, id DESC LIMIT :limit")
+    @Query("SELECT *, MAX(printf('%015d_%015d', max(COALESCE(pub_date, created_date_time), 0), id)) AS rep_sort_key FROM rss_item WHERE (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) GROUP BY COALESCE(NULLIF(dedup_key, ''), NULLIF(link, ''), 'rss_item#' || id) HAVING (:afterSortKey IS NULL OR COALESCE(pub_date, created_date_time) < :afterSortKey OR (COALESCE(pub_date, created_date_time) = :afterSortKey AND id < :afterId)) ORDER BY COALESCE(pub_date, created_date_time) DESC, id DESC LIMIT :limit")
     public abstract List<RssItem> findRssItemsPageGroupedByLinkDesc(Long channelId, Integer isRead, Integer isFavorite, Long afterSortKey, Long afterId, int limit);
 
     /**
-     * Loads one keyset-pagination page of rss items GROUPED BY LINK, oldest first -
-     * the ASC mirror of
+     * Loads one keyset-pagination page of rss items GROUPED BY duplicate cluster
+     * (dedup_key, falling back to link), oldest first - the ASC mirror of
      * {@link #findRssItemsPageGroupedByLinkDesc(Long, Integer, Integer, Long, Long, int)}.
-     * See that method for the full rationale of the grouping expression, the
-     * printf-based deterministic representative, the copy-level filters and the
-     * HAVING-carried keyset cursor; only the comparison directions differ.
+     * See that method for the full rationale of the three-tier grouping
+     * expression (dedup cluster key first - the phase-2 title-similarity
+     * collapse; then exact link - the phase-1 behavior; then the per-row
+     * sentinel), the printf-based deterministic representative, the copy-level
+     * filters and the HAVING-carried keyset cursor; only the comparison
+     * directions differ.
      * This method must be called on a background thread.
      *
      * @param channelId    optional channel id filter, null to include all channels
@@ -522,11 +559,11 @@ public abstract class RssDao {
      * @param afterId      id of the last already-loaded group representative,
      *                     ignored when afterSortKey is null
      * @param limit        maximum number of groups to return
-     * @return one representative per link group matching the filters, oldest first,
-     * continuing after the cursor group
+     * @return one representative per story group (dedup key or link) matching the
+     * filters, oldest first, continuing after the cursor group
      */
     @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Query("SELECT *, MAX(printf('%015d_%015d', max(COALESCE(pub_date, created_date_time), 0), id)) AS rep_sort_key FROM rss_item WHERE (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) GROUP BY COALESCE(NULLIF(link, ''), 'rss_item#' || id) HAVING (:afterSortKey IS NULL OR COALESCE(pub_date, created_date_time) > :afterSortKey OR (COALESCE(pub_date, created_date_time) = :afterSortKey AND id > :afterId)) ORDER BY COALESCE(pub_date, created_date_time) ASC, id ASC LIMIT :limit")
+    @Query("SELECT *, MAX(printf('%015d_%015d', max(COALESCE(pub_date, created_date_time), 0), id)) AS rep_sort_key FROM rss_item WHERE (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) GROUP BY COALESCE(NULLIF(dedup_key, ''), NULLIF(link, ''), 'rss_item#' || id) HAVING (:afterSortKey IS NULL OR COALESCE(pub_date, created_date_time) > :afterSortKey OR (COALESCE(pub_date, created_date_time) = :afterSortKey AND id > :afterId)) ORDER BY COALESCE(pub_date, created_date_time) ASC, id ASC LIMIT :limit")
     public abstract List<RssItem> findRssItemsPageGroupedByLinkAsc(Long channelId, Integer isRead, Integer isFavorite, Long afterSortKey, Long afterId, int limit);
 
     /**
@@ -582,11 +619,14 @@ public abstract class RssDao {
     public abstract RssItem findNewerRssItem(Long channelId, Integer isRead, Integer isFavorite, long anchorDate, long anchorId);
 
     /**
-     * Finds the link-GROUP directly older than the given anchor position - the
+     * Finds the story-GROUP directly older than the given anchor position - the
      * grouped counterpart of
      * {@link #findOlderRssItem(Long, Integer, Integer, long, long)} used by the
      * item detail page when the home list shows the collapsed all-channels view
-     * (issue #45). GROUP BY expression, printf-anchored deterministic
+     * (issue #45). GROUP BY expression - the three-tier dedup-key/link/sentinel
+     * COALESCE, see
+     * {@link #findRssItemsPageGroupedByLinkDesc(Long, Integer, Integer, Long, Long, int)}
+     * for the full phase-1/phase-2 rationale - printf-anchored deterministic
      * representative (newest copy of the group, tiebreak by id) and copy-level
      * filters are EXACTLY the ones of
      * {@link #findRssItemsPageGroupedByLinkDesc(Long, Integer, Integer, Long, Long, int)}
@@ -604,21 +644,23 @@ public abstract class RssDao {
      * @param anchorDate the anchor's effective date (pub_date, falling back to
      *                   created_date_time) in epoch millis
      * @param anchorId   the anchor's id (unique autoincrement primary key)
-     * @return the representative of the closest older link group, or null when the
+     * @return the representative of the closest older story group, or null when the
      * anchor is the oldest visible group
      */
     @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Query("SELECT *, MAX(printf('%015d_%015d', max(COALESCE(pub_date, created_date_time), 0), id)) AS rep_sort_key FROM rss_item WHERE (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) GROUP BY COALESCE(NULLIF(link, ''), 'rss_item#' || id) HAVING (COALESCE(pub_date, created_date_time) < :anchorDate OR (COALESCE(pub_date, created_date_time) = :anchorDate AND id < :anchorId)) ORDER BY COALESCE(pub_date, created_date_time) DESC, id DESC LIMIT 1")
+    @Query("SELECT *, MAX(printf('%015d_%015d', max(COALESCE(pub_date, created_date_time), 0), id)) AS rep_sort_key FROM rss_item WHERE (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) GROUP BY COALESCE(NULLIF(dedup_key, ''), NULLIF(link, ''), 'rss_item#' || id) HAVING (COALESCE(pub_date, created_date_time) < :anchorDate OR (COALESCE(pub_date, created_date_time) = :anchorDate AND id < :anchorId)) ORDER BY COALESCE(pub_date, created_date_time) DESC, id DESC LIMIT 1")
     public abstract RssItem findOlderRssItemGroupedByLink(Long channelId, Integer isRead, Integer isFavorite, long anchorDate, long anchorId);
 
     /**
-     * Finds the link-GROUP directly newer than the given anchor position - the
+     * Finds the story-GROUP directly newer than the given anchor position - the
      * grouped counterpart of
      * {@link #findNewerRssItem(Long, Integer, Integer, long, long)}, ASC mirror of
      * {@link #findOlderRssItemGroupedByLink(Long, Integer, Integer, long, long)}.
-     * GROUP BY expression, printf-anchored deterministic representative
-     * (newest copy of the group, tiebreak by id) and copy-level filters are EXACTLY
-     * the ones of
+     * GROUP BY expression - the three-tier dedup-key/link/sentinel COALESCE, see
+     * {@link #findRssItemsPageGroupedByLinkDesc(Long, Integer, Integer, Long, Long, int)}
+     * for the full phase-1/phase-2 rationale - printf-anchored deterministic
+     * representative (newest copy of the group, tiebreak by id) and copy-level
+     * filters are EXACTLY the ones of
      * {@link #findRssItemsPageGroupedByLinkAsc(Long, Integer, Integer, Long, Long, int)},
      * so navigation walks exactly the collapsed list order: the returned group is
      * the next visible row of the grouped list. The anchor passed in must itself be
@@ -632,11 +674,11 @@ public abstract class RssDao {
      * @param anchorDate the anchor's effective date (pub_date, falling back to
      *                   created_date_time) in epoch millis
      * @param anchorId   the anchor's id (unique autoincrement primary key)
-     * @return the representative of the closest newer link group, or null when the
+     * @return the representative of the closest newer story group, or null when the
      * anchor is the newest visible group
      */
     @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Query("SELECT *, MAX(printf('%015d_%015d', max(COALESCE(pub_date, created_date_time), 0), id)) AS rep_sort_key FROM rss_item WHERE (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) GROUP BY COALESCE(NULLIF(link, ''), 'rss_item#' || id) HAVING (COALESCE(pub_date, created_date_time) > :anchorDate OR (COALESCE(pub_date, created_date_time) = :anchorDate AND id > :anchorId)) ORDER BY COALESCE(pub_date, created_date_time) ASC, id ASC LIMIT 1")
+    @Query("SELECT *, MAX(printf('%015d_%015d', max(COALESCE(pub_date, created_date_time), 0), id)) AS rep_sort_key FROM rss_item WHERE (:channelId IS NULL OR channel_id = :channelId) AND (:isRead IS NULL OR is_read = :isRead) AND (:isFavorite IS NULL OR is_favorite = :isFavorite) GROUP BY COALESCE(NULLIF(dedup_key, ''), NULLIF(link, ''), 'rss_item#' || id) HAVING (COALESCE(pub_date, created_date_time) > :anchorDate OR (COALESCE(pub_date, created_date_time) = :anchorDate AND id > :anchorId)) ORDER BY COALESCE(pub_date, created_date_time) ASC, id ASC LIMIT 1")
     public abstract RssItem findNewerRssItemGroupedByLink(Long channelId, Integer isRead, Integer isFavorite, long anchorDate, long anchorId);
 
     /**
@@ -813,6 +855,77 @@ public abstract class RssDao {
     protected abstract List<LinkCount> countRssItemsByLinksChunk(List<String> links);
 
     /**
+     * Counts, per dedup cluster key, how many rss_item rows carry it. Backs the
+     * "Also in N feeds" duplicate badge of the collapsed all-channels list for
+     * KEYED rows (issue #45 phase 2): each representative row of
+     * {@link #findRssItemsPageGroupedByLinkDesc(Long, Integer, Integer, Long, Long, int)}
+     * whose dedup_key is non-empty reports the absolute number of copies its
+     * whole story cluster has across ALL channels, regardless of any active
+     * read/favorite filter - copies with DIFFERENT links included, which the
+     * per-link count of {@link #countRssItemsByLinks(List)} cannot see. The
+     * unkeyed representatives keep using that per-link count, so the command
+     * merges both lookups.
+     * <p>
+     * Null/empty input entries are dropped BEFORE the query: a null key can
+     * never match the IN clause anyway, but an empty-string key WOULD match and
+     * count every empty-key row of the table as copies of each other - they are
+     * not (empty keys are neutralized at grouping time by the query-time
+     * NULLIF, mirroring the empty-link trap documented on
+     * {@link #countRssItemsByLinks(List)}). Returns an empty list for null/empty
+     * input.
+     * <p>
+     * The keys are chunked at {@link #COUNT_BY_KEYS_CHUNK_SIZE} per statement
+     * for the same host-parameter ceiling as {@link #countRssItemsByLinks(List)}
+     * - the caller's window can exceed 1000 keys after a deep scroll in REFRESH
+     * mode, and SQLite older than 3.32 (Android 11 and below) allows at most 999
+     * host parameters per query.
+     * This method must be called on a background thread.
+     *
+     * @param keys the dedup cluster keys to count copies for, may contain
+     *             null/empty entries (ignored)
+     * @return one {@link KeyCount} per distinct valid key that has at least one
+     * row, empty when no input key matches
+     */
+    @Transaction
+    public List<KeyCount> countRssItemsByDedupKeys(List<String> keys) {
+        if (keys == null || keys.isEmpty()) {
+            return Collections.emptyList();
+        }
+        ArrayList<String> validKeys = new ArrayList<>(keys.size());
+        for (String key : keys) {
+            if (key != null && !key.isEmpty()) {
+                validKeys.add(key);
+            }
+        }
+        if (validKeys.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<KeyCount> result = new ArrayList<>();
+        for (int i = 0; i < validKeys.size(); i += COUNT_BY_KEYS_CHUNK_SIZE) {
+            int end = Math.min(i + COUNT_BY_KEYS_CHUNK_SIZE, validKeys.size());
+            List<KeyCount> chunkResult =
+                    countRssItemsByDedupKeysChunk(validKeys.subList(i, end));
+            if (chunkResult != null && !chunkResult.isEmpty()) {
+                result.addAll(chunkResult);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Counts copies for one chunk of at most {@link #COUNT_BY_KEYS_CHUNK_SIZE}
+     * dedup cluster keys. Protected chunk method of
+     * {@link #countRssItemsByDedupKeys(List)}, which owns the null/empty
+     * filtering and the chunk loop.
+     * This method must be called on a background thread.
+     *
+     * @param keys the non-empty dedup cluster keys of this chunk
+     * @return one {@link KeyCount} per key of the chunk that has at least one row
+     */
+    @Query("SELECT dedup_key, COUNT(*) AS cnt FROM rss_item WHERE dedup_key IN (:keys) GROUP BY dedup_key")
+    protected abstract List<KeyCount> countRssItemsByDedupKeysChunk(List<String> keys);
+
+    /**
      * Auto mark-read (unread retention window): marks unread, non-favorite rss items
      * as read when they are old. An item is old when
      * COALESCE(pub_date, created_date_time) is strictly before the given cutoff.
@@ -898,4 +1011,84 @@ public abstract class RssDao {
      */
     @Query("SELECT * FROM rss_item WHERE link = :link")
     public abstract List<RssItem> findRssItemsByLink(String link);
+
+    /**
+     * Loads the partial projections of all rss_item rows last touched by a sync
+     * at or after the given time and carrying a usable title - the matcher reads
+     * ONLY the id, link, title and dedup_key columns. Backs the sync-time
+     * fuzzy-candidate pass of the dedup-key assignment (issue #45 phase 2): the
+     * repository scans these rows once per sync to find a title-similar adoptable
+     * key for freshly parsed items. The projection is deliberately partial (a
+     * full-entity SELECT would drag description and media columns through memory
+     * for every candidate on every sync); Room leaves the unmapped nullable
+     * RssItem fields at their defaults, which is fine because the matcher reads
+     * only the projected fields - hence the QUERY_MISMATCH suppression. The two
+     * primitive-backed boolean columns (is_read, is_favorite) are carried in the
+     * SELECT solely because Room refuses a partial projection that omits
+     * primitive (non-null) entity fields; the matcher ignores them.
+     * <p>
+     * The window ({@code updated_date_time >= :sinceMillis}, typically
+     * {@code now - RssTitleNormalizer.DEDUP_WINDOW_DAYS days}) bounds comparison
+     * COST only, not correctness: any feed still carrying an item re-stamps its
+     * updated_date_time on every sync (see
+     * {@link #upsertRssItemsForChannel(RssChannel, List)}), so a live story's
+     * copies are always inside the window, while the union-by-link matching step
+     * is deliberately NOT window-bounded. The {@code title IS NOT NULL AND title != ''}
+     * guard skips rows whose title can never produce a normalized key.
+     * This method must be called on a background thread.
+     *
+     * @param sinceMillis epoch millis lower bound (inclusive) on updated_date_time;
+     *                    pass {@code now - RssTitleNormalizer.DEDUP_WINDOW_DAYS} days
+     * @return the recent rows' (id, link, title, dedup_key) projections, other
+     * fields left at their defaults
+     */
+    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
+    @Query("SELECT id, link, title, dedup_key, is_read, is_favorite FROM rss_item WHERE updated_date_time >= :sinceMillis AND title IS NOT NULL AND title != ''")
+    public abstract List<RssItem> findRecentRssItemsForDedupMatching(long sinceMillis);
+
+    /**
+     * Stamps the given dedup cluster key on EVERY rss_item row whose link equals
+     * the given link. The healing write of the sync-time dedup-key assignment
+     * (issue #45 phase 2): after the repository assigned a key to a parsed item,
+     * all stored rows sharing that link are re-pointed onto the same key, which
+     * makes the phase-1 "same link = same story" invariant independent of any
+     * recency heuristic (P0-1). Two deliberate properties:
+     * <ul>
+     * <li>The {@code link != ''} guard is a P0 trap guard: the parser yields ""
+     * links for RSS items with an EMPTY &lt;link/&gt; element, and an unguarded
+     * {@code link = ''} predicate would mass-key EVERY empty-link row of the
+     * table onto one cluster - the same trap guarded in
+     * {@link #markItemsReadByLinksChunk(List)} and {@link #markOldItemsRead(long)}.
+     * Null links can never match {@code link = :link} in SQLite anyway.</li>
+     * <li>The update is UNCONDITIONAL on the old key value - it OVERWRITES
+     * differing keys, it does not merely fill NULLs - so all rows sharing a link
+     * always converge onto exactly one key per the phase-1 same-link invariant,
+     * whichever stale spelling they carried before.</li>
+     * </ul>
+     * This method must be called on a background thread.
+     *
+     * @param dedupKey the cluster key to stamp (an empty key is never healed by
+     *                 the caller, but writing one is harmless: the query-time
+     *                 NULLIF neutralizes it back to link grouping)
+     * @param link     the non-empty link whose rows receive the key
+     * @return the number of rows stamped
+     */
+    @Query("UPDATE rss_item SET dedup_key = :dedupKey WHERE link = :link AND link IS NOT NULL AND link != ''")
+    public abstract int updateRssItemsDedupKeyForLink(String dedupKey, String link);
+
+    /**
+     * Finds all rss_item rows carrying the given dedup cluster key, regardless of
+     * channel or link. Backs the "also in N feeds" copies expansion of the
+     * collapsed all-channels list for KEYED rows (issue #45 phase 2): the
+     * displayed representative may have no link at all, and copies with DIFFERENT
+     * links are invisible to {@link #findRssItemsByLink(String)} - the cluster key
+     * is the only handle that enumerates the whole story. dedup_key is indexed
+     * since MIGRATION_12_13 (Room-default index name), so this is an index seek.
+     * This method must be called on a background thread.
+     *
+     * @param dedupKey the cluster key of the rows to find
+     * @return list of rss items carrying the given key
+     */
+    @Query("SELECT * FROM rss_item WHERE dedup_key = :dedupKey")
+    public abstract List<RssItem> findRssItemsByDedupKey(String dedupKey);
 }

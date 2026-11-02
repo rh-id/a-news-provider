@@ -24,6 +24,7 @@ import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
+import m.co.rh.id.a_news_provider.base.model.KeyCount;
 import m.co.rh.id.a_news_provider.base.model.LinkCount;
 import m.co.rh.id.a_news_provider.base.model.RssModel;
 import m.co.rh.id.a_news_provider.test.util.DirectExecutorService;
@@ -50,7 +51,10 @@ import static org.mockito.Mockito.when;
  * channel must not load at all. Plus the duplicate-story collapsing branch
  * (issue #45): with the setting on and all channels shown, loadItems() must use
  * the link-grouped DAO queries and fill duplicateCount per row, while a selected
- * channel (or the setting off) must keep the flat queries.
+ * channel (or the setting off) must keep the flat queries. Plus the phase-2
+ * two-tier counting: keyed representatives count via countRssItemsByDedupKeys,
+ * unkeyed ones via countRssItemsByLinks, a mixed page fills both, and rows
+ * without a count row default to duplicateCount 1.
  */
 public class PagedRssItemsCmdTest {
 
@@ -303,5 +307,156 @@ public class PagedRssItemsCmdTest {
         verify(mMockRssDao, times(1)).findRssItemsPageGroupedByLinkDesc(
                 any(), any(), any(), any(), any(), anyInt());
         verify(mMockRssDao, never()).countRssItemsByLinks(anyList());
+    }
+
+    // ==================================================================================
+    // Two-tier duplicate counting (issue #45 phase 2)
+    // ==================================================================================
+
+    @Test
+    public void loadItems_collapseOnKeyedRowsCountByDedupKeys() {
+        // both representatives carry the same dedup cluster key but DIFFERENT
+        // links - the story's copies are only enumerable through the key, so the
+        // key count must be used and the per-link count must not run at all
+        when(mMockSharedPreferences.isCollapseDuplicateStories()).thenReturn(true);
+        ArrayList<RssItem> groupedPage = new ArrayList<>();
+        RssItem keyedA = item(1, 1000);
+        keyedA.link = "http://test.com/a";
+        keyedA.dedupKey = "fed cuts rates sharply";
+        RssItem keyedB = item(2, 900);
+        keyedB.link = "http://test.com/b";
+        keyedB.dedupKey = "fed cuts rates sharply";
+        groupedPage.add(keyedA);
+        groupedPage.add(keyedB);
+        when(mMockRssDao.findRssItemsPageGroupedByLinkDesc(
+                isNull(), eq(0), isNull(), isNull(), isNull(), eq(BaseRssItemsCmd.PAGE_SIZE)))
+                .thenReturn(groupedPage);
+        List<KeyCount> keyCounts = new ArrayList<>();
+        KeyCount countA = new KeyCount();
+        countA.dedupKey = "fed cuts rates sharply";
+        countA.cnt = 4;
+        keyCounts.add(countA);
+        when(mMockRssDao.countRssItemsByDedupKeys(anyList())).thenReturn(keyCounts);
+
+        PagedRssItemsCmd cmd = new PagedRssItemsCmd(mMockProvider);
+        mDisposable = cmd.getRssItems().subscribe(items -> {
+            // drain the stream
+        });
+
+        ArrayList<RssItem> items = cmd.getAllRssItems();
+        assertEquals(2, items.size());
+        assertEquals("Both keyed representatives report the cluster's absolute count",
+                4, items.get(0).duplicateCount);
+        assertEquals(4, items.get(1).duplicateCount);
+        verify(mMockRssDao).countRssItemsByDedupKeys(anyList());
+        verify(mMockRssDao, never()).countRssItemsByLinks(anyList());
+    }
+
+    @Test
+    public void loadItems_collapseOnUnkeyedRowsStillCountByLinks() {
+        // the phase-1 population: empty/null dedupKey with a valid link - these
+        // representatives must keep the per-link count until their channel syncs
+        when(mMockSharedPreferences.isCollapseDuplicateStories()).thenReturn(true);
+        ArrayList<RssItem> groupedPage = new ArrayList<>();
+        RssItem unkeyed = item(3, 1000);
+        unkeyed.link = "http://test.com/legacy";
+        unkeyed.dedupKey = "";
+        groupedPage.add(unkeyed);
+        when(mMockRssDao.findRssItemsPageGroupedByLinkDesc(
+                isNull(), eq(0), isNull(), isNull(), isNull(), eq(BaseRssItemsCmd.PAGE_SIZE)))
+                .thenReturn(groupedPage);
+        List<LinkCount> linkCounts = new ArrayList<>();
+        LinkCount countLegacy = new LinkCount();
+        countLegacy.link = "http://test.com/legacy";
+        countLegacy.cnt = 2;
+        linkCounts.add(countLegacy);
+        when(mMockRssDao.countRssItemsByLinks(anyList())).thenReturn(linkCounts);
+
+        PagedRssItemsCmd cmd = new PagedRssItemsCmd(mMockProvider);
+        mDisposable = cmd.getRssItems().subscribe(items -> {
+            // drain the stream
+        });
+
+        ArrayList<RssItem> items = cmd.getAllRssItems();
+        assertEquals(1, items.size());
+        assertEquals(2, items.get(0).duplicateCount);
+        verify(mMockRssDao).countRssItemsByLinks(anyList());
+        verify(mMockRssDao, never()).countRssItemsByDedupKeys(anyList());
+    }
+
+    @Test
+    public void loadItems_collapseOnMixedPageFillsBothTiers() {
+        // one keyed representative (counted by key) and one unkeyed (counted by
+        // link) on the same page: both lookups run and merge per row
+        when(mMockSharedPreferences.isCollapseDuplicateStories()).thenReturn(true);
+        ArrayList<RssItem> groupedPage = new ArrayList<>();
+        RssItem keyed = item(4, 1000);
+        keyed.link = "http://test.com/keyed";
+        keyed.dedupKey = "story cluster one";
+        RssItem unkeyed = item(5, 900);
+        unkeyed.link = "http://test.com/unkeyed";
+        groupedPage.add(keyed);
+        groupedPage.add(unkeyed);
+        when(mMockRssDao.findRssItemsPageGroupedByLinkDesc(
+                isNull(), eq(0), isNull(), isNull(), isNull(), eq(BaseRssItemsCmd.PAGE_SIZE)))
+                .thenReturn(groupedPage);
+        List<KeyCount> keyCounts = new ArrayList<>();
+        KeyCount keyCount = new KeyCount();
+        keyCount.dedupKey = "story cluster one";
+        keyCount.cnt = 5;
+        keyCounts.add(keyCount);
+        when(mMockRssDao.countRssItemsByDedupKeys(anyList())).thenReturn(keyCounts);
+        List<LinkCount> linkCounts = new ArrayList<>();
+        LinkCount linkCount = new LinkCount();
+        linkCount.link = "http://test.com/unkeyed";
+        linkCount.cnt = 3;
+        linkCounts.add(linkCount);
+        when(mMockRssDao.countRssItemsByLinks(anyList())).thenReturn(linkCounts);
+
+        PagedRssItemsCmd cmd = new PagedRssItemsCmd(mMockProvider);
+        mDisposable = cmd.getRssItems().subscribe(items -> {
+            // drain the stream
+        });
+
+        ArrayList<RssItem> items = cmd.getAllRssItems();
+        assertEquals(2, items.size());
+        assertEquals("Keyed representative counted via its cluster key",
+                5, items.get(0).duplicateCount);
+        assertEquals("Unkeyed representative counted via its link",
+                3, items.get(1).duplicateCount);
+        verify(mMockRssDao).countRssItemsByDedupKeys(anyList());
+        verify(mMockRssDao).countRssItemsByLinks(anyList());
+    }
+
+    @Test
+    public void loadItems_collapseOnMissingCountRowsDefaultToOne() {
+        // a representative whose key has no count row (stale/raced cluster) and a
+        // representative with neither key nor valid link (sentinel singleton):
+        // both must default to 1 - the badge only renders for counts > 1
+        when(mMockSharedPreferences.isCollapseDuplicateStories()).thenReturn(true);
+        ArrayList<RssItem> groupedPage = new ArrayList<>();
+        RssItem unknownKey = item(6, 1000);
+        unknownKey.link = "http://test.com/x";
+        unknownKey.dedupKey = "no count row for me";
+        RssItem bareSentinel = item(7, 900);
+        bareSentinel.link = null;
+        bareSentinel.dedupKey = null;
+        groupedPage.add(unknownKey);
+        groupedPage.add(bareSentinel);
+        when(mMockRssDao.findRssItemsPageGroupedByLinkDesc(
+                isNull(), eq(0), isNull(), isNull(), isNull(), eq(BaseRssItemsCmd.PAGE_SIZE)))
+                .thenReturn(groupedPage);
+        when(mMockRssDao.countRssItemsByDedupKeys(anyList())).thenReturn(new ArrayList<>());
+        when(mMockRssDao.countRssItemsByLinks(anyList())).thenReturn(new ArrayList<>());
+
+        PagedRssItemsCmd cmd = new PagedRssItemsCmd(mMockProvider);
+        mDisposable = cmd.getRssItems().subscribe(items -> {
+            // drain the stream
+        });
+
+        ArrayList<RssItem> items = cmd.getAllRssItems();
+        assertEquals(2, items.size());
+        assertEquals(1, items.get(0).duplicateCount);
+        assertEquals(1, items.get(1).duplicateCount);
     }
 }

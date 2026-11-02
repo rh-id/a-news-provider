@@ -405,6 +405,61 @@ public class DbMigrationTest {
     }
 
     // ==================================================================================
+    // MIGRATION_12_13: rss_item.dedup_key column + index for the title-similarity
+    // duplicate collapse (issue #45 phase 2)
+    // ==================================================================================
+
+    @Test
+    public void migrate12to13_addsNullableDedupKeyColumnWithIndex() throws IOException {
+        // createDatabase builds the EXACT version-12 schema from the exported
+        // 12.json (v11 columns + the link index; no dedup_key yet)
+        SupportSQLiteDatabase db = helper.createDatabase(TEST_DB, 12);
+        insertRssChannel(db, 1, "Feed A", "https://a.com/feed");
+        insertRssChannel(db, 2, "Feed B", "https://b.com/feed");
+        insertRssItem(db, 11, 1, "https://shared.com/post-1", false, false);
+        insertRssItem(db, 12, 2, "https://shared.com/post-1", true, false);
+        insertRssItem(db, 13, 2, null, false, false);
+        db.close();
+
+        SupportSQLiteDatabase migrated = helper.runMigrationsAndValidate(TEST_DB, 13,
+                true, DbMigration.MIGRATION_12_13);
+
+        try {
+            // pre-existing rows keep NULL dedup_key: the key is assigned at sync
+            // time only, there is no backfill
+            assertNull(readString(migrated,
+                    "SELECT dedup_key FROM rss_item WHERE id = 11"));
+            assertNull(readString(migrated,
+                    "SELECT dedup_key FROM rss_item WHERE id = 12"));
+            assertNull(readString(migrated,
+                    "SELECT dedup_key FROM rss_item WHERE id = 13"));
+            // the index exists under Room's default name - runMigrationsAndValidate
+            // already verified it matches the exported 13.json, this names it explicitly
+            assertEquals(1, readLong(migrated,
+                    "SELECT COUNT(name) FROM sqlite_master " +
+                            "WHERE type = 'index' AND name = 'index_rss_item_dedup_key'"));
+            assertEquals(1, readLong(migrated,
+                    "SELECT COUNT(name) FROM sqlite_master " +
+                            "WHERE type = 'index' AND name = 'index_rss_item_dedup_key' " +
+                            "AND tbl_name = 'rss_item'"));
+            // the new column is writable: cluster keys round-trip
+            migrated.execSQL("UPDATE rss_item SET dedup_key = 'story-k' WHERE id = 11");
+            assertEquals("story-k", readString(migrated,
+                    "SELECT dedup_key FROM rss_item WHERE id = 11"));
+            // data survived the migration untouched
+            assertEquals(3, readLong(migrated, "SELECT COUNT(id) FROM rss_item"));
+            assertEquals(1, readLong(migrated,
+                    "SELECT is_read FROM rss_item WHERE id = 12"));
+            // the duplicate-link rows above still coexist (non-unique index,
+            // non-unique keys by design)
+            assertEquals(2, readLong(migrated,
+                    "SELECT COUNT(id) FROM rss_item WHERE link = 'https://shared.com/post-1'"));
+        } finally {
+            migrated.close();
+        }
+    }
+
+    // ==================================================================================
     // helpers: seed rows using the exact version-8 schema, read values after migration
     // ==================================================================================
 

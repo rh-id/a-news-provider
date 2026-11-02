@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
+import m.co.rh.id.a_news_provider.base.model.KeyCount;
 import m.co.rh.id.a_news_provider.base.model.LinkCount;
 
 import static org.junit.Assert.assertEquals;
@@ -47,7 +48,13 @@ import static org.junit.Assert.fail;
  * stay singleton groups, read/favorite filters apply at copy level before grouping,
  * keyset pagination walks every group exactly once, the grouped neighbor queries walk
  * exactly the collapsed list order, and {@code countRssItemsByLinks} counts copies
- * per link across chunk boundaries.
+ * per link across chunk boundaries. Plus the phase-2 dedup-key surface (issue #45
+ * phase 2): rows sharing ONLY a dedup_key (different links) collapse with the newest
+ * copy as representative, NULL-key rows keep the link grouping,
+ * {@code countRssItemsByDedupKeys} counts per key with null/empty filtering,
+ * {@code findRssItemsByDedupKey} enumerates a whole cluster, and the healing
+ * {@code updateRssItemsDedupKeyForLink} overrides differing keys while never
+ * touching empty-link rows.
  * <p>
  * 5. Upsert retention (issue #37) and updated-since queries:
  * {@code upsertRssItemsForChannel} inserts new rows, updates matched rows in place
@@ -872,6 +879,210 @@ public class RssDaoTest {
                 assertEquals(1, linkCountResult.cnt);
             }
         }
+    }
+
+    // ==================================================================================
+    // Section 4b: dedup-key collapse (issue #45 phase 2)
+    // ==================================================================================
+
+    @Test
+    public void groupedPageDesc_dedupKeyCollapsesDifferentLinksNullKeysKeepLinkGrouping() {
+        RssChannel channel1 = createRssChannel("http://test.com/feed1", "Feed 1");
+        RssChannel channel2 = createRssChannel("http://test.com/feed2", "Feed 2");
+        // one story cluster via dedup_key across DIFFERENT links - the newest copy
+        // (Jan 3) must win the representative; plus a NULL-key pair sharing one
+        // link, which keeps the phase-1 link grouping
+        RssItem keyedOld = createRssItem("cluster copy old", null,
+                "http://test.com/cluster-a", createDate(2026, 1, 1));
+        RssItem keyedNew = createRssItem("cluster copy new", null,
+                "http://test.com/cluster-b", createDate(2026, 1, 3));
+        RssItem nullKeyNew = createRssItem("null key copy new", null,
+                "http://test.com/null-key", createDate(2026, 1, 2));
+        RssItem nullKeyOld = createRssItem("null key copy old", null,
+                "http://test.com/null-key", createDate(2026, 1, 1));
+        mRssDao.insertRssChannel(channel1, keyedOld, nullKeyNew, nullKeyOld);
+        mRssDao.insertRssChannel(channel2, keyedNew);
+        mRssDao.updateRssItemsDedupKeyForLink("story-cluster", "http://test.com/cluster-a");
+        mRssDao.updateRssItemsDedupKeyForLink("story-cluster", "http://test.com/cluster-b");
+
+        // 4 rows in the table but only 2 collapsed groups
+        List<RssItem> grouped = mRssDao.findRssItemsPageGroupedByLinkDesc(
+                null, null, null, null, null, 100);
+        assertEquals(2, grouped.size());
+        assertEquals("keyed cluster groups regardless of the differing links",
+                "cluster copy new", grouped.get(0).title);
+        assertEquals("the representative is the cluster's NEWEST copy",
+                "http://test.com/cluster-b", grouped.get(0).link);
+        assertEquals("null-key rows still collapse by exact link",
+                "null key copy new", grouped.get(1).title);
+
+        // ASC mirror returns the same groups in reverse
+        List<RssItem> groupedAsc = mRssDao.findRssItemsPageGroupedByLinkAsc(
+                null, null, null, null, null, 100);
+        assertEquals(2, groupedAsc.size());
+        assertEquals("null key copy new", groupedAsc.get(0).title);
+        assertEquals("cluster copy new", groupedAsc.get(1).title);
+
+        // the grouped neighbor queries walk exactly this collapsed order too
+        RssItem older = mRssDao.findOlderRssItemGroupedByLink(null, null, null,
+                grouped.get(0).pubDate.getTime(), grouped.get(0).id);
+        assertNotNull(older);
+        assertEquals("null key copy new", older.title);
+        assertNull(mRssDao.findOlderRssItemGroupedByLink(null, null, null,
+                older.pubDate.getTime(), older.id));
+    }
+
+    @Test
+    public void countRssItemsByDedupKeys_countsCopiesPerKeyIgnoringNullAndEmpty() {
+        RssChannel channel1 = createRssChannel("http://test.com/feed1", "Feed 1");
+        RssChannel channel2 = createRssChannel("http://test.com/feed2", "Feed 2");
+        // triple cluster (3 rows, different links), double cluster, single, plus
+        // an empty-key and a NULL-key row that are NOT copies of anything
+        RssItem triple1 = createRssItem("triple 1", null,
+                "http://test.com/t1", createDate(2026, 1, 1));
+        RssItem triple2 = createRssItem("triple 2", null,
+                "http://test.com/t2", createDate(2026, 1, 2));
+        RssItem triple3 = createRssItem("triple 3", null,
+                "http://test.com/t3", createDate(2026, 1, 3));
+        RssItem double1 = createRssItem("double 1", null,
+                "http://test.com/d1", createDate(2026, 1, 1));
+        RssItem double2 = createRssItem("double 2", null,
+                "http://test.com/d2", createDate(2026, 1, 2));
+        RssItem single = createRssItem("single", null,
+                "http://test.com/s1", createDate(2026, 1, 1));
+        RssItem emptyKey = createRssItem("empty key", null,
+                "http://test.com/empty", createDate(2026, 1, 1));
+        RssItem nullKey = createRssItem("null key", null,
+                "http://test.com/null", createDate(2026, 1, 1));
+        mRssDao.insertRssChannel(channel1, triple1, double1, single, emptyKey, nullKey);
+        mRssDao.insertRssChannel(channel2, triple2, double2);
+        mRssDao.insertRssChannel(createRssChannel("http://test.com/feed3", "Feed 3"), triple3);
+        mRssDao.updateRssItemsDedupKeyForLink("k-triple", "http://test.com/t1");
+        mRssDao.updateRssItemsDedupKeyForLink("k-triple", "http://test.com/t2");
+        mRssDao.updateRssItemsDedupKeyForLink("k-triple", "http://test.com/t3");
+        mRssDao.updateRssItemsDedupKeyForLink("k-double", "http://test.com/d1");
+        mRssDao.updateRssItemsDedupKeyForLink("k-double", "http://test.com/d2");
+        mRssDao.updateRssItemsDedupKeyForLink("k-single", "http://test.com/s1");
+        mRssDao.updateRssItemsDedupKeyForLink("", "http://test.com/empty");
+
+        List<String> keys = new ArrayList<>();
+        keys.add("k-triple");
+        keys.add("k-double");
+        keys.add("k-single");
+        keys.add("k-missing");
+        // null and empty entries must be dropped, never matched - an empty key
+        // would otherwise count every empty-key row as copies of each other
+        keys.add(null);
+        keys.add("");
+
+        List<KeyCount> counts = mRssDao.countRssItemsByDedupKeys(keys);
+
+        // absolute copy counts across ALL channels and DIFFERENT links
+        assertEquals(3, counts.size());
+        for (KeyCount keyCount : counts) {
+            switch (keyCount.dedupKey) {
+                case "k-triple":
+                    assertEquals(3, keyCount.cnt);
+                    break;
+                case "k-double":
+                    assertEquals(2, keyCount.cnt);
+                    break;
+                case "k-single":
+                    assertEquals(1, keyCount.cnt);
+                    break;
+                default:
+                    fail("unexpected key: " + keyCount.dedupKey);
+            }
+        }
+
+        // null/empty-only or null input produces no count rows
+        ArrayList<String> invalidOnly = new ArrayList<>();
+        invalidOnly.add(null);
+        invalidOnly.add("");
+        assertTrue(mRssDao.countRssItemsByDedupKeys(invalidOnly).isEmpty());
+        assertTrue(mRssDao.countRssItemsByDedupKeys(null).isEmpty());
+        assertTrue(mRssDao.countRssItemsByDedupKeys(new ArrayList<>()).isEmpty());
+    }
+
+    @Test
+    public void findRssItemsByDedupKey_returnsWholeClusterAcrossLinksAndChannels() {
+        RssChannel channel1 = createRssChannel("http://test.com/feed1", "Feed 1");
+        RssChannel channel2 = createRssChannel("http://test.com/feed2", "Feed 2");
+        RssItem copyA = createRssItem("cluster copy a", null,
+                "http://test.com/a", createDate(2026, 1, 1));
+        RssItem copyB = createRssItem("cluster copy b", null,
+                "http://test.com/b", createDate(2026, 1, 2));
+        RssItem outsider = createRssItem("different story", null,
+                "http://test.com/c", createDate(2026, 1, 3));
+        mRssDao.insertRssChannel(channel1, copyA, outsider);
+        mRssDao.insertRssChannel(channel2, copyB);
+        mRssDao.updateRssItemsDedupKeyForLink("story-k", "http://test.com/a");
+        mRssDao.updateRssItemsDedupKeyForLink("story-k", "http://test.com/b");
+
+        List<RssItem> cluster = mRssDao.findRssItemsByDedupKey("story-k");
+        // both copies come back although their links differ - the per-link lookup
+        // could never enumerate this cluster
+        assertEquals(2, cluster.size());
+        HashSet<String> titles = new HashSet<>();
+        for (RssItem rssItem : cluster) {
+            titles.add(rssItem.title);
+        }
+        assertTrue(titles.contains("cluster copy a"));
+        assertTrue(titles.contains("cluster copy b"));
+
+        assertTrue(mRssDao.findRssItemsByDedupKey("no-such-key").isEmpty());
+    }
+
+    @Test
+    public void updateRssItemsDedupKeyForLink_overridesDifferingKeysAndGuardsEmptyLinks() {
+        RssChannel channel1 = createRssChannel("http://test.com/feed1", "Feed 1");
+        RssChannel channel2 = createRssChannel("http://test.com/feed2", "Feed 2");
+        RssItem copyA = createRssItem("copy a", null,
+                "http://test.com/shared", createDate(2026, 1, 1));
+        RssItem copyB = createRssItem("copy b", null,
+                "http://test.com/shared", createDate(2026, 1, 2));
+        RssItem divergent = createRssItem("divergent", null,
+                "http://test.com/shared", createDate(2026, 1, 3));
+        RssItem emptyLink = createRssItem("empty link", null,
+                "", createDate(2026, 1, 1));
+        RssItem nullLink = createRssItem("null link", null,
+                null, createDate(2026, 1, 1));
+        mRssDao.insertRssChannel(channel1, copyA, emptyLink, nullLink);
+        mRssDao.insertRssChannel(channel2, copyB, divergent);
+        // three same-link rows carrying THREE different key spellings
+        setDedupKeyRaw(copyA.id, "old-a");
+        setDedupKeyRaw(copyB.id, "old-b");
+        setDedupKeyRaw(divergent.id, "old-c");
+        // the empty-link row carries a key that must survive
+        setDedupKeyRaw(emptyLink.id, "keeper");
+
+        int rowsStamped = mRssDao.updateRssItemsDedupKeyForLink(
+                "converged-key", "http://test.com/shared");
+
+        assertEquals("all three same-link rows stamped", 3, rowsStamped);
+        for (RssItem rssItem : mRssDao.findRssItemsByLink("http://test.com/shared")) {
+            assertEquals("the healing update overrides differing old keys",
+                    "converged-key", rssItem.dedupKey);
+        }
+        // the link != '' guard: the empty-link row keeps its key and the
+        // null-link row keeps NULL - empty links are never mass-keyed
+        RssItem storedEmptyLink = findByTitle(
+                mRssDao.findRssItemsByChannelId(channel1.id), "empty link");
+        assertEquals("keeper", storedEmptyLink.dedupKey);
+        RssItem storedNullLink = findByTitle(
+                mRssDao.findRssItemsByChannelId(channel1.id), "null link");
+        assertNull(storedNullLink.dedupKey);
+    }
+
+    /**
+     * Writes a dedup_key directly via raw SQL - the DAO's only key writer
+     * (updateRssItemsDedupKeyForLink) is keyed by link and refuses empty links,
+     * so tests that need arbitrary pre-existing key spellings stamp directly.
+     */
+    private void setDedupKeyRaw(long itemId, String dedupKey) {
+        mAppDatabase.getOpenHelper().getWritableDatabase().execSQL(
+                "UPDATE rss_item SET dedup_key = ? WHERE id = ?",
+                new Object[]{dedupKey, itemId});
     }
 
     // ==================================================================================

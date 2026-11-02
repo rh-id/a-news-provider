@@ -17,6 +17,7 @@ import m.co.rh.id.a_news_provider.app.provider.notifier.RssChannelStateNotifier;
 import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
+import m.co.rh.id.a_news_provider.base.model.KeyCount;
 import m.co.rh.id.a_news_provider.base.model.LinkCount;
 import m.co.rh.id.aprovider.Provider;
 
@@ -106,13 +107,18 @@ public class PagedRssItemsCmd extends BaseRssItemsCmd {
      * straight through to the DAO so page boundaries stay stable.
      * <p>
      * Duplicate-story collapsing (issue #45): when the list shows ALL channels
-     * (no channel selected) AND the collapse setting is on, the link-grouped DAO
-     * queries are used instead of the flat ones, so rows sharing a link collapse
-     * into their newest copy, and {@link RssItem#duplicateCount} is filled per row
-     * with the link's ABSOLUTE copy count from
-     * {@code countRssItemsByLinks} (all copies regardless of the active
-     * read/favorite filter, so the badge wording "Also in N feeds" stays true even
-     * when the visible row is filtered). The setting is deliberately RE-READ on
+     * (no channel selected) AND the collapse setting is on, the grouped DAO
+     * queries are used instead of the flat ones, so rows that are the same story
+     * - sharing a dedup cluster key (phase-2 title-similarity collapse) or, for
+     * the not-yet-re-synced rows, an exact link (phase-1 behavior) - collapse
+     * into their newest copy, and {@link RssItem#duplicateCount} is filled per
+     * row with the ABSOLUTE copy count of its story (all copies regardless of
+     * the active read/favorite filter, so the badge wording "Also in N feeds"
+     * stays true even when the visible row is filtered). The count is two-tier,
+     * mirroring the queries' grouping COALESCE: keyed representatives are counted
+     * by dedup key ({@code countRssItemsByDedupKeys}, spanning DIFFERENT links),
+     * unkeyed ones by link ({@code countRssItemsByLinks}) - see
+     * {@link #fillDuplicateCounts(List)}. The setting is deliberately RE-READ on
      * every load rather than observed: the grouped and flat queries produce
      * different keyset cursors, so a mode switch is only valid on a fresh window,
      * which the next list load provides. Sync-driven REFRESH emissions re-run this
@@ -152,11 +158,22 @@ public class PagedRssItemsCmd extends BaseRssItemsCmd {
 
     /**
      * Fills {@link RssItem#duplicateCount} for every representative row of a
-     * grouped page from the DAO's per-link copy counts. Runs on the same executor
-     * thread as the page query (inside {@link #loadItems(Long, Long, int)}), never
-     * on the main thread. Rows without a count row (null/empty links, which
-     * {@code countRssItemsByLinks} deliberately ignores) default to 1: they are
-     * singleton groups, and the badge only renders for counts &gt; 1.
+     * grouped page with the two-tier copy counts of the collapse feature (issue
+     * #45 phase 2). Runs on the same executor thread as the page query (inside
+     * {@link #loadItems(Long, Long, int)}), never on the main thread.
+     * <p>
+     * The representatives are split into two disjoint tiers, mirroring the
+     * grouped queries' three-tier COALESCE: KEYED rows (non-empty
+     * {@link RssItem#dedupKey}) are counted by cluster key via
+     * {@code countRssItemsByDedupKeys} - their story may span DIFFERENT links
+     * across feeds, which a per-link count cannot see; UNKEYED rows (empty key
+     * but valid link - the not-yet-re-synced phase-1 population) keep the
+     * per-link count via {@code countRssItemsByLinks}, which already drops
+     * null/empty links internally. The two lookups merge into one per-row
+     * resolution (by key for the first tier, by link for the second); every
+     * representative without a matching count row - including rows with neither
+     * key nor valid link, which are singleton groups by construction - defaults
+     * to 1, and the badge only renders for counts &gt; 1.
      *
      * @param representatives the grouped page's representative rows, may be null/empty
      */
@@ -164,19 +181,38 @@ public class PagedRssItemsCmd extends BaseRssItemsCmd {
         if (representatives == null || representatives.isEmpty()) {
             return;
         }
+        ArrayList<String> dedupKeys = new ArrayList<>(representatives.size());
         ArrayList<String> links = new ArrayList<>(representatives.size());
         for (RssItem rssItem : representatives) {
-            links.add(rssItem.link);
+            if (rssItem.dedupKey != null && !rssItem.dedupKey.isEmpty()) {
+                dedupKeys.add(rssItem.dedupKey);
+            } else if (rssItem.link != null && !rssItem.link.isEmpty()) {
+                links.add(rssItem.link);
+            }
         }
-        List<LinkCount> counts = mRssDao.countRssItemsByLinks(links);
+        List<KeyCount> keyCounts = dedupKeys.isEmpty()
+                ? null : mRssDao.countRssItemsByDedupKeys(dedupKeys);
+        List<LinkCount> linkCounts = links.isEmpty()
+                ? null : mRssDao.countRssItemsByLinks(links);
+        Map<String, Integer> countByKey = new HashMap<>();
+        if (keyCounts != null) {
+            for (KeyCount keyCount : keyCounts) {
+                countByKey.put(keyCount.dedupKey, keyCount.cnt);
+            }
+        }
         Map<String, Integer> countByLink = new HashMap<>();
-        if (counts != null) {
-            for (LinkCount linkCount : counts) {
+        if (linkCounts != null) {
+            for (LinkCount linkCount : linkCounts) {
                 countByLink.put(linkCount.link, linkCount.cnt);
             }
         }
         for (RssItem rssItem : representatives) {
-            Integer count = rssItem.link == null ? null : countByLink.get(rssItem.link);
+            Integer count = null;
+            if (rssItem.dedupKey != null && !rssItem.dedupKey.isEmpty()) {
+                count = countByKey.get(rssItem.dedupKey);
+            } else if (rssItem.link != null) {
+                count = countByLink.get(rssItem.link);
+            }
             rssItem.duplicateCount = count != null ? count : 1;
         }
     }

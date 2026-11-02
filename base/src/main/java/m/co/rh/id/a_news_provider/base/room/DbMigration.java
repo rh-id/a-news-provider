@@ -16,7 +16,7 @@ public class DbMigration {
     public static Migration[] getAll() {
         return new Migration[]{MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4,
                 MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
-                MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12};
+                MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13};
     }
 
     public static final Migration MIGRATION_1_2 = new Migration(1, 2) {
@@ -142,6 +142,34 @@ public class DbMigration {
         @Override
         public void migrate(SupportSQLiteDatabase database) {
             database.execSQL("CREATE INDEX IF NOT EXISTS `index_rss_item_link` ON `rss_item` (`link`)");
+        }
+    };
+
+    /**
+     * Adds the dedup_key column to rss_item, the cross-feed near-duplicate story
+     * cluster key of the title-similarity collapse (issue #45 phase 2): rows
+     * sharing a non-null, non-empty key are the same story (same link, or similar
+     * normalized title at or above RssTitleNormalizer.JACCARD_THRESHOLD) and
+     * collapse into one row in the all-channels grouped list. The key is assigned
+     * by RssRepository at sync time only, so the column is nullable with no
+     * default (same rationale as MIGRATION_10_11's categories): rows created
+     * before this migration - and items of channels that never sync again (paused
+     * or removed feeds) - simply have no key and keep the phase-1 exact-link
+     * grouping until their channel's next sync; there is deliberately NO backfill.
+     * <p>
+     * The second statement creates the index under the EXACT Room-default name
+     * (index_&lt;table&gt;_&lt;column&gt;, the same rule as MIGRATION_11_12's
+     * link index) because the entity's {@code @Index(value = {"dedup_key"})} is
+     * validated against the migrated schema and any other name fails the schema
+     * check. It is a plain non-unique index: null and empty keys are legal and
+     * numerous (every not-yet-re-synced row holds NULL), and the queries never
+     * rely on uniqueness - the key is an opaque cluster label, not an identity.
+     */
+    public static final Migration MIGRATION_12_13 = new Migration(12, 13) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE `rss_item` ADD COLUMN `dedup_key` TEXT");
+            database.execSQL("CREATE INDEX IF NOT EXISTS `index_rss_item_dedup_key` ON `rss_item` (`dedup_key`)");
         }
     };
 

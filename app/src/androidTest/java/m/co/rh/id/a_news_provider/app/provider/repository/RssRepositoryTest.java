@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import m.co.rh.id.a_news_provider.base.util.RssTitleNormalizer;
 import m.co.rh.id.a_news_provider.base.util.UrlNormalizer;
 import m.co.rh.id.a_news_provider.base.AppDatabase;
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
@@ -49,6 +50,10 @@ import static org.junit.Assert.*;
  *     null/empty-link exclusion, paused-channel aging),</li>
  *     <li>neighbor navigation queries (next/previous article lookups) and keyset
  *     (cursor) pagination walks, including tied-sort-key page boundaries.</li>
+ *     <li>dedup-key assignment through persist() (issue #45 phase 2): cross-channel
+ *     title-similarity adoption, link-union precedence, the window-independent
+ *     P0-1 regression, healing overrides, linkless-batch safety, singleton
+ *     fallback keys and intra-batch fuzzy convergence.</li>
  * </ul>
  */
 @RunWith(AndroidJUnit4.class)
@@ -66,7 +71,8 @@ public class RssRepositoryTest {
                 .allowMainThreadQueries()
                 .build();
         mRssDao = mAppDatabase.rssDao();
-        mProvider = Provider.createProvider(context, new RepositoryTestProviderModule(mRssDao));
+        mProvider = Provider.createProvider(context,
+                new RepositoryTestProviderModule(mAppDatabase, mRssDao));
         mRssRepository = mProvider.get(RssRepository.class);
     }
 
@@ -1125,6 +1131,221 @@ public class RssRepositoryTest {
         }
     }
 
+    // ==================================================================================
+    // Section 7: dedup-key assignment through persist() (issue #45 phase 2)
+    // ==================================================================================
+
+    /**
+     * Writes a dedup_key directly via raw SQL: the sync-time assignment is the
+     * only production writer and runs inside persist(), so tests that need an
+     * ARBITRARY pre-existing key spelling (legacy or empty) stamp it directly -
+     * same backdoor precedent as {@link #backdateUpdated(long, long)}.
+     */
+    private void setDedupKey(long itemId, String dedupKey) {
+        mAppDatabase.getOpenHelper().getWritableDatabase().execSQL(
+                "UPDATE rss_item SET dedup_key = ? WHERE id = ?",
+                new Object[]{dedupKey, itemId});
+    }
+
+    @Test
+    public void testPersistAssignsSameKeyToSimilarTitlesAcrossChannels() {
+        // (a) cross-channel title-similarity collapse: the second sync finds the
+        // first story's row inside the recency window and adopts its key
+        RssChannel channelA = createRssChannel("http://test.com/feed-a", "Feed A");
+        ArrayList<RssItem> itemsA = new ArrayList<>();
+        itemsA.add(createRssItem("Fed cuts rates sharply amid inflation fears",
+                "http://test.com/fed-a"));
+        mRssRepository.persist(new RssModel(channelA, itemsA));
+
+        RssChannel channelB = createRssChannel("http://test.com/feed-b", "Feed B");
+        ArrayList<RssItem> itemsB = new ArrayList<>();
+        itemsB.add(createRssItem("Fed cuts rates sharply amid inflation",
+                "http://test.com/fed-b"));
+        mRssRepository.persist(new RssModel(channelB, itemsB));
+
+        RssItem storedA = findSingleItem("http://test.com/fed-a");
+        RssItem storedB = findSingleItem("http://test.com/fed-b");
+        assertNotNull("Synced row must carry a key", storedA.dedupKey);
+        assertEquals("Similar titles with different links share one dedup_key",
+                storedA.dedupKey, storedB.dedupKey);
+        assertEquals("The first story's normalized title is the cluster key",
+                "fed cuts rates sharply amid inflation fears", storedA.dedupKey);
+    }
+
+    @Test
+    public void testPersistSameLinkWithDissimilarTitlesStillOneKey() {
+        // (b) link-union beats fuzzy: the second story shares the link but its
+        // title is unrelated - it still joins the stored row's cluster
+        RssChannel channelA = createRssChannel("http://test.com/feed-a", "Feed A");
+        ArrayList<RssItem> itemsA = new ArrayList<>();
+        itemsA.add(createRssItem("Presidential debate draws record audience",
+                "http://test.com/shared"));
+        mRssRepository.persist(new RssModel(channelA, itemsA));
+
+        RssChannel channelB = createRssChannel("http://test.com/feed-b", "Feed B");
+        ArrayList<RssItem> itemsB = new ArrayList<>();
+        itemsB.add(createRssItem("Quarterly earnings miss wall street forecasts",
+                "http://test.com/shared"));
+        mRssRepository.persist(new RssModel(channelB, itemsB));
+
+        // two channel copies of one link exist; the second parse adopted the
+        // first copy's key through the by-link union despite the dissimilar title
+        List<RssItem> copies = mRssDao.findRssItemsByLink("http://test.com/shared");
+        assertEquals(2, copies.size());
+        for (RssItem copy : copies) {
+            assertEquals("Same-link rows always converge onto one key",
+                    "presidential debate draws record audience", copy.dedupKey);
+        }
+    }
+
+    @Test
+    public void testPersistLinkUnionIsWindowIndependent() {
+        // (c) P0-1 regression: the stored row's last-seen stamp is far outside the
+        // fuzzy window, but the by-link lookup is NOT window-bounded - the new
+        // copy must still adopt the OLD key
+        RssChannel channelA = createRssChannel("http://test.com/feed-a", "Feed A");
+        RssItem dbItem = createRssItem("Old spelling of the story",
+                "http://test.com/window-less");
+        mRssDao.insertRssChannel(channelA, dbItem);
+        mRssDao.updateRssItemsDedupKeyForLink("legacy-key", "http://test.com/window-less");
+        // simulate staleness: the row was last seen by a sync 30 days ago
+        backdateUpdated(dbItem.id, System.currentTimeMillis()
+                - TimeUnit.DAYS.toMillis(30));
+
+        RssChannel channelB = createRssChannel("http://test.com/feed-b", "Feed B");
+        ArrayList<RssItem> itemsB = new ArrayList<>();
+        itemsB.add(createRssItem("Brand new headline about quantum computing",
+                "http://test.com/window-less"));
+        mRssRepository.persist(new RssModel(channelB, itemsB));
+
+        // two rows share the link: the stale channel-A seed AND channel B's
+        // inserted copy (the upsert matches per-channel, so the cross-channel
+        // copy inserts). BOTH must carry the adopted legacy key: the fresh copy
+        // through rule 1's window-free by-link lookup, the stale row because
+        // its key is adopted, never replaced
+        List<RssItem> copies = mRssDao.findRssItemsByLink("http://test.com/window-less");
+        assertEquals(2, copies.size());
+        for (RssItem copy : copies) {
+            assertEquals("A stale same-link row still hands its key over",
+                    "legacy-key", copy.dedupKey);
+        }
+    }
+
+    @Test
+    public void testPersistHealingOverridesDifferingKey() {
+        // (d) healing write overrides: the stored row of the link carries a
+        // DIFFERENT (empty-string) key; the freshly assigned key must overwrite
+        // it, because the healing UPDATE is unconditional on the old value
+        RssChannel channelA = createRssChannel("http://test.com/feed-a", "Feed A");
+        RssItem dbItem = createRssItem("Whatever the old title was",
+                "http://test.com/heal-me");
+        mRssDao.insertRssChannel(channelA, dbItem);
+        setDedupKey(dbItem.id, "");
+
+        RssChannel channelB = createRssChannel("http://test.com/feed-b", "Feed B");
+        ArrayList<RssItem> itemsB = new ArrayList<>();
+        itemsB.add(createRssItem("Unrelated headline about quantum computing advances",
+                "http://test.com/heal-me"));
+        mRssRepository.persist(new RssModel(channelB, itemsB));
+
+        // two rows share the link (channel A's ""-keyed seed + channel B's
+        // inserted copy); the unconditional healing UPDATE must have flipped
+        // BOTH onto the freshly assigned key - the seeded row proving the
+        // override of a differing old value
+        List<RssItem> healed = mRssDao.findRssItemsByLink("http://test.com/heal-me");
+        assertEquals(2, healed.size());
+        for (RssItem copy : healed) {
+            assertEquals("The empty key was overridden by the freshly assigned one",
+                    "unrelated headline about quantum computing advances",
+                    copy.dedupKey);
+        }
+    }
+
+    @Test
+    public void testPersistLinklessItemCorruptsNothing() {
+        // (e) a parsed item with an EMPTY link must neither be keyed by an
+        // existing empty-link row's key nor corrupt the other empty-link rows
+        RssChannel channelA = createRssChannel("http://test.com/feed-a", "Feed A");
+        RssItem keyedLinkless = createRssItem("Keeper story headline about markets", "");
+        RssItem nullKeyLinkless = createRssItem("Another linkless headline today", null);
+        mRssDao.insertRssChannel(channelA, keyedLinkless, nullKeyLinkless);
+        setDedupKey(keyedLinkless.id, "keeper-key");
+
+        RssChannel channelB = createRssChannel("http://test.com/feed-b", "Feed B");
+        ArrayList<RssItem> itemsB = new ArrayList<>();
+        itemsB.add(createRssItem("Completely different breaking news topic here", ""));
+        mRssRepository.persist(new RssModel(channelB, itemsB));
+
+        // the new item is persisted with its own fallback key (title, dissimilar
+        // from the keeper row so no fuzzy adoption); it is matched by channel -
+        // findRssItemsByLink("") would return the keeper row too, which shares
+        // the same empty-link bucket by design
+        List<RssItem> channelBItems = mRssDao.findRssItemsByChannelId(channelB.id);
+        assertEquals(1, channelBItems.size());
+        assertEquals("completely different breaking news topic here",
+                channelBItems.get(0).dedupKey);
+        // the pre-existing empty-link rows are untouched: empty links are never
+        // healed and never mass-keyed
+        List<RssItem> channelAItems = mRssDao.findRssItemsByChannelId(channelA.id);
+        RssItem storedKeeper = findByTitle(channelAItems, "Keeper story headline about markets");
+        assertNotNull(storedKeeper);
+        assertEquals("keeper-key", storedKeeper.dedupKey);
+        RssItem storedNullKey = findByTitle(channelAItems, "Another linkless headline today");
+        assertNotNull(storedNullKey);
+        assertNull(storedNullKey.dedupKey);
+    }
+
+    @Test
+    public void testPersistSingletonItemKeyedWithItsNormalizedTitle() {
+        // (f) nothing to adopt from: the singleton falls back to its own
+        // normalized title as the canonical cluster key
+        RssChannel channel = createRssChannel("http://test.com/feed", "Feed");
+        ArrayList<RssItem> items = new ArrayList<>();
+        items.add(createRssItem("Big rally in tech shares this morning",
+                "http://test.com/solo"));
+        mRssRepository.persist(new RssModel(channel, items));
+
+        RssItem stored = findSingleItem("http://test.com/solo");
+        assertEquals("big rally in tech shares this morning", stored.dedupKey);
+    }
+
+    @Test
+    public void testPersistTwoSimilarTitlesInOneBatchShareKey() {
+        // (g) intra-batch fuzzy convergence: neither title exists in the database
+        // during the assignment loop (the insert only runs afterwards), so the
+        // second item must find the first through the batch candidate pool
+        RssChannel channel = createRssChannel("http://test.com/feed", "Feed");
+        ArrayList<RssItem> items = new ArrayList<>();
+        items.add(createRssItem("Fed cuts rates sharply amid inflation fears",
+                "http://test.com/batch-a"));
+        items.add(createRssItem("Fed cuts rates sharply amid inflation",
+                "http://test.com/batch-b"));
+        mRssRepository.persist(new RssModel(channel, items));
+
+        RssItem storedA = findSingleItem("http://test.com/batch-a");
+        RssItem storedB = findSingleItem("http://test.com/batch-b");
+        assertEquals("Two similar titles arriving in one sync share a key",
+                storedA.dedupKey, storedB.dedupKey);
+        assertEquals("fed cuts rates sharply amid inflation fears", storedA.dedupKey);
+    }
+
+    private RssItem findSingleItem(String link) {
+        List<RssItem> items = mRssDao.findRssItemsByLink(link);
+        if (items == null || items.size() != 1) {
+            return null;
+        }
+        return items.get(0);
+    }
+
+    private RssItem findByTitle(List<RssItem> rssItems, String title) {
+        for (RssItem rssItem : rssItems) {
+            if (rssItem.title != null && rssItem.title.equals(title)) {
+                return rssItem;
+            }
+        }
+        return null;
+    }
+
     private List<String> linksOf(List<RssItem> rssItems) {
         List<String> links = new ArrayList<>();
         for (RssItem rssItem : rssItems) {
@@ -1158,19 +1379,25 @@ public class RssRepositoryTest {
 
     /**
      * Standalone test module that registers only what {@link RssRepository} needs:
-     * the shared in-memory {@link RssDao} and the real {@link UrlNormalizer}.
+     * the shared in-memory {@link AppDatabase} (the repository runs persist()
+     * inside its transactions), the shared {@link RssDao}, and the real
+     * {@link UrlNormalizer} / {@link RssTitleNormalizer}.
      */
     private static class RepositoryTestProviderModule implements ProviderModule {
+        private final AppDatabase mAppDatabase;
         private final RssDao mRssDao;
 
-        RepositoryTestProviderModule(RssDao rssDao) {
+        RepositoryTestProviderModule(AppDatabase appDatabase, RssDao rssDao) {
+            mAppDatabase = appDatabase;
             mRssDao = rssDao;
         }
 
         @Override
         public void provides(ProviderRegistry providerRegistry, Provider provider) {
+            providerRegistry.registerAsync(AppDatabase.class, () -> mAppDatabase);
             providerRegistry.registerAsync(RssDao.class, () -> mRssDao);
             providerRegistry.registerLazy(UrlNormalizer.class, UrlNormalizer::new);
+            providerRegistry.registerLazy(RssTitleNormalizer.class, RssTitleNormalizer::new);
             providerRegistry.registerLazy(RssRepository.class, () -> new RssRepository(provider));
         }
 

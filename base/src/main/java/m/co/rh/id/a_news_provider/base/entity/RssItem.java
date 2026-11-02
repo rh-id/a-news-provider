@@ -13,7 +13,8 @@ import java.util.Date;
 import m.co.rh.id.a_news_provider.base.room.converter.Converter;
 
 @Entity(tableName = "rss_item",
-        indices = {@Index(value = {"channel_id"}), @Index(value = {"link"})}
+        indices = {@Index(value = {"channel_id"}), @Index(value = {"link"}),
+                @Index(value = {"dedup_key"})}
 )
 public class RssItem implements Serializable {
     @PrimaryKey(autoGenerate = true)
@@ -61,6 +62,20 @@ public class RssItem implements Serializable {
     @ColumnInfo(name = "categories")
     public String categories;
 
+    /**
+     * Opaque duplicate-cluster key assigned at sync time by
+     * RssRepository.persist() (issue #45 phase 2): rows sharing a non-null,
+     * non-empty dedup_key are the same story (same link, or similar normalized
+     * title, token-set Jaccard >= RssTitleNormalizer.JACCARD_THRESHOLD) and
+     * collapse into one row in the all-channels grouped list. NULL/empty rows
+     * fall back to exact-link grouping (the phase-1 behavior) via the query-time
+     * COALESCE - rows never re-synced (retained items, paused channels) simply
+     * keep the old behavior until their channel next syncs (no backfill, same
+     * precedent as the categories column).
+     */
+    @ColumnInfo(name = "dedup_key")
+    public String dedupKey;
+
     @ColumnInfo(name = "is_read")
     public boolean isRead;
 
@@ -98,6 +113,7 @@ public class RssItem implements Serializable {
                 ", pubDate=" + pubDate +
                 ", mediaImage='" + mediaImage + '\'' +
                 ", categories='" + categories + '\'' +
+                ", dedupKey='" + dedupKey + '\'' +
                 ", isRead=" + isRead +
                 ", isFavorite=" + isFavorite +
                 ", createdDateTime=" + createdDateTime +
