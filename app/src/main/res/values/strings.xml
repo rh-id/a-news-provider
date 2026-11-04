@@ -119,6 +119,10 @@
     <string name="title_collapse_duplicate_stories">Collapse Duplicate Stories</string>
     <string name="menu_subtitle_collapse_duplicate_stories">Show stories shared by multiple feeds only once in the all-feeds list</string>
     <string name="image">Image</string>
+    <string name="title_save_image">Save image</string>
+    <string name="title_share_image">Share image</string>
+    <string name="open_image_viewer">Open image viewer</string>
+    <string name="image_saved">Image saved</string>
     <string name="menu_import_opml">Import OPML file</string>
     <string name="open_video">Open video</string>
     <string name="buy_developer_a_coffee">Buy developer a coffee</string>

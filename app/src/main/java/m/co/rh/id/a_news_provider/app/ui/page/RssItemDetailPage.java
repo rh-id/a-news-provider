@@ -55,6 +55,7 @@ import m.co.rh.id.a_news_provider.app.provider.command.UpdateRssItemIsReadCmd;
 import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
+import m.co.rh.id.a_news_provider.app.ui.component.image.ImageViewerSVDialog;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.EditRssLinkSVDialog;
 import m.co.rh.id.a_news_provider.app.ui.KeyEventHandler;
 import m.co.rh.id.a_news_provider.app.util.ReadingTypography;
@@ -249,6 +250,15 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
             networkImageView.setErrorImageResId(R.drawable.ic_broken_image_red);
             networkImageView.setImageUrl(imageUrl, mImageLoader);
             networkImageView.setVisibility(View.VISIBLE);
+            // tap the hero image to open the full-screen pinch-zoom viewer (issue #36);
+            // both detail layouts share R.id.network_image so one code path covers
+            // normal + one-hand mode
+            networkImageView.setContentDescription(
+                    activity.getString(R.string.open_image_viewer));
+            networkImageView.setOnClickListener(v -> mNavigator.push(
+                    (args, activity1) -> new ImageViewerSVDialog(),
+                    ImageViewerSVDialog.Args.with(mRssItem.mediaImage,
+                            mRssChannel.feedName, mRssItem.title)));
         } else {
             networkImageView.setVisibility(View.GONE);
         }

@@ -120,6 +120,10 @@
     <string name="title_collapse_duplicate_stories">Raggruppa articoli duplicati</string>
     <string name="menu_subtitle_collapse_duplicate_stories">Mostra una sola volta gli articoli condivisi da più feed nell\'elenco di tutti i feed</string>
     <string name="image">Immagine</string>
+    <string name="title_save_image">Salva immagine</string>
+    <string name="title_share_image">Condividi immagine</string>
+    <string name="open_image_viewer">Apri il visualizzatore immagini</string>
+    <string name="image_saved">Immagine salvata</string>
     <string name="menu_import_opml">Importa file OPML</string>
     <string name="open_video">Apri video</string>
     <string name="buy_developer_a_coffee">Offri un caffè allo sviluppatore</string>

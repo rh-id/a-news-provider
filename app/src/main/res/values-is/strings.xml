@@ -117,6 +117,10 @@
     <string name="title_collapse_duplicate_stories">Fella saman tvítekna frétt</string>
     <string name="menu_subtitle_collapse_duplicate_stories">Birta fréttir sem mörg streymi deila aðeins einu sinni í lista yfir öll streymi</string>
     <string name="image">Mynd</string>
+    <string name="title_save_image">Vista mynd</string>
+    <string name="title_share_image">Deila mynd</string>
+    <string name="open_image_viewer">Opna myndaskoðara</string>
+    <string name="image_saved">Mynd vistuð</string>
     <string name="menu_import_opml">Flytja inn OPML-skrá</string>
     <string name="open_video">Opna myndskeið</string>
     <string name="buy_developer_a_coffee">Kaupa forritara kaffi</string>

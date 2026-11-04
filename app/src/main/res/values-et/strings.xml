@@ -117,6 +117,10 @@
     <string name="title_collapse_duplicate_stories">Koonda duplikaatlood</string>
     <string name="menu_subtitle_collapse_duplicate_stories">Näita mitme voo poolt jagatud lugusid kõigi voogude loendis vaid üks kord</string>
     <string name="image">Pilt</string>
+    <string name="title_save_image">Salvesta pilt</string>
+    <string name="title_share_image">Jaga pilt</string>
+    <string name="open_image_viewer">Ava pildivaatur</string>
+    <string name="image_saved">Pilt salvestatud</string>
     <string name="menu_import_opml">Impordi OPML-fail</string>
     <string name="open_video">Ava video</string>
     <string name="buy_developer_a_coffee">Osta arendajale kohvi</string>

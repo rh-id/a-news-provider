@@ -92,6 +92,7 @@ dependencies {
     implementation libs.androidx.drawerlayout
     implementation libs.androidx.recyclerview
     implementation libs.androidx.swiperefreshlayout
+    implementation libs.photoView
     implementation libs.leakcanary.plumber
     implementation libs.android.showcase
     implementation libs.work.runtime

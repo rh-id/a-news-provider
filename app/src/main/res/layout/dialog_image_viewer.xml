@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- no root background: the dialog window itself is forced to opaque black in
+     ImageViewerSVDialog#createDialog, painting it here would just overdraw -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.github.chrisbanes.photoview.PhotoView
+        android:id="@+id/photo_image_viewer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@string/image" />
+
+    <ProgressBar
+        android:id="@+id/progress_image_viewer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:indeterminate="true" />
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/broken_image_viewer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:contentDescription="@string/image"
+        android:visibility="gone"
+        app:srcCompat="@drawable/ic_broken_image_red" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:padding="8dp">
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/button_save_image"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="16dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/title_save_image"
+            app:srcCompat="@drawable/ic_download_black"
+            app:tint="@android:color/white" />
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/button_share_image"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/title_share_image"
+            app:srcCompat="@drawable/ic_share_black"
+            app:tint="@android:color/white" />
+    </LinearLayout>
+</FrameLayout>

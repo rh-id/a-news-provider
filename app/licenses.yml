@@ -256,6 +256,12 @@
   license: The Apache License, Version 2.0
   licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
   url: https://github.com/google/volley
+- artifact: com.github.chrisbanes:PhotoView:+
+  name: PhotoView
+  copyrightHolder: Chris Banes
+  license: The Apache Software License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://github.com/chrisbanes/PhotoView
 - artifact: com.github.rh-id.a-navigator:a-navigator:+
   name: a-navigator
   copyrightHolder: Ruby Hartono

@@ -116,6 +116,10 @@
     <string name="title_collapse_duplicate_stories">合并重复故事</string>
     <string name="menu_subtitle_collapse_duplicate_stories">在全部订阅源列表中，多个订阅源转发的相同故事只显示一次</string>
     <string name="image">图片</string>
+    <string name="title_save_image">保存图片</string>
+    <string name="title_share_image">分享图片</string>
+    <string name="open_image_viewer">打开图片查看器</string>
+    <string name="image_saved">图片已保存</string>
     <string name="menu_import_opml">导入 OPML 文件</string>
     <string name="open_video">打开视频</string>
     <string name="buy_developer_a_coffee">请开发者喝杯咖啡</string>

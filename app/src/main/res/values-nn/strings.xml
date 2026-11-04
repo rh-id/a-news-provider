@@ -117,6 +117,10 @@
     <string name="title_collapse_duplicate_stories">Grupper duplikathistoriar</string>
     <string name="menu_subtitle_collapse_duplicate_stories">Vis historiar som blir delt av fleire strøymer berre éin gong i lista over alle strøymer</string>
     <string name="image">Bilete</string>
+    <string name="title_save_image">Lagre bilete</string>
+    <string name="title_share_image">Del bilete</string>
+    <string name="open_image_viewer">Opna biletvisinga</string>
+    <string name="image_saved">Bilete lagra</string>
     <string name="menu_import_opml">Importer OPML-fil</string>
     <string name="open_video">Opna video</string>
     <string name="buy_developer_a_coffee">Kjøp ein kaffe til utviklaren</string>

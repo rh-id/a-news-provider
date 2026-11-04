@@ -1,10 +1,5 @@
 package m.co.rh.id.a_news_provider.component.network.provider;
 
-import android.graphics.Bitmap;
-import android.util.LruCache;
-
-import androidx.annotation.Nullable;
-
 import com.android.volley.Cache;
 import com.android.volley.Network;
 import com.android.volley.RequestQueue;
@@ -18,6 +13,7 @@ import java.io.File;
 
 import m.co.rh.id.a_news_provider.component.network.RssRequestFactory;
 import m.co.rh.id.a_news_provider.component.network.parser.RssFeedParser;
+import m.co.rh.id.a_news_provider.component.network.provider.cache.DiskLruBitmapCache;
 import m.co.rh.id.a_news_provider.component.network.provider.volley.DisposableRequestQueue;
 import m.co.rh.id.a_news_provider.component.network.ssl.ExtendedTrustManager;
 import m.co.rh.id.aprovider.Provider;
@@ -42,22 +38,14 @@ public class NetworkProviderModule implements ProviderModule {
             requestQueue.start();
             return requestQueue;
         });
+        // registered on its own so pages (e.g. the image viewer dialog) can get()
+        // the same instance the ImageLoader was built with: isOnDisk/decodeFullResolution
+        // then read exactly the files Volley writes
+        providerRegistry.registerLazy(DiskLruBitmapCache.class, () ->
+                new DiskLruBitmapCache(provider));
         providerRegistry.registerAsync(ImageLoader.class, () ->
                 new ImageLoader(provider.get(RequestQueue.class),
-                        new ImageLoader.ImageCache() {
-                            private final LruCache<String, Bitmap> mCache = new LruCache<>(20);
-
-                            @Nullable
-                            @Override
-                            public Bitmap getBitmap(String url) {
-                                return mCache.get(url);
-                            }
-
-                            @Override
-                            public void putBitmap(String url, Bitmap bitmap) {
-                                mCache.put(url, bitmap);
-                            }
-                        }));
+                        provider.get(DiskLruBitmapCache.class)));
         providerRegistry.registerLazy(RssRequestFactory.class, () -> new RssRequestFactory(provider));
         providerRegistry.registerLazy(RssFeedParser.class, () -> new RssFeedParser(provider));
     }

@@ -117,6 +117,10 @@
     <string name="title_collapse_duplicate_stories">Grupper duplikathistorier</string>
     <string name="menu_subtitle_collapse_duplicate_stories">Vis historier som deles av flere strømmer kun én gang i listen over alle strømmer</string>
     <string name="image">Bilde</string>
+    <string name="title_save_image">Lagre bilde</string>
+    <string name="title_share_image">Del bilde</string>
+    <string name="open_image_viewer">Åpne bildevisningen</string>
+    <string name="image_saved">Bilde lagret</string>
     <string name="menu_import_opml">Importer OPML-fil</string>
     <string name="open_video">Åpne video</string>
     <string name="buy_developer_a_coffee">Kjøp en kaffe til utvikleren</string>

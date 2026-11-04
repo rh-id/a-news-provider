@@ -117,6 +117,10 @@
     <string name="title_collapse_duplicate_stories">Duplikate zusammenfassen</string>
     <string name="menu_subtitle_collapse_duplicate_stories">Beiträge, die von mehreren Feeds geteilt werden, in der Gesamtliste nur einmal anzeigen</string>
     <string name="image">Bild</string>
+    <string name="title_save_image">Bild speichern</string>
+    <string name="title_share_image">Bild teilen</string>
+    <string name="open_image_viewer">Bildansicht öffnen</string>
+    <string name="image_saved">Bild gespeichert</string>
     <string name="menu_import_opml">OPML-Datei importieren</string>
     <string name="open_video">Video öffnen</string>
     <string name="buy_developer_a_coffee">Dem Entwickler einen Kaffee spendieren</string>

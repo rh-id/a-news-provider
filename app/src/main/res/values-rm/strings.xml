@@ -117,6 +117,10 @@
     <string name="title_collapse_duplicate_stories">Reunir reportaschas dublas</string>
     <string name="menu_subtitle_collapse_duplicate_stories">Mussar reportaschas che plirs feeds divideschan be ina giada en la glista da tut ils feeds</string>
     <string name="image">Grafica</string>
+    <string name="title_save_image">Memorisiar la grafica</string>
+    <string name="title_share_image">Parter la grafica</string>
+    <string name="open_image_viewer">Avrir il visur da graficas</string>
+    <string name="image_saved">Grafica memorisada</string>
     <string name="menu_import_opml">Importar il dossier OPML</string>
     <string name="open_video">Avrir il video</string>
     <string name="buy_developer_a_coffee">Convidar il sviluppader sin in cafè</string>

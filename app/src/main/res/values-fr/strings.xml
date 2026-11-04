@@ -120,6 +120,10 @@
     <string name="title_collapse_duplicate_stories">Regrouper les articles en double</string>
     <string name="menu_subtitle_collapse_duplicate_stories">Afficher une seule fois les articles partagés par plusieurs flux dans la liste de tous les flux</string>
     <string name="image">Image</string>
+    <string name="title_save_image">Enregistrer l\'image</string>
+    <string name="title_share_image">Partager l\'image</string>
+    <string name="open_image_viewer">Ouvrir la visionneuse d\'images</string>
+    <string name="image_saved">Image enregistrée</string>
     <string name="menu_import_opml">Importer un fichier OPML</string>
     <string name="open_video">Ouvrir la vidéo</string>
     <string name="buy_developer_a_coffee">Offrir un café au développeur</string>
