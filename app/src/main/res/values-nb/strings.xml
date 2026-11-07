@@ -211,4 +211,10 @@
     <string name="open_links_default_browser">Standardnettleser</string>
     <string name="open_links_custom_tabs">Custom Tabs</string>
     <string name="error_open_link">Klarte ikke å åpne lenke</string>
+    <string name="menu_read_full_article">Les hele artikkelen</string>
+    <string name="menu_show_original_description">Vis opprinnelig beskrivelse</string>
+    <string name="loading_full_article">Laster hele artikkelen…</string>
+    <string name="full_article_fetch_failed">Klarte ikke å laste hele artikkelen</string>
+    <string name="title_fetch_full_text_automatically">Hent hele artikler automatisk</string>
+    <string name="menu_subtitle_fetch_full_text_automatically">Når en artikkel åpnes, hentes hele sideteksten automatisk hvis strømmen bare viser et sammendrag. Slå av for å beholde strømmens beskrivelse</string>
 </resources>

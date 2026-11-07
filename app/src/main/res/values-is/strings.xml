@@ -211,4 +211,10 @@
     <string name="open_links_default_browser">Sjálfgefinn vafri</string>
     <string name="open_links_custom_tabs">Custom Tabs</string>
     <string name="error_open_link">Tókst ekki að opna tengil</string>
+    <string name="menu_read_full_article">Lesa alla greinina</string>
+    <string name="menu_show_original_description">Sýna upphaflega lýsingu</string>
+    <string name="loading_full_article">Hleð alla greinina…</string>
+    <string name="full_article_fetch_failed">Tókst ekki að hlaða alla greinina</string>
+    <string name="title_fetch_full_text_automatically">Sækja fulla greina sjálfkrafa</string>
+    <string name="menu_subtitle_fetch_full_text_automatically">Þegar grein er opnuð er fullur texti síðunnar sóttur sjálfkrafa ef streymið sýnir aðeins samantekt. Slökkva til að halda lýsingu streymis</string>
 </resources>

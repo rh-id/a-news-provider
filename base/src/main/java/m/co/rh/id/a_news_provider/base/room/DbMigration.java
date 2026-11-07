@@ -16,7 +16,8 @@ public class DbMigration {
     public static Migration[] getAll() {
         return new Migration[]{MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4,
                 MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
-                MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13};
+                MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13,
+                MIGRATION_13_14};
     }
 
     public static final Migration MIGRATION_1_2 = new Migration(1, 2) {
@@ -170,6 +171,25 @@ public class DbMigration {
         public void migrate(SupportSQLiteDatabase database) {
             database.execSQL("ALTER TABLE `rss_item` ADD COLUMN `dedup_key` TEXT");
             database.execSQL("CREATE INDEX IF NOT EXISTS `index_rss_item_dedup_key` ON `rss_item` (`dedup_key`)");
+        }
+    };
+
+    /**
+     * Creates the article_content table for the in-app article reader (issue #28
+     * phase 1): a link-keyed cache of extracted full-text article bodies that a
+     * summary-only feed item can fetch on demand. The CREATE TABLE follows the
+     * exact SQL Room generates for {@link m.co.rh.id.a_news_provider.base.entity.ArticleContent}:
+     * every column is NOT NULL (link and content are &#64;NonNull Strings, the
+     * fetch stamp is a primitive long) and the primary key is the link itself
+     * (no autogenerate - the link is the identity, mirroring the by-link state
+     * sync of rss_item). No index beyond the primary key: lookups are exact
+     * link matches served by the PK. It is a brand-new table, so existing data
+     * is untouched and no backfill exists (content is fetched lazily on demand).
+     */
+    public static final Migration MIGRATION_13_14 = new Migration(13, 14) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("CREATE TABLE IF NOT EXISTS `article_content` (`link` TEXT NOT NULL, `content` TEXT NOT NULL, `fetched_date_time` INTEGER NOT NULL, PRIMARY KEY(`link`))");
         }
     };
 

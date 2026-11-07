@@ -44,10 +44,12 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.constants.Routes;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.BaseRssItemsCmd;
+import m.co.rh.id.a_news_provider.app.provider.command.FetchArticleContentCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.PagedRssItemsCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.RssQueryCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.UpdateRssItemIsFavoriteCmd;
@@ -61,9 +63,11 @@ import m.co.rh.id.a_news_provider.app.ui.KeyEventHandler;
 import m.co.rh.id.a_news_provider.app.util.ReadingTypography;
 import m.co.rh.id.a_news_provider.app.util.UiUtils;
 import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
+import m.co.rh.id.a_news_provider.base.entity.ArticleContent;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.a_news_provider.base.entity.RssItemCategories;
+import m.co.rh.id.a_news_provider.base.provider.notifier.DeviceStatusNotifier;
 import m.co.rh.id.a_news_provider.base.ui.SwipeGestureDetector;
 import m.co.rh.id.a_news_provider.base.util.UrlSanitizer;
 import m.co.rh.id.alogger.ILogger;
@@ -106,8 +110,29 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
     private transient UpdateRssItemIsReadCmd mUpdateRssItemIsReadCmd;
     private transient PagedRssItemsCmd mPagedRssItemsCmd;
     private transient RssQueryCmd mRssQueryCmd;
+    private transient FetchArticleContentCmd mFetchArticleContentCmd;
     private transient MenuItem mToggleFavoriteMenuItem;
     private transient MenuItem mDownloadVideoMenuItem;
+    private transient MenuItem mReadFullArticleMenuItem;
+    // the page's content view, captured in createView for the reader-mode
+    // render paths (onMenuItemClick has no view parameter). transient: page
+    // fields participate in NavRoute serialization
+    private transient View mPageView;
+    // reader mode (issue #28): true while text_content shows the extracted
+    // full article instead of the original feed description
+    private transient boolean mReaderMode;
+    // in-flight guard for the full-text fetch: one fetch at a time, the
+    // progress indicator is driven by it
+    private transient boolean mFetchInFlight;
+    // in-flight guard for the SILENT background refresh of already-rendered
+    // reader content (cache-first menu tap while online, issue #28): separate
+    // from mFetchInFlight so a background refresh never drives the progress
+    // indicator and never blocks rendering the cached row
+    private transient boolean mBackgroundRefreshInFlight;
+    // the reader-mode content string currently rendered (issue #28): the
+    // background refresh re-renders only when the fetched content differs
+    // from it, so a no-change refresh never jumps the scroll position
+    private transient String mRenderedArticleContent;
     // in-flight guard for navigateToNeighbor: volume keys are easier to spam than
     // the right-edge swipe, and each press is a db query followed by a full page
     // replace — a second press while the first navigation resolves must not
@@ -141,6 +166,7 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         mUpdateRssItemIsFavoriteCmd = mSvProvider.get(UpdateRssItemIsFavoriteCmd.class);
         mUpdateRssItemIsReadCmd = mSvProvider.get(UpdateRssItemIsReadCmd.class);
         mRssQueryCmd = mSvProvider.get(RssQueryCmd.class);
+        mFetchArticleContentCmd = mSvProvider.get(FetchArticleContentCmd.class);
         // PagedRssItemsCmd must come from the GLOBAL provider: the home list uses the
         // same app-scoped instance (see RssItemListSV), so its channel/filter/sort
         // describe exactly the list the user navigated from. The page-scoped provider
@@ -176,6 +202,7 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
             layoutId = R.layout.one_hand_mode_page_rss_item_detail;
         }
         View view = activity.getLayoutInflater().inflate(layoutId, container, false);
+        mPageView = view;
         // single right-edge strip overlaying the content side; fling left =
         // next article (gated live by the swipe setting in the detector). The
         // strip is inset beyond the system back-gesture zone (>= ~25dp measured
@@ -195,6 +222,31 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
                                     && rssItem.isFavorite != mRssItem.isFavorite) {
                                 mRssItem.isFavorite = rssItem.isFavorite;
                                 updateFavoriteIcon(mRssItem.isFavorite);
+                            }
+                        }));
+        // article reader mode (issue #28): when the fetch of THIS item's link
+        // completes anywhere in the app (this page's manual action, auto-fetch,
+        // or a previous page instance that was replaced), load the cached
+        // content and switch into reader mode. A popped/replaced page never
+        // sees the event: its subscriptions are disposed with the page, while
+        // the content still lands in the database for the next open.
+        mRxDisposer.add("rssChangeNotifier.articleContentUpdated",
+                mSvProvider.get(RssChangeNotifier.class).getArticleContentUpdated()
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(link -> {
+                            if (mRssItem != null && link != null
+                                    && link.equals(mRssItem.link)) {
+                                if (mBackgroundRefreshInFlight) {
+                                    // the silent background refresh reports
+                                    // through its own completion path, which
+                                    // re-renders only when the content changed
+                                    // and never flips the user back to reader
+                                    // mode - handling the event here too would
+                                    // render twice and override an explicit
+                                    // "Show original description" tap
+                                    return;
+                                }
+                                loadAndRenderFullContent();
                             }
                         }));
         // SettingsPage can be pushed on top of this page (menu_reading_settings) and
@@ -262,18 +314,7 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         } else {
             networkImageView.setVisibility(View.GONE);
         }
-        TextView textView = view.findViewById(R.id.text_content);
-        String desc = mRssItem.description;
-        if (desc != null && !desc.isEmpty()) {
-            textView.setText(HtmlCompat.fromHtml(desc, HtmlCompat.FROM_HTML_MODE_LEGACY));
-            textView.setMovementMethod(LinkMovementMethod.getInstance());
-            // the description's URLSpans would fire a raw ACTION_VIEW internally;
-            // swap them for spans that honor the "Open links in" preference (issue #35)
-            UiUtils.routeUrlSpans(textView);
-        } else {
-            // clear leftover content when re-binding to an item without a description
-            textView.setText("");
-        }
+        renderDescription();
         HorizontalScrollView scrollCategories = view.findViewById(R.id.scroll_categories);
         LinearLayout containerCategories = view.findViewById(R.id.container_categories);
         bindCategoryChips(activity, scrollCategories, containerCategories);
@@ -298,6 +339,326 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         ReadingTypography typography = ReadingTypography.from(mAppSharedPreferences);
         typography.applyToBody(view.findViewById(R.id.text_content));
         typography.applyToTitle(view.findViewById(R.id.text_title));
+        // auto-fetch full text (issue #28, opt-in): when the setting is on and
+        // nothing is cached for this item's link yet, kick off a fetch. The
+        // subscription dies with the page, and the command is app-scoped: even
+        // if the user navigates away, the content still lands in the database
+        // for the next open.
+        maybeAutoFetchFullText();
+    }
+
+    /**
+     * Renders the ORIGINAL feed description into text_content (the
+     * non-reader-mode view of the article body). Reader mode and the
+     * description share the exact same treatment: HtmlCompat.fromHtml
+     * (FROM_HTML_MODE_LEGACY), URL spans routed through the "Open links in"
+     * preference and the user's reading typography.
+     */
+    private void renderDescription() {
+        if (mPageView == null || mRssItem == null) {
+            return;
+        }
+        TextView textView = mPageView.findViewById(R.id.text_content);
+        String desc = mRssItem.description;
+        if (desc != null && !desc.isEmpty()) {
+            textView.setText(HtmlCompat.fromHtml(desc, HtmlCompat.FROM_HTML_MODE_LEGACY));
+            textView.setMovementMethod(LinkMovementMethod.getInstance());
+            // the description's URLSpans would fire a raw ACTION_VIEW internally;
+            // swap them for spans that honor the "Open links in" preference (issue #35)
+            UiUtils.routeUrlSpans(textView);
+        } else {
+            // clear leftover content when re-binding to an item without a description
+            textView.setText("");
+        }
+        ReadingTypography.from(mAppSharedPreferences).applyToBody(textView);
+        ScrollView scrollView = mPageView.findViewById(R.id.scroll_content);
+        scrollView.scrollTo(0, 0);
+    }
+
+    /**
+     * Auto-fetch full text (issue #28): when the opt-in setting is on, the
+     * item has a fetchable link and no fetch is running, look the content up
+     * first - a cache hit switches to reader mode immediately, a miss starts
+     * the fetch. The manual toolbar action has its own cache-first path
+     * ({@link #openReaderMode()}); both meet in the same render/fetch paths.
+     */
+    private void maybeAutoFetchFullText() {
+        if (mAppSharedPreferences == null || !mAppSharedPreferences.isFetchFullTextAutomatically()) {
+            return;
+        }
+        if (mRssItem == null || mFetchInFlight) {
+            return;
+        }
+        String link = mRssItem.link;
+        if (link == null || link.trim().isEmpty()) {
+            return;
+        }
+        mRxDisposer.add("autoFetchArticleContent_lookup",
+                mRssQueryCmd.getArticleContentByLink(link)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(articleContentOptional -> {
+                            if (mRssItem == null || mFetchInFlight) {
+                                return;
+                            }
+                            if (articleContentOptional.isPresent()) {
+                                renderReaderContent(articleContentOptional.get());
+                            } else {
+                                startFullTextFetch(false);
+                            }
+                        }, throwable -> mLogger.e(TAG, throwable.getMessage(), throwable)));
+    }
+
+    /**
+     * Enters reader mode from the toolbar action (issue #28, cache-first):
+     * looks the item's link up in the {@code article_content} cache FIRST - a
+     * cached row renders immediately (so tapping "Read full article" offline
+     * restores the article), then, only while the device is online, a silent
+     * background refresh re-fetches the page. With no cached row the plain
+     * network fetch runs in the foreground (loading indicator, failure toast),
+     * exactly like before the cache-first change. The lookup error also falls
+     * back to the network fetch: the tap must not die silently on a db hiccup.
+     */
+    private void openReaderMode() {
+        if (mFetchInFlight || mRssItem == null) {
+            return;
+        }
+        String link = mRssItem.link;
+        if (link == null || link.trim().isEmpty()) {
+            Toast.makeText(mSvProvider.getContext(),
+                    R.string.full_article_fetch_failed, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        mRxDisposer.add("openReaderMode_lookup",
+                mRssQueryCmd.getArticleContentByLink(link)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(articleContentOptional -> {
+                            if (mRssItem == null || mFetchInFlight) {
+                                return;
+                            }
+                            if (articleContentOptional.isPresent()) {
+                                renderReaderContent(articleContentOptional.get());
+                                maybeStartBackgroundRefresh();
+                            } else {
+                                startFullTextFetch(true);
+                            }
+                        }, throwable -> {
+                            mLogger.e(TAG, throwable.getMessage(), throwable);
+                            startFullTextFetch(true);
+                        }));
+    }
+
+    /**
+     * Silently re-fetches the current item's already-rendered content in the
+     * background (issue #28): runs only while the device is online (checked
+     * synchronously through {@link DeviceStatusNotifier#isOnline()}, the same
+     * state SyncRssCmd gates on) and at most once at a time. No loading
+     * indicator and no failure toast - the cached content is already on
+     * screen, so a refresh is best-effort. The completion re-renders through
+     * {@link #loadAndRenderFullContent()}, whose comparison skips the render
+     * when the fetched content equals what is displayed: an unchanged refresh
+     * never jumps the scroll position, and a user who toggled back to the
+     * description meanwhile is never flipped back to reader mode.
+     */
+    private void maybeStartBackgroundRefresh() {
+        if (mBackgroundRefreshInFlight || mFetchInFlight || mRssItem == null) {
+            return;
+        }
+        if (!mSvProvider.get(DeviceStatusNotifier.class).isOnline()) {
+            return;
+        }
+        mBackgroundRefreshInFlight = true;
+        mRxDisposer.add("backgroundRefreshArticleContent",
+                mFetchArticleContentCmd.executeForce(mRssItem)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(success -> {
+                            mBackgroundRefreshInFlight = false;
+                            if (success && mReaderMode) {
+                                // the command's articleContentUpdated event is
+                                // ignored while the refresh is in flight -
+                                // load here instead; unchanged content skips
+                                // the render
+                                loadAndRenderFullContent();
+                            }
+                        }, throwable -> {
+                            mBackgroundRefreshInFlight = false;
+                            mLogger.e(TAG, throwable.getMessage(), throwable);
+                        }));
+    }
+
+    /**
+     * Starts the FOREGROUND full-text fetch (issue #28): guards re-entry with
+     * {@code mFetchInFlight}, shows the loading indicator and runs the command.
+     * Reached from the toolbar action only when the cache-first lookup found
+     * no row (or the lookup itself failed), and from auto-fetch on a cache
+     * miss. A successful fetch resolves through the notifier event
+     * (articleContentUpdated) which re-enters via loadAndRenderFullContent();
+     * a failure toasts and returns the page to idle description rendering.
+     *
+     * @param force true to re-fetch even when content is already cached,
+     *              false to skip when cached
+     */
+    private void startFullTextFetch(boolean force) {
+        if (mFetchInFlight || mRssItem == null) {
+            return;
+        }
+        String link = mRssItem.link;
+        if (link == null || link.trim().isEmpty()) {
+            Toast.makeText(mSvProvider.getContext(),
+                    R.string.full_article_fetch_failed, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        mFetchInFlight = true;
+        setLoadingIndicator(true);
+        mRxDisposer.add("fetchArticleContent",
+                (force ? mFetchArticleContentCmd.executeForce(mRssItem)
+                        : mFetchArticleContentCmd.execute(mRssItem))
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(success -> {
+                            resetFetchState();
+                            if (success) {
+                                // the command already emitted
+                                // articleContentUpdated, which loadAndRenderFullContent
+                                // is subscribed to - but this page might not be
+                                // the one that triggered the fetch (or the event
+                                // may have raced ahead), so load directly too;
+                                // the lookup is idempotent
+                                loadAndRenderFullContent();
+                            } else {
+                                Toast.makeText(mSvProvider.getContext(),
+                                        R.string.full_article_fetch_failed,
+                                        Toast.LENGTH_SHORT).show();
+                            }
+                        }, throwable -> {
+                            resetFetchState();
+                            mLogger.e(TAG, throwable.getMessage(), throwable);
+                            Toast.makeText(mSvProvider.getContext(),
+                                    R.string.full_article_fetch_failed,
+                                    Toast.LENGTH_SHORT).show();
+                        }));
+    }
+
+    /**
+     * Loads the cached article content of the current item's link from the
+     * database (through RssQueryCmd, the page's existing live-lookup path) and
+     * switches to reader mode when present. Used by the notifier subscription,
+     * the foreground fetch-completion path and the background refresh
+     * completion. While reader mode is active, content identical to what is
+     * already rendered is skipped: the redundant notifier event of a
+     * foreground fetch and a no-change background refresh then never re-render
+     * (no scroll jump).
+     */
+    private void loadAndRenderFullContent() {
+        if (mRssItem == null) {
+            return;
+        }
+        String link = mRssItem.link;
+        if (link == null || link.trim().isEmpty()) {
+            return;
+        }
+        mRxDisposer.add("loadArticleContent",
+                mRssQueryCmd.getArticleContentByLink(link)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(articleContentOptional -> {
+                            if (articleContentOptional.isPresent()) {
+                                ArticleContent articleContent = articleContentOptional.get();
+                                if (mReaderMode && isRenderedReaderContent(articleContent)) {
+                                    return;
+                                }
+                                renderReaderContent(articleContent);
+                            }
+                        }, throwable -> mLogger.e(TAG, throwable.getMessage(), throwable)));
+    }
+
+    /**
+     * Returns true when the given content row's body equals the reader-mode
+     * content currently rendered (issue #28): the background refresh uses the
+     * check to skip re-rendering unchanged content.
+     *
+     * @param articleContent a non-null cached content row of the current link
+     * @return true when its content equals the rendered content string
+     */
+    private boolean isRenderedReaderContent(ArticleContent articleContent) {
+        String rendered = mRenderedArticleContent;
+        return rendered != null
+                && articleContent.content != null
+                && rendered.equals(articleContent.content);
+    }
+
+    /**
+     * Switches the page into reader mode and renders the extracted article
+     * HTML into text_content. The heavy HTML-to-span conversion runs on the
+     * executor (large documents), only the resulting CharSequence is posted to
+     * the main thread via the page's disposed Rx subscription. The finished
+     * content receives the identical treatment as the description: URL spans
+     * routed through the "Open links in" preference and the user's reading
+     * typography.
+     *
+     * @param articleContent the cached content row of the current item's link
+     */
+    private void renderReaderContent(ArticleContent articleContent) {
+        if (mPageView == null || articleContent == null) {
+            return;
+        }
+        mReaderMode = true;
+        // remember what is on screen: the background refresh (issue #28)
+        // compares against this before re-rendering
+        mRenderedArticleContent = articleContent.content;
+        updateReadArticleMenuItem();
+        mRxDisposer.add("renderArticleContent",
+                Single.fromCallable(() -> HtmlCompat.fromHtml(articleContent.content,
+                        HtmlCompat.FROM_HTML_MODE_LEGACY))
+                        .subscribeOn(Schedulers.from(mExecutorService))
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(spanned -> {
+                            if (mPageView == null) {
+                                return;
+                            }
+                            TextView textView = mPageView.findViewById(R.id.text_content);
+                            textView.setText(spanned);
+                            textView.setMovementMethod(LinkMovementMethod.getInstance());
+                            UiUtils.routeUrlSpans(textView);
+                            ReadingTypography.from(mAppSharedPreferences).applyToBody(textView);
+                            ScrollView scrollView =
+                                    mPageView.findViewById(R.id.scroll_content);
+                            scrollView.scrollTo(0, 0);
+                        }, throwable -> mLogger.e(TAG, throwable.getMessage(), throwable)));
+    }
+
+    /**
+     * Returns the page to the original feed description (reader mode off).
+     */
+    private void showOriginalDescription() {
+        mReaderMode = false;
+        mRenderedArticleContent = null;
+        updateReadArticleMenuItem();
+        renderDescription();
+    }
+
+    /**
+     * Swaps the toolbar action's label to reflect the mode: "Read full
+     * article" while the description is shown, "Show original description"
+     * while reader mode is active.
+     */
+    private void updateReadArticleMenuItem() {
+        if (mReadFullArticleMenuItem != null) {
+            mReadFullArticleMenuItem.setTitle(mReaderMode
+                    ? R.string.menu_show_original_description
+                    : R.string.menu_read_full_article);
+        }
+    }
+
+    private void setLoadingIndicator(boolean loading) {
+        if (mPageView != null) {
+            View progress = mPageView.findViewById(R.id.progress_article);
+            if (progress != null) {
+                progress.setVisibility(loading ? View.VISIBLE : View.GONE);
+            }
+        }
+    }
+
+    private void resetFetchState() {
+        mFetchInFlight = false;
+        setLoadingIndicator(false);
     }
 
     /**
@@ -360,8 +721,16 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         mUpdateRssItemIsReadCmd = null;
         mPagedRssItemsCmd = null;
         mRssQueryCmd = null;
+        mFetchArticleContentCmd = null;
         mToggleFavoriteMenuItem = null;
         mDownloadVideoMenuItem = null;
+        mReadFullArticleMenuItem = null;
+        mPageView = null;
+        // reader-mode page state never outlives the page
+        mReaderMode = false;
+        mFetchInFlight = false;
+        mBackgroundRefreshInFlight = false;
+        mRenderedArticleContent = null;
         // protects against a late navigateToNeighbor callback after this page was
         // already replaced by another detail page instance
         mNeighborNavigationInProgress = false;
@@ -447,6 +816,19 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
                         REQUEST_CODE_PERMISSION_WRITE_EXTERNAL_STORAGE);
             }
 
+        } else if (id == R.id.menu_read_full_article) {
+            // reader mode toggle (issue #28): while the full article is
+            // displayed the same action returns to the original description;
+            // entering reader mode is CACHE-FIRST: a cached row renders
+            // immediately (restores the article offline too) and, while the
+            // device is online, refreshes from the network in the background;
+            // with no cached row it fetches from the network regardless of
+            // the auto-fetch setting
+            if (mReaderMode) {
+                showOriginalDescription();
+            } else {
+                openReaderMode();
+            }
         } else if (id == R.id.menu_reading_settings) {
             // door into the reading settings while the article stays behind it;
             // the mRxDisposer subscription in createView() re-applies the new
@@ -463,6 +845,8 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         mToggleFavoriteMenuItem = menu.findItem(R.id.menu_toggle_favorite);
         mToggleFavoriteMenuItem.setIcon(mRssItem.isFavorite ?
                 R.drawable.ic_star_filled_white : R.drawable.ic_star_outline_white);
+        mReadFullArticleMenuItem = menu.findItem(R.id.menu_read_full_article);
+        updateReadArticleMenuItem();
     }
 
     @Override

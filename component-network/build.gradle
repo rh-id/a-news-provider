@@ -36,6 +36,9 @@ dependencies {
 
     implementation project(':base')
     api libs.volley
+    // article full-text extraction; implementation (NOT api) on purpose: Jsoup
+    // types must not leak from the extractor's API surface
+    implementation libs.jsoup
 
     testImplementation libs.junit
     testImplementation libs.kxml2

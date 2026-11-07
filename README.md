@@ -32,6 +32,7 @@ A simple and easy to use RSS aggregator that deliver news to your smartphone.
   <li>Support editing feed item link</li>
   <li>Copy feed item links and channel links to clipboard</li>
   <li>"Open links in" setting: default browser (default) or browser Custom Tabs (opt-in, falls back to the default browser when Custom Tabs isn't supported)</li>
+  <li>Read the full article in-app: a "Read full article" action on the item detail fetches and extracts the page's text (readability-style, images stripped) when the feed only carries a summary, caches it, and can be switched back to the original description with the same action; optional auto-fetch on article open (off by default)</li>
   <li>Offline/online detection with SnackBar feedback; syncs run automatically once the device is back online</li>
   <li>Simple interface to add and read your news</li>
   <li>Theme selection: follow system, light, or dark mode, plus Material You dynamic color on Android 12 and above (on by default)</li>

@@ -206,4 +206,10 @@
     <string name="open_links_default_browser">Browser bawaan</string>
     <string name="open_links_custom_tabs">Custom Tabs</string>
     <string name="error_open_link">Gagal membuka link</string>
+    <string name="menu_read_full_article">Baca artikel lengkap</string>
+    <string name="menu_show_original_description">Tampilkan deskripsi asli</string>
+    <string name="loading_full_article">Memuat artikel lengkap…</string>
+    <string name="full_article_fetch_failed">Gagal memuat artikel lengkap</string>
+    <string name="title_fetch_full_text_automatically">Ambil artikel lengkap otomatis</string>
+    <string name="menu_subtitle_fetch_full_text_automatically">Saat membuka artikel, ambil teks lengkap halaman secara otomatis jika feed hanya menampilkan ringkasan. Matikan untuk tetap memakai deskripsi feed</string>
 </resources>

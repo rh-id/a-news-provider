@@ -211,4 +211,10 @@
     <string name="open_links_default_browser">Browser normal</string>
     <string name="open_links_custom_tabs">Custom Tabs</string>
     <string name="error_open_link">Betg reussì da avrir la colliaziun</string>
+    <string name="menu_read_full_article">Leger l\'artitgel cumplet</string>
+    <string name="menu_show_original_description">Mussar la descripziun originala</string>
+    <string name="loading_full_article">Chargiar l\'artitgel cumplet…</string>
+    <string name="full_article_fetch_failed">Betg reussì da chargiar l\'artitgel cumplet</string>
+    <string name="title_fetch_full_text_automatically">Chargiar automaticamain artitgels cumplets</string>
+    <string name="menu_subtitle_fetch_full_text_automatically">Cun avrir in artitgel vegn il text cumplet da la pagina chargià automaticamain sch\'il feed mo mussa in resumé. Deactivar per mantegnair la descripziun dal feed</string>
 </resources>

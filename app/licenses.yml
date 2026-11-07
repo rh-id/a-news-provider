@@ -423,3 +423,9 @@
   license: GNU General Public License, version 2, with the Classpath Exception
   licenseUrl: https://openjdk.org/legal/gplv2+ce.html
   url: https://github.com/google/desugar_jdk_libs
+- artifact: org.jsoup:jsoup:+
+  name: jsoup
+  copyrightHolder: Jonathan Hedley
+  license: MIT License
+  licenseUrl: https://api.github.com/licenses/mit
+  url: https://jsoup.org/

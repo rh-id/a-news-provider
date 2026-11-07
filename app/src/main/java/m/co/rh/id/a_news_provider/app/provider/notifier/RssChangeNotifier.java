@@ -15,8 +15,10 @@ import m.co.rh.id.a_news_provider.base.model.RssModel;
  * A hub for RSS change events. Emits events when RSS models are added, synced, or updated,
  * when RSS items are marked as read (user-initiated via
  * {@link #itemsMarkedRead(Long)} or auto-aged by the unread retention window via
- * {@link #itemsMarkedReadAuto(Long)}), and when the read-item retention window prunes
- * the archive (auto, via {@link #itemsPrunedAuto(Long)}).
+ * {@link #itemsMarkedReadAuto(Long)}), when the read-item retention window prunes
+ * the archive (auto, via {@link #itemsPrunedAuto(Long)}), and when an article's
+ * full-text content was fetched and cached (issue #28, via
+ * {@link #articleContentUpdated(String)}).
  */
 public class RssChangeNotifier {
     private final PublishSubject<Optional<RssModel>> mAddedRssModelPublishSubject;
@@ -27,6 +29,7 @@ public class RssChangeNotifier {
     private final PublishSubject<Optional<Long>> mItemsMarkedReadSubject;
     private final PublishSubject<Optional<Long>> mItemsMarkedReadAutoSubject;
     private final PublishSubject<Optional<Long>> mItemsPrunedAutoSubject;
+    private final PublishSubject<String> mArticleContentUpdatedSubject;
 
     public RssChangeNotifier() {
         mAddedRssModelPublishSubject = PublishSubject.create();
@@ -37,6 +40,7 @@ public class RssChangeNotifier {
         mItemsMarkedReadSubject = PublishSubject.create();
         mItemsMarkedReadAutoSubject = PublishSubject.create();
         mItemsPrunedAutoSubject = PublishSubject.create();
+        mArticleContentUpdatedSubject = PublishSubject.create();
     }
 
     /**
@@ -124,6 +128,22 @@ public class RssChangeNotifier {
     }
 
     /**
+     * Emits an article-content-updated event: the full-text body of the article
+     * with the given link was fetched, extracted and cached in the
+     * article_content table (issue #28 phase 1). Raised by
+     * FetchArticleContentCmd after its successful cache write; an open detail
+     * page for that link subscribes to switch into reader mode. Deliberately a
+     * SEPARATE subject from the rss-item update stream: item updates mean
+     * feed-sync state changes (reload list windows), while this event is a
+     * page-scoped content delivery that no list view may react to.
+     *
+     * @param link the link of the article whose content became available
+     */
+    public void articleContentUpdated(String link) {
+        mArticleContentUpdatedSubject.onNext(link);
+    }
+
+    /**
      * Provides a Flowable stream of new RSS model events.
      *
      * @return Flowable that emits optional RSS models
@@ -193,5 +213,15 @@ public class RssChangeNotifier {
      */
     public Flowable<Optional<Long>> getItemsPrunedAuto() {
         return Flowable.fromObservable(mItemsPrunedAutoSubject, BackpressureStrategy.BUFFER);
+    }
+
+    /**
+     * Provides a Flowable stream of article-content-updated events.
+     *
+     * @return Flowable that emits the link of the article whose full-text
+     * content was fetched and cached
+     */
+    public Flowable<String> getArticleContentUpdated() {
+        return Flowable.fromObservable(mArticleContentUpdatedSubject, BackpressureStrategy.BUFFER);
     }
 }

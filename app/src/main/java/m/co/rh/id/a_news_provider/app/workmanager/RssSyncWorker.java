@@ -21,6 +21,7 @@ import m.co.rh.id.a_news_provider.app.provider.notifier.RssChannelStateNotifier;
 import m.co.rh.id.a_news_provider.app.provider.repository.RssRepository;
 import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
+import m.co.rh.id.a_news_provider.base.dao.ArticleContentDao;
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.model.RssModel;
@@ -138,6 +139,15 @@ public class RssSyncWorker extends Worker {
      * items must reload, which the {@code itemsPrunedAuto} event triggers. A failure
      * here must never fail the sync, hence the catch-all. Paused channels are
      * included by design (the setting is a global opt-in).
+     * <p>
+     * At the END of the prune step, the article-content cache is also swept for
+     * orphans (issue #28): rows whose link no longer exists on any rss_item can
+     * never be opened again. The sweep runs on EVERY sync, regardless of the
+     * keep-read-items setting - item rows can also disappear through channel
+     * deletion (whose own cleanup is catch-all-logged too), so the sweep doubles
+     * as a self-heal for anything that path missed. Deleting cached content never
+     * changes unread counts; nothing needs reloading - a fetched article is only
+     * visible on the detail page that requested it.
      *
      * @param provider      the app provider
      * @param rssRepository the repository used to run the prune update
@@ -146,15 +156,16 @@ public class RssSyncWorker extends Worker {
         try {
             AppSharedPreferences appSharedPreferences = provider.get(AppSharedPreferences.class);
             int keepReadItemsDays = appSharedPreferences.getKeepReadItemsDays();
-            if (keepReadItemsDays <= 0) {
-                return;
+            if (keepReadItemsDays > 0) {
+                long cutoffMillis = System.currentTimeMillis()
+                        - TimeUnit.DAYS.toMillis(keepReadItemsDays);
+                int rowsDeleted = rssRepository.pruneOldReadItems(cutoffMillis);
+                if (rowsDeleted > 0) {
+                    provider.get(RssChangeNotifier.class).itemsPrunedAuto(null);
+                }
             }
-            long cutoffMillis = System.currentTimeMillis()
-                    - TimeUnit.DAYS.toMillis(keepReadItemsDays);
-            int rowsDeleted = rssRepository.pruneOldReadItems(cutoffMillis);
-            if (rowsDeleted > 0) {
-                provider.get(RssChangeNotifier.class).itemsPrunedAuto(null);
-            }
+            // article-content orphan sweep: last step of the prune, never fails the sync
+            provider.get(ArticleContentDao.class).deleteOrphanArticleContent();
         } catch (Throwable throwable) {
             provider.get(ILogger.class)
                     .e(TAG, getApplicationContext()

@@ -216,4 +216,10 @@
     <string name="open_links_default_browser">Navigateur par défaut</string>
     <string name="open_links_custom_tabs">Custom Tabs</string>
     <string name="error_open_link">Échec de l\'ouverture du lien</string>
+    <string name="menu_read_full_article">Lire l\'article complet</string>
+    <string name="menu_show_original_description">Afficher la description d\'origine</string>
+    <string name="loading_full_article">Chargement de l\'article complet…</string>
+    <string name="full_article_fetch_failed">Échec du chargement de l\'article complet</string>
+    <string name="title_fetch_full_text_automatically">Charger automatiquement les articles complets</string>
+    <string name="menu_subtitle_fetch_full_text_automatically">À l\'ouverture d\'un article, charger automatiquement le texte complet de la page si le flux n\'affiche qu\'un résumé. Désactivé pour conserver la description du flux</string>
 </resources>

@@ -11,6 +11,7 @@ import com.android.volley.toolbox.ImageLoader;
 
 import java.io.File;
 
+import m.co.rh.id.a_news_provider.component.network.ArticleExtractor;
 import m.co.rh.id.a_news_provider.component.network.RssRequestFactory;
 import m.co.rh.id.a_news_provider.component.network.parser.RssFeedParser;
 import m.co.rh.id.a_news_provider.component.network.provider.cache.DiskLruBitmapCache;
@@ -48,5 +49,8 @@ public class NetworkProviderModule implements ProviderModule {
                         provider.get(DiskLruBitmapCache.class)));
         providerRegistry.registerLazy(RssRequestFactory.class, () -> new RssRequestFactory(provider));
         providerRegistry.registerLazy(RssFeedParser.class, () -> new RssFeedParser(provider));
+        // stateless extractor singleton: no deps, no construction cost, so lazy
+        // registration keeps even the single instance out of memory until first use
+        providerRegistry.registerLazy(ArticleExtractor.class, ArticleExtractor::new);
     }
 }

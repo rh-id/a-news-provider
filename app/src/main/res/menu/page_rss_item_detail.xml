@@ -21,6 +21,10 @@
             android:title="@string/menu_next_article"
             app:showAsAction="always" />
         <item
+            android:id="@+id/menu_read_full_article"
+            android:title="@string/menu_read_full_article"
+            app:showAsAction="collapseActionView" />
+        <item
             android:id="@+id/menu_edit_link"
             android:icon="@drawable/ic_link_black"
             android:title="@string/menu_edit_link"

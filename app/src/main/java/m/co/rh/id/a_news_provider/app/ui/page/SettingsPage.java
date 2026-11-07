@@ -23,6 +23,7 @@ import m.co.rh.id.a_news_provider.app.ui.component.settings.AutoMarkReadMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.KeepReadItemsMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.CollapseDuplicateStoriesMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.DownloadImageMenuSV;
+import m.co.rh.id.a_news_provider.app.ui.component.settings.FetchFullTextAutomaticallyMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.LicensesMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.LogMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.MarkReadOnScrollMenuSV;
@@ -101,6 +102,11 @@ public class SettingsPage extends StatefulView<Activity> implements RssSyncMenuS
         mStatefulViews.add(readingLineSpacingMenuSV);
         ReadingJustificationMenuSV readingJustificationMenuSV = new ReadingJustificationMenuSV();
         mStatefulViews.add(readingJustificationMenuSV);
+        // auto-fetch full text belongs to the reading-experience block right
+        // after the typography rows (issue #28)
+        FetchFullTextAutomaticallyMenuSV fetchFullTextAutomaticallyMenuSV =
+                new FetchFullTextAutomaticallyMenuSV();
+        mStatefulViews.add(fetchFullTextAutomaticallyMenuSV);
         OneHandModeMenuSV oneHandModeMenuSV = new OneHandModeMenuSV();
         mStatefulViews.add(oneHandModeMenuSV);
         DownloadImageMenuSV downloadImageMenuSV = new DownloadImageMenuSV();

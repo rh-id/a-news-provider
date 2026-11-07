@@ -210,4 +210,10 @@
     <string name="open_links_default_browser">Default browser</string>
     <string name="open_links_custom_tabs">Custom Tabs</string>
     <string name="error_open_link">Failed to open link</string>
+    <string name="menu_read_full_article">Read full article</string>
+    <string name="menu_show_original_description">Show original description</string>
+    <string name="loading_full_article">Loading full article…</string>
+    <string name="full_article_fetch_failed">Failed to load full article</string>
+    <string name="title_fetch_full_text_automatically">Auto-fetch full articles</string>
+    <string name="menu_subtitle_fetch_full_text_automatically">When opening an article, fetch the full page text automatically if the feed only shows a summary. Turn off to keep using the feed description</string>
 </resources>

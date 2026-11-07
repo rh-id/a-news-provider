@@ -211,4 +211,10 @@
     <string name="open_links_default_browser">Standardbrowser</string>
     <string name="open_links_custom_tabs">Custom Tabs</string>
     <string name="error_open_link">Link konnte nicht geöffnet werden</string>
+    <string name="menu_read_full_article">Vollständigen Artikel lesen</string>
+    <string name="menu_show_original_description">Originalbeschreibung anzeigen</string>
+    <string name="loading_full_article">Vollständiger Artikel wird geladen…</string>
+    <string name="full_article_fetch_failed">Vollständiger Artikel konnte nicht geladen werden</string>
+    <string name="title_fetch_full_text_automatically">Vollständige Artikel automatisch laden</string>
+    <string name="menu_subtitle_fetch_full_text_automatically">Beim Öffnen eines Artikels den Volltext der Seite automatisch laden, wenn der Feed nur eine Zusammenfassung zeigt. Aus, um die Feed-Beschreibung zu behalten</string>
 </resources>

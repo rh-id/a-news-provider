@@ -87,6 +87,9 @@ public class AppSharedPreferences {
     private SerialBehaviorSubject<Integer> mOpenLinksMode;
     private String mOpenLinksModeKey;
 
+    private SerialBehaviorSubject<Boolean> mFetchFullTextAutomatically;
+    private String mFetchFullTextAutomaticallyKey;
+
     private boolean mShowCaseRssChannelList;
     private String mShowCaseRssChannelListKey;
 
@@ -125,6 +128,7 @@ public class AppSharedPreferences {
         mReadingLineSpacing = new SerialBehaviorSubject<>();
         mReadingJustification = new SerialBehaviorSubject<>();
         mOpenLinksMode = new SerialBehaviorSubject<>();
+        mFetchFullTextAutomatically = new SerialBehaviorSubject<>();
         initValue();
     }
 
@@ -167,6 +171,8 @@ public class AppSharedPreferences {
                 + ".readingJustification";
         mOpenLinksModeKey = SHARED_PREFERENCES_NAME
                 + ".openLinksMode";
+        mFetchFullTextAutomaticallyKey = SHARED_PREFERENCES_NAME
+                + ".fetchFullTextAutomatically";
         mShowCaseRssChannelListKey = SHARED_PREFERENCES_NAME
                 + ".showCaseRssChannelList";
         mShowCaseRssItemListKey = SHARED_PREFERENCES_NAME
@@ -250,6 +256,12 @@ public class AppSharedPreferences {
         // "Open links in" defaults to the raw ACTION_VIEW behavior (0); existing
         // users therefore see no change when upgrading (issue #35)
         openLinksMode(mSharedPreferences.getInt(mOpenLinksModeKey, MODE_DEFAULT_BROWSER));
+        // auto-fetch full text defaults to OFF (issue #28): it fetches whole web
+        // pages in the background on every article open, which users must opt
+        // into (bandwidth/privacy); the manual toolbar action works regardless
+        boolean fetchFullTextAutomatically = mSharedPreferences.getBoolean(
+                mFetchFullTextAutomaticallyKey, false);
+        fetchFullTextAutomatically(fetchFullTextAutomatically);
         boolean showCaseRssChannelList = mSharedPreferences.getBoolean(mShowCaseRssChannelListKey, false);
         setShowCaseRssChannelList(showCaseRssChannelList);
         boolean showCaseRssItemList = mSharedPreferences.getBoolean(mShowCaseRssItemListKey, false);
@@ -712,6 +724,34 @@ public class AppSharedPreferences {
 
     public Flowable<Integer> getOpenLinksModeFlow() {
         return Flowable.fromObservable(mOpenLinksMode.getSubject(), BackpressureStrategy.BUFFER);
+    }
+
+    /**
+     * Auto-fetch full text on article open (issue #28, default OFF): when
+     * enabled, opening an article whose feed only carries a teaser fetches the
+     * full page text (extracted, text-only) in the background. Off by default
+     * because it downloads whole web pages without an explicit per-article ask;
+     * the manual "Read full article" toolbar action is unaffected by this
+     * setting.
+     */
+    private void fetchFullTextAutomatically(boolean enabled) {
+        mFetchFullTextAutomatically.onNext(enabled);
+        mExecutorService.execute(() ->
+                mSharedPreferences.edit().putBoolean(mFetchFullTextAutomaticallyKey, enabled)
+                        .commit());
+    }
+
+    public boolean isFetchFullTextAutomatically() {
+        Boolean value = mFetchFullTextAutomatically.getValue();
+        return value != null && value;
+    }
+
+    public void setFetchFullTextAutomatically(boolean enabled) {
+        fetchFullTextAutomatically(enabled);
+    }
+
+    public Flowable<Boolean> getIsFetchFullTextAutomaticallyFlow() {
+        return Flowable.fromObservable(mFetchFullTextAutomatically.getSubject(), BackpressureStrategy.BUFFER);
     }
 
     public void setShowCaseRssChannelList(boolean show) {

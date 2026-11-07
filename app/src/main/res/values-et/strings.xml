@@ -211,4 +211,10 @@
     <string name="open_links_default_browser">Vaikimisi brauser</string>
     <string name="open_links_custom_tabs">Custom Tabs</string>
     <string name="error_open_link">Linki avamine ebaõnnestus</string>
+    <string name="menu_read_full_article">Loe täielikku artiklit</string>
+    <string name="menu_show_original_description">Kuva algne kirjeldus</string>
+    <string name="loading_full_article">Täieliku artikli laadimine…</string>
+    <string name="full_article_fetch_failed">Täieliku artikli laadimine ebaõnnestus</string>
+    <string name="title_fetch_full_text_automatically">Laadi täielikud artiklid automaatselt</string>
+    <string name="menu_subtitle_fetch_full_text_automatically">Artikli avamisel laaditakse lehe täistekst automaatselt, kui voog näitab ainult kokkuvõtet. Lülita välja, et kasutada voo kirjeldust</string>
 </resources>

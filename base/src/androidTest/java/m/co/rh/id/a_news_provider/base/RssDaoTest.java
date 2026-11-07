@@ -17,7 +17,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import m.co.rh.id.a_news_provider.base.dao.ArticleContentDao;
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
+import m.co.rh.id.a_news_provider.base.entity.ArticleContent;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.a_news_provider.base.model.KeyCount;
@@ -67,11 +69,18 @@ import static org.junit.Assert.fail;
  * deletes only old READ non-favorite rows (by the last-seen stamp), keeps unread
  * items and favorites whatever their age, keeps recently-seen rows, is counted
  * across all channels and includes paused channels (global opt-in window).
+ * <p>
+ * 7. Article-content cache (issue #28 phase 1): {@code article_content} rows are
+ * keyed by link, survive an {@code upsertRssItemsForChannel} re-sync untouched,
+ * and {@code deleteOrphanArticleContent} deletes exactly the rows whose link no
+ * longer exists on any rss_item row - shared links keep their cached content
+ * while at least one item row still carries the link.
  */
 @RunWith(AndroidJUnit4.class)
 public class RssDaoTest {
     private AppDatabase mAppDatabase;
     private RssDao mRssDao;
+    private ArticleContentDao mArticleContentDao;
 
     @Before
     public void setUp() {
@@ -81,6 +90,7 @@ public class RssDaoTest {
                 .allowMainThreadQueries()
                 .build();
         mRssDao = mAppDatabase.rssDao();
+        mArticleContentDao = mAppDatabase.articleContentDao();
     }
 
     @After
@@ -1405,6 +1415,87 @@ public class RssDaoTest {
         assertEquals("Paused channels age under the same global window", 1, deleted);
         assertTrue("The aged row of the paused channel is gone",
                 mRssDao.findRssItemsByChannelId(pausedChannel.id).isEmpty());
+    }
+
+    // ==================================================================================
+    // Section 7: article-content cache (issue #28 phase 1)
+    // ==================================================================================
+
+    @Test
+    public void articleContent_survivesUpsertResyncUntouched() {
+        RssChannel rssChannel = createRssChannel("http://test.com/feed", "Feed");
+        RssItem rssItem = createRssItem("Story", "teaser only",
+                "http://test.com/1", createDate(2026, 1, 1));
+        mRssDao.insertRssChannel(rssChannel, rssItem);
+        mArticleContentDao.upsertArticleContent(new ArticleContent(
+                "http://test.com/1", "<p>extracted full text</p>",
+                System.currentTimeMillis()));
+
+        // re-sync the same feed: the item row is updated in place (the feed
+        // refreshed its teaser), which must NOT touch the cached content - the
+        // article_content table is deliberately separate from the sync upsert
+        RssItem refreshed = createRssItem("Story", "refreshed teaser",
+                "http://test.com/1", createDate(2026, 1, 1));
+        mRssDao.upsertRssItemsForChannel(rssChannel, Collections.singletonList(refreshed));
+
+        ArticleContent articleContent =
+                mArticleContentDao.findArticleContentByLink("http://test.com/1");
+        assertNotNull("Cached content survives the sync upsert", articleContent);
+        assertEquals("<p>extracted full text</p>", articleContent.content);
+        // and the item row itself WAS updated by the sync
+        assertEquals("refreshed teaser",
+                mRssDao.findRssItemById(rssItem.id).description);
+    }
+
+    @Test
+    public void deleteOrphanArticleContent_removesOnlyLinksWithoutItemRows() {
+        RssChannel channelA = createRssChannel("http://a.com/feed", "Feed A");
+        RssChannel channelB = createRssChannel("http://b.com/feed", "Feed B");
+        // shared link exists in BOTH channels; b-only exists only in B;
+        // a-only exists only in A (the untouched control)
+        RssItem sharedInA = createRssItem("Shared A", "desc",
+                "http://test.com/shared", createDate(2026, 1, 1));
+        RssItem sharedInB = createRssItem("Shared B", "desc",
+                "http://test.com/shared", createDate(2026, 1, 2));
+        RssItem bOnly = createRssItem("B only", "desc",
+                "http://test.com/b-only", createDate(2026, 1, 3));
+        RssItem aOnly = createRssItem("A only", "desc",
+                "http://test.com/a-only", createDate(2026, 1, 4));
+        mRssDao.insertRssChannel(channelA, sharedInA, aOnly);
+        mRssDao.insertRssChannel(channelB, sharedInB, bOnly);
+        mArticleContentDao.upsertArticleContent(new ArticleContent(
+                "http://test.com/shared", "<p>shared content</p>", 1L));
+        mArticleContentDao.upsertArticleContent(new ArticleContent(
+                "http://test.com/b-only", "<p>b content</p>", 1L));
+        mArticleContentDao.upsertArticleContent(new ArticleContent(
+                "http://test.com/a-only", "<p>a content</p>", 1L));
+
+        // deleting channel B removes its item rows, orphaning exactly the
+        // b-only link (the shared link still exists on channel A's row)
+        mRssDao.deleteRssChannel(channelB);
+        int deleted = mArticleContentDao.deleteOrphanArticleContent();
+
+        assertEquals(1, deleted);
+        assertNotNull("Shared-link content is kept while one item row remains",
+                mArticleContentDao.findArticleContentByLink("http://test.com/shared"));
+        assertNull("Orphaned content is removed",
+                mArticleContentDao.findArticleContentByLink("http://test.com/b-only"));
+        assertNotNull(mArticleContentDao.findArticleContentByLink("http://test.com/a-only"));
+    }
+
+    @Test
+    public void deleteOrphanArticleContent_withNoOrphans_deletesNothing() {
+        RssChannel rssChannel = createRssChannel("http://test.com/feed", "Feed");
+        RssItem rssItem = createRssItem("Story", "desc",
+                "http://test.com/1", createDate(2026, 1, 1));
+        mRssDao.insertRssChannel(rssChannel, rssItem);
+        mArticleContentDao.upsertArticleContent(new ArticleContent(
+                "http://test.com/1", "<p>full text</p>", 1L));
+
+        int deleted = mArticleContentDao.deleteOrphanArticleContent();
+
+        assertEquals(0, deleted);
+        assertNotNull(mArticleContentDao.findArticleContentByLink("http://test.com/1"));
     }
 
     private RssChannel createRssChannel(String url, String feedName) {

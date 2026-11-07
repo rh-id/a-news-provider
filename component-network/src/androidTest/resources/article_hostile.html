@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hostile page</title>
+    <meta charset="utf-8">
+</head>
+<body>
+<article>
+    <h1>Hostile Article Title</h1>
+    <p>This page is full of hostile markup. A script tag below tries to run code, an iframe tries to embed another page, and links point at protocol urls that must never survive sanitization.</p>
+    <p>The second paragraph exists so the article container carries enough paragraph text to win the root scoring on this page.</p>
+    <script>alert('script payload');</script>
+    <iframe src="https://tracking.example/frame"></iframe>
+    <form action="/steal"><input type="text" name="secret"><button>Submit</button></form>
+    <a href="javascript:alert(document.cookie)">a javascript link</a>
+    <a href="data:text/html,payload">a data link</a>
+</article>
+</body>
+</html>

@@ -37,6 +37,18 @@
                     android:layout_margin="@dimen/text_margin"
                     android:textSize="24sp" />
 
+                <!-- full-article loading indicator (issue #28 reader mode):
+                     hidden by default, spun up while a fetch is in flight -->
+                <ProgressBar
+                    android:id="@+id/progress_article"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="8dp"
+                    android:indeterminate="true"
+                    android:visibility="gone"
+                    android:contentDescription="@string/loading_full_article" />
+
                 <ScrollView
                     android:id="@+id/scroll_content"
                     android:layout_width="match_parent"

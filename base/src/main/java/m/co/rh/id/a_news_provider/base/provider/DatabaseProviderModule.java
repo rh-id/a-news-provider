@@ -4,6 +4,7 @@ import androidx.room.Room;
 
 import m.co.rh.id.a_news_provider.base.AppDatabase;
 import m.co.rh.id.a_news_provider.base.dao.AndroidNotificationDao;
+import m.co.rh.id.a_news_provider.base.dao.ArticleContentDao;
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.room.DbMigration;
 import m.co.rh.id.aprovider.Provider;
@@ -37,5 +38,7 @@ public class DatabaseProviderModule implements ProviderModule {
                 provider.get(AppDatabase.class).rssDao());
         providerRegistry.registerAsync(AndroidNotificationDao.class, () ->
                 provider.get(AppDatabase.class).androidNotificationDao());
+        providerRegistry.registerAsync(ArticleContentDao.class, () ->
+                provider.get(AppDatabase.class).articleContentDao());
     }
 }

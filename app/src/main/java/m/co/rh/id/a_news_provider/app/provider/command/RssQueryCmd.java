@@ -8,7 +8,9 @@ import java.util.concurrent.ExecutorService;
 
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.schedulers.Schedulers;
+import m.co.rh.id.a_news_provider.base.dao.ArticleContentDao;
 import m.co.rh.id.a_news_provider.base.dao.RssDao;
+import m.co.rh.id.a_news_provider.base.entity.ArticleContent;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.aprovider.Provider;
@@ -17,11 +19,13 @@ public class RssQueryCmd {
     private final Context mAppContext;
     private final ExecutorService mExecutorService;
     private final RssDao mRssDao;
+    private final ArticleContentDao mArticleContentDao;
 
     public RssQueryCmd(Provider provider) {
         mAppContext = provider.getContext().getApplicationContext();
         mExecutorService = provider.get(ExecutorService.class);
         mRssDao = provider.get(RssDao.class);
+        mArticleContentDao = provider.get(ArticleContentDao.class);
     }
 
     public Single<RssChannel> getRssChannelById(long id) {
@@ -35,6 +39,23 @@ public class RssQueryCmd {
         return Single.fromCallable(() ->
                 mRssDao
                         .findRssItemById(id))
+                .subscribeOn(Schedulers.from(mExecutorService));
+    }
+
+    /**
+     * Loads the cached full-text article content of the given link
+     * (issue #28 phase 1). Backs the detail page's reader mode: the page looks
+     * the content up here after the FetchArticleContentCmd's
+     * articleContentUpdated event and on auto-fetch. Absence (nothing fetched
+     * yet) is a normal outcome, hence the Optional instead of a nullable
+     * emission.
+     *
+     * @param link the item link to look up
+     * @return Single emitting the cached content, or empty when none is cached
+     */
+    public Single<Optional<ArticleContent>> getArticleContentByLink(String link) {
+        return Single.fromCallable(() ->
+                Optional.ofNullable(mArticleContentDao.findArticleContentByLink(link)))
                 .subscribeOn(Schedulers.from(mExecutorService));
     }
 

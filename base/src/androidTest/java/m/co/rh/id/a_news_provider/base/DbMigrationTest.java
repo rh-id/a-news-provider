@@ -460,6 +460,54 @@ public class DbMigrationTest {
     }
 
     // ==================================================================================
+    // MIGRATION_13_14: article_content table for the in-app article reader cache
+    // (issue #28 phase 1)
+    // ==================================================================================
+
+    @Test
+    public void migrate13to14_createsArticleContentTable() throws IOException {
+        SupportSQLiteDatabase db = helper.createDatabase(TEST_DB, 13);
+        insertRssChannel(db, 1, "Feed A", "https://a.com/feed");
+        insertRssItem(db, 11, 1, "https://a.com/post-1", false, false);
+        insertRssItem(db, 12, 1, "https://a.com/post-2", true, false);
+        db.close();
+
+        // runMigrationsAndValidate already checks the migrated schema against
+        // the exported 14.json (which the Room compiler regenerates on build),
+        // so a matching table shape is a precondition of reaching these asserts
+        SupportSQLiteDatabase migrated = helper.runMigrationsAndValidate(TEST_DB, 14,
+                true, DbMigration.MIGRATION_13_14);
+
+        try {
+            // the brand-new table starts empty; existing data is untouched
+            assertEquals(0, readLong(migrated,
+                    "SELECT COUNT(link) FROM article_content"));
+            assertEquals(2, readLong(migrated, "SELECT COUNT(id) FROM rss_item"));
+            assertEquals(1, readLong(migrated,
+                    "SELECT is_read FROM rss_item WHERE id = 12"));
+            // content rows round-trip through the new table
+            migrated.execSQL("INSERT INTO article_content " +
+                            "(link, content, fetched_date_time) VALUES (?, ?, ?)",
+                    new Object[]{"https://a.com/post-1", "<p>full text</p>", BASE_TIME});
+            assertEquals("<p>full text</p>", readString(migrated,
+                    "SELECT content FROM article_content WHERE link = 'https://a.com/post-1'"));
+            assertEquals(BASE_TIME, readLong(migrated,
+                    "SELECT fetched_date_time FROM article_content WHERE link = 'https://a.com/post-1'"));
+            // the link is the primary key: a REPLACE insert upserts by link,
+            // mirroring the DAO's OnConflictStrategy.REPLACE
+            migrated.execSQL("INSERT OR REPLACE INTO article_content " +
+                            "(link, content, fetched_date_time) VALUES (?, ?, ?)",
+                    new Object[]{"https://a.com/post-1", "<p>refreshed</p>", BASE_TIME + 1});
+            assertEquals(1, readLong(migrated,
+                    "SELECT COUNT(link) FROM article_content"));
+            assertEquals("<p>refreshed</p>", readString(migrated,
+                    "SELECT content FROM article_content WHERE link = 'https://a.com/post-1'"));
+        } finally {
+            migrated.close();
+        }
+    }
+
+    // ==================================================================================
     // helpers: seed rows using the exact version-8 schema, read values after migration
     // ==================================================================================
 

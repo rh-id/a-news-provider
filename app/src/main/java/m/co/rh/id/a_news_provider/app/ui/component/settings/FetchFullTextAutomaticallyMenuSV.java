@@ -1,0 +1,65 @@
+package m.co.rh.id.a_news_provider.app.ui.component.settings;
+
+import android.app.Activity;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.CompoundButton;
+
+import com.google.android.material.switchmaterial.SwitchMaterial;
+
+import m.co.rh.id.a_news_provider.R;
+import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
+import m.co.rh.id.anavigator.StatefulView;
+import m.co.rh.id.anavigator.annotation.NavInject;
+import m.co.rh.id.aprovider.Provider;
+
+/**
+ * Settings toggle for auto-fetching the full article text on open
+ * (issue #28, default OFF): when enabled, opening an article whose feed only
+ * carries a teaser fetches the full page text in the background. Toggling only
+ * writes the preference: the decision is made at article-OPEN time (the detail
+ * page reads the flag when it binds an item), so the very next article already
+ * honors the new value. The manual "Read full article" toolbar action works
+ * regardless of this setting.
+ */
+public class FetchFullTextAutomaticallyMenuSV extends StatefulView<Activity> implements View.OnClickListener, CompoundButton.OnCheckedChangeListener {
+
+    @NavInject
+    private transient Provider mProvider;
+    private transient AppSharedPreferences mAppSharedPreferences;
+
+    private transient SwitchMaterial mSwitchMaterial;
+
+    @Override
+    protected View createView(Activity activity, ViewGroup container) {
+        View view = activity.getLayoutInflater().inflate(
+                R.layout.menu_fetch_full_text_automatically, container, false);
+        mAppSharedPreferences = mProvider.get(AppSharedPreferences.class);
+        mSwitchMaterial = view.findViewById(R.id.switchm_fetch_full_text_automatically);
+        mSwitchMaterial.setChecked(mAppSharedPreferences.isFetchFullTextAutomatically());
+        mSwitchMaterial.setOnCheckedChangeListener(this);
+        View containerMenu = view.findViewById(R.id.container_menu);
+        containerMenu.setOnClickListener(this);
+        return view;
+    }
+
+    @Override
+    public void dispose(Activity activity) {
+        super.dispose(activity);
+        mProvider = null;
+        mSwitchMaterial = null;
+    }
+
+    @Override
+    public void onClick(View view) {
+        int viewId = view.getId();
+        if (viewId == R.id.container_menu) {
+            mSwitchMaterial.setChecked(!mSwitchMaterial.isChecked());
+        }
+    }
+
+    @Override
+    public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
+        mAppSharedPreferences.setFetchFullTextAutomatically(checked);
+    }
+}

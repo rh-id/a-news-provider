@@ -206,4 +206,10 @@
     <string name="open_links_default_browser">默认浏览器</string>
     <string name="open_links_custom_tabs">Custom Tabs</string>
     <string name="error_open_link">无法打开链接</string>
+    <string name="menu_read_full_article">阅读全文</string>
+    <string name="menu_show_original_description">显示原始描述</string>
+    <string name="loading_full_article">正在加载全文…</string>
+    <string name="full_article_fetch_failed">全文加载失败</string>
+    <string name="title_fetch_full_text_automatically">自动获取全文</string>
+    <string name="menu_subtitle_fetch_full_text_automatically">打开文章时，若订阅源仅显示摘要，则自动抓取网页全文。关闭后将继续使用订阅源描述</string>
 </resources>
