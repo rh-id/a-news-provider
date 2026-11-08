@@ -4,7 +4,7 @@ import androidx.room.ColumnInfo;
 
 /**
  * One row of
- * {@link m.co.rh.id.a_news_provider.base.dao.RssDao#countRssItemsByDedupKeys(java.util.List)}:
+ * {@link m.co.rh.id.a_news_provider.base.provider.component.dao.RssDao#countRssItemsByDedupKeys(java.util.List)}:
  * a dedup cluster key and how many rss_item rows (channel copies) carry it.
  * Room maps query result POJO fields by COLUMN NAME, so the field names must
  * match the query's column aliases exactly - which they do here

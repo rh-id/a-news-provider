@@ -10,7 +10,7 @@ import java.io.IOException;
 
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
-import m.co.rh.id.a_news_provider.base.entity.RssItemCategories;
+import m.co.rh.id.a_news_provider.base.util.RssItemCategories;
 import m.co.rh.id.a_news_provider.base.model.RssModel;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.aprovider.Provider;

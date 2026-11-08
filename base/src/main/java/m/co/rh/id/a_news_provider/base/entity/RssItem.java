@@ -62,8 +62,8 @@ public class RssItem implements Serializable {
 
     /**
      * Feed-provided category terms joined with
-     * {@link m.co.rh.id.a_news_provider.base.entity.RssItemCategories#DELIMITER},
-     * see {@link m.co.rh.id.a_news_provider.base.entity.RssItemCategories}.
+     * {@link m.co.rh.id.a_news_provider.base.util.RssItemCategories#DELIMITER},
+     * see {@link m.co.rh.id.a_news_provider.base.util.RssItemCategories}.
      */
     @ColumnInfo(name = "categories")
     public String categories;

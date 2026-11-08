@@ -36,15 +36,15 @@ MainActivity also creates an **activity-scoped** provider (`new RxProviderModule
 `RssQueryCmd`, `PagedRssItemsCmd`, `NewRssChannelCmd`, `RenameRssFeedCmd`, `EditRssLinkCmd`, `DeleteRssChannelCmd`, `PauseRssChannelCmd`, `UpdateRssItemIsReadCmd`, `UpdateRssItemIsFavoriteCmd`, `MarkAllReadCmd`, `MarkItemsReadOnScrollCmd`, `SearchRssItemsCmd`, `SyncRssCmd` (enqueues WorkManager sync chain), `OpmlCmd` (import/export via `OpmlParser` + `OpmlParseWorker`), `FetchArticleContentCmd` (issue #28: Volley GET + Jsoup extraction → `article_content` cache → `articleContentUpdated` event; `Single<Boolean>`, never crashes).
 Supporting classes: `BaseRssItemsCmd` (shared item-list base), `RedirectDuplicateChecker` (duplicate-feed detection using base's `UrlNormalizer`).
 The rss item list renders through `RssItemRecyclerViewAdapter`, a facade over a ConcatAdapter combining a `ListAdapter<RssItem, VH>` (DiffUtil, `areItemsTheSame`=id, contents compare excludes `updated_date_time`) with a 1-row empty-state adapter; the SVs push full accumulated lists via `submitItems()` and DiffUtil animates appends/removals — keyset pagination in `BaseRssItemsCmd` emits the accumulated list per page load.
-The add-feed core shared by `NewRssChannelCmd` and `OpmlParser` lives in non-UI `app/.../provider/service/RssService`.
+The add-feed core shared by `NewRssChannelCmd` and `OpmlParser` lives in non-UI `app/.../provider/component/service/RssService`.
 UI retrieves command from Provider and executes; DB-threaded work runs on a shared WeightedThreadPool (max weight 5).
 `PagedRssItemsCmd` is registered **app-scoped and shared** between `RssItemListSV` and `RssItemDetailPage` (a page-scoped copy used to shadow it, breaking neighbor context; sharing also persists home-list filter/sort across pages).
 
 ## Reactive Layer
-- `RssChangeNotifier` (`app/.../app/provider/notifier/`) — Rx event hub: new/updated/deleted channels, synced items, updated items, mark-read events.
+- `RssChangeNotifier` (`app/.../app/provider/component/notifier/`) — Rx event hub: new/updated/deleted channels, synced items, updated items, mark-read events.
 - `RssChannelStateNotifier` — selected channel + unread-count state.
-- `AppSharedPreferences` (`base/.../base/AppSharedPreferences.java`) — exposes prefs (theme, dynamic color, sync interval, one-hand mode, download-image, swipe article navigation, mark-read-on-scroll, auto mark-read retention days, open-links mode, showcase flags) as Rx flows via `SerialBehaviorSubject` (merged its former mQuery field into the subject in 2026-10).
-- `DeviceStatusNotifier` (`base/.../base/provider/notifier/`) — ConnectivityManager callback → `BehaviorSubject<Boolean>` online state; UI shows SnackBar offline feedback.
+- `AppSharedPreferences` (`base/.../base/provider/component/AppSharedPreferences.java`) — exposes prefs (theme, dynamic color, sync interval, one-hand mode, download-image, swipe article navigation, mark-read-on-scroll, auto mark-read retention days, open-links mode, showcase flags) as Rx flows via `SerialBehaviorSubject` (merged its former mQuery field into the subject in 2026-10).
+- `DeviceStatusNotifier` (`base/.../base/provider/component/notifier/`) — ConnectivityManager callback → `BehaviorSubject<Boolean>` online state; UI shows SnackBar offline feedback.
 - `MainApplication` installs `RxJavaPlugins.setErrorHandler` (logs undeliverable errors) + default uncaught-exception handler (logs, disposes provider).
 
 ## Background Work (WorkManager)

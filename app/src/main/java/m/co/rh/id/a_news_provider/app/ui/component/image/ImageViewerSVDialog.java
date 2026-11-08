@@ -37,7 +37,7 @@ import java.util.concurrent.ExecutorService;
 
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
-import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
+import m.co.rh.id.a_news_provider.app.provider.component.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.util.UiUtils;
 import m.co.rh.id.a_news_provider.component.network.provider.cache.DiskLruBitmapCache;
 import m.co.rh.id.alogger.ILogger;

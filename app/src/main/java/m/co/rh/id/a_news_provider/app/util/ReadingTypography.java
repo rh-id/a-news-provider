@@ -9,7 +9,7 @@ import android.widget.TextView;
 
 import androidx.annotation.RequiresApi;
 
-import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
+import m.co.rh.id.a_news_provider.base.provider.component.AppSharedPreferences;
 
 /**
  * Immutable snapshot of the user's reading preferences, plus the two appliers that

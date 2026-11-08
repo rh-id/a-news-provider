@@ -39,7 +39,7 @@ import m.co.rh.id.a_news_provider.app.ui.page.HomePage;
 import m.co.rh.id.a_news_provider.app.ui.page.RssItemDetailPage;
 import m.co.rh.id.a_news_provider.app.ui.page.SearchRssPage;
 import m.co.rh.id.a_news_provider.app.ui.page.SettingsPage;
-import m.co.rh.id.a_news_provider.base.dao.RssDao;
+import m.co.rh.id.a_news_provider.base.provider.component.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.a_news_provider.provider.IntegrationTestAppProviderModule;

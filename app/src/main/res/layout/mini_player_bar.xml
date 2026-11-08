@@ -4,7 +4,7 @@
      never a child of it (the navigator sweeps unknown children on rebuild).
      Background follows the DayNight surface pair (white/gray-900) so the
      title and the icon buttons keep contrast in both themes. -->
-<m.co.rh.id.a_news_provider.app.playback.MiniPlayerBarView xmlns:android="http://schemas.android.com/apk/res/android"
+<m.co.rh.id.a_news_provider.app.ui.component.playback.MiniPlayerBarView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="56dp"
@@ -49,4 +49,4 @@
         android:contentDescription="@string/mini_player_close"
         android:src="@drawable/ic_close_white"
         app:tint="@color/daynight_black_white" />
-</m.co.rh.id.a_news_provider.app.playback.MiniPlayerBarView>
+</m.co.rh.id.a_news_provider.app.ui.component.playback.MiniPlayerBarView>

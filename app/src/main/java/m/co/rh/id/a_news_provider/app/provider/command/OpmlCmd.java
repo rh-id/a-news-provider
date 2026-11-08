@@ -13,10 +13,10 @@ import java.util.concurrent.ExecutorService;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import m.co.rh.id.a_news_provider.R;
-import m.co.rh.id.a_news_provider.app.provider.parser.OpmlParser;
+import m.co.rh.id.a_news_provider.app.provider.component.parser.OpmlParser;
 import m.co.rh.id.a_news_provider.app.workmanager.ConstantsKey;
 import m.co.rh.id.a_news_provider.app.workmanager.OpmlParseWorker;
-import m.co.rh.id.a_news_provider.base.provider.FileHelper;
+import m.co.rh.id.a_news_provider.base.provider.component.FileHelper;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.aprovider.Provider;
 

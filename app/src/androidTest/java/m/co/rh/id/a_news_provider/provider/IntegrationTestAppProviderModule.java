@@ -4,19 +4,20 @@ import android.app.Application;
 
 import androidx.work.WorkManager;
 
-import m.co.rh.id.a_news_provider.app.component.AppNotificationHandler;
-import m.co.rh.id.a_news_provider.app.playback.MiniPlayerBarController;
-import m.co.rh.id.a_news_provider.app.playback.PlaybackManager;
-import m.co.rh.id.a_news_provider.app.playback.VideoUrlPolicy;
 import m.co.rh.id.a_news_provider.app.provider.CommandProviderModule;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.RedirectDuplicateChecker;
-import m.co.rh.id.a_news_provider.app.provider.event.AppSharedPreferencesEventHandler;
-import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
-import m.co.rh.id.a_news_provider.app.provider.notifier.RssChannelStateNotifier;
-import m.co.rh.id.a_news_provider.app.provider.parser.OpmlParser;
-import m.co.rh.id.a_news_provider.app.provider.repository.RssRepository;
-import m.co.rh.id.a_news_provider.app.provider.service.RssService;
+import m.co.rh.id.a_news_provider.app.provider.component.AppNotificationHandler;
+import m.co.rh.id.a_news_provider.app.provider.component.LinkOpener;
+import m.co.rh.id.a_news_provider.app.provider.component.event.AppSharedPreferencesEventHandler;
+import m.co.rh.id.a_news_provider.app.provider.component.notifier.RssChangeNotifier;
+import m.co.rh.id.a_news_provider.app.provider.component.notifier.RssChannelStateNotifier;
+import m.co.rh.id.a_news_provider.app.provider.component.parser.OpmlParser;
+import m.co.rh.id.a_news_provider.app.provider.component.playback.MiniPlayerBarController;
+import m.co.rh.id.a_news_provider.app.provider.component.playback.PlaybackManager;
+import m.co.rh.id.a_news_provider.app.provider.component.repository.RssRepository;
+import m.co.rh.id.a_news_provider.app.provider.component.service.RssService;
+import m.co.rh.id.a_news_provider.app.util.VideoUrlPolicy;
 import m.co.rh.id.a_news_provider.base.util.RssTitleNormalizer;
 import m.co.rh.id.a_news_provider.base.util.UrlNormalizer;
 import m.co.rh.id.a_news_provider.base.util.UrlSanitizer;
@@ -60,6 +61,7 @@ public class IntegrationTestAppProviderModule implements ProviderModule {
         providerRegistry.registerLazy(UrlNormalizer.class, UrlNormalizer::new);
         providerRegistry.registerLazy(RssTitleNormalizer.class, RssTitleNormalizer::new);
         providerRegistry.registerLazy(UrlSanitizer.class, UrlSanitizer::new);
+        providerRegistry.registerLazy(LinkOpener.class, () -> new LinkOpener(provider));
         providerRegistry.registerLazy(RedirectDuplicateChecker.class, () -> new RedirectDuplicateChecker(provider));
         providerRegistry.registerLazy(OpmlParser.class, () -> new OpmlParser(provider));
 

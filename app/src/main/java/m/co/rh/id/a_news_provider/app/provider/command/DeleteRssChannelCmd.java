@@ -2,9 +2,9 @@ package m.co.rh.id.a_news_provider.app.provider.command;
 
 import java.util.concurrent.ExecutorService;
 
-import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
-import m.co.rh.id.a_news_provider.app.provider.repository.RssRepository;
-import m.co.rh.id.a_news_provider.base.dao.ArticleContentDao;
+import m.co.rh.id.a_news_provider.app.provider.component.notifier.RssChangeNotifier;
+import m.co.rh.id.a_news_provider.app.provider.component.repository.RssRepository;
+import m.co.rh.id.a_news_provider.base.provider.component.dao.ArticleContentDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.aprovider.Provider;

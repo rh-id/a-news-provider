@@ -2,7 +2,7 @@ package m.co.rh.id.a_news_provider.app.util;
 
 import org.junit.Test;
 
-import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
+import m.co.rh.id.a_news_provider.base.provider.component.AppSharedPreferences;
 
 import static org.junit.Assert.assertEquals;
 

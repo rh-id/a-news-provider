@@ -10,9 +10,9 @@ import androidx.work.WorkerParameters;
 import java.util.ArrayList;
 import java.util.List;
 
-import m.co.rh.id.a_news_provider.app.component.AppNotificationHandler;
+import m.co.rh.id.a_news_provider.app.provider.component.AppNotificationHandler;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
-import m.co.rh.id.a_news_provider.base.dao.RssDao;
+import m.co.rh.id.a_news_provider.base.provider.component.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.a_news_provider.base.model.RssModel;

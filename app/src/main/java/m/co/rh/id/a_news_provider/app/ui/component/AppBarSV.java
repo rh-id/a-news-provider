@@ -12,7 +12,7 @@ import co.rh.id.lib.rx3_utils.subject.SerialBehaviorSubject;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
-import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
+import m.co.rh.id.a_news_provider.app.provider.component.rx.RxDisposer;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.anavigator.annotation.NavRouteIndex;

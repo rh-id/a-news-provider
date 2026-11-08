@@ -39,8 +39,9 @@ import m.co.rh.id.a_news_provider.app.provider.command.DeleteRssChannelCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.MarkAllReadCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.PauseRssChannelCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.RenameRssFeedCmd;
-import m.co.rh.id.a_news_provider.app.provider.notifier.RssChannelStateNotifier;
-import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
+import m.co.rh.id.a_news_provider.app.provider.component.LinkOpener;
+import m.co.rh.id.a_news_provider.app.provider.component.notifier.RssChannelStateNotifier;
+import m.co.rh.id.a_news_provider.app.provider.component.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.util.UiUtils;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.anavigator.StatefulView;
@@ -60,6 +61,7 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
     private transient DeleteRssChannelCmd mDeleteRssChannelCmd;
     private transient MarkAllReadCmd mMarkAllReadCmd;
     private transient PauseRssChannelCmd mPauseRssChannelCmd;
+    private transient LinkOpener mLinkOpener;
     private transient int mPauseUnpauseAccessibilityActionId;
 
     private transient TextWatcher mNameTextWatcher;
@@ -79,6 +81,7 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
         mDeleteRssChannelCmd = mSvProvider.get(DeleteRssChannelCmd.class);
         mMarkAllReadCmd = mSvProvider.get(MarkAllReadCmd.class);
         mPauseRssChannelCmd = mSvProvider.get(PauseRssChannelCmd.class);
+        mLinkOpener = mSvProvider.get(LinkOpener.class);
         if (mRssChannelCountSubject == null) {
             mRssChannelCountSubject = BehaviorSubject.create();
         }
@@ -402,7 +405,7 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
             message.setMovementMethod(LinkMovementMethod.getInstance());
             // Linkify attached raw URLSpans; swap them for spans that honor the
             // "Open links in" preference (issue #35), TalkBack link semantics intact
-            UiUtils.routeUrlSpans(message);
+            mLinkOpener.routeUrlSpans(message);
         }
     }
 
@@ -428,6 +431,7 @@ public class RssChannelItemSV extends StatefulView<Activity> implements RequireC
             mRssChannelCountSubject = null;
         }
         mRssChannelStateNotifier = null;
+        mLinkOpener = null;
     }
 
     public void setRssChannelCount(Map.Entry<RssChannel, Integer> rssChannelCount) {

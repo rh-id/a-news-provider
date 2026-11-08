@@ -51,9 +51,6 @@ import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.constants.Routes;
-import m.co.rh.id.a_news_provider.app.playback.PlaybackManager;
-import m.co.rh.id.a_news_provider.app.playback.PlaybackState;
-import m.co.rh.id.a_news_provider.app.playback.VideoUrlPolicy;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.BaseRssItemsCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.FetchArticleContentCmd;
@@ -61,20 +58,24 @@ import m.co.rh.id.a_news_provider.app.provider.command.PagedRssItemsCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.RssQueryCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.UpdateRssItemIsFavoriteCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.UpdateRssItemIsReadCmd;
-import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
-import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
+import m.co.rh.id.a_news_provider.app.provider.component.LinkOpener;
+import m.co.rh.id.a_news_provider.app.provider.component.notifier.RssChangeNotifier;
+import m.co.rh.id.a_news_provider.app.provider.component.playback.PlaybackManager;
+import m.co.rh.id.a_news_provider.app.provider.component.playback.PlaybackState;
+import m.co.rh.id.a_news_provider.app.provider.component.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.ui.component.AppBarSV;
 import m.co.rh.id.a_news_provider.app.ui.component.image.ImageViewerSVDialog;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.EditRssLinkSVDialog;
 import m.co.rh.id.a_news_provider.app.ui.KeyEventHandler;
 import m.co.rh.id.a_news_provider.app.util.ReadingTypography;
 import m.co.rh.id.a_news_provider.app.util.UiUtils;
-import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
+import m.co.rh.id.a_news_provider.app.util.VideoUrlPolicy;
+import m.co.rh.id.a_news_provider.base.provider.component.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.base.entity.ArticleContent;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
-import m.co.rh.id.a_news_provider.base.entity.RssItemCategories;
-import m.co.rh.id.a_news_provider.base.provider.notifier.DeviceStatusNotifier;
+import m.co.rh.id.a_news_provider.base.util.RssItemCategories;
+import m.co.rh.id.a_news_provider.base.provider.component.notifier.DeviceStatusNotifier;
 import m.co.rh.id.a_news_provider.base.ui.SwipeGestureDetector;
 import m.co.rh.id.a_news_provider.base.util.UrlSanitizer;
 import m.co.rh.id.alogger.ILogger;
@@ -165,6 +166,10 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
     // manager from the same global provider (transient: page fields
     // participate in NavRoute serialization)
     private transient VideoUrlPolicy mVideoUrlPolicy;
+    // link launcher (issue #35/#76): reads the open-links mode and the
+    // strip-tracking toggle at CLICK time (transient: page fields participate
+    // in NavRoute serialization)
+    private transient LinkOpener mLinkOpener;
 
     public RssItemDetailPage() {
         mAppBarSV = new AppBarSV(R.menu.page_rss_item_detail);
@@ -194,6 +199,7 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         mUpdateRssItemIsReadCmd = mSvProvider.get(UpdateRssItemIsReadCmd.class);
         mRssQueryCmd = mSvProvider.get(RssQueryCmd.class);
         mFetchArticleContentCmd = mSvProvider.get(FetchArticleContentCmd.class);
+        mLinkOpener = mSvProvider.get(LinkOpener.class);
         // the playback manager is APP-SCOPED: resolved from the global provider
         // (like PagedRssItemsCmd below), so this page and the mini-player bar /
         // MainActivity PiP logic observe the same session (registered in both
@@ -436,7 +442,7 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
             textView.setMovementMethod(LinkMovementMethod.getInstance());
             // the description's URLSpans would fire a raw ACTION_VIEW internally;
             // swap them for spans that honor the "Open links in" preference (issue #35)
-            UiUtils.routeUrlSpans(textView);
+            mLinkOpener.routeUrlSpans(textView);
         } else {
             // clear leftover content when re-binding to an item without a description
             textView.setText("");
@@ -687,7 +693,7 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
                             TextView textView = mPageView.findViewById(R.id.text_content);
                             textView.setText(spanned);
                             textView.setMovementMethod(LinkMovementMethod.getInstance());
-                            UiUtils.routeUrlSpans(textView);
+                            mLinkOpener.routeUrlSpans(textView);
                             ReadingTypography.from(mAppSharedPreferences).applyToBody(textView);
                             ScrollView scrollView =
                                     mPageView.findViewById(R.id.scroll_content);
@@ -802,6 +808,7 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         }
         mPlaybackManager = null;
         mVideoUrlPolicy = null;
+        mLinkOpener = null;
         if (mSvProvider != null) {
             mSvProvider.dispose();
             mSvProvider = null;
@@ -836,7 +843,7 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
     public void onClick(View view) {
         int viewId = view.getId();
         if (viewId == R.id.text_title || viewId == R.id.fab_open_link) {
-            UiUtils.openLink(UiUtils.getActivity(view), mRssItem.link);
+            mLinkOpener.openLink(UiUtils.getActivity(view), mRssItem.link);
         } else if (viewId == R.id.fab_open_video) {
             // media enclosure / YouTube deep link: deliberately EXCLUDED from the
             // "Open links in" setting (issue #35) - a Custom Tab would regress them

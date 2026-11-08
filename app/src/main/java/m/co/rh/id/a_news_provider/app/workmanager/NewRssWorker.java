@@ -14,8 +14,8 @@ import com.android.volley.toolbox.RequestFuture;
 import java.util.concurrent.TimeUnit;
 
 import m.co.rh.id.a_news_provider.R;
-import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
-import m.co.rh.id.a_news_provider.app.provider.repository.RssRepository;
+import m.co.rh.id.a_news_provider.app.provider.component.notifier.RssChangeNotifier;
+import m.co.rh.id.a_news_provider.app.provider.component.repository.RssRepository;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.a_news_provider.base.model.RssModel;
 import m.co.rh.id.a_news_provider.component.network.RssRequest;

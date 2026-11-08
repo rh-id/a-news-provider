@@ -45,7 +45,7 @@ import m.co.rh.id.a_news_provider.app.MainActivity;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.RssChannelItemSV;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.RssItemListSV;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.RssItemSV;
-import m.co.rh.id.a_news_provider.base.dao.RssDao;
+import m.co.rh.id.a_news_provider.base.provider.component.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.a_news_provider.provider.IntegrationTestAppProviderModule;

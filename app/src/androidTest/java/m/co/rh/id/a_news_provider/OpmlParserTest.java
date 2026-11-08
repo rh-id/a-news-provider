@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import m.co.rh.id.a_news_provider.app.provider.parser.OpmlParser;
+import m.co.rh.id.a_news_provider.app.provider.component.parser.OpmlParser;
 import m.co.rh.id.a_news_provider.base.provider.BaseProviderModule;
 import m.co.rh.id.a_news_provider.base.provider.DatabaseProviderModule;
 import m.co.rh.id.a_news_provider.base.util.UrlNormalizer;

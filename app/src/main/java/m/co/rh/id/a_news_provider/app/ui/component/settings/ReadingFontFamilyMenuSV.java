@@ -9,7 +9,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.util.ReadingTypography;
-import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
+import m.co.rh.id.a_news_provider.base.provider.component.AppSharedPreferences;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.aprovider.Provider;

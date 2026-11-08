@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.function.Function;
 
 import m.co.rh.id.a_news_provider.base.util.UrlNormalizer;
-import m.co.rh.id.a_news_provider.base.dao.RssDao;
+import m.co.rh.id.a_news_provider.base.provider.component.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.aprovider.Provider;
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * JVM tests for the redirect-duplicate decision consumed by
- * {@link m.co.rh.id.a_news_provider.app.provider.service.RssService#addNewFeed(String)}.
+ * {@link m.co.rh.id.a_news_provider.app.provider.component.service.RssService#addNewFeed(String)}.
  * All 5 decision branches plus the swallow-and-continue failure paths are
  * covered: Context/RssDao/ILogger are mocked, {@link UrlNormalizer} is real and
  * the redirect resolution is injected as a recording lambda so probe invocations

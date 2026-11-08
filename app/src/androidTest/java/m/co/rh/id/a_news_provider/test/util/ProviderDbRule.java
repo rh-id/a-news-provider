@@ -4,7 +4,7 @@ import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
-import m.co.rh.id.a_news_provider.base.AppDatabase;
+import m.co.rh.id.a_news_provider.base.provider.component.AppDatabase;
 import m.co.rh.id.a_news_provider.test.TestApplication;
 import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderModule;

@@ -14,10 +14,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import co.rh.id.lib.concurrent_utils.concurrent.executor.WeightedThreadPool;
-import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.a_news_provider.base.BuildConfig;
-import m.co.rh.id.a_news_provider.base.provider.notifier.DeviceStatusNotifier;
+import m.co.rh.id.a_news_provider.base.provider.component.AppSharedPreferences;
+import m.co.rh.id.a_news_provider.base.provider.component.FileHelper;
+import m.co.rh.id.a_news_provider.base.provider.component.notifier.DeviceStatusNotifier;
+import m.co.rh.id.a_news_provider.base.provider.component.rx.DisposableHandler;
 import m.co.rh.id.alogger.AndroidLogger;
 import m.co.rh.id.alogger.CompositeLogger;
 import m.co.rh.id.alogger.FileLogger;

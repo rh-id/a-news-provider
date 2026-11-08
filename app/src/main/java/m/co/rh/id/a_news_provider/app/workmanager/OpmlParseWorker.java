@@ -10,8 +10,8 @@ import java.io.File;
 import java.util.List;
 
 import m.co.rh.id.a_news_provider.R;
-import m.co.rh.id.a_news_provider.app.provider.parser.OpmlParser;
-import m.co.rh.id.a_news_provider.app.provider.service.RssService;
+import m.co.rh.id.a_news_provider.app.provider.component.parser.OpmlParser;
+import m.co.rh.id.a_news_provider.app.provider.component.service.RssService;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.aprovider.Provider;

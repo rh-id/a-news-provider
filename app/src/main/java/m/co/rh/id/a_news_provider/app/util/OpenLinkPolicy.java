@@ -1,6 +1,6 @@
 package m.co.rh.id.a_news_provider.app.util;
 
-import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
+import m.co.rh.id.a_news_provider.base.provider.component.AppSharedPreferences;
 
 /**
  * Pure-java decision policy for the "Open links in" preference (issue #35).

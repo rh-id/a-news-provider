@@ -13,7 +13,7 @@ import javax.net.ssl.SSLSocketFactory;
 
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.base.util.UrlNormalizer;
-import m.co.rh.id.a_news_provider.base.dao.RssDao;
+import m.co.rh.id.a_news_provider.base.provider.component.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.component.network.ssl.ExtendedTrustManager;
 import m.co.rh.id.alogger.ILogger;
@@ -26,7 +26,7 @@ import m.co.rh.id.aprovider.Provider;
  * inline error instead of enqueueing the fetch.
  * <p>
  * Runs inside
- * {@link m.co.rh.id.a_news_provider.app.provider.service.RssService#addNewFeed(String)}
+ * {@link m.co.rh.id.a_news_provider.app.provider.component.service.RssService#addNewFeed(String)}
  * as part of the add check, before the fetch worker is enqueued, so the add dialog
  * shows the redirect case inline. This class owns both the decision and the
  * built-in network probing

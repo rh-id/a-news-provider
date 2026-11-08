@@ -10,8 +10,8 @@ import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.a_news_provider.R;
-import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
-import m.co.rh.id.a_news_provider.app.provider.service.RssService;
+import m.co.rh.id.a_news_provider.app.provider.component.notifier.RssChangeNotifier;
+import m.co.rh.id.a_news_provider.app.provider.component.service.RssService;
 import m.co.rh.id.a_news_provider.base.model.RssModel;
 import m.co.rh.id.aprovider.Provider;
 
@@ -83,7 +83,7 @@ public class NewRssChannelCmd {
             }
             case DUPLICATE: {
                 String message = mAppContext.getString(R.string.feed_already_added_as,
-                        RssService.displayName(result.existing));
+                        mRssService.displayName(result.existing));
                 mUrlValidationBehaviorSubject.onNext(message);
                 throw new RuntimeException(message);
             }

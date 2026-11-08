@@ -18,7 +18,7 @@ import io.reactivex.rxjava3.observers.TestObserver;
 import io.reactivex.rxjava3.subscribers.TestSubscriber;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.workmanager.ConstantsKey;
-import m.co.rh.id.a_news_provider.base.dao.RssDao;
+import m.co.rh.id.a_news_provider.base.provider.component.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.util.UrlNormalizer;
 import m.co.rh.id.a_news_provider.provider.IntegrationTestAppProviderModule;

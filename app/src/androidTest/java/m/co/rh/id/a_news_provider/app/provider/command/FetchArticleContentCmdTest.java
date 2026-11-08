@@ -16,8 +16,8 @@ import java.util.concurrent.ExecutorService;
 
 import io.reactivex.rxjava3.observers.TestObserver;
 import io.reactivex.rxjava3.subscribers.TestSubscriber;
-import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
-import m.co.rh.id.a_news_provider.base.dao.ArticleContentDao;
+import m.co.rh.id.a_news_provider.app.provider.component.notifier.RssChangeNotifier;
+import m.co.rh.id.a_news_provider.base.provider.component.dao.ArticleContentDao;
 import m.co.rh.id.a_news_provider.base.entity.ArticleContent;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.a_news_provider.provider.IntegrationTestAppProviderModule;

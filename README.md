@@ -178,7 +178,7 @@ The `fastlane/` directory contains store metadata (descriptions, images, and per
 ## Project Structure
 
 *   `app/`: Main application module containing UI (StatefulViews), Commands, the non-UI `RssService`, DI configuration, WorkManager workers, and notifications.
-*   `base/`: Room database, entities, DAOs, shared preferences, base provider modules, and logger/file/network-status helpers. Exported Room schemas (`base/schemas/m.co.rh.id.a_news_provider.base.AppDatabase/1.json` - `11.json`) live here.
+*   `base/`: Room database, entities, DAOs, shared preferences, base provider modules, and logger/file/network-status helpers. Exported Room schemas (`base/schemas/m.co.rh.id.a_news_provider.base.provider.component.AppDatabase/1.json` - `15.json`) live here.
 *   `component-network/`: Volley-based `RssRequest` and the RSS/Atom/RDF feed parsers.
 *   `fastlane/`: Store metadata for 11 locales and per-version changelogs.
 *   `.github/`: GitHub Actions workflow configurations.

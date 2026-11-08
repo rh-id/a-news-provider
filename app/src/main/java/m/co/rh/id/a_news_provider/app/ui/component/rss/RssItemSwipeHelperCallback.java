@@ -17,7 +17,7 @@ import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.command.PagedRssItemsCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.UpdateRssItemIsFavoriteCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.UpdateRssItemIsReadCmd;
-import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
+import m.co.rh.id.a_news_provider.base.provider.component.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.alogger.ILogger;
 

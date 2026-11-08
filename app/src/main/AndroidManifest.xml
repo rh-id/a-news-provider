@@ -63,7 +63,7 @@
 
         <!-- podcast audio playback (issue #69): media3 session service, the
              in-app MediaController connects to it from the detail page -->
-        <service android:name="m.co.rh.id.a_news_provider.app.service.PlaybackService"
+        <service android:name="m.co.rh.id.a_news_provider.app.provider.component.service.PlaybackService"
             android:exported="true"
             android:foregroundServiceType="mediaPlayback">
             <intent-filter>

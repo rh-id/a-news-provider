@@ -17,6 +17,7 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
+import m.co.rh.id.a_news_provider.base.provider.component.AppDatabase;
 import m.co.rh.id.a_news_provider.base.room.DbMigration;
 
 import static org.junit.Assert.assertEquals;

@@ -5,8 +5,8 @@ import android.content.Context;
 import java.util.concurrent.ExecutorService;
 
 import m.co.rh.id.a_news_provider.R;
-import m.co.rh.id.a_news_provider.app.provider.notifier.RssChannelStateNotifier;
-import m.co.rh.id.a_news_provider.app.provider.repository.RssRepository;
+import m.co.rh.id.a_news_provider.app.provider.component.notifier.RssChannelStateNotifier;
+import m.co.rh.id.a_news_provider.app.provider.component.repository.RssRepository;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.aprovider.Provider;

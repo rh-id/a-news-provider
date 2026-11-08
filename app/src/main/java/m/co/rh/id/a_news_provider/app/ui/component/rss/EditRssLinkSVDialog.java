@@ -15,7 +15,8 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.EditRssLinkCmd;
-import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
+import m.co.rh.id.a_news_provider.app.provider.component.LinkOpener;
+import m.co.rh.id.a_news_provider.app.provider.component.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.util.UiUtils;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.alogger.ILogger;
@@ -34,6 +35,7 @@ public class EditRssLinkSVDialog extends StatefulViewDialog<Activity> implements
     private transient RxDisposer mRxDisposer;
     private transient EditRssLinkCmd mEditRssLinkCmd;
     private transient ILogger mLogger;
+    private transient LinkOpener mLinkOpener;
     private SerialBehaviorSubject<String> mUrlSubject;
 
     private transient TextWatcher mUrlTextWatcher;
@@ -49,6 +51,7 @@ public class EditRssLinkSVDialog extends StatefulViewDialog<Activity> implements
         mRxDisposer = mSvProvider.get(RxDisposer.class);
         mEditRssLinkCmd = mSvProvider.get(EditRssLinkCmd.class);
         mLogger = mSvProvider.get(ILogger.class);
+        mLinkOpener = mSvProvider.get(LinkOpener.class);
         if (mUrlSubject == null) {
             String url;
             Args args = getArgs();
@@ -116,6 +119,7 @@ public class EditRssLinkSVDialog extends StatefulViewDialog<Activity> implements
         }
         mUrlTextWatcher = null;
         mLogger = null;
+        mLinkOpener = null;
     }
 
     public Args getArgs() {
@@ -164,7 +168,7 @@ public class EditRssLinkSVDialog extends StatefulViewDialog<Activity> implements
     }
 
     private void openUrl(Activity activity, String url) {
-        if (!UiUtils.openLink(activity, url)) {
+        if (!mLinkOpener.openLink(activity, url)) {
             mLogger.e(TAG, mSvProvider.getContext().getString(R.string.error_open_link));
         }
     }

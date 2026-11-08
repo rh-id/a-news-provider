@@ -116,7 +116,7 @@ public class DbMigration {
     /**
      * Adds the categories column to rss_item. It stores the feed-provided category
      * terms joined with the unit-separator delimiter (see
-     * {@link m.co.rh.id.a_news_provider.base.entity.RssItemCategories}). The column
+     * {@link m.co.rh.id.a_news_provider.base.util.RssItemCategories}). The column
      * is nullable with no default: rows created before this migration (and items of
      * paused channels) simply have no categories until their next feed sync.
      */

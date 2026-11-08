@@ -11,6 +11,7 @@ import android.widget.TextView;
 import androidx.core.text.HtmlCompat;
 
 import m.co.rh.id.a_news_provider.R;
+import m.co.rh.id.a_news_provider.app.provider.component.LinkOpener;
 import m.co.rh.id.a_news_provider.app.util.UiUtils;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.StatefulView;
@@ -24,9 +25,11 @@ public class DonationsPage extends StatefulView<Activity> implements View.OnClic
 
     @NavInject
     private transient Provider mProvider;
+    private transient LinkOpener mLinkOpener;
 
     @Override
     protected View createView(Activity activity, ViewGroup container) {
+        mLinkOpener = mProvider.get(LinkOpener.class);
         View rootLayout = activity.getLayoutInflater().inflate(R.layout.page_donations, container, false);
         Button donate = rootLayout.findViewById(R.id.button_donate);
         donate.setOnClickListener(this);
@@ -36,7 +39,7 @@ public class DonationsPage extends StatefulView<Activity> implements View.OnClic
         otherApps.setMovementMethod(LinkMovementMethod.getInstance());
         // the dev-site URLSpan would fire a raw ACTION_VIEW internally; swap it for
         // a span that honors the "Open links in" preference (issue #35)
-        UiUtils.routeUrlSpans(otherApps);
+        mLinkOpener.routeUrlSpans(otherApps);
         return rootLayout;
     }
 
@@ -45,7 +48,7 @@ public class DonationsPage extends StatefulView<Activity> implements View.OnClic
         int id = view.getId();
         if (id == R.id.button_donate) {
             Context context = view.getContext();
-            boolean opened = UiUtils.openLink(UiUtils.getActivity(view), DONATE_URL);
+            boolean opened = mLinkOpener.openLink(UiUtils.getActivity(view), DONATE_URL);
             ILogger logger = mProvider.get(ILogger.class);
             if (opened) {
                 logger.i(TAG, context.getString(R.string.donation_thank_you));

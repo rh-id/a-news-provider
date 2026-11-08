@@ -14,8 +14,8 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
 import io.reactivex.rxjava3.subscribers.TestSubscriber;
-import m.co.rh.id.a_news_provider.app.provider.notifier.RssChangeNotifier;
-import m.co.rh.id.a_news_provider.base.dao.RssDao;
+import m.co.rh.id.a_news_provider.app.provider.component.notifier.RssChangeNotifier;
+import m.co.rh.id.a_news_provider.base.provider.component.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.provider.IntegrationTestAppProviderModule;
 import m.co.rh.id.a_news_provider.test.TestApplication;

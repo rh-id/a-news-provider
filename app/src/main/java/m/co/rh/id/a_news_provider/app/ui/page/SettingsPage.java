@@ -41,7 +41,7 @@ import m.co.rh.id.a_news_provider.app.ui.component.settings.ThemeMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.VersionMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.VolumeKeyNavigationMenuSV;
 import m.co.rh.id.a_news_provider.app.util.NotificationPermissionPolicy;
-import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
+import m.co.rh.id.a_news_provider.base.provider.component.AppSharedPreferences;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.annotation.NavInject;

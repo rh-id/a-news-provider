@@ -9,7 +9,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
-import m.co.rh.id.a_news_provider.base.dao.RssDao;
+import m.co.rh.id.a_news_provider.base.provider.component.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.a_news_provider.test.util.DirectExecutorService;
 import m.co.rh.id.alogger.ILogger;

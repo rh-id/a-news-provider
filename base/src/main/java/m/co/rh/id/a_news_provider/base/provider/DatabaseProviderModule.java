@@ -2,10 +2,10 @@ package m.co.rh.id.a_news_provider.base.provider;
 
 import androidx.room.Room;
 
-import m.co.rh.id.a_news_provider.base.AppDatabase;
-import m.co.rh.id.a_news_provider.base.dao.AndroidNotificationDao;
-import m.co.rh.id.a_news_provider.base.dao.ArticleContentDao;
-import m.co.rh.id.a_news_provider.base.dao.RssDao;
+import m.co.rh.id.a_news_provider.base.provider.component.AppDatabase;
+import m.co.rh.id.a_news_provider.base.provider.component.dao.AndroidNotificationDao;
+import m.co.rh.id.a_news_provider.base.provider.component.dao.ArticleContentDao;
+import m.co.rh.id.a_news_provider.base.provider.component.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.room.DbMigration;
 import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderModule;

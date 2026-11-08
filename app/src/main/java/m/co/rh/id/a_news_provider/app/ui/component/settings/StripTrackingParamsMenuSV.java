@@ -8,7 +8,7 @@ import android.widget.CompoundButton;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
 import m.co.rh.id.a_news_provider.R;
-import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
+import m.co.rh.id.a_news_provider.base.provider.component.AppSharedPreferences;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.aprovider.Provider;
@@ -16,7 +16,7 @@ import m.co.rh.id.aprovider.Provider;
 /**
  * Settings toggle for stripping tracking parameters from links (issue #76).
  * Toggling only writes the preference: the sanitized string is built at
- * open/copy time (UiUtils.openLink and the detail page's copy-link menu read
+ * open/copy time (LinkOpener.openLink and the detail page's copy-link menu read
  * the flag at CLICK time), so the very next tap already honors the new value.
  * The stored RssItem.link is never modified either way - only the local copy
  * handed to the browser/clipboard is cleaned.
