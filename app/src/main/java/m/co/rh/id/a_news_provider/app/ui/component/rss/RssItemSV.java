@@ -614,6 +614,13 @@ public class RssItemSV extends StatefulView<Activity> implements RequireNavigato
         int id = view.getId();
         if (id == R.id.root_layout) {
             RssItem rssItem = mRssItemSubject.getValue();
+            // a click can land before the first bind (or after dispose/rebind of a
+            // recycled row) and a late a11y action likewise: a null item means
+            // nothing to open - silent no-op instead of a main-thread NPE that
+            // aborts instrumentation batches
+            if (rssItem == null) {
+                return;
+            }
             if (!rssItem.isRead) {
                 mUpdateRssItemIsReadCmd.execute(rssItem, true);
                 mRssItemSubject.onNext(rssItem);
