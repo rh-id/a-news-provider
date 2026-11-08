@@ -1,0 +1,13 @@
+Útgáfa 2.4.0+79
+
+Eiginleikar:
+* Innbyggður greinarlesari: fullur texti dreginn út af síðunni
+* Afspilun hljóðs og myndbands í appinu með smáspilara og mynd-í-mynd
+* Myndaskoðun með pinch-zoom: ýttu á mynd til að stækka, vista eða deila
+* Strjúkuaðgerðir á listaröðum
+* Fréttir með svipaðar fyrirsagnir falla einnig saman
+* Myndir geymast á diski, tiltækar án nettengingar
+
+Villuleiðréttingar:
+* Dagsetningar í streymum lesnar nú rétt á tækjum sem ekki eru ensk
+* Viðgerð á hruni við ýting á listaröð

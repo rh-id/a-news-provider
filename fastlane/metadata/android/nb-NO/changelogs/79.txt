@@ -1,0 +1,13 @@
+Utgivelse 2.4.0+79
+
+Funksjoner:
+* Innebygd artikkelleser: hele teksten hentes fra siden
+* Avspilling av lyd/video i appen med minispiller og bilde-i-bilde
+* Bildefremvisning med klyp-zoom: trykk for å zoome, lagre eller dele
+* Sveipehandlinger på listerader
+* Historier med like titler slås også sammen til én rad
+* Bilder lagres på disk og er tilgjengelige frakoblet
+
+Feilrettinger:
+* Feeddatoer leses nå riktig på enheter med ikke-engelsk språk
+* Fikset krasj ved trykk på gjenbrukte listerader

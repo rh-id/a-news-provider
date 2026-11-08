@@ -1,0 +1,13 @@
+Rilis 2.4.0+79
+
+Fitur:
+* Pembaca artikel dalam aplikasi: teks lengkap diekstrak dari halaman
+* Putar audio/video dengan mini-pemutar dan picture-in-picture
+* Penampil gambar pinch-zoom: ketuk gambar untuk zoom, simpan atau bagikan
+* Aksi geser pada baris daftar
+* Cerita berjudul serupa juga digabung jadi satu baris (semua feed)
+* Gambar di-cache ke disk, tersedia offline
+
+Perbaikan:
+* Tanggal feed kini terurai benar di perangkat berbahasa non-Inggris
+* Perbaikan crash saat mengetuk baris daftar

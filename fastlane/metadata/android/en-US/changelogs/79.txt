@@ -1,0 +1,13 @@
+Release 2.4.0+79
+
+Features:
+* In-app article reader: full text extracted from the page
+* In-app audio/video playback with mini-player and picture-in-picture
+* Pinch-zoom image viewer: tap an image to zoom, save or share
+* Swipe actions on list rows
+* Stories with similar titles also collapse into one row (all-channels view)
+* Images cached on disk, available offline
+
+Fixes:
+* Feed dates now parse on non-English devices
+* Fix crash when tapping a recycled list row

@@ -1,0 +1,13 @@
+Ediziun 2.4.0+79
+
+Funcziuns:
+* Leger artitgels en l'app: text cumplet da la pagina
+* Audio/video en l'app cun mini-player e picture-in-picture
+* Zoom sin fotografias: tutgar per ingrandir, arcunar u sparter
+* Acziuns da swipe en la glista
+* Er reportaschas cun titels sumegliants cumparan be ina giada
+* Fotografias vegnan arcunadas sin il disc, disponibles offline
+
+Corecziuns:
+* Datas da feeds vegnan ussa endretg legidas sin apparels betg englais
+* Crash tar lingias reutilizadas endrizzà

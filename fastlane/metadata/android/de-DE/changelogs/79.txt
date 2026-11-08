@@ -1,0 +1,13 @@
+Release 2.4.0+79
+
+Funktionen:
+* Integrierter Artikel-Reader: Volltext aus der Seite
+* Audio/Video-Wiedergabe in der App mit Mini-Player und Bild-in-Bild
+* Bildansicht mit Zoom: antippen, speichern, teilen
+* Wischaktionen in Beitragslisten
+* Beiträge mit ähnlichen Titeln werden ebenfalls zusammengefasst
+* Bilder werden auf dem Gerät zwischengespeichert (offline verfügbar)
+
+Fehlerbehebungen:
+* Feed-Daten korrekt auch bei nicht-englischer Spracheinstellung
+* Absturz bei Listenzeilen behoben

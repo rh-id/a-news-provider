@@ -1,0 +1,13 @@
+Rilascio 2.4.0+79
+
+Funzionalità:
+* Lettore di articoli integrato: testo completo estratto dalla pagina
+* Riproduzione audio/video nell'app con mini-player e picture-in-picture
+* Zoom delle immagini: tocca per zoomare, salvare o condividere
+* Azioni di scorrimento sulle righe dell'elenco
+* Gli articoli con titoli simili si uniscono in una sola riga
+* Immagini in cache su disco, disponibili offline
+
+Correzioni:
+* Date dei feed corrette su dispositivi non inglesi
+* Crash corretto su riga riciclata

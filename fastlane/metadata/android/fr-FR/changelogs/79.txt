@@ -1,0 +1,13 @@
+Version 2.4.0+79
+
+Fonctionnalités :
+* Lecteur d'articles intégré : texte complet de la page
+* Lecture audio/vidéo avec mini-lecteur et image dans l'image
+* Zoom des images : appuyez pour zoomer, enregistrer ou partager
+* Actions par balayage dans les listes
+* Les articles aux titres similaires sont aussi regroupés
+* Images mises en cache sur disque, disponibles hors ligne
+
+Corrections :
+* Dates des flux correctement analysées sur appareils non anglais
+* Crash corrigé sur ligne recyclée

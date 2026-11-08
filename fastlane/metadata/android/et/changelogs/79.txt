@@ -1,0 +1,13 @@
+Versioon 2.4.0+79
+
+Funktsioonid:
+* Rakendusesisene artiklilugeja: täistekst eraldatakse lehelt
+* Audio/video taasesitus rakenduses: miniesitaja ja pilt-pildis
+* Piltide suumimine: puuduta pilti, salvesta või jaga
+* Pühkimistoimingud loendi ridadel
+* Sarnaste pealkirjadega lood koondatakse samuti üheks reaks
+* Pildid salvestatakse kettavähemällu, saadaval võrguühenduseta
+
+Parandused:
+* Voogude kuupäevad töötavad ka mitteingliskeelsetel seadmetel
+* Parandatud krahh rea puudutamisel
