@@ -55,6 +55,12 @@ public class RssItem implements Serializable {
     public String mediaVideo;
 
     /**
+     * media:content URL or enclosure URL
+     */
+    @ColumnInfo(name = "media_audio")
+    public String mediaAudio;
+
+    /**
      * Feed-provided category terms joined with
      * {@link m.co.rh.id.a_news_provider.base.entity.RssItemCategories#DELIMITER},
      * see {@link m.co.rh.id.a_news_provider.base.entity.RssItemCategories}.

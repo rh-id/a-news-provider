@@ -5,6 +5,9 @@ import android.app.Application;
 import androidx.work.WorkManager;
 
 import m.co.rh.id.a_news_provider.app.component.AppNotificationHandler;
+import m.co.rh.id.a_news_provider.app.playback.MiniPlayerBarController;
+import m.co.rh.id.a_news_provider.app.playback.PlaybackManager;
+import m.co.rh.id.a_news_provider.app.playback.VideoUrlPolicy;
 import m.co.rh.id.a_news_provider.app.provider.CommandProviderModule;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.RedirectDuplicateChecker;
@@ -59,6 +62,18 @@ public class IntegrationTestAppProviderModule implements ProviderModule {
         providerRegistry.registerLazy(UrlSanitizer.class, UrlSanitizer::new);
         providerRegistry.registerLazy(RedirectDuplicateChecker.class, () -> new RedirectDuplicateChecker(provider));
         providerRegistry.registerLazy(OpmlParser.class, () -> new OpmlParser(provider));
+
+        // podcast playback (issue #69 phase 2): registered here too (R2) - the
+        // RssItemDetailPage resolves PlaybackManager and VideoUrlPolicy from
+        // the provider and MainActivity resolves all three playback
+        // components; without these registrations EVERY detail-page
+        // instrumented test would crash.
+        // INavigator is registered per-test by the tests themselves (see
+        // AppPageTest) BEFORE MainActivity launches, which is when
+        // MiniPlayerBarController resolves it.
+        providerRegistry.registerLazy(PlaybackManager.class, () -> new PlaybackManager(provider));
+        providerRegistry.registerLazy(MiniPlayerBarController.class, () -> new MiniPlayerBarController(provider));
+        providerRegistry.registerLazy(VideoUrlPolicy.class, VideoUrlPolicy::new);
 
         providerRegistry.registerPool(StatefulViewProvider.class, () -> new StatefulViewProvider(provider));
     }

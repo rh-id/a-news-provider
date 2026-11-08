@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- mini-player bar (issue #69 phase 2): 56dp strip docked to the bottom of
+     android.R.id.content as a SIBLING of the navigator's NavViewLayout -
+     never a child of it (the navigator sweeps unknown children on rebuild).
+     Background follows the DayNight surface pair (white/gray-900) so the
+     title and the icon buttons keep contrast in both themes. -->
+<m.co.rh.id.a_news_provider.app.playback.MiniPlayerBarView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="56dp"
+    android:background="@color/daynight_white_gray_900"
+    android:elevation="8dp"
+    android:orientation="horizontal">
+
+    <!-- what is playing (the loaded item's title). weight 1, single line,
+         marquee for long titles - marquee only runs while selected, the
+         view class sets setSelected(true) once a title is bound -->
+    <TextView
+        android:id="@+id/text_mini_player_title"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:ellipsize="marquee"
+        android:gravity="center_vertical"
+        android:marqueeRepeatLimit="marquee_forever"
+        android:paddingStart="@dimen/text_margin"
+        android:paddingEnd="8dp"
+        android:scrollHorizontally="true"
+        android:singleLine="true"
+        android:textColor="@color/daynight_black_white"
+        android:textSize="14sp" />
+
+    <!-- play/pause: toggles the SHARED session (no autoplay anywhere) -->
+    <androidx.appcompat.widget.AppCompatImageButton
+        android:id="@+id/button_mini_player_play_pause"
+        android:layout_width="48dp"
+        android:layout_height="match_parent"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/fab_play_audio"
+        app:tint="@color/daynight_black_white" />
+
+    <!-- close: stops playback and releases the session (the service's media
+         notification goes away with it) -->
+    <androidx.appcompat.widget.AppCompatImageButton
+        android:id="@+id/button_mini_player_close"
+        android:layout_width="48dp"
+        android:layout_height="match_parent"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/mini_player_close"
+        android:src="@drawable/ic_close_white"
+        app:tint="@color/daynight_black_white" />
+</m.co.rh.id.a_news_provider.app.playback.MiniPlayerBarView>

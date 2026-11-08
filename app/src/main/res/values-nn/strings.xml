@@ -217,4 +217,9 @@
     <string name="full_article_fetch_failed">Klarte ikkje å laste heile artikkelen</string>
     <string name="title_fetch_full_text_automatically">Hent heile artiklar automatisk</string>
     <string name="menu_subtitle_fetch_full_text_automatically">Når ein artikkel blir opna, blir heile sideteksten henta automatisk dersom straumen berre viser eit samandrag. Slå av for å behalda skildringa frå straumen</string>
+    <string name="fab_play_audio">Spel av lyd</string>
+    <string name="fab_pause_audio">Sett lyden på pause</string>
+    <string name="audio_playback_failed">Klarte ikkje å spela av lyd</string>
+    <string name="mini_player_close">Lukk minispelaren</string>
+    <string name="video_playback_failed">Klarte ikkje å spela av video</string>
 </resources>

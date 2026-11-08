@@ -31,9 +31,11 @@
             android:layout_margin="@dimen/text_margin"
             android:textSize="20sp"
             android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@id/button_favorite"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/text_date"
+            app:layout_constraintVertical_bias="0"
             tools:text="BREAKING NEWS" />
 
         <!-- duplicate-story badge + sources expansion (issue #45): GONE for rows

@@ -212,4 +212,9 @@
     <string name="full_article_fetch_failed">全文加载失败</string>
     <string name="title_fetch_full_text_automatically">自动获取全文</string>
     <string name="menu_subtitle_fetch_full_text_automatically">打开文章时，若订阅源仅显示摘要，则自动抓取网页全文。关闭后将继续使用订阅源描述</string>
+    <string name="fab_play_audio">播放音频</string>
+    <string name="fab_pause_audio">暂停音频</string>
+    <string name="audio_playback_failed">音频播放失败</string>
+    <string name="mini_player_close">关闭迷你播放器</string>
+    <string name="video_playback_failed">视频播放失败</string>
 </resources>

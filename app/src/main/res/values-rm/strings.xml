@@ -217,4 +217,9 @@
     <string name="full_article_fetch_failed">Betg reussì da chargiar l\'artitgel cumplet</string>
     <string name="title_fetch_full_text_automatically">Chargiar automaticamain artitgels cumplets</string>
     <string name="menu_subtitle_fetch_full_text_automatically">Cun avrir in artitgel vegn il text cumplet da la pagina chargià automaticamain sch\'il feed mo mussa in resumé. Deactivar per mantegnair la descripziun dal feed</string>
+    <string name="fab_play_audio">Reproduir audio</string>
+    <string name="fab_pause_audio">Pausar audio</string>
+    <string name="audio_playback_failed">Betg reussì da reproducir l\'audio</string>
+    <string name="mini_player_close">Serrar il mini-player</string>
+    <string name="video_playback_failed">Betg reussì da reproducir il video</string>
 </resources>

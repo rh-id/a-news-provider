@@ -24,16 +24,20 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.OptIn;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.core.text.HtmlCompat;
 import androidx.core.view.ViewCompat;
+import androidx.media3.common.util.UnstableApi;
+import androidx.media3.ui.PlayerView;
 
 import com.android.volley.toolbox.ImageLoader;
 import com.android.volley.toolbox.NetworkImageView;
 import com.google.android.material.chip.Chip;
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 
 import java.io.Serializable;
 import java.util.List;
@@ -47,6 +51,9 @@ import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.constants.Routes;
+import m.co.rh.id.a_news_provider.app.playback.PlaybackManager;
+import m.co.rh.id.a_news_provider.app.playback.PlaybackState;
+import m.co.rh.id.a_news_provider.app.playback.VideoUrlPolicy;
 import m.co.rh.id.a_news_provider.app.provider.StatefulViewProvider;
 import m.co.rh.id.a_news_provider.app.provider.command.BaseRssItemsCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.FetchArticleContentCmd;
@@ -76,11 +83,12 @@ import m.co.rh.id.anavigator.RouteOptions;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.anavigator.component.INavigator;
+import m.co.rh.id.anavigator.component.NavActivityLifecycle;
 import m.co.rh.id.anavigator.component.NavOnRequestPermissionResult;
 import m.co.rh.id.anavigator.component.RequireComponent;
 import m.co.rh.id.aprovider.Provider;
 
-public class RssItemDetailPage extends StatefulView<Activity> implements RequireComponent<Provider>, NavOnRequestPermissionResult, View.OnClickListener, Toolbar.OnMenuItemClickListener, AppBarSV.OnMenuCreated, KeyEventHandler {
+public class RssItemDetailPage extends StatefulView<Activity> implements RequireComponent<Provider>, NavOnRequestPermissionResult, View.OnClickListener, Toolbar.OnMenuItemClickListener, AppBarSV.OnMenuCreated, KeyEventHandler, NavActivityLifecycle<Activity> {
 
     private static final String TAG = RssItemDetailPage.class.getName();
     private static final int REQUEST_CODE_PERMISSION_WRITE_EXTERNAL_STORAGE = 1;
@@ -90,6 +98,13 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
      * on every chip (including the last) - same spacing as the list-row strip.
      */
     private static final float CHIP_SPACING_DP = 8f;
+
+    /**
+     * Height of the app-wide mini-player bar (mini_player_bar.xml): the extra
+     * bottom margin the FABs receive while the bar is visible on this page so
+     * they sit above it (issue #69 phase 2).
+     */
+    private static final float MINI_PLAYER_BAR_LIFT_DP = 56f;
 
     @NavInject
     private AppBarSV mAppBarSV;
@@ -138,6 +153,18 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
     // replace — a second press while the first navigation resolves must not
     // double-replace. transient: page fields participate in NavRoute serialization
     private transient boolean mNeighborNavigationInProgress;
+    // podcast playback (issue #69, phase 2): the media controller moved OUT of
+    // the page into the app-scoped PlaybackManager - playback now outlives the
+    // page that started it (mini-player bar, picture-in-picture). The page only
+    // REFLECTS the shared session's state (audio FAB, inline video slot, FAB
+    // lift for the mini-player bar) through the subscription added in
+    // createView; dispose unsubscribes but NEVER releases the controller.
+    // transient: page fields participate in NavRoute serialization
+    private transient PlaybackManager mPlaybackManager;
+    // stateless inline-video decision policy: resolved alongside the playback
+    // manager from the same global provider (transient: page fields
+    // participate in NavRoute serialization)
+    private transient VideoUrlPolicy mVideoUrlPolicy;
 
     public RssItemDetailPage() {
         mAppBarSV = new AppBarSV(R.menu.page_rss_item_detail);
@@ -167,6 +194,12 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         mUpdateRssItemIsReadCmd = mSvProvider.get(UpdateRssItemIsReadCmd.class);
         mRssQueryCmd = mSvProvider.get(RssQueryCmd.class);
         mFetchArticleContentCmd = mSvProvider.get(FetchArticleContentCmd.class);
+        // the playback manager is APP-SCOPED: resolved from the global provider
+        // (like PagedRssItemsCmd below), so this page and the mini-player bar /
+        // MainActivity PiP logic observe the same session (registered in both
+        // AppProviderModule and IntegrationTestAppProviderModule)
+        mPlaybackManager = provider.get(PlaybackManager.class);
+        mVideoUrlPolicy = provider.get(VideoUrlPolicy.class);
         // PagedRssItemsCmd must come from the GLOBAL provider: the home list uses the
         // same app-scoped instance (see RssItemListSV), so its channel/filter/sort
         // describe exactly the list the user navigated from. The page-scoped provider
@@ -266,10 +299,21 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
                             typography.applyToBody(view.findViewById(R.id.text_content));
                             typography.applyToTitle(view.findViewById(R.id.text_title));
                         }));
+        // app-scoped playback (issue #69): reflects the shared session onto the
+        // audio FAB, the inline video slot and the FAB lift for the mini-player
+        // bar. The subject replays its current value, so the initial application
+        // happens here too. The subscription dies with the page (RxDisposer);
+        // the CONTROLLER does not - playback outlives the page by design.
+        mRxDisposer.add("playbackManager.state",
+                mPlaybackManager.state()
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(this::onPlaybackStateChanged));
         Button fabOpenLink = view.findViewById(R.id.fab_open_link);
         fabOpenLink.setOnClickListener(this);
         Button fabOpenVideo = view.findViewById(R.id.fab_open_video);
         fabOpenVideo.setOnClickListener(this);
+        Button fabPlayAudio = view.findViewById(R.id.fab_play_audio);
+        fabPlayAudio.setOnClickListener(this);
         bindRssItem(activity, view);
         return view;
     }
@@ -292,7 +336,15 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         if (mRssItem.mediaImage != null) {
             imageUrl = mRssItem.mediaImage;
         }
-        boolean showImage = mAppSharedPreferences.isDownloadImage() && imageUrl != null;
+        // inline video (issue #69 phase 2): when the item's video enclosure is
+        // probably a directly playable file, the video slot replaces the hero
+        // image AND the open-in-browser FAB - see bindVideoSlot. The video slot
+        // never inherits the isDownloadImage() gate: the user tapped into an
+        // article whose video can play right here, independent of the image
+        // saving preference.
+        boolean showInlineVideo = isDirectVideoItem();
+        boolean showImage = mAppSharedPreferences.isDownloadImage()
+                && imageUrl != null && !showInlineVideo;
         if (showImage) {
             Drawable drawable = DrawableCompat.wrap(ContextCompat
                     .getDrawable(activity, R.drawable.ic_image_black));
@@ -319,11 +371,25 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         LinearLayout containerCategories = view.findViewById(R.id.container_categories);
         bindCategoryChips(activity, scrollCategories, containerCategories);
         Button fabOpenVideo = view.findViewById(R.id.fab_open_video);
-        if (mRssItem.mediaVideo != null) {
+        if (mRssItem.mediaVideo != null && !showInlineVideo) {
             fabOpenVideo.setVisibility(View.VISIBLE);
         } else {
             fabOpenVideo.setVisibility(View.GONE);
         }
+        // audio play/pause follows the same rebind contract: neighbor navigation
+        // swaps items in place on this page, so visibility AND icon must refresh
+        // here, not only at view creation (issue #69)
+        ExtendedFloatingActionButton fabPlayAudio = view.findViewById(R.id.fab_play_audio);
+        if (mRssItem.mediaAudio != null) {
+            fabPlayAudio.setVisibility(View.VISIBLE);
+            updateAudioFabVisual(fabPlayAudio, mPlaybackManager.getCurrentState());
+        } else {
+            fabPlayAudio.setVisibility(View.GONE);
+        }
+        bindVideoSlot(view, showInlineVideo);
+        // lift the FABs above the mini-player bar while the bar is visible on
+        // this page (issue #69 phase 2); restores automatically otherwise
+        updateFabBottomMargins(view);
         mAppBarSV.setTitle(mRssChannel.feedName);
         updateFavoriteIcon(mRssItem.isFavorite);
         // refresh the overflow entry too: an in-place swap can land on an item
@@ -345,6 +411,11 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         // if the user navigates away, the content still lands in the database
         // for the next open.
         maybeAutoFetchFullText();
+        // PiP chrome (issue #69 phase 2, R4): a PiP window resize fires
+        // onConfigurationChanged -> reBuildAllRoute, so a REBUILT view must
+        // hide its reading chrome too; outside PiP this restores the
+        // binding-driven visibilities set above untouched.
+        applyPipChrome(activity);
     }
 
     /**
@@ -703,9 +774,34 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
         }
     }
 
+    /**
+     * SEMANTICS CHANGE (issue #69 phase 2): the page no longer owns the media
+     * controller. Phase 1 released the page-scoped controller here; playback
+     * is now app-scoped ({@link PlaybackManager}) and OUTLIVES this page -
+     * the mini-player bar and picture-in-picture keep using the session.
+     * dispose only detaches the page's UI from the session:
+     * <ul>
+     * <li>the RxDisposer disposal (below, via mSvProvider) ends the playback
+     * state subscription</li>
+     * <li>the inline video slot's PlayerView is detached from the shared
+     * controller (the session itself keeps playing)</li>
+     * </ul>
+     * The SERVICE stops via the media notification's deleteIntent, the
+     * mini-player bar's close button ({@link PlaybackManager#stop()}), the
+     * playback-ENDED release, or onTaskRemoved-when-idle.
+     */
     @Override
     public void dispose(Activity activity) {
         super.dispose(activity);
+        if (mPageView != null) {
+            PlayerView playerView = mPageView.findViewById(R.id.player_view);
+            if (playerView != null) {
+                playerView.setPlayer(null);
+                playerView.setOnClickListener(null);
+            }
+        }
+        mPlaybackManager = null;
+        mVideoUrlPolicy = null;
         if (mSvProvider != null) {
             mSvProvider.dispose();
             mSvProvider = null;
@@ -747,6 +843,13 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
             Activity activity = UiUtils.getActivity(view);
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(mRssItem.mediaVideo));
             activity.startActivity(browserIntent);
+        } else if (viewId == R.id.fab_play_audio) {
+            // routed through the app-scoped manager (issue #69 phase 2): the
+            // decision (pause / resume in place / fresh load) is made against
+            // the SHARED session, not this page's view
+            if (mRssItem != null && mRssItem.mediaAudio != null) {
+                mPlaybackManager.togglePlay(mRssItem, mRssChannel, mRssItem.mediaAudio, false);
+            }
         }
     }
 
@@ -1010,6 +1113,310 @@ public class RssItemDetailPage extends StatefulView<Activity> implements Require
                 mLogger.e(TAG, e.getMessage(), e);
             }
         });
+    }
+
+    /**
+     * True when the current item's video enclosure is probably a directly
+     * playable file (issue #69 phase 2) - the only case rendered inline; hub
+     * URLs (YouTube, Vimeo, ...) stay on the open-in-browser FAB.
+     */
+    private boolean isDirectVideoItem() {
+        return mRssItem != null && mRssItem.mediaVideo != null
+                && mVideoUrlPolicy.isProbablyDirectVideoUrl(mRssItem.mediaVideo);
+    }
+
+    /**
+     * Binds the inline video slot (issue #69 phase 2): player_view + hero
+     * image + open-video FAB + swipe strip as one mutually consistent set,
+     * driven by the given inline-video decision. Called from bindRssItem
+     * (view build / neighbor swap) and from the playback state subscription
+     * (video failure revert).
+     * <p>
+     * Single-player semantics: loading this video through the shared session
+     * inherently replaces whatever audio is playing - the app owns exactly
+     * one player (PlaybackManager).
+     *
+     * @param view            the page's content view
+     * @param showInlineVideo true to render the video slot (a state already
+     *                        marked failed for THIS video is downgraded back
+     *                        to FAB-only here)
+     */
+    @OptIn(markerClass = UnstableApi.class)
+    private void bindVideoSlot(View view, boolean showInlineVideo) {
+        if (mRssItem == null) {
+            return;
+        }
+        PlayerView playerView = view.findViewById(R.id.player_view);
+        View networkImageView = view.findViewById(R.id.network_image);
+        View swipeRegionRight = view.findViewById(R.id.container_swipe_region_right);
+        PlaybackState state = mPlaybackManager.getCurrentState();
+        // a fatal error for THIS video reverts the slot to FAB-only mode until
+        // the next rebind (the toast itself is emitted by the state handler)
+        if (showInlineVideo && state.failed && state.matchesUrl(mRssItem.mediaVideo)) {
+            showInlineVideo = false;
+        }
+        if (showInlineVideo) {
+            playerView.setVisibility(View.VISIBLE);
+            // the video slot replaces the hero image, which keeps its own
+            // isDownloadImage gate when the slot hides again
+            networkImageView.setVisibility(View.GONE);
+            view.findViewById(R.id.fab_open_video).setVisibility(View.GONE);
+            // R7: the 64dp right-edge swipe strip overlays the player controls
+            // and a swipe there would replace the page mid-video - hide it
+            // while the video is inline, restore when the slot hides
+            swipeRegionRight.setVisibility(View.GONE);
+            // render the session-remote video: PlayerView accepts any Player,
+            // including the app-scoped MediaController whose timeline crossed
+            // the binder boundary (null while the session holds no controller)
+            playerView.setPlayer(mPlaybackManager.getControllerIfConnected());
+            // first tap on the surface (or tap after a failure) loads + plays
+            // through the manager - strictly tap-initiated, no autoplay
+            // anywhere. Once THIS video is loaded the built-in controller's
+            // play/pause button drives pause/resume directly on the shared
+            // session (PlayerView.performClick already toggled the controls
+            // before this listener ran), and this tap must not toggle again.
+            playerView.setOnClickListener(v -> {
+                if (mRssItem == null || mRssItem.mediaVideo == null) {
+                    return;
+                }
+                PlaybackState playbackState = mPlaybackManager.getCurrentState();
+                if (!playbackState.matchesUrl(mRssItem.mediaVideo) || playbackState.failed) {
+                    mPlaybackManager.togglePlay(mRssItem, mRssChannel,
+                            mRssItem.mediaVideo, true);
+                }
+            });
+        } else {
+            playerView.setVisibility(View.GONE);
+            playerView.setPlayer(null);
+            playerView.setOnClickListener(null);
+            // restore the hero image per its own gate (idempotent with the
+            // bindRssItem path, correct on the failure-revert path)
+            boolean showImage = mAppSharedPreferences != null
+                    && mAppSharedPreferences.isDownloadImage()
+                    && mRssItem.mediaImage != null;
+            networkImageView.setVisibility(showImage ? View.VISIBLE : View.GONE);
+            swipeRegionRight.setVisibility(View.VISIBLE);
+            // restore the browser FAB too: the inline branch hid it, and the
+            // failure-revert path lands HERE without a rebind - without this
+            // restore a failed direct video left the page with no way to open
+            // the video at all (E2E api24: 403 fixture hid both player_view
+            // and fab_open_video)
+            view.findViewById(R.id.fab_open_video).setVisibility(
+                    mRssItem.mediaVideo != null ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    /**
+     * Re-attaches the inline video slot to the CURRENT session controller.
+     * Runs on every playback state emission while the slot is visible, so
+     * controller-level events that change what the view should render (the
+     * ENDED release nulls the controller, a reconnect replaces it) keep the
+     * view consistent without a rebind.
+     */
+    @OptIn(markerClass = UnstableApi.class)
+    private void refreshVideoPlayerAttachment() {
+        if (mPageView == null || mRssItem == null) {
+            return;
+        }
+        PlayerView playerView = mPageView.findViewById(R.id.player_view);
+        if (playerView.getVisibility() == View.VISIBLE) {
+            playerView.setPlayer(mPlaybackManager.getControllerIfConnected());
+        }
+    }
+
+    /**
+     * True while the inline video slot of this page is currently visible.
+     */
+    private boolean isVideoSlotShowing() {
+        if (mPageView == null) {
+            return false;
+        }
+        View playerView = mPageView.findViewById(R.id.player_view);
+        return playerView != null && playerView.getVisibility() == View.VISIBLE;
+    }
+
+    /**
+     * Playback-state handler (issue #69 phase 2): refreshes the audio FAB,
+     * keeps the inline video slot attached to the session, toasts + reverts
+     * the slot when THIS item's video fatally fails and re-evaluates the FAB
+     * lift for the mini-player bar. Emissions arrive on the main thread.
+     *
+     * @param state the new app-wide playback state
+     */
+    private void onPlaybackStateChanged(PlaybackState state) {
+        if (mPageView == null || mRssItem == null) {
+            return;
+        }
+        updateAudioFabVisual(state);
+        if (state.failed && state.item != null
+                && state.matchesUrl(mRssItem.mediaVideo)
+                && isVideoSlotShowing()) {
+            Toast.makeText(mSvProvider.getContext(),
+                    R.string.video_playback_failed, Toast.LENGTH_SHORT).show();
+            bindVideoSlot(mPageView, isDirectVideoItem());
+        } else {
+            refreshVideoPlayerAttachment();
+        }
+        updateFabBottomMargins(mPageView);
+    }
+
+    /**
+     * Refreshes the audio FAB's icon/label from the given playback state.
+     *
+     * @param state the current app-wide playback state
+     */
+    private void updateAudioFabVisual(PlaybackState state) {
+        if (mPageView == null) {
+            return;
+        }
+        updateAudioFabVisual(mPageView.findViewById(R.id.fab_play_audio), state);
+    }
+
+    /**
+     * Updates the audio play/pause FAB's icon, text and content description.
+     * The pause state shows ONLY while THIS item's audio is actively playing in
+     * the shared session: another item's ongoing playback renders as a fresh
+     * play state - binding a new article never hijacks audio the user is
+     * already listening to, playback only moves on an explicit tap (issue #69).
+     *
+     * @param fabPlayAudio the page view's audio FAB
+     * @param state        the current app-wide playback state
+     */
+    private void updateAudioFabVisual(ExtendedFloatingActionButton fabPlayAudio,
+                                      PlaybackState state) {
+        boolean isPlayingThisAudio = state != null
+                && mRssItem != null
+                && mRssItem.mediaAudio != null
+                && state.matchesUrl(mRssItem.mediaAudio)
+                && state.isPlaying;
+        int labelRes = isPlayingThisAudio
+                ? R.string.fab_pause_audio
+                : R.string.fab_play_audio;
+        String label = mSvProvider.getContext().getString(labelRes);
+        fabPlayAudio.setIcon(ContextCompat.getDrawable(mSvProvider.getContext(),
+                isPlayingThisAudio
+                        ? R.drawable.ic_pause_white
+                        : R.drawable.ic_play_arrow_white));
+        fabPlayAudio.setText(label);
+        fabPlayAudio.setContentDescription(label);
+    }
+
+    /**
+     * Lifts the three FABs above the mini-player bar while the bar is visible
+     * on THIS page (issue #69 phase 2), restoring the plain text_margin
+     * baseline otherwise. "Bar visible on this page" is exactly the bar's own
+     * visibility rule evaluated against this page's item (a session is loaded
+     * AND its media is not this page's current audio/video): whenever this
+     * page is the top route both computations agree, and margins computed
+     * while the page is covered are refreshed by the next state emission
+     * before the page can become visible again.
+     */
+    private void updateFabBottomMargins(View view) {
+        if (view == null) {
+            return;
+        }
+        PlaybackState state = mPlaybackManager.getCurrentState();
+        boolean barVisibleOnThisPage = state != null && state.item != null
+                && mRssItem != null
+                && !state.matchesUrl(mRssItem.mediaAudio)
+                && !state.matchesUrl(mRssItem.mediaVideo);
+        int extraMarginPx = barVisibleOnThisPage
+                ? (int) (MINI_PLAYER_BAR_LIFT_DP
+                * mSvProvider.getContext().getResources()
+                .getDisplayMetrics().density + 0.5f)
+                : 0;
+        applyExtraBottomMargin(view.findViewById(R.id.fab_play_audio), extraMarginPx);
+        applyExtraBottomMargin(view.findViewById(R.id.fab_open_video), extraMarginPx);
+        applyExtraBottomMargin(view.findViewById(R.id.fab_open_link), extraMarginPx);
+    }
+
+    /**
+     * Adds the given extra pixels to one FAB's bottom margin (on top of the
+     * {@code text_margin} baseline both detail layouts share).
+     */
+    private void applyExtraBottomMargin(View fab, int extraMarginPx) {
+        if (fab == null) {
+            return;
+        }
+        ViewGroup.LayoutParams layoutParams = fab.getLayoutParams();
+        if (!(layoutParams instanceof ViewGroup.MarginLayoutParams)) {
+            return;
+        }
+        ViewGroup.MarginLayoutParams marginLayoutParams =
+                (ViewGroup.MarginLayoutParams) layoutParams;
+        int baseMarginPx = mSvProvider.getContext().getResources()
+                .getDimensionPixelSize(R.dimen.text_margin);
+        int newBottomMargin = baseMarginPx + extraMarginPx;
+        if (marginLayoutParams.bottomMargin != newBottomMargin) {
+            marginLayoutParams.bottomMargin = newBottomMargin;
+            fab.setLayoutParams(marginLayoutParams);
+        }
+    }
+
+    /**
+     * PiP chrome refresh (issue #69 phase 2, R4): the toolbar and the FABs
+     * are reading chrome, not video - hide them while the activity is in
+     * picture-in-picture mode and restore them otherwise. The FAB
+     * visibilities stay BINDING-driven (an item without audio/video keeps its
+     * FAB hidden even outside PiP); the swipe strip stays hidden whenever the
+     * inline video hides it (R7). Called from bindRssItem (covers the
+     * reBuildAllRoute mid-PiP rebuild) and from the activity
+     * paused/resumed forwards (the lifecycle boundary where
+     * isInPictureInPictureMode() has settled).
+     * <p>
+     * PiP params themselves are NEVER computed here - they stay with
+     * MainActivity, the activity-owned API.
+     *
+     * @param activity the current activity
+     */
+    private void applyPipChrome(Activity activity) {
+        if (mPageView == null || mRssItem == null) {
+            return;
+        }
+        // Activity#isInPictureInPictureMode exists since API 24; PiP itself is
+        // an API 26+ feature so the flag can only be true far above minSdk 21
+        boolean inPip = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
+                && activity.isInPictureInPictureMode();
+        mPageView.findViewById(R.id.container_app_bar)
+                .setVisibility(inPip ? View.GONE : View.VISIBLE);
+        updateFabVisibility(mPageView.findViewById(R.id.fab_play_audio),
+                mRssItem.mediaAudio != null, inPip);
+        updateFabVisibility(mPageView.findViewById(R.id.fab_open_video),
+                mRssItem.mediaVideo != null && !isDirectVideoItem(), inPip);
+        updateFabVisibility(mPageView.findViewById(R.id.fab_open_link), true, inPip);
+        boolean swipeVisible = !inPip && !isVideoSlotShowing();
+        mPageView.findViewById(R.id.container_swipe_region_right)
+                .setVisibility(swipeVisible ? View.VISIBLE : View.GONE);
+    }
+
+    /**
+     * Applies one FAB's binding-driven visibility, suppressed in PiP.
+     */
+    private void updateFabVisibility(View fab, boolean bindingVisible, boolean inPip) {
+        if (fab == null) {
+            return;
+        }
+        fab.setVisibility(bindingVisible && !inPip ? View.VISIBLE : View.GONE);
+    }
+
+    /**
+     * Activity resumed (issue #69 phase 2, PiP chrome only): re-evaluates
+     * which chrome this page shows for the current picture-in-picture state.
+     * No PiP params are touched here (MainActivity owns them).
+     */
+    @Override
+    public void onNavActivityResumed(Activity activity) {
+        applyPipChrome(activity);
+    }
+
+    /**
+     * Activity paused (issue #69 phase 2, PiP chrome only): entering
+     * picture-in-picture pauses the activity - hide this page's reading
+     * chrome for the shrunken window. No PiP params are touched here.
+     */
+    @Override
+    public void onNavActivityPaused(Activity activity) {
+        applyPipChrome(activity);
     }
 
     public static class Args implements Serializable {

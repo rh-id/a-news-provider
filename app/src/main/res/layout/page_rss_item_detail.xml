@@ -63,6 +63,28 @@
                         android:layout_height="wrap_content"
                         android:orientation="vertical">
 
+                        <!-- inline video slot (issue #69 phase 2): hidden by
+                             default, shown instead of the hero image below when
+                             the item's video enclosure is a directly playable
+                             file. wrap_content height + minHeight 200dp: the
+                             internal AspectRatioFrameLayout only knows the
+                             video's aspect after onVideoSizeChanged fires, and
+                             BEFORE that it measures to 0px (match_parent
+                             surface child) - minHeight floors the empty state
+                             (visual parity with the 200dp hero image); once
+                             the real size is known the aspect layout takes
+                             over. The built-in play/pause controller drives
+                             the app-scoped MediaController directly. -->
+                        <androidx.media3.ui.PlayerView
+                            android:id="@+id/player_view"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="200dp"
+                            android:visibility="gone"
+                            android:contentDescription="@string/open_video"
+                            app:use_controller="true"
+                            app:show_buffering="when_playing" />
+
                         <com.android.volley.toolbox.NetworkImageView
                             android:id="@+id/network_image"
                             android:contentDescription="@string/image"
@@ -120,16 +142,46 @@
         </FrameLayout>
     </LinearLayout>
 
-    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-        android:id="@+id/fab_open_video"
+    <!-- bottom-start FAB stack (issue #69): both left FABs live in one wrapper
+         anchored bottom-start of the page. A GONE child takes no space in a
+         LinearLayout, so whichever FAB is visible alone still lands exactly on
+         fab_open_link's bottom line (parent bottom - 16dp). The old
+         ConstraintLayout sibling chain collapsed a GONE fab_open_video to a
+         zero-size anchor floating between container_body and the parent
+         bottom, leaving fab_play_audio hanging 40dp above fab_open_link. -->
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="@dimen/text_margin"
-        android:text="@string/open_video"
-        app:icon="@drawable/ic_open_in_browser_white"
+        android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/container_body" />
+        app:layout_constraintStart_toStartOf="parent">
+
+        <!-- podcast audio play/pause (issue #69): stacked above the video FAB,
+             hidden unless the bound item carries an audio enclosure; its 16dp
+             bottom margin is the stack gap above fab_open_video and the bottom
+             inset when it is the only visible left FAB -->
+        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+            android:id="@+id/fab_play_audio"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/text_margin"
+            android:visibility="gone"
+            android:text="@string/fab_play_audio"
+            app:icon="@drawable/ic_play_arrow_white" />
+
+        <!-- marginTop 0dp: the visible stack gap is exactly the audio FAB's
+             16dp bottom margin, not a doubled 32dp -->
+        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+            android:id="@+id/fab_open_video"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/text_margin"
+            android:layout_marginTop="0dp"
+            android:layout_marginEnd="@dimen/text_margin"
+            android:layout_marginBottom="@dimen/text_margin"
+            android:text="@string/open_video"
+            app:icon="@drawable/ic_open_in_browser_white" />
+    </LinearLayout>
 
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/fab_open_link"

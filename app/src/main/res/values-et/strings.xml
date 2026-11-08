@@ -217,4 +217,9 @@
     <string name="full_article_fetch_failed">Täieliku artikli laadimine ebaõnnestus</string>
     <string name="title_fetch_full_text_automatically">Laadi täielikud artiklid automaatselt</string>
     <string name="menu_subtitle_fetch_full_text_automatically">Artikli avamisel laaditakse lehe täistekst automaatselt, kui voog näitab ainult kokkuvõtet. Lülita välja, et kasutada voo kirjeldust</string>
+    <string name="fab_play_audio">Esita heli</string>
+    <string name="fab_pause_audio">Peata heli</string>
+    <string name="audio_playback_failed">Heli esitamine ebaõnnestus</string>
+    <string name="mini_player_close">Sulge minipleier</string>
+    <string name="video_playback_failed">Video esitamine ebaõnnestus</string>
 </resources>

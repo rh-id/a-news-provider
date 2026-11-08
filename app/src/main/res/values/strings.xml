@@ -216,4 +216,9 @@
     <string name="full_article_fetch_failed">Failed to load full article</string>
     <string name="title_fetch_full_text_automatically">Auto-fetch full articles</string>
     <string name="menu_subtitle_fetch_full_text_automatically">When opening an article, fetch the full page text automatically if the feed only shows a summary. Turn off to keep using the feed description</string>
+    <string name="fab_play_audio">Play audio</string>
+    <string name="fab_pause_audio">Pause audio</string>
+    <string name="audio_playback_failed">Audio playback failed</string>
+    <string name="mini_player_close">Close mini player</string>
+    <string name="video_playback_failed">Video playback failed</string>
 </resources>

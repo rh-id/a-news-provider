@@ -3,6 +3,7 @@ package m.co.rh.id.a_news_provider.component.network.parser;
 class RssMedia {
     static final int TYPE_IMAGE = 1;
     static final int TYPE_VIDEO = 2;
+    static final int TYPE_AUDIO = 3;
     String url;
     int type;
 
@@ -12,5 +13,9 @@ class RssMedia {
 
     boolean isVideo() {
         return type == TYPE_VIDEO;
+    }
+
+    boolean isAudio() {
+        return type == TYPE_AUDIO;
     }
 }

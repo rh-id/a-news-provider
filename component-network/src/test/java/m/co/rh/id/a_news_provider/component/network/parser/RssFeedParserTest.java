@@ -266,6 +266,103 @@ public class RssFeedParserTest {
         assertNull(item.mediaVideo);
     }
 
+    @Test
+    public void testParseWithEnclosureAudio() throws IOException, XmlPullParserException {
+        // podcast enclosure routes to mediaAudio (issue #69)
+        String rss = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" +
+                "<rss version=\"2.0\">\n" +
+                "  <channel>\n" +
+                "    <title>Test Feed</title>\n" +
+                "    <item>\n" +
+                "      <title>Podcast Episode</title>\n" +
+                "      <link>http://test.com/episode</link>\n" +
+                "      <enclosure url=\"http://test.com/episode.mp3\" type=\"audio/mpeg\"/>\n" +
+                "    </item>\n" +
+                "  </channel>\n" +
+                "</rss>";
+
+        RssModel model = parser.parse(rss, "http://test.com/feed");
+
+        RssItem item = model.getRssItems().get(0);
+        assertEquals("Podcast Episode", item.title);
+        assertEquals("http://test.com/episode.mp3", item.mediaAudio);
+        assertNull(item.mediaImage);
+        assertNull(item.mediaVideo);
+    }
+
+    @Test
+    public void testParseWithEnclosureAudioGenericMimeFallback() throws IOException, XmlPullParserException {
+        // unlisted audio spellings still classify as audio via the audio* prefix
+        String rss = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" +
+                "<rss version=\"2.0\">\n" +
+                "  <channel>\n" +
+                "    <title>Test Feed</title>\n" +
+                "    <item>\n" +
+                "      <title>Podcast Episode</title>\n" +
+                "      <link>http://test.com/episode</link>\n" +
+                "      <enclosure url=\"http://test.com/episode.mp3\" type=\"audio/mp3\"/>\n" +
+                "    </item>\n" +
+                "  </channel>\n" +
+                "</rss>";
+
+        RssModel model = parser.parse(rss, "http://test.com/feed");
+
+        RssItem item = model.getRssItems().get(0);
+        assertEquals("http://test.com/episode.mp3", item.mediaAudio);
+        assertNull(item.mediaImage);
+        assertNull(item.mediaVideo);
+    }
+
+    @Test
+    public void testParseWithMediaContentAudioGenericMimeFallback() throws IOException, XmlPullParserException {
+        // unlisted audio spellings classify as audio via the audio* prefix in
+        // media:content too - same fallback readEnclosure has. Previously an
+        // unlisted audio mime here WITHOUT a medium attribute was dropped
+        // while the same URL in an <enclosure> was captured
+        String rss = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" +
+                "<rss version=\"2.0\">\n" +
+                "  <channel>\n" +
+                "    <title>Test Feed</title>\n" +
+                "    <item>\n" +
+                "      <title>Podcast Episode</title>\n" +
+                "      <link>http://test.com/episode</link>\n" +
+                "      <media:content url=\"http://test.com/episode.mp3\" type=\"audio/mp3\"/>\n" +
+                "    </item>\n" +
+                "  </channel>\n" +
+                "</rss>";
+
+        RssModel model = parser.parse(rss, "http://test.com/feed");
+
+        RssItem item = model.getRssItems().get(0);
+        assertEquals("http://test.com/episode.mp3", item.mediaAudio);
+        assertNull(item.mediaImage);
+        assertNull(item.mediaVideo);
+    }
+
+    @Test
+    public void testParseWithEnclosureUnknownMimeStaysUnclassified() throws IOException, XmlPullParserException {
+        // a mime outside image/video/audio classifies as nothing - the audio
+        // prefix fallback must not swallow unrelated types
+        String rss = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" +
+                "<rss version=\"2.0\">\n" +
+                "  <channel>\n" +
+                "    <title>Test Feed</title>\n" +
+                "    <item>\n" +
+                "      <title>Document Item</title>\n" +
+                "      <link>http://test.com/item</link>\n" +
+                "      <enclosure url=\"http://test.com/doc.pdf\" type=\"application/pdf\"/>\n" +
+                "    </item>\n" +
+                "  </channel>\n" +
+                "</rss>";
+
+        RssModel model = parser.parse(rss, "http://test.com/feed");
+
+        RssItem item = model.getRssItems().get(0);
+        assertNull(item.mediaImage);
+        assertNull(item.mediaVideo);
+        assertNull(item.mediaAudio);
+    }
+
     @Test(expected = XmlPullParserException.class)
     public void testParseUnknownRootTag() throws IOException, XmlPullParserException {
         String invalid = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" +
@@ -381,6 +478,56 @@ public class RssFeedParserTest {
         assertEquals("Media Content Medium Video", item.title);
         assertEquals("http://test.com/medium_video.mp4", item.mediaVideo);
         assertNull(item.mediaImage);
+    }
+
+    @Test
+    public void testParseWithMediaContentMediumAudioDoesNotPolluteImage() throws IOException, XmlPullParserException {
+        // regression (issue #69): medium="audio" without a type attribute used to
+        // fall into the default-image branch, storing the audio URL into mediaImage
+        // and rendering a broken hero image on the detail page
+        String rss = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" +
+                "<rss version=\"2.0\" xmlns:media=\"http://search.yahoo.com/mrss/\">\n" +
+                "  <channel>\n" +
+                "    <title>Test Feed</title>\n" +
+                "    <item>\n" +
+                "      <title>Media Content Medium Audio</title>\n" +
+                "      <link>http://test.com/episode</link>\n" +
+                "      <media:content url=\"http://test.com/episode.mp3\" medium=\"audio\"/>\n" +
+                "    </item>\n" +
+                "  </channel>\n" +
+                "</rss>";
+
+        RssModel model = parser.parse(rss, "http://test.com/feed");
+
+        RssItem item = model.getRssItems().get(0);
+        assertEquals("Media Content Medium Audio", item.title);
+        assertEquals("http://test.com/episode.mp3", item.mediaAudio);
+        assertNull(item.mediaImage);
+        assertNull(item.mediaVideo);
+    }
+
+    @Test
+    public void testParseWithMediaContentAudioMimeTypeNoMedium() throws IOException, XmlPullParserException {
+        // audio mime on media:content classifies as audio even without the medium attribute
+        String rss = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" +
+                "<rss version=\"2.0\" xmlns:media=\"http://search.yahoo.com/mrss/\">\n" +
+                "  <channel>\n" +
+                "    <title>Test Feed</title>\n" +
+                "    <item>\n" +
+                "      <title>Media Content Audio</title>\n" +
+                "      <link>http://test.com/episode</link>\n" +
+                "      <media:content url=\"http://test.com/episode.m4a\" type=\"audio/mp4\"/>\n" +
+                "    </item>\n" +
+                "  </channel>\n" +
+                "</rss>";
+
+        RssModel model = parser.parse(rss, "http://test.com/feed");
+
+        RssItem item = model.getRssItems().get(0);
+        assertEquals("Media Content Audio", item.title);
+        assertEquals("http://test.com/episode.m4a", item.mediaAudio);
+        assertNull(item.mediaImage);
+        assertNull(item.mediaVideo);
     }
 
     @Test

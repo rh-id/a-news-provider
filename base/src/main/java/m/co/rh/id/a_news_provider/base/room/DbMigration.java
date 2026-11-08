@@ -17,7 +17,7 @@ public class DbMigration {
         return new Migration[]{MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4,
                 MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
                 MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13,
-                MIGRATION_13_14};
+                MIGRATION_13_14, MIGRATION_14_15};
     }
 
     public static final Migration MIGRATION_1_2 = new Migration(1, 2) {
@@ -190,6 +190,20 @@ public class DbMigration {
         @Override
         public void migrate(SupportSQLiteDatabase database) {
             database.execSQL("CREATE TABLE IF NOT EXISTS `article_content` (`link` TEXT NOT NULL, `content` TEXT NOT NULL, `fetched_date_time` INTEGER NOT NULL, PRIMARY KEY(`link`))");
+        }
+    };
+
+    /**
+     * Adds the media_audio column to rss_item (issue #69 podcast audio phase 1):
+     * the URL of an audio-classified media:content or enclosure element. The
+     * column is nullable with no default: rows created before this migration
+     * (and items of paused channels) simply have no audio until their next feed
+     * sync (same rationale as MIGRATION_10_11's categories - no backfill).
+     */
+    public static final Migration MIGRATION_14_15 = new Migration(14, 15) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE `rss_item` ADD COLUMN `media_audio` TEXT");
         }
     };
 

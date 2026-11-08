@@ -1141,6 +1141,7 @@ public class RssDaoTest {
         RssItem parsed = createRssItem("new title", "new desc",
                 "http://test.com/item", createDate(2026, 2, 2));
         parsed.mediaImage = "http://test.com/img.png";
+        parsed.mediaAudio = "http://test.com/audio.mp3";
         parsed.categories = "Fresh\u001FTech";
         parsedItems.add(parsed);
 
@@ -1153,6 +1154,7 @@ public class RssDaoTest {
         assertEquals("Description refreshed from the feed", "new desc", merged.description);
         assertEquals("Pub date refreshed from the feed", createDate(2026, 2, 2), merged.pubDate);
         assertEquals("Media refreshed from the feed", "http://test.com/img.png", merged.mediaImage);
+        assertEquals("Media refreshed from the feed", "http://test.com/audio.mp3", merged.mediaAudio);
         assertEquals("Categories refreshed from the feed", "Fresh\u001FTech", merged.categories);
         assertTrue("Read state preserved", merged.isRead);
         assertTrue("Favorite state preserved", merged.isFavorite);
@@ -1160,6 +1162,35 @@ public class RssDaoTest {
         assertNotNull("updated_date_time refreshed", merged.updatedDateTime);
         assertFalse("updated_date_time not rolled back",
                 merged.updatedDateTime.before(originalUpdated));
+
+        // second sync (issue #69): an existing row must gain a changed audio URL
+        // through the in-place update, keeping its id and state (items are
+        // retained, never reinserted - without the copy the row would keep the
+        // stale audio forever)
+        ArrayList<RssItem> secondBatch = new ArrayList<>();
+        RssItem secondSync = createRssItem("new title", "new desc",
+                "http://test.com/item", createDate(2026, 3, 3));
+        secondSync.mediaImage = "http://test.com/img2.png";
+        secondSync.mediaAudio = "http://test.com/audio2.m4a";
+        secondBatch.add(secondSync);
+
+        List<RssItem> persistedSecond = mRssDao.upsertRssItemsForChannel(rssChannel, secondBatch);
+
+        assertEquals(1, persistedSecond.size());
+        RssItem refreshed = persistedSecond.get(0);
+        assertEquals("Matched row keeps its id on the second sync", originalId, refreshed.id);
+        assertEquals("Audio refreshed from the feed",
+                "http://test.com/audio2.m4a", refreshed.mediaAudio);
+        assertEquals("Image refreshed from the feed",
+                "http://test.com/img2.png", refreshed.mediaImage);
+        assertTrue("Read state preserved on the second sync", refreshed.isRead);
+        assertTrue("Favorite state preserved on the second sync", refreshed.isFavorite);
+
+        List<RssItem> stored = mRssDao.findRssItemsByChannelId(rssChannel.id);
+        assertEquals(1, stored.size());
+        assertEquals(originalId, stored.get(0).id);
+        assertEquals("Audio persisted to the database row",
+                "http://test.com/audio2.m4a", stored.get(0).mediaAudio);
     }
 
     @Test

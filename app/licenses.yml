@@ -291,6 +291,18 @@
   copyrightHolder: The Guava Authors
   license: The Apache Software License, Version 2.0
   licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+- artifact: com.google.guava:guava:+
+  name: Guava: Google Core Libraries for Java
+  copyrightHolder: The Guava Authors
+  license: The Apache Software License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://github.com/google/guava
+- artifact: com.google.guava:failureaccess:+
+  name: Guava InternalFutureFailureAccess and InternalFutures
+  copyrightHolder: The Guava Authors
+  license: The Apache Software License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://github.com/google/guava
 - artifact: io.reactivex.rxjava3:rxandroid:+
   name: rxandroid
   copyrightHolder: RxAndroid Contributors

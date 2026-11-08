@@ -172,8 +172,8 @@ public abstract class RssDao {
      * <ul>
      * <li>Items with a VALID link (non-null, non-empty) match an existing channel item
      * by exact link. A match is updated IN PLACE: the feed-provided fields (title,
-     * link, description, pubDate, mediaImage, mediaVideo, categories, dedupKey) are
-     * overwritten
+     * link, description, pubDate, mediaImage, mediaVideo, mediaAudio, categories,
+     * dedupKey) are overwritten
      * from the parsed item while id, isRead, isFavorite and createdDateTime are
      * preserved, and updatedDateTime is refreshed. No match means INSERT with
      * createdDateTime = updatedDateTime = now (the same null-stamp pattern as
@@ -307,6 +307,7 @@ public abstract class RssDao {
         matched.pubDate = parsedItem.pubDate;
         matched.mediaImage = parsedItem.mediaImage;
         matched.mediaVideo = parsedItem.mediaVideo;
+        matched.mediaAudio = parsedItem.mediaAudio;
         matched.categories = parsedItem.categories;
         matched.dedupKey = parsedItem.dedupKey;
         matched.updatedDateTime = now;

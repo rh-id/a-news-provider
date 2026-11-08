@@ -222,4 +222,9 @@
     <string name="full_article_fetch_failed">Caricamento dell\'articolo completo non riuscito</string>
     <string name="title_fetch_full_text_automatically">Carica automaticamente gli articoli completi</string>
     <string name="menu_subtitle_fetch_full_text_automatically">All\'apertura di un articolo, recupera automaticamente il testo completo della pagina se il feed mostra solo un riepilogo. Disattiva per mantenere la descrizione del feed</string>
+    <string name="fab_play_audio">Riproduci audio</string>
+    <string name="fab_pause_audio">Metti in pausa l\'audio</string>
+    <string name="audio_playback_failed">Riproduzione audio non riuscita</string>
+    <string name="mini_player_close">Chiudi mini player</string>
+    <string name="video_playback_failed">Riproduzione video non riuscita</string>
 </resources>

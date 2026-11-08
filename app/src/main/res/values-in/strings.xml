@@ -212,4 +212,9 @@
     <string name="full_article_fetch_failed">Gagal memuat artikel lengkap</string>
     <string name="title_fetch_full_text_automatically">Ambil artikel lengkap otomatis</string>
     <string name="menu_subtitle_fetch_full_text_automatically">Saat membuka artikel, ambil teks lengkap halaman secara otomatis jika feed hanya menampilkan ringkasan. Matikan untuk tetap memakai deskripsi feed</string>
+    <string name="fab_play_audio">Putar audio</string>
+    <string name="fab_pause_audio">Jeda audio</string>
+    <string name="audio_playback_failed">Pemutaran audio gagal</string>
+    <string name="mini_player_close">Tutup pemutar mini</string>
+    <string name="video_playback_failed">Pemutaran video gagal</string>
 </resources>

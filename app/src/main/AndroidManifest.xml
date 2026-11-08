@@ -6,6 +6,11 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
+    <!-- podcast playback (issue #69): held by ExoPlayer (WAKE_MODE_NETWORK) so
+         streaming keeps running with the screen off -->
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
     <application
         android:name=".app.MainApplication"
@@ -22,6 +27,7 @@
             android:configChanges="uiMode|locale|layoutDirection|orientation|screenSize|screenLayout|density|colorMode|fontScale|fontWeightAdjustment|keyboard|keyboardHidden|smallestScreenSize"
             android:exported="true"
             android:launchMode="singleTop"
+            android:supportsPictureInPicture="true"
             android:theme="@style/Theme.Anewsprovider.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -54,6 +60,17 @@
 
         <receiver android:name=".app.receiver.NotificationDeleteReceiver"
             android:exported="false" />
+
+        <!-- podcast audio playback (issue #69): media3 session service, the
+             in-app MediaController connects to it from the detail page -->
+        <service android:name="m.co.rh.id.a_news_provider.app.service.PlaybackService"
+            android:exported="true"
+            android:foregroundServiceType="mediaPlayback">
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaSessionService"/>
+            </intent-filter>
+        </service>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="m.co.rh.id.a_news_provider.fileprovider"

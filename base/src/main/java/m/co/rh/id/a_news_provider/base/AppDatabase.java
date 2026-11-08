@@ -13,7 +13,7 @@ import m.co.rh.id.a_news_provider.base.entity.RssItem;
 
 @Database(entities = {RssChannel.class, RssItem.class,
         AndroidNotification.class, ArticleContent.class},
-        version = 14)
+        version = 15)
 public abstract class AppDatabase extends RoomDatabase {
     public abstract RssDao rssDao();
 

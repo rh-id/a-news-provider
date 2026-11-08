@@ -217,4 +217,9 @@
     <string name="full_article_fetch_failed">Vollständiger Artikel konnte nicht geladen werden</string>
     <string name="title_fetch_full_text_automatically">Vollständige Artikel automatisch laden</string>
     <string name="menu_subtitle_fetch_full_text_automatically">Beim Öffnen eines Artikels den Volltext der Seite automatisch laden, wenn der Feed nur eine Zusammenfassung zeigt. Aus, um die Feed-Beschreibung zu behalten</string>
+    <string name="fab_play_audio">Audio abspielen</string>
+    <string name="fab_pause_audio">Audio pausieren</string>
+    <string name="audio_playback_failed">Audio-Wiedergabe fehlgeschlagen</string>
+    <string name="mini_player_close">Mini-Player schließen</string>
+    <string name="video_playback_failed">Video-Wiedergabe fehlgeschlagen</string>
 </resources>

@@ -1,9 +1,12 @@
 package m.co.rh.id.a_news_provider.app;
 
+import android.app.PictureInPictureParams;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.drawable.ColorDrawable;
+import android.os.Build;
 import android.os.Bundle;
+import android.util.Rational;
 import android.util.TypedValue;
 import android.view.KeyEvent;
 
@@ -12,30 +15,56 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.media3.common.VideoSize;
+import androidx.media3.session.MediaController;
 
 import com.google.android.material.color.DynamicColors;
 
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.component.AppNotificationHandler;
+import m.co.rh.id.a_news_provider.app.playback.MiniPlayerBarController;
+import m.co.rh.id.a_news_provider.app.playback.PlaybackManager;
+import m.co.rh.id.a_news_provider.app.playback.PlaybackState;
+import m.co.rh.id.a_news_provider.app.playback.VideoUrlPolicy;
 import m.co.rh.id.a_news_provider.app.provider.RxProviderModule;
 import m.co.rh.id.a_news_provider.app.rx.RxDisposer;
 import m.co.rh.id.a_news_provider.app.ui.KeyEventHandler;
+import m.co.rh.id.a_news_provider.app.ui.page.RssItemDetailPage;
 import m.co.rh.id.a_news_provider.base.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.anavigator.NavRoute;
 import m.co.rh.id.anavigator.StatefulView;
+import m.co.rh.id.anavigator.component.INavigator;
 import m.co.rh.id.anavigator.component.NavBackEvent;
+import m.co.rh.id.anavigator.component.NavOnRouteChangedListener;
 import m.co.rh.id.aprovider.Provider;
 
 public class MainActivity extends AppCompatActivity {
 
+    /**
+     * System-allowed picture-in-picture aspect range (R1): below 0.418 and
+     * above 2.39 the system rejects/thresholds the ratio.
+     */
+    private static final float MIN_PIP_ASPECT_RATIO = 0.418f;
+    private static final float MAX_PIP_ASPECT_RATIO = 2.39f;
+
     private BehaviorSubject<Boolean> mRebuildUi;
     private Provider mProvider;
     private AppSharedPreferences mAppSharedPreferences;
+    // podcast playback (issue #69 phase 2): the app-scoped playback singletons
+    // come from the APPLICATION provider (in instrumented tests that is the
+    // test provider, which registers all three per R2)
+    private PlaybackManager mPlaybackManager;
+    private MiniPlayerBarController mMiniPlayerBarController;
+    private VideoUrlPolicy mVideoUrlPolicy;
+    private INavigator mNavigator;
+    private NavOnRouteChangedListener mPipRouteChangedListener;
+    private CompositeDisposable mPlaybackDisposables;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -43,6 +72,7 @@ public class MainActivity extends AppCompatActivity {
         mAppSharedPreferences = BaseApplication.of(this).getProvider()
                 .get(AppSharedPreferences.class);
         mRebuildUi = BehaviorSubject.create();
+        resolvePlaybackSingletons();
         // apply Material You dynamic colors before super.onCreate installs
         // the theme; gated on both the user setting and device support
         if (mAppSharedPreferences.isDynamicColorsEnabled()
@@ -81,6 +111,13 @@ public class MainActivity extends AppCompatActivity {
                                     getWindow().setBackgroundDrawableResource(R.color.daynight_white_black);
                                 }
                                 BaseApplication.of(this).getNavigator(this).reBuildAllRoute();
+                                // reBuildAllRoute setContentView'd a NEW NavViewLayout, wiping ALL
+                                // android.R.id.content children - the mini-player bar (a sibling
+                                // of the nav layout) went with them: re-attach a fresh one (R9)
+                                if (mMiniPlayerBarController != null) {
+                                    mMiniPlayerBarController.attachIfNeeded(this);
+                                }
+                                updatePictureInPictureParams();
                             }
                         })
                 );
@@ -123,16 +160,112 @@ public class MainActivity extends AppCompatActivity {
         handleNotification(getIntent());
     }
 
-    @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        handleNotification(intent);
+    /**
+     * Resolves the app-scoped playback singletons and wires the PiP recompute
+     * (issue #69 phase 2, R1): the params are refreshed on EVERY playback
+     * state emission, on EVERY route push/pop/restore (whether the top route
+     * is a detail page decides auto-enter) and at the onPause/onResume
+     * lifecycle boundaries (the moment auto-enter can actually trigger).
+     */
+    private void resolvePlaybackSingletons() {
+        BaseApplication baseApplication = BaseApplication.of(this);
+        if (baseApplication == null || baseApplication.getProvider() == null) {
+            return;
+        }
+        Provider applicationProvider = baseApplication.getProvider();
+        mPlaybackManager = applicationProvider.get(PlaybackManager.class);
+        mMiniPlayerBarController = applicationProvider.get(MiniPlayerBarController.class);
+        mVideoUrlPolicy = applicationProvider.get(VideoUrlPolicy.class);
+        mNavigator = applicationProvider.get(INavigator.class);
+        mPlaybackDisposables = new CompositeDisposable();
+        mPlaybackDisposables.add(mPlaybackManager.state()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(state -> updatePictureInPictureParams()));
+        mPipRouteChangedListener = (previous, current) -> updatePictureInPictureParams();
+        mNavigator.addOnRouteChangedListener(mPipRouteChangedListener);
     }
 
     private void handleNotification(Intent intent) {
         Provider provider = BaseApplication.of(this).getProvider();
         AppNotificationHandler appNotificationHandler = provider.get(AppNotificationHandler.class);
         appNotificationHandler.processNotification(intent);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // mini-player bar (issue #69 phase 2): attach a FRESH bar on every
+        // resume (R9 - theme attrs must re-resolve; the navigator wipes
+        // android.R.id.content's children on rebuild and activity recreation)
+        if (mMiniPlayerBarController != null) {
+            mMiniPlayerBarController.attachIfNeeded(this);
+        }
+        // auto-enter PiP (R1) triggers exactly at the leave-the-app boundary -
+        // the params must be freshly computed at this lifecycle edge too
+        updatePictureInPictureParams();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // auto-enter PiP (R1): the last recompute happens HERE, immediately
+        // before the system evaluates leaving the app into picture-in-picture
+        updatePictureInPictureParams();
+    }
+
+    /**
+     * Recomputes the picture-in-picture auto-enter params (issue #69 phase 2,
+     * R1 - MainActivity-OWNED, never page-driven): auto-enter is enabled ONLY
+     * while the current top route is a RssItemDetailPage AND the shared
+     * session is playing a DIRECT video URL (hub URLs like YouTube have
+     * nothing to render in the PiP window). The aspect ratio follows the
+     * session controller's video size, clamped to the system-allowed
+     * [0.418, 2.39] range. Safe at null/finishing: every dependency is
+     * null-checked and the activity guards its own terminal state.
+     * API 31+ only ({@code setAutoEnterEnabled} is S) - a no-op below.
+     */
+    private void updatePictureInPictureParams() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            return;
+        }
+        if (isFinishing() || isDestroyed()) {
+            return;
+        }
+        PlaybackState state = mPlaybackManager != null
+                ? mPlaybackManager.getCurrentState() : null;
+        boolean playingDirectVideo = state != null && state.item != null
+                && state.isVideo && state.isPlaying
+                && mVideoUrlPolicy != null
+                && mVideoUrlPolicy.isProbablyDirectVideoUrl(state.url);
+        NavRoute currentRoute = mNavigator != null ? mNavigator.getCurrentRoute() : null;
+        boolean topRouteIsDetailPage = currentRoute != null
+                && currentRoute.getStatefulView() instanceof RssItemDetailPage;
+        boolean autoEnter = playingDirectVideo && topRouteIsDetailPage;
+        float aspectRatio = 16f / 9f;
+        MediaController controller = mPlaybackManager != null
+                ? mPlaybackManager.getControllerIfConnected() : null;
+        if (controller != null) {
+            VideoSize videoSize = controller.getVideoSize();
+            if (videoSize.width > 0 && videoSize.height > 0) {
+                aspectRatio = clampPipAspectRatio(
+                        (float) videoSize.width / (float) videoSize.height);
+            }
+        }
+        // Rational wants integer terms - thousandths are exact enough for the
+        // clamped bounds and any sensor-derived video size
+        PictureInPictureParams params = new PictureInPictureParams.Builder()
+                .setAspectRatio(new Rational(Math.round(aspectRatio * 1000f), 1000))
+                .setAutoEnterEnabled(autoEnter)
+                .build();
+        setPictureInPictureParams(params);
+    }
+
+    /**
+     * Clamps a width/height ratio into the system-allowed PiP aspect range.
+     */
+    private static float clampPipAspectRatio(float aspectRatio) {
+        return Math.max(MIN_PIP_ASPECT_RATIO,
+                Math.min(MAX_PIP_ASPECT_RATIO, aspectRatio));
     }
 
     @Override
@@ -195,6 +328,24 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        // playback wiring teardown (issue #69 phase 2): the singletons live on
+        // in the application provider - only THIS activity's hooks go
+        if (mPipRouteChangedListener != null && mNavigator != null) {
+            mNavigator.removeOnRouteChangedListener(mPipRouteChangedListener);
+        }
+        if (mPlaybackDisposables != null) {
+            mPlaybackDisposables.dispose();
+        }
+        // do not hold a dead activity's view through the bar controller
+        if (mMiniPlayerBarController != null) {
+            mMiniPlayerBarController.clearViewReference();
+        }
+        mPipRouteChangedListener = null;
+        mPlaybackDisposables = null;
+        mPlaybackManager = null;
+        mMiniPlayerBarController = null;
+        mVideoUrlPolicy = null;
+        mNavigator = null;
         mProvider.dispose();
         mProvider = null;
         mRebuildUi.onComplete();

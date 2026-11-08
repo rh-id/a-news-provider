@@ -217,4 +217,9 @@
     <string name="full_article_fetch_failed">Tókst ekki að hlaða alla greinina</string>
     <string name="title_fetch_full_text_automatically">Sækja fulla greina sjálfkrafa</string>
     <string name="menu_subtitle_fetch_full_text_automatically">Þegar grein er opnuð er fullur texti síðunnar sóttur sjálfkrafa ef streymið sýnir aðeins samantekt. Slökkva til að halda lýsingu streymis</string>
+    <string name="fab_play_audio">Spila hljóð</string>
+    <string name="fab_pause_audio">Gera hlé á hljóði</string>
+    <string name="audio_playback_failed">Tókst ekki að spila hljóð</string>
+    <string name="mini_player_close">Loka smáspilaranum</string>
+    <string name="video_playback_failed">Tókst ekki að spila myndband</string>
 </resources>

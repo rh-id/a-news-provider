@@ -508,6 +508,49 @@ public class DbMigrationTest {
     }
 
     // ==================================================================================
+    // MIGRATION_14_15: rss_item.media_audio column for podcast audio playback
+    // (issue #69 phase 1)
+    // ==================================================================================
+
+    @Test
+    public void migrate14to15_addsNullableMediaAudioColumn() throws IOException {
+        // createDatabase builds the EXACT version-14 schema from the exported
+        // 14.json (no media_audio yet)
+        SupportSQLiteDatabase db = helper.createDatabase(TEST_DB, 14);
+        insertRssChannel(db, 1, "Podcast Feed", "https://pod.com/feed");
+        insertRssItem(db, 11, 1, "https://pod.com/episode-1", false, false);
+        insertRssItem(db, 12, 1, "https://pod.com/episode-2", true, false);
+        db.close();
+
+        SupportSQLiteDatabase migrated = helper.runMigrationsAndValidate(TEST_DB, 15,
+                true, DbMigration.MIGRATION_14_15);
+
+        try {
+            // every migrated item row starts out with no audio: the URL arrives
+            // with the channel's next feed sync, there is no backfill
+            assertNull(readString(migrated,
+                    "SELECT media_audio FROM rss_item WHERE id = 11"));
+            assertNull(readString(migrated,
+                    "SELECT media_audio FROM rss_item WHERE id = 12"));
+            // the new column is writable: an audio enclosure URL round-trips
+            migrated.execSQL("UPDATE rss_item SET media_audio = ? WHERE id = 11",
+                    new Object[]{"https://pod.com/episode-1.mp3"});
+            assertEquals("https://pod.com/episode-1.mp3", readString(migrated,
+                    "SELECT media_audio FROM rss_item WHERE id = 11"));
+            // a second row without audio keeps storing null fine
+            migrated.execSQL("UPDATE rss_item SET title = 'renamed' WHERE id = 12");
+            assertEquals("renamed", readString(migrated,
+                    "SELECT title FROM rss_item WHERE id = 12"));
+            // pre-existing data survived the migration untouched
+            assertEquals(2, readLong(migrated, "SELECT COUNT(id) FROM rss_item"));
+            assertEquals(1, readLong(migrated,
+                    "SELECT is_read FROM rss_item WHERE id = 12"));
+        } finally {
+            migrated.close();
+        }
+    }
+
+    // ==================================================================================
     // helpers: seed rows using the exact version-8 schema, read values after migration
     // ==================================================================================
 

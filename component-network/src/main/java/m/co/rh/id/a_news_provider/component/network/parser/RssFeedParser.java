@@ -304,9 +304,13 @@ public class RssFeedParser {
             } else if (name.equals("media:content")) {
                 RssMedia rssMedia = readMediaContent(xpp);
                 if (rssMedia.isImage()) {
+                    // repeated tags of one type overwrite each other on purpose
+                    // (last-wins, same rule as the enclosure handling below)
                     rssItem.mediaImage = rssMedia.url;
                 } else if (rssMedia.isVideo()) {
                     rssItem.mediaVideo = rssMedia.url;
+                } else if (rssMedia.isAudio()) {
+                    rssItem.mediaAudio = rssMedia.url;
                 }
             } else if (name.equals("media:thumbnail")) {
                 RssMedia rssMedia = readMediaThumbnail(xpp);
@@ -316,9 +320,13 @@ public class RssFeedParser {
             } else if (name.equals("enclosure")) {
                 RssMedia rssMedia = readEnclosure(xpp);
                 if (rssMedia.isImage()) {
+                    // repeated tags of one type overwrite each other on purpose
+                    // (last-wins, same rule as the media:content handling above)
                     rssItem.mediaImage = rssMedia.url;
                 } else if (rssMedia.isVideo()) {
                     rssItem.mediaVideo = rssMedia.url;
+                } else if (rssMedia.isAudio()) {
+                    rssItem.mediaAudio = rssMedia.url;
                 }
             } else {
                 skip(xpp);
@@ -372,14 +380,37 @@ public class RssFeedParser {
             case "application/x-shockwave-flash":
                 rssMedia.type = RssMedia.TYPE_VIDEO;
                 break;
+            case "audio/mpeg":
+            case "audio/mp4":
+            case "audio/aac":
+            case "audio/ogg":
+            case "audio/x-m4a":
+            case "audio/wav":
+                rssMedia.type = RssMedia.TYPE_AUDIO;
+                break;
             case "":
                 if (medium.equals("image")) {
                     rssMedia.type = RssMedia.TYPE_IMAGE;
                 } else if (medium.equals("video")) {
                     rssMedia.type = RssMedia.TYPE_VIDEO;
+                } else if (medium.equals("audio")) {
+                    // podcast feeds omit the type attribute and describe the
+                    // enclosure via medium only - must be classified BEFORE the
+                    // default-image fallback, otherwise the audio URL would be
+                    // stored as mediaImage and rendered as a broken hero image
+                    rssMedia.type = RssMedia.TYPE_AUDIO;
                 } else {
                     // if nothing matches by default it is image
                     rssMedia.type = RssMedia.TYPE_IMAGE;
+                }
+                break;
+            default:
+                // feeds use plenty of unlisted audio spellings (audio/x-mpeg,
+                // audio/mp3, audio/aacp, ...): anything starting with "audio/"
+                // is still an audio content - same fallback as readEnclosure,
+                // which the same URL in an <enclosure> already benefits from
+                if (mimeType.startsWith("audio")) {
+                    rssMedia.type = RssMedia.TYPE_AUDIO;
                 }
                 break;
         }
@@ -435,6 +466,22 @@ public class RssFeedParser {
             case "video/x-matroska":
             case "application/x-shockwave-flash":
                 rssMedia.type = RssMedia.TYPE_VIDEO;
+                break;
+            case "audio/mpeg":
+            case "audio/mp4":
+            case "audio/aac":
+            case "audio/ogg":
+            case "audio/x-m4a":
+            case "audio/wav":
+                rssMedia.type = RssMedia.TYPE_AUDIO;
+                break;
+            default:
+                // feeds use plenty of unlisted audio spellings (audio/x-mpeg,
+                // audio/mp3, audio/aacp, ...): anything starting with "audio/"
+                // is still an audio enclosure
+                if (mimeType.startsWith("audio")) {
+                    rssMedia.type = RssMedia.TYPE_AUDIO;
+                }
                 break;
         }
         xpp.next();

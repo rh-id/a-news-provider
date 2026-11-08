@@ -222,4 +222,9 @@
     <string name="full_article_fetch_failed">Échec du chargement de l\'article complet</string>
     <string name="title_fetch_full_text_automatically">Charger automatiquement les articles complets</string>
     <string name="menu_subtitle_fetch_full_text_automatically">À l\'ouverture d\'un article, charger automatiquement le texte complet de la page si le flux n\'affiche qu\'un résumé. Désactivé pour conserver la description du flux</string>
+    <string name="fab_play_audio">Lire l\'audio</string>
+    <string name="fab_pause_audio">Mettre l\'audio en pause</string>
+    <string name="audio_playback_failed">Échec de la lecture audio</string>
+    <string name="mini_player_close">Fermer le mini-lecteur</string>
+    <string name="video_playback_failed">Échec de la lecture vidéo</string>
 </resources>

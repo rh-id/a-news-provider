@@ -88,6 +88,10 @@ dependencies {
     implementation libs.material
     // pinned 1.9.0: 1.10.0+ raised minSdk to 23, this app is minSdk 21
     implementation libs.androidx.browser
+    // pinned 1.8.1: 1.9.0+ raised minSdk to 23 (1.12+ to 24), this app is minSdk 21
+    implementation libs.media3.exoplayer
+    implementation libs.media3.session
+    implementation libs.media3.ui
     implementation libs.androidx.constraintlayout
     implementation libs.androidx.drawerlayout
     implementation libs.androidx.recyclerview
