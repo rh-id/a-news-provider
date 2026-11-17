@@ -24,6 +24,7 @@ import m.co.rh.id.a_news_provider.base.util.UrlSanitizer;
 import m.co.rh.id.a_news_provider.base.provider.BaseProviderModule;
 import m.co.rh.id.a_news_provider.base.provider.DatabaseProviderModule;
 import m.co.rh.id.a_news_provider.component.network.provider.NetworkProviderModule;
+import m.co.rh.id.anavigator.extension.dialog.ui.NavExtDialogConfig;
 import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderModule;
 import m.co.rh.id.aprovider.ProviderRegistry;
@@ -76,6 +77,10 @@ public class IntegrationTestAppProviderModule implements ProviderModule {
         providerRegistry.registerLazy(PlaybackManager.class, () -> new PlaybackManager(provider));
         providerRegistry.registerLazy(MiniPlayerBarController.class, () -> new MiniPlayerBarController(provider));
         providerRegistry.registerLazy(VideoUrlPolicy.class, VideoUrlPolicy::new);
+
+        // library extension dialogs (confirm/message/pickers/progress) from
+        // a-navigator-extension-dialog, resolved by pages that push its routes
+        providerRegistry.registerLazy(NavExtDialogConfig.class, () -> new NavExtDialogConfig(provider.getContext()));
 
         providerRegistry.registerPool(StatefulViewProvider.class, () -> new StatefulViewProvider(provider));
     }

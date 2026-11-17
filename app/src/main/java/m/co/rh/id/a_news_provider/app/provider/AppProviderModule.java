@@ -42,6 +42,7 @@ import m.co.rh.id.anavigator.Navigator;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.component.INavigator;
 import m.co.rh.id.anavigator.component.StatefulViewFactory;
+import m.co.rh.id.anavigator.extension.dialog.ui.NavExtDialogConfig;
 import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderModule;
 import m.co.rh.id.aprovider.ProviderRegistry;
@@ -88,21 +89,27 @@ public class AppProviderModule implements ProviderModule {
         // stateless inline-video decision policy (issue #69): no dependencies,
         // resolved by MainActivity PiP + RssItemDetailPage video slot
         providerRegistry.registerLazy(VideoUrlPolicy.class, VideoUrlPolicy::new);
+        // library extension dialogs (confirm/message/pickers/progress) from
+        // a-navigator-extension-dialog, resolved by pages that push its routes
+        providerRegistry.registerLazy(NavExtDialogConfig.class, () -> new NavExtDialogConfig(provider.getContext()));
 
         // it is safer to register navigator last in case it needs dependency from all above, provider can be passed here
         providerRegistry.register(INavigator.class, () -> getNavigator(provider));
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private Navigator getNavigator(Provider provider) {
-        Map<String, StatefulViewFactory<Activity, StatefulView>> navMap = new ArrayMap<>();
+        Map<String, StatefulViewFactory> navMap = new ArrayMap<>();
         navMap.put(Routes.SPLASH_PAGE, (args, activity) -> new SplashPage(Routes.HOME_PAGE));
         navMap.put(Routes.HOME_PAGE, (args, activity) -> new HomePage());
         navMap.put(Routes.SETTINGS_PAGE, (args, activity) -> new SettingsPage());
         navMap.put(Routes.DONATIONS_PAGE, (args, activity) -> new DonationsPage());
         navMap.put(Routes.RSS_ITEM_DETAIL_PAGE, (args, activity) -> new RssItemDetailPage());
         navMap.put(Routes.SEARCH_RSS_PAGE, (args, activity) -> new SearchRssPage(args));
-        NavConfiguration.Builder<Activity, StatefulView> navBuilder =
-                new NavConfiguration.Builder<>(Routes.SPLASH_PAGE, navMap);
+        // library extension dialogs (confirm/message/pickers/progress) from a-navigator-extension-dialog
+        navMap.putAll(provider.get(NavExtDialogConfig.class).getNavMap());
+        NavConfiguration.Builder navBuilder =
+                new NavConfiguration.Builder(Routes.SPLASH_PAGE, navMap);
         navBuilder.setRequiredComponent(provider);
         navBuilder.setMainHandler(provider.get(Handler.class));
         navBuilder.setLoadingView(

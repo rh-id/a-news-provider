@@ -62,10 +62,12 @@ import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.annotation.NavInject;
 import m.co.rh.id.anavigator.component.INavigator;
 import m.co.rh.id.anavigator.component.NavActivityLifecycle;
+import m.co.rh.id.anavigator.component.NavBackPressResult;
 import m.co.rh.id.anavigator.component.NavOnActivityResult;
 import m.co.rh.id.anavigator.component.NavOnBackPressed;
 import m.co.rh.id.anavigator.component.NavOnRequestPermissionResult;
 import m.co.rh.id.anavigator.component.RequireComponent;
+import m.co.rh.id.anavigator.extension.dialog.ui.NavExtDialogConfig;
 import m.co.rh.id.aprovider.Provider;
 
 public class HomePage extends StatefulView<Activity> implements RequireComponent<Provider>, NavOnBackPressed<Activity>, Toolbar.OnMenuItemClickListener, SwipeRefreshLayout.OnRefreshListener, DrawerLayout.DrawerListener, View.OnClickListener, AppBarSV.OnMenuCreated, NavOnActivityResult<Activity>, NavOnRequestPermissionResult, NavActivityLifecycle<Activity> {
@@ -106,6 +108,7 @@ public class HomePage extends StatefulView<Activity> implements RequireComponent
     private transient OpmlCmd mOpmlCmd;
     private transient MarkAllReadCmd mMarkAllReadCmd;
     private transient ILogger mLogger;
+    private transient NavExtDialogConfig mNavExtDialogConfig;
 
     // View related
     private transient DrawerLayout mDrawerLayout;
@@ -131,6 +134,7 @@ public class HomePage extends StatefulView<Activity> implements RequireComponent
         mOpmlCmd = mSvProvider.get(OpmlCmd.class);
         mMarkAllReadCmd = mSvProvider.get(MarkAllReadCmd.class);
         mLogger = mSvProvider.get(ILogger.class);
+        mNavExtDialogConfig = mSvProvider.get(NavExtDialogConfig.class);
     }
 
     @Override
@@ -389,6 +393,7 @@ public class HomePage extends StatefulView<Activity> implements RequireComponent
             mSvProvider = null;
         }
         mLogger = null;
+        mNavExtDialogConfig = null;
         mDrawerLayout = null;
         mContainerListNews = null;
         mTextA11yStatus = null;
@@ -397,7 +402,7 @@ public class HomePage extends StatefulView<Activity> implements RequireComponent
     }
 
     @Override
-    public void onBackPressed(View currentView, Activity activity, INavigator navigator) {
+    public NavBackPressResult onBackPressed(View currentView, Activity activity, INavigator navigator) {
         if (mDrawerLayout.isOpen()) {
             mDrawerLayout.close();
         } else {
@@ -410,6 +415,9 @@ public class HomePage extends StatefulView<Activity> implements RequireComponent
                         activity.getString(R.string.toast_back_press_exit));
             }
         }
+        // v0.0.75+ NavOnBackPressed contract: noPop() swallows the back press,
+        // a null return means the default pop (pops the root route and exits the app)
+        return NavBackPressResult.noPop();
     }
 
     @Override
@@ -426,8 +434,14 @@ public class HomePage extends StatefulView<Activity> implements RequireComponent
             return true;
         } else if (id == R.id.menu_export_opml) {
             Context context = mSvProvider.getContext();
+            // non-cancellable progress dialog (a-navigator-extension-dialog); popped
+            // in doFinally when the export completes, success or failure
+            mNavigator.push(mNavExtDialogConfig.route_progressDialog(),
+                    mNavExtDialogConfig.args_progressDialog(
+                            context.getString(R.string.menu_export_opml), null));
             mRxDisposer.add("asyncExportOpml", mOpmlCmd.exportOpml()
                     .observeOn(AndroidSchedulers.mainThread())
+                    .doFinally(() -> mNavigator.pop())
                     .subscribe(file -> UiUtils.shareFile(context, file, context.getString(R.string.share_opml)),
                             throwable -> mLogger
                                     .e(TAG, context.getString(R.string.error_exporting_opml),

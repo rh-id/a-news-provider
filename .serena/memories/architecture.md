@@ -29,7 +29,7 @@ MainActivity also creates an **activity-scoped** provider (`new RxProviderModule
 - Back press → `OnBackPressedDispatcher` → `navigator.onBackPressed()`; `onActivityResult` forwarded to navigator; `onRequestPermissionsResult` also forwarded (POST_NOTIFICATIONS runtime request).
 - Day/night config change: `BehaviorSubject<Boolean>` debounced 100ms → `navigator.reBuildAllRoute()`.
 - Intents (notification tap, share-target `SEND text/plain`, OPML `VIEW`) processed by `AppNotificationHandler.processNotification(intent)`.
-- `RssItemDetailPage` supports next/previous article navigation (default on, togglable via SwipeArticleNavigationMenuSV): toolbar prev/next actions + mirrored 50dp edge-swipe strips; neighbors resolved from the home list context (channel/filter/sort) via RssDao compound-key queries; navigating marks read and `replace()`s the detail route so back returns to the list. Requires a-navigator ≥ v0.0.73 (view-stack safe replace()).
+- `RssItemDetailPage` supports next/previous article navigation (default on, togglable via SwipeArticleNavigationMenuSV): toolbar prev/next actions + mirrored 50dp edge-swipe strips; neighbors resolved from the home list context (channel/filter/sort) via RssDao compound-key queries; navigating marks read and `replace()`s the detail route so back returns to the list. Requires a-navigator ≥ v0.0.73 (view-stack safe replace()); the app is on a-navigator v0.0.76 (JitPack `com.github.rh-id.a-navigator:a-navigator`, plus the a-navigator-extension-dialog artifact).
 
 ## Command Pattern (business logic)
 15 lazy-registered commands in `app/.../app/provider/command/` (registered by `CommandProviderModule`):

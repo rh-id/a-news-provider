@@ -39,7 +39,8 @@
 - `RssDateParser.parsePubDate/parseUpdated` return null on failure and log — callers must null-check.
 - `RssFeedParser` throws on unrecognized root tag — new feed formats require explicit parser support + tests.
 - List order + neighbor navigation + keyset cursor all use `(COALESCE(pub_date, created_date_time), id)` — `id` is the unique tiebreaker (created_date_time is not unique). Keep the three in sync if touching those DAO queries. Filter/sort/query/channel changes must do a FRESH load (cursor reset); mark-read/favorite/pull-to-refresh use REFRESH (window-preserving) — see `BaseRssItemsCmd`.
-- Detail-page next/prev navigation requires a-navigator ≥ v0.0.73 (view-stack safe `replace()`); older versions desync the view stack and crash on back-press.
+- Detail-page next/prev navigation requires a-navigator ≥ v0.0.73 (view-stack safe `replace()`); older versions desync the view stack and crash on back-press. The app is on a-navigator v0.0.76 (JitPack `com.github.rh-id.a-navigator:a-navigator`).
+- **NavOnBackPressed contract (a-navigator v0.0.75+)**: implementors of `NavOnBackPressed.onBackPressed` must return `NavBackPressResult` — a null return means the DEFAULT pop (popping the root route exits the app), only an explicit `NavBackPressResult.noPop()` swallows the back press (see HomePage.onBackPressed: all branches fall through to a single `return NavBackPressResult.noPop()` to preserve the old v0.0.74 swallow behavior).
 - Release signing depends on env vars (`SIGNING_KEY` etc.); local unsigned release builds are expected when unset.
 - Changelog for release workflow is keyed by **versionCode** file name in `fastlane/metadata/android/en-US/changelogs/`.
 - ILogger is a CompositeLogger (Android + File `cacheDir/alogger/app.log` + Toast) — don't use `Log`/`System.out` directly; use the provided `ILogger`.

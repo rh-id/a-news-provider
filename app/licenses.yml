@@ -268,6 +268,12 @@
   license: MIT License
   licenseUrl: https://api.github.com/licenses/mit
   url: https://github.com/rh-id/a-navigator
+- artifact: com.github.rh-id.a-navigator:a-navigator-extension-dialog:+
+  name: a-navigator-extension-dialog
+  copyrightHolder: Ruby Hartono
+  license: MIT License
+  licenseUrl: https://api.github.com/licenses/mit
+  url: https://github.com/rh-id/a-navigator
 - artifact: com.github.rh-id:a-provider:+
   name: a-provider
   copyrightHolder: Ruby Hartono

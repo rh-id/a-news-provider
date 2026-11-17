@@ -54,6 +54,7 @@ dependencies {
     api libs.androidx.annotation
     api libs.a.provider
     api libs.a.navigator
+    api libs.a.navigator.dialog
     api libs.a.logger
     api libs.rx.utils
     api libs.rxandroid
