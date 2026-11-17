@@ -117,6 +117,7 @@
     <string name="title_share_image">Bagikan gambar</string>
     <string name="open_image_viewer">Buka penampil gambar</string>
     <string name="image_saved">Gambar disimpan</string>
+    <string name="share_ignored_no_image">Berbagi diabaikan, gambar belum dimuat</string>
     <string name="menu_import_opml">Impor file OPML</string>
     <string name="open_video">Buka video</string>
     <string name="buy_developer_a_coffee">Traktir developer secangkir kopi</string>

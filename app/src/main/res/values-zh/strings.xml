@@ -119,6 +119,7 @@
     <string name="title_share_image">分享图片</string>
     <string name="open_image_viewer">打开图片查看器</string>
     <string name="image_saved">图片已保存</string>
+    <string name="share_ignored_no_image">分享被忽略，尚未加载图片</string>
     <string name="menu_import_opml">导入 OPML 文件</string>
     <string name="open_video">打开视频</string>
     <string name="buy_developer_a_coffee">请开发者喝杯咖啡</string>

@@ -110,8 +110,7 @@ public class FetchArticleContentCmd {
     private Boolean executeInternal(RssItem rssItem, boolean force) {
         String link = rssItem != null ? rssItem.link : null;
         if (!hasValidLink(link)) {
-            mLogger.d(TAG, mAppContext.getString(R.string.full_article_fetch_failed)
-                    + ": " + mAppContext.getString(R.string.invalid_url));
+            mLogger.d(TAG, "Full article fetch failed: invalid url");
             return false;
         }
         try {
@@ -127,8 +126,7 @@ public class FetchArticleContentCmd {
             byte[] rawPageBytes = fetchArticleBytes(link);
             String extractedContent = mArticleExtractor.extract(rawPageBytes, link);
             if (extractedContent == null || extractedContent.isEmpty()) {
-                mLogger.d(TAG, mAppContext.getString(R.string.full_article_fetch_failed)
-                        + " " + link);
+                mLogger.d(TAG, "Full article fetch failed: " + link);
                 return false;
             }
             mArticleContentDao.upsertArticleContent(new ArticleContent(link,

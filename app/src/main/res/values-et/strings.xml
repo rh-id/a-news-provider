@@ -120,6 +120,7 @@
     <string name="title_share_image">Jaga pilt</string>
     <string name="open_image_viewer">Ava pildivaatur</string>
     <string name="image_saved">Pilt salvestatud</string>
+    <string name="share_ignored_no_image">Jagamine jäeti vahele, pilt pole veel laaditud</string>
     <string name="menu_import_opml">Impordi OPML-fail</string>
     <string name="open_video">Ava video</string>
     <string name="buy_developer_a_coffee">Osta arendajale kohvi</string>

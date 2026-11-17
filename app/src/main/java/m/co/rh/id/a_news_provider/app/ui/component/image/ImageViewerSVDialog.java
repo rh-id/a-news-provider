@@ -340,7 +340,7 @@ public class ImageViewerSVDialog extends StatefulViewDialog<Activity> implements
         // local capture: dispose() may null the field on the main thread while this runs
         Bitmap bitmap = mCurrentBitmap;
         if (bitmap == null) {
-            mLogger.i(TAG, "Share ignored, no image loaded yet");
+            mLogger.i(TAG, mSvProvider.getContext().getString(R.string.share_ignored_no_image));
             return;
         }
         Context context = mSvProvider.getContext().getApplicationContext();

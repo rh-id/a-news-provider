@@ -120,6 +120,7 @@
     <string name="title_share_image">Bild teilen</string>
     <string name="open_image_viewer">Bildansicht öffnen</string>
     <string name="image_saved">Bild gespeichert</string>
+    <string name="share_ignored_no_image">Teilen ignoriert, noch kein Bild geladen</string>
     <string name="menu_import_opml">OPML-Datei importieren</string>
     <string name="open_video">Video öffnen</string>
     <string name="buy_developer_a_coffee">Dem Entwickler einen Kaffee spendieren</string>

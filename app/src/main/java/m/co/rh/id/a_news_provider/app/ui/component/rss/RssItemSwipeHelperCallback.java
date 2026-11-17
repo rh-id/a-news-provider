@@ -171,7 +171,7 @@ public class RssItemSwipeHelperCallback extends ItemTouchHelper.SimpleCallback {
             return;
         }
         if (rssItem.link == null || rssItem.link.isEmpty()) {
-            mLogger.i(TAG, "Skipped swipe action on link-less rss item: " + rssItem.title);
+            mLogger.d(TAG, "Skipped swipe action on link-less rss item: " + rssItem.title);
             // snap back WITHOUT any state change or Snackbar - see the guard above
             mRssItemRecyclerViewAdapter.notifyItemChangedByHolder(viewHolder);
             return;

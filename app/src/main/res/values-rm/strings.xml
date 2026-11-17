@@ -120,6 +120,7 @@
     <string name="title_share_image">Parter la grafica</string>
     <string name="open_image_viewer">Avrir il visur da graficas</string>
     <string name="image_saved">Grafica memorisada</string>
+    <string name="share_ignored_no_image">Partiziun ignorada, anc nagina illustraziun chargiada</string>
     <string name="menu_import_opml">Importar il dossier OPML</string>
     <string name="open_video">Avrir il video</string>
     <string name="buy_developer_a_coffee">Convidar il sviluppader sin in cafè</string>

@@ -123,6 +123,7 @@
     <string name="title_share_image">Partager l\'image</string>
     <string name="open_image_viewer">Ouvrir la visionneuse d\'images</string>
     <string name="image_saved">Image enregistrée</string>
+    <string name="share_ignored_no_image">Partage ignoré, aucune image chargée pour le moment</string>
     <string name="menu_import_opml">Importer un fichier OPML</string>
     <string name="open_video">Ouvrir la vidéo</string>
     <string name="buy_developer_a_coffee">Offrir un café au développeur</string>

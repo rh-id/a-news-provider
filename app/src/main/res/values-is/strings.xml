@@ -120,6 +120,7 @@
     <string name="title_share_image">Deila mynd</string>
     <string name="open_image_viewer">Opna myndaskoðara</string>
     <string name="image_saved">Mynd vistuð</string>
+    <string name="share_ignored_no_image">Deiling hunsað, mynd ekki hlaðin enn</string>
     <string name="menu_import_opml">Flytja inn OPML-skrá</string>
     <string name="open_video">Opna myndskeið</string>
     <string name="buy_developer_a_coffee">Kaupa forritara kaffi</string>

@@ -120,6 +120,7 @@
     <string name="title_share_image">Del bilde</string>
     <string name="open_image_viewer">Åpne bildevisningen</string>
     <string name="image_saved">Bilde lagret</string>
+    <string name="share_ignored_no_image">Deling ignorert, ingen bilde lastet ennå</string>
     <string name="menu_import_opml">Importer OPML-fil</string>
     <string name="open_video">Åpne video</string>
     <string name="buy_developer_a_coffee">Kjøp en kaffe til utvikleren</string>
