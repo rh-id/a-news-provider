@@ -48,7 +48,6 @@
     <string name="log_file">Log File</string>
     <string name="share_log_file">Bagi log file</string>
     <string name="error_sharing_log_file">Error membagikan log file</string>
-    <string name="error_failed_to_sync_some_rss">Gagal sinkronisasi beberapa RSS</string>
     <string name="version">Versi:</string>
     <string name="filter_by">Filter menurut:</string>
     <string name="error_failed_to_open_file">Gagal membuka file</string>
@@ -147,6 +146,9 @@
     <plurals name="also_in_n_feeds">
         <item quantity="other">Juga dalam %d feed</item>
     </plurals>
+    <plurals name="feed_sync_failed_count">
+        <item quantity="other">Gagal menyinkronkan %1$d dari %2$d feed</item>
+    </plurals>
     <string name="menu_search">Cari</string>
     <string name="search_hint">Cari artikel…</string>
 
@@ -217,4 +219,6 @@
     <string name="audio_playback_failed">Pemutaran audio gagal</string>
     <string name="mini_player_close">Tutup pemutar mini</string>
     <string name="video_playback_failed">Pemutaran video gagal</string>
+    <string name="sync_on_app_open">Sinkron saat aplikasi dibuka</string>
+    <string name="sync_on_app_open_description">Ambil feed secara otomatis saat aplikasi dibuka, paling sering setiap 15 menit</string>
 </resources>

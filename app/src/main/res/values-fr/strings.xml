@@ -48,7 +48,6 @@
     <string name="log_file">Fichier journal</string>
     <string name="share_log_file">Partager le fichier journal</string>
     <string name="error_sharing_log_file">Erreur lors du partage du fichier journal</string>
-    <string name="error_failed_to_sync_some_rss">Échec de la synchronisation de certains flux RSS</string>
     <string name="version">Version :</string>
     <string name="filter_by">Filtrer par :</string>
     <string name="error_failed_to_open_file">Échec de l\'ouverture du fichier</string>
@@ -157,6 +156,11 @@
         <item quantity="many">Aussi dans %d flux</item>
         <item quantity="other">Aussi dans %d flux</item>
     </plurals>
+    <plurals name="feed_sync_failed_count">
+        <item quantity="one">Échec de la synchronisation de %1$d flux sur %2$d</item>
+        <item quantity="many">Échec de la synchronisation de %1$d flux sur %2$d</item>
+        <item quantity="other">Échec de la synchronisation de %1$d flux sur %2$d</item>
+    </plurals>
     <string name="menu_search">Rechercher</string>
     <string name="search_hint">Rechercher des articles…</string>
 
@@ -227,4 +231,6 @@
     <string name="audio_playback_failed">Échec de la lecture audio</string>
     <string name="mini_player_close">Fermer le mini-lecteur</string>
     <string name="video_playback_failed">Échec de la lecture vidéo</string>
+    <string name="sync_on_app_open">Synchroniser à l\'ouverture de l\'application</string>
+    <string name="sync_on_app_open_description">Récupérer automatiquement les flux à l\'ouverture de l\'application, au maximum toutes les 15 minutes</string>
 </resources>

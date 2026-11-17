@@ -90,6 +90,15 @@ public class AppSharedPreferences {
     private SerialBehaviorSubject<Boolean> mFetchFullTextAutomatically;
     private String mFetchFullTextAutomaticallyKey;
 
+    private SerialBehaviorSubject<Boolean> mSyncOnAppOpen;
+    private String mSyncOnAppOpenKey;
+
+    // deliberately a plain pref (no SerialBehaviorSubject): nothing observes it
+    // reactively, it is only polled by the sync-on-open debounce gate, so a
+    // subject would just add a pointless emission on every sync request
+    private long mLastSyncRequestMillis;
+    private String mLastSyncRequestMillisKey;
+
     private boolean mShowCaseRssChannelList;
     private String mShowCaseRssChannelListKey;
 
@@ -129,6 +138,7 @@ public class AppSharedPreferences {
         mReadingJustification = new SerialBehaviorSubject<>();
         mOpenLinksMode = new SerialBehaviorSubject<>();
         mFetchFullTextAutomatically = new SerialBehaviorSubject<>();
+        mSyncOnAppOpen = new SerialBehaviorSubject<>();
         initValue();
     }
 
@@ -173,6 +183,10 @@ public class AppSharedPreferences {
                 + ".openLinksMode";
         mFetchFullTextAutomaticallyKey = SHARED_PREFERENCES_NAME
                 + ".fetchFullTextAutomatically";
+        mSyncOnAppOpenKey = SHARED_PREFERENCES_NAME
+                + ".syncOnAppOpen";
+        mLastSyncRequestMillisKey = SHARED_PREFERENCES_NAME
+                + ".lastSyncRequestMillis";
         mShowCaseRssChannelListKey = SHARED_PREFERENCES_NAME
                 + ".showCaseRssChannelList";
         mShowCaseRssItemListKey = SHARED_PREFERENCES_NAME
@@ -262,6 +276,16 @@ public class AppSharedPreferences {
         boolean fetchFullTextAutomatically = mSharedPreferences.getBoolean(
                 mFetchFullTextAutomaticallyKey, false);
         fetchFullTextAutomatically(fetchFullTextAutomatically);
+        // sync-on-app-open defaults to ON (issue #50): the user asked for
+        // fresher content without sub-hourly wakeups, and the 15-minute debounce
+        // already bounds the cost to at most one extra sync per opening session;
+        // users who prefer syncing only by hand can switch it off in settings
+        boolean syncOnAppOpen = mSharedPreferences.getBoolean(mSyncOnAppOpenKey, true);
+        syncOnAppOpen(syncOnAppOpen);
+        // plain pref, read straight into the field (see the field javadoc for why
+        // there is no subject): 0 means "never requested" and always lets the
+        // first app-open sync through the debounce gate
+        mLastSyncRequestMillis = mSharedPreferences.getLong(mLastSyncRequestMillisKey, 0);
         boolean showCaseRssChannelList = mSharedPreferences.getBoolean(mShowCaseRssChannelListKey, false);
         setShowCaseRssChannelList(showCaseRssChannelList);
         boolean showCaseRssItemList = mSharedPreferences.getBoolean(mShowCaseRssItemListKey, false);
@@ -378,6 +402,64 @@ public class AppSharedPreferences {
 
     public Flowable<Boolean> getIsEnablePeriodicSyncFlow() {
         return Flowable.fromObservable(mEnablePeriodicSync.getSubject(), BackpressureStrategy.BUFFER);
+    }
+
+    /**
+     * "Sync when app opens" (issue #50), default ON: when enabled,
+     * returning to the home page enqueues the manual sync - but only when the
+     * last sync request is at least 15 minutes old (the debounce gate lives in
+     * app/util/SyncOnOpenPolicy). This resolves the spirit of the declined
+     * issue #19 ("sync on app open, at most every X") with fresh content on
+     * ordinary usage while never adding sub-hourly background wakeups: the
+     * periodic sync schedule is completely unaffected. Default ON because the
+     * debounce already bounds the cost (at most one extra sync per opening
+     * session) and fresh content is the expected news-reader behavior.
+     */
+    private void syncOnAppOpen(boolean enabled) {
+        mSyncOnAppOpen.onNext(enabled);
+        mExecutorService.execute(() ->
+                mSharedPreferences.edit().putBoolean(mSyncOnAppOpenKey, enabled)
+                        .commit());
+    }
+
+    public boolean isSyncOnAppOpen() {
+        Boolean value = mSyncOnAppOpen.getValue();
+        return value == null || value;
+    }
+
+    public void setSyncOnAppOpen(boolean enabled) {
+        syncOnAppOpen(enabled);
+    }
+
+    public Flowable<Boolean> getIsSyncOnAppOpenFlow() {
+        return Flowable.fromObservable(mSyncOnAppOpen.getSubject(), BackpressureStrategy.BUFFER);
+    }
+
+    /**
+     * Timestamp of the last sync REQUEST (epoch millis), stamped by
+     * SyncRssCmd.execute() right before it enqueues the unique work - 0 means
+     * never requested. Deliberately a plain pref (no SerialBehaviorSubject,
+     * nothing observes it): it is polled only by the sync-on-open debounce gate
+     * and a subject would emit a pointless value on every sync request.
+     * <p>
+     * Accepted trade-off: the stamp is written even when WorkManager's KEEP
+     * policy dedupes the enqueue (an identical sync already pending/running) -
+     * stamping after the dedupe outcome would need the enqueue result, and the
+     * debounce gate is the real rate limiter anyway: a deduped request means a
+     * sync is imminent or in flight, so treating it as "content was refreshed"
+     * is exactly the intent of the 15-minute window.
+     *
+     * @param millis the request time in epoch millis
+     */
+    public void setLastSyncRequestMillis(long millis) {
+        mLastSyncRequestMillis = millis;
+        mExecutorService.execute(() ->
+                mSharedPreferences.edit().putLong(mLastSyncRequestMillisKey, millis)
+                        .commit());
+    }
+
+    public long getLastSyncRequestMillis() {
+        return mLastSyncRequestMillis;
     }
 
     private void selectedTheme(int setting) {

@@ -4,9 +4,7 @@ import android.content.Context;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.URI;
 import java.net.URL;
-import java.util.function.Function;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
@@ -15,6 +13,7 @@ import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.base.util.UrlNormalizer;
 import m.co.rh.id.a_news_provider.base.provider.component.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
+import m.co.rh.id.a_news_provider.component.network.http.RedirectFollower;
 import m.co.rh.id.a_news_provider.component.network.ssl.ExtendedTrustManager;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.aprovider.Provider;
@@ -31,11 +30,16 @@ import m.co.rh.id.aprovider.Provider;
  * shows the redirect case inline. This class owns both the decision and the
  * built-in network probing
  * (the redirect chain is followed manually with {@link HttpURLConnection}
- * because the Volley stack reports the original request URL and never captures
- * redirect targets). HTTPS probe connections use
+ * because at ADD time there is no fetch yet whose redirect record could be
+ * consumed - the Volley stack only records the chain of the requests it
+ * actually executes). The redirect semantics - followed status codes, Location
+ * resolution, hop limit - are the SHARED primitives of
+ * {@link RedirectFollower} (issue #50) that the Volley stack uses too,
+ * so the add-time probe and the actual fetch can never disagree about where a
+ * feed's chain ends. HTTPS probe connections use
  * {@link ExtendedTrustManager#createSslSocketFactory(Context)} - the same
  * extended trust (system store plus bundled ISRG roots) as the Volley
- * {@code HurlStack}, so the probe and the actual fetch see identical
+ * stack, so the probe and the actual fetch see identical
  * certificates.
  * <p>
  * Probe failures fail open: they never reject the add, the feed proceeds with the
@@ -44,10 +48,8 @@ import m.co.rh.id.aprovider.Provider;
 public class RedirectDuplicateChecker {
     private static final String TAG = RedirectDuplicateChecker.class.getName();
 
-    private static final int MAX_REDIRECTS = 5;
     private static final int CONNECT_TIMEOUT_MILLIS = 10_000;
     private static final int READ_TIMEOUT_MILLIS = 10_000;
-    private static final String HEADER_LOCATION = "Location";
     private static final String SCHEME_HTTP = "http";
     private static final String SCHEME_HTTPS = "https";
     private static final String REQUEST_METHOD_GET = "GET";
@@ -80,22 +82,6 @@ public class RedirectDuplicateChecker {
         mUrlNormalizer = provider.get(UrlNormalizer.class);
         mLogger = provider.get(ILogger.class);
         mRedirectProbe = this::resolveRedirects;
-    }
-
-    /**
-     * Test/fake constructor: injects the redirect resolution so tests can run
-     * without any network (JVM tests and instrumented fake registrations).
-     */
-    public RedirectDuplicateChecker(Context appContext,
-                                    RssDao rssDao,
-                                    UrlNormalizer urlNormalizer,
-                                    ILogger logger,
-                                    Function<String, String> redirectResolver) {
-        mAppContext = appContext;
-        mRssDao = rssDao;
-        mUrlNormalizer = urlNormalizer;
-        mLogger = logger;
-        mRedirectProbe = redirectResolver::apply;
     }
 
     /**
@@ -132,18 +118,26 @@ public class RedirectDuplicateChecker {
     }
 
     /**
-     * Follows up to {@value MAX_REDIRECTS} HTTP redirects starting from the given URL
-     * and returns the final URL. Redirect status codes 301, 302, 303, 307 and 308 are
-     * followed; only http and https targets are accepted. When a response is not a
-     * redirect, carries no Location header, the hop limit is reached or the target
-     * cannot be resolved, the last known URL is returned. Connection errors and
-     * malformed input throw.
+     * Follows up to {@link RedirectFollower#MAX_REDIRECTS} HTTP redirects
+     * starting from the given URL and returns the final URL. The followed
+     * status codes and the Location resolution are the shared
+     * {@link RedirectFollower} primitives. Unlike the Volley stack's follower
+     * this probe deliberately FAILS OPEN on the hop limit and on unresolvable
+     * targets - returning the last known URL instead of throwing - because a
+     * probe failure must never block adding a feed. Connection errors and
+     * malformed input still throw.
+     * <p>
+     * This is the OVERRIDE SEAM for instrumented tests: with only the single
+     * {@link #RedirectDuplicateChecker(Provider)} constructor kept, test
+     * provider modules inject a network-free recording resolver by overriding
+     * this method in an anonymous subclass, so the fake probe flows through the
+     * exact same production wiring as the real one.
      *
      * @param url the URL to start resolving from
      * @return the final URL after following redirects
      * @throws IOException when a connection cannot be established or times out
      */
-    private String resolveRedirects(String url) throws IOException {
+    protected String resolveRedirects(String url) throws IOException {
         String currentUrl = url;
         if (!isSupportedScheme(currentUrl)) {
             return currentUrl;
@@ -152,16 +146,16 @@ public class RedirectDuplicateChecker {
         if (mAppContext != null) {
             sslSocketFactory = ExtendedTrustManager.createSslSocketFactory(mAppContext);
         }
-        for (int hop = 0; hop < MAX_REDIRECTS; hop++) {
+        for (int hop = 0; hop < RedirectFollower.MAX_REDIRECTS; hop++) {
             HttpURLConnection connection = openConnection(currentUrl, sslSocketFactory);
             int status = connection.getResponseCode();
-            if (!isRedirect(status)) {
+            if (!RedirectFollower.isRedirect(status)) {
                 connection.disconnect();
                 return currentUrl;
             }
-            String location = connection.getHeaderField(HEADER_LOCATION);
+            String location = connection.getHeaderField(RedirectFollower.HEADER_LOCATION);
             connection.disconnect();
-            String nextUrl = resolveLocation(currentUrl, location);
+            String nextUrl = RedirectFollower.resolveLocation(currentUrl, location);
             if (nextUrl == null) {
                 // No usable redirect target - the current URL is the best known destination
                 return currentUrl;
@@ -183,46 +177,6 @@ public class RedirectDuplicateChecker {
             ((HttpsURLConnection) connection).setSSLSocketFactory(sslSocketFactory);
         }
         return connection;
-    }
-
-    /**
-     * Resolves the Location header value against the current URL.
-     * Package-private for testing.
-     *
-     * @param baseUrl  the URL the redirect response came from
-     * @param location the raw Location header value, may be null or empty
-     * @return the absolute redirect target, or null when it cannot be resolved
-     * or does not use a supported scheme
-     */
-    static String resolveLocation(String baseUrl, String location) {
-        if (location == null || location.isEmpty()) {
-            return null;
-        }
-        try {
-            URI resolved = new URI(baseUrl.trim()).resolve(location.trim());
-            String scheme = resolved.getScheme();
-            if (!SCHEME_HTTP.equalsIgnoreCase(scheme) && !SCHEME_HTTPS.equalsIgnoreCase(scheme)) {
-                return null;
-            }
-            return resolved.toString();
-        } catch (Throwable throwable) {
-            return null;
-        }
-    }
-
-    /**
-     * Whether the status code is one of the followed redirect codes (301, 302, 303, 307, 308).
-     * Package-private for testing.
-     *
-     * @param statusCode the HTTP status code
-     * @return true when the status code is a followed redirect
-     */
-    static boolean isRedirect(int statusCode) {
-        return statusCode == HttpURLConnection.HTTP_MOVED_PERM
-                || statusCode == HttpURLConnection.HTTP_MOVED_TEMP
-                || statusCode == HttpURLConnection.HTTP_SEE_OTHER
-                || statusCode == 307
-                || statusCode == 308;
     }
 
     private static boolean isSupportedScheme(String url) {

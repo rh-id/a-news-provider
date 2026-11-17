@@ -41,6 +41,10 @@ dependencies {
     implementation libs.jsoup
 
     testImplementation libs.junit
+    // Volley's BaseHttpStack declares org.apache.http types in its signatures - JVM unit
+    // tests constructing any HurlStack subclass need them on the classpath (device
+    // builds never do)
+    testImplementation libs.httpcore
     testImplementation libs.kxml2
     androidTestImplementation libs.androidx.test.junit
     androidTestImplementation libs.espresso.core

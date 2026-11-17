@@ -35,6 +35,7 @@ import m.co.rh.id.a_news_provider.app.ui.component.settings.ReadingJustification
 import m.co.rh.id.a_news_provider.app.ui.component.settings.ReadingLineSpacingMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.RssSyncMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.StripTrackingParamsMenuSV;
+import m.co.rh.id.a_news_provider.app.ui.component.settings.SyncOnOpenMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.SwipeArticleNavigationMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.SwipeRowActionsMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.ThemeMenuSV;
@@ -72,6 +73,8 @@ public class SettingsPage extends StatefulView<Activity> implements RssSyncMenuS
         mStatefulViews = new ArrayList<>();
         mRssSyncMenuSV = new RssSyncMenuSV();
         mStatefulViews.add(mRssSyncMenuSV);
+        SyncOnOpenMenuSV syncOnOpenMenuSV = new SyncOnOpenMenuSV();
+        mStatefulViews.add(syncOnOpenMenuSV);
         AutoMarkReadMenuSV autoMarkReadMenuSV = new AutoMarkReadMenuSV();
         mStatefulViews.add(autoMarkReadMenuSV);
         KeepReadItemsMenuSV keepReadItemsMenuSV = new KeepReadItemsMenuSV();

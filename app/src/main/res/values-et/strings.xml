@@ -48,7 +48,6 @@
     <string name="log_file">Logifail</string>
     <string name="share_log_file">Jaga logifaili</string>
     <string name="error_sharing_log_file">Viga logifaili jagamisel</string>
-    <string name="error_failed_to_sync_some_rss">Mõnede RSS-voogude sünkroonimine ebaõnnestus</string>
     <string name="version">Versioon:</string>
     <string name="filter_by">Filtreeri:</string>
     <string name="error_failed_to_open_file">Faili avamine ebaõnnestus</string>
@@ -152,6 +151,10 @@
         <item quantity="one">Ka veel %d voog</item>
         <item quantity="other">Ka veel %d voogu</item>
     </plurals>
+    <plurals name="feed_sync_failed_count">
+        <item quantity="one">Voo sünkroonimine ebaõnnestus: %1$d/%2$d</item>
+        <item quantity="other">Voogude sünkroonimine ebaõnnestus: %1$d/%2$d</item>
+    </plurals>
     <string name="menu_search">Otsi</string>
     <string name="search_hint">Otsi artikleid…</string>
 
@@ -222,4 +225,6 @@
     <string name="audio_playback_failed">Heli esitamine ebaõnnestus</string>
     <string name="mini_player_close">Sulge minipleier</string>
     <string name="video_playback_failed">Video esitamine ebaõnnestus</string>
+    <string name="sync_on_app_open">Sünkrooni rakenduse avamisel</string>
+    <string name="sync_on_app_open_description">Vood laaditakse automaatselt rakenduse avamisel, mitte sagedamini kui iga 15 minuti järel</string>
 </resources>

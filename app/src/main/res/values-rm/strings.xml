@@ -48,7 +48,6 @@
     <string name="log_file">Dossier da log</string>
     <string name="share_log_file">Cundivider il dossier da log</string>
     <string name="error_sharing_log_file">Errur cun cundivider il dossier da log</string>
-    <string name="error_failed_to_sync_some_rss">Betg reussì da sincronisar intgins feeds RSS</string>
     <string name="version">Versiun:</string>
     <string name="filter_by">Filtrar tenor:</string>
     <string name="error_failed_to_open_file">Betg reussì da avrir il dossier</string>
@@ -152,6 +151,10 @@
         <item quantity="one">Er en %d feed</item>
         <item quantity="other">Er en %d feeds</item>
     </plurals>
+    <plurals name="feed_sync_failed_count">
+        <item quantity="one">Betg reussì da sincronisar %1$d da %2$d feed</item>
+        <item quantity="other">Betg reussì da sincronisar %1$d da %2$d feeds</item>
+    </plurals>
     <string name="menu_search">Tschertgar</string>
     <string name="search_hint">Tschertgar artitgels…</string>
 
@@ -222,4 +225,6 @@
     <string name="audio_playback_failed">Betg reussì da reproducir l\'audio</string>
     <string name="mini_player_close">Serrar il mini-player</string>
     <string name="video_playback_failed">Betg reussì da reproducir il video</string>
+    <string name="sync_on_app_open">Sincronisar cun avrir l\'app</string>
+    <string name="sync_on_app_open_description">Chargiar ils feeds automaticamain cun avrir l\'app, al max mintga 15 minutos</string>
 </resources>

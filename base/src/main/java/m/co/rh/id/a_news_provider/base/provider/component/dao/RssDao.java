@@ -6,6 +6,7 @@ import androidx.room.Insert;
 import androidx.room.Query;
 import androidx.room.RoomWarnings;
 import androidx.room.Transaction;
+import androidx.room.TypeConverters;
 import androidx.room.Update;
 
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.a_news_provider.base.model.ChannelUnreadCount;
 import m.co.rh.id.a_news_provider.base.model.KeyCount;
 import m.co.rh.id.a_news_provider.base.model.LinkCount;
+import m.co.rh.id.a_news_provider.base.room.converter.Converter;
 
 @Dao
 public abstract class RssDao {
@@ -1002,6 +1004,111 @@ public abstract class RssDao {
      */
     @Query("UPDATE rss_channel SET is_paused = :isPaused WHERE id = :channelId")
     public abstract void updateRssChannelIsPaused(long channelId, boolean isPaused);
+
+    /**
+     * Stamps the time of the last actual fetch attempt for the given channel
+     * (issue #50 sync-health tracking). Called by the sync worker right before
+     * the network request. Deliberately NOT called when a due sync is SKIPPED
+     * by the backoff: refreshing the stamp on skipped runs would self-extend
+     * the skip window, and a failing feed would then never become due again.
+     * The channel's updated_date_time is deliberately left untouched (same
+     * targeted-update convention as {@link #updateRssChannelIsPaused(long,
+     * boolean)}): the only writer that refreshes that stamp is a successful
+     * sync's full-row upsert {@link #upsertRssItemsForChannel(RssChannel, List)}.
+     * The method-level {@code @TypeConverters} brings the static Date converter
+     * into query-parameter scope (it is declared per-field on the entity, not
+     * database-wide).
+     * This method must be called on a background thread.
+     *
+     * @param channelId the channel id to update
+     * @param time      the attempt time to stamp
+     */
+    @TypeConverters({Converter.class})
+    @Query("UPDATE rss_channel SET last_sync_attempt_date_time = :time WHERE id = :channelId")
+    public abstract void markRssChannelSyncAttempted(long channelId, Date time);
+
+    /**
+     * Records a successful sync of the given channel (issue #50): resets the
+     * consecutive-failure counter and clears the failure observability fields,
+     * all in one targeted write. Called by the sync worker AFTER persist() -
+     * the full-row upsert must never write these columns (see the preserved
+     * set in RssRepository), so this explicit reset after the upsert is the
+     * single writer of the success state. All values are written SQL-side,
+     * never via a read-modify-write of the entity. The method-level {@code
+     * @TypeConverters} brings the static Date converter into query-parameter
+     * scope (it is declared per-field on the entity, not database-wide).
+     * This method must be called on a background thread.
+     *
+     * @param channelId the channel id to update
+     * @param time      the success time to stamp as the last attempt
+     */
+    @TypeConverters({Converter.class})
+    @Query("UPDATE rss_channel SET consecutive_failures = 0, last_http_status = NULL, last_error = NULL, last_sync_attempt_date_time = :time WHERE id = :channelId")
+    public abstract void markRssChannelSyncSuccess(long channelId, Date time);
+
+    /**
+     * Records a failed sync of the given channel (issue #50): increments the
+     * consecutive-failure counter and stores the failure observability fields,
+     * all in one targeted write. The increment MUST stay SQL-side
+     * ({@code consecutive_failures = consecutive_failures + 1}), never a
+     * read-modify-write of the entity: a read-modify-write would need to read
+     * the row first (an extra query) and races a concurrent writer between
+     * read and write, silently losing that writer's increment. {@code
+     * httpStatus} is null when the failure had no HTTP status (timeout,
+     * network error, parse error); {@code error} is the truncated (~200
+     * chars, caller's job) error message for the feed-health dashboard
+     * (issue #42). The method-level {@code @TypeConverters} brings the static
+     * Date converter into query-parameter scope (it is declared per-field on
+     * the entity, not database-wide).
+     * This method must be called on a background thread.
+     *
+     * @param channelId  the channel id to update
+     * @param httpStatus the observed HTTP status code, or null when none
+     * @param error      the truncated error message, or null when unknown
+     * @param time       the failure time to stamp as the last attempt
+     */
+    @TypeConverters({Converter.class})
+    @Query("UPDATE rss_channel SET consecutive_failures = consecutive_failures + 1, last_http_status = :httpStatus, last_error = :error, last_sync_attempt_date_time = :time WHERE id = :channelId")
+    public abstract void markRssChannelSyncFailure(long channelId, Integer httpStatus, String error, Date time);
+
+    /**
+     * Bumps the consecutive-failure counter by one WITHOUT touching any other
+     * column (issue #50). Sole caller: the sync worker's Retry-After
+     * counter-encoding - when a failure response carries a Retry-After hint
+     * longer than the exponential window the ordinary single increment (see
+     * {@link #markRssChannelSyncFailure(long, Integer, String, Date)}) will
+     * produce, the worker calls this in addition until the counter's backoff
+     * window covers the hint, encoding the server's "stay quiet until then"
+     * advice into the already-persisted schedule. Deliberately writes ONLY the
+     * counter: last_http_status and last_error must keep describing the REAL
+     * failure (the counter is a skip schedule, not a judge), and
+     * last_sync_attempt_date_time was already stamped by the failure call, so
+     * a second write must not move it again. The increment stays SQL-side
+     * ({@code consecutive_failures = consecutive_failures + 1}) for the same
+     * read-modify-write race reason as the failure method above. This method
+     * must be called on a background thread.
+     *
+     * @param channelId the channel id to update
+     */
+    @Query("UPDATE rss_channel SET consecutive_failures = consecutive_failures + 1 WHERE id = :channelId")
+    public abstract void incrementRssChannelSyncFailure(long channelId);
+
+    /**
+     * Re-points the given channel to a new URL after a user edit (issue #50).
+     * Deliberately minimal - only the url column is written, the
+     * caller decides about updatedDateTime (it holds the full entity). This
+     * follows the targeted-update convention of {@link
+     * #updateRssChannelIsPaused(long, boolean)}: the DAO convention stamps
+     * updated_date_time only on the full-row channel write of a successful
+     * sync ({@link #upsertRssItemsForChannel(RssChannel, List)}), so a URL
+     * edit never masquerades as a feed update.
+     * This method must be called on a background thread.
+     *
+     * @param channelId the channel id to update
+     * @param url       the new feed URL
+     */
+    @Query("UPDATE rss_channel SET url = :url WHERE id = :channelId")
+    public abstract void updateRssChannelUrl(long channelId, String url);
 
     /**
      * Finds all rss items matching the given link, regardless of channel.

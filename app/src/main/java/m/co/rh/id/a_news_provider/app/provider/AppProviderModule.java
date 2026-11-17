@@ -22,6 +22,7 @@ import m.co.rh.id.a_news_provider.app.provider.component.notifier.RssChannelStat
 import m.co.rh.id.a_news_provider.app.provider.component.parser.OpmlParser;
 import m.co.rh.id.a_news_provider.app.provider.component.playback.MiniPlayerBarController;
 import m.co.rh.id.a_news_provider.app.provider.component.playback.PlaybackManager;
+import m.co.rh.id.a_news_provider.app.provider.component.repository.PermanentRedirectGuard;
 import m.co.rh.id.a_news_provider.app.provider.component.repository.RssRepository;
 import m.co.rh.id.a_news_provider.app.provider.component.service.RssService;
 import m.co.rh.id.a_news_provider.app.ui.page.DonationsPage;
@@ -71,6 +72,9 @@ public class AppProviderModule implements ProviderModule {
         providerRegistry.registerAsync(RssChannelStateNotifier.class, () -> new RssChannelStateNotifier(provider));
         providerRegistry.registerLazy(OpmlParser.class, () -> new OpmlParser(provider));
         providerRegistry.registerLazy(RssRepository.class, () -> new RssRepository(provider));
+        // shared sync+add duplicate guard for the permanent-redirect url rewrite
+        // (issue #50) - one decision for both persist call sites
+        providerRegistry.registerLazy(PermanentRedirectGuard.class, () -> new PermanentRedirectGuard(provider));
         providerRegistry.registerLazy(RssService.class, () -> new RssService(provider));
         providerRegistry.registerLazy(UrlNormalizer.class, UrlNormalizer::new);
         providerRegistry.registerLazy(RssTitleNormalizer.class, RssTitleNormalizer::new);

@@ -50,7 +50,6 @@
     <string name="log_file">日志文件</string>
     <string name="share_log_file">分享日志文件</string>
     <string name="error_sharing_log_file">分享日志文件出错</string>
-    <string name="error_failed_to_sync_some_rss">部分 RSS 同步失败</string>
     <string name="version">版本：</string>
     <string name="filter_by">筛选：</string>
     <string name="error_failed_to_open_file">无法打开文件</string>
@@ -147,6 +146,9 @@
     <plurals name="also_in_n_feeds">
         <item quantity="other">另见 %d 个订阅源</item>
     </plurals>
+    <plurals name="feed_sync_failed_count">
+        <item quantity="other">%1$d 个订阅源（共 %2$d 个）同步失败</item>
+    </plurals>
     <string name="menu_search">搜索</string>
     <string name="search_hint">搜索文章…</string>
 
@@ -217,4 +219,6 @@
     <string name="audio_playback_failed">音频播放失败</string>
     <string name="mini_player_close">关闭迷你播放器</string>
     <string name="video_playback_failed">视频播放失败</string>
+    <string name="sync_on_app_open">打开应用时同步</string>
+    <string name="sync_on_app_open_description">打开应用时自动抓取订阅源，最多每 15 分钟一次</string>
 </resources>

@@ -28,7 +28,8 @@ import static org.junit.Assert.assertTrue;
  * (issue #51), the auto mark-read retention window (issue #47), the keep-read-items
  * retention window (issue #37), the four reading-typography preferences (issue #29),
  * the open-links mode preference (issue #35), the duplicate-story collapsing
- * preference (issue #45) and the volume-key navigation preference (issue #60):
+ * preference (issue #45), the volume-key navigation preference (issue #60) and
+ * the sync-on-open preference plus its last-sync-request stamp (issue #50):
  * asserts the fresh-install defaults, the set/get round-trip
  * of each new field, that every Flowable replays its current value and emits on
  * change, and that state persists through a fresh provider instance (re-read from
@@ -474,6 +475,79 @@ public class AppSharedPreferencesTest {
         mProvider = Provider.createProvider(mContext, new PrefsTestProviderModule());
         AppSharedPreferences reloaded = mProvider.get(AppSharedPreferences.class);
         assertFalse(reloaded.isVolumeKeyNavigationEnabled());
+    }
+
+    // ========================================================================
+    // sync on open + last sync request stamp (issue #50)
+    //
+    // "Sync when app opens" (default ON, the 15-minute debounce makes the
+    // cost acceptable) and the plain lastSyncRequestMillis stamp the sync
+    // command writes on every request (no subject: nothing observes it
+    // reactively, HomePage only polls it through the debounce gate).
+    // ========================================================================
+
+    @Test
+    public void testSyncOnAppOpenFreshInstallDefault() {
+        assertTrue("Sync on app open must default to ON",
+                mAppSharedPreferences.isSyncOnAppOpen());
+    }
+
+    @Test
+    public void testSyncOnAppOpenRoundTrip() {
+        mAppSharedPreferences.setSyncOnAppOpen(false);
+        assertFalse(mAppSharedPreferences.isSyncOnAppOpen());
+        mAppSharedPreferences.setSyncOnAppOpen(true);
+        assertTrue(mAppSharedPreferences.isSyncOnAppOpen());
+    }
+
+    @Test
+    public void testSyncOnAppOpenFlowEmitsUpdates() {
+        TestSubscriber<Boolean> testSubscriber =
+                mAppSharedPreferences.getIsSyncOnAppOpenFlow().test();
+
+        // SerialBehaviorSubject replays the current value on subscribe
+        assertEquals(Boolean.TRUE, testSubscriber.values().get(0));
+
+        mAppSharedPreferences.setSyncOnAppOpen(false);
+
+        testSubscriber.assertValueCount(2);
+        assertEquals(Boolean.FALSE, testSubscriber.values().get(1));
+    }
+
+    @Test
+    public void testSyncOnAppOpenSurvivesNewProviderInstance() {
+        mAppSharedPreferences.setSyncOnAppOpen(false);
+        // the setter persists synchronously via the direct executor, so the write
+        // has landed before dispose() runs
+        mProvider.dispose();
+        mProvider = Provider.createProvider(mContext, new PrefsTestProviderModule());
+        AppSharedPreferences reloaded = mProvider.get(AppSharedPreferences.class);
+        assertFalse(reloaded.isSyncOnAppOpen());
+    }
+
+    @Test
+    public void testLastSyncRequestMillisFreshInstallDefault() {
+        assertEquals("Never-requested must read as 0",
+                0L, mAppSharedPreferences.getLastSyncRequestMillis());
+    }
+
+    @Test
+    public void testLastSyncRequestMillisRoundTrip() {
+        mAppSharedPreferences.setLastSyncRequestMillis(1_000L);
+        assertEquals(1_000L, mAppSharedPreferences.getLastSyncRequestMillis());
+        mAppSharedPreferences.setLastSyncRequestMillis(1_700_000_000_000L);
+        assertEquals(1_700_000_000_000L, mAppSharedPreferences.getLastSyncRequestMillis());
+    }
+
+    @Test
+    public void testLastSyncRequestMillisSurvivesNewProviderInstance() {
+        mAppSharedPreferences.setLastSyncRequestMillis(1_700_000_000_000L);
+        // the setter persists synchronously via the direct executor, so the write
+        // has landed before dispose() runs
+        mProvider.dispose();
+        mProvider = Provider.createProvider(mContext, new PrefsTestProviderModule());
+        AppSharedPreferences reloaded = mProvider.get(AppSharedPreferences.class);
+        assertEquals(1_700_000_000_000L, reloaded.getLastSyncRequestMillis());
     }
 
     private static class PrefsTestProviderModule implements ProviderModule {

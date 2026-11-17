@@ -12,6 +12,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 
 import io.reactivex.rxjava3.observers.TestObserver;
@@ -20,10 +21,8 @@ import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.workmanager.ConstantsKey;
 import m.co.rh.id.a_news_provider.base.provider.component.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
-import m.co.rh.id.a_news_provider.base.util.UrlNormalizer;
 import m.co.rh.id.a_news_provider.provider.IntegrationTestAppProviderModule;
 import m.co.rh.id.a_news_provider.test.FakeWorkManager;
-import m.co.rh.id.a_news_provider.test.NoOpLogger;
 import m.co.rh.id.a_news_provider.test.TestApplication;
 import m.co.rh.id.a_news_provider.test.util.DirectExecutorService;
 import m.co.rh.id.a_news_provider.test.util.ProviderDbRule;
@@ -324,13 +323,15 @@ public class NewRssChannelCmdTest {
 
     /**
      * Wraps {@link IntegrationTestAppProviderModule} and registers the WorkManager
-     * double plus a fake-resolver {@link RedirectDuplicateChecker} FIRST: DefaultProvider
-     * throws on duplicate registrations, and with setSkipSameType(true) it keeps the
-     * FIRST registration - so the doubles win and the wrapped module's real WorkManager
-     * and real (network-resolving) checker registrations are skipped. The fake resolver
-     * records every probe call and never touches the network. The direct (same-thread)
-     * ExecutorService registered first wins the same way, so commands complete
-     * synchronously inside .test().
+     * double plus a network-free {@link RedirectDuplicateChecker} override FIRST:
+     * DefaultProvider throws on duplicate registrations, and with setSkipSameType(true)
+     * it keeps the FIRST registration - so the doubles win and the wrapped module's
+     * real WorkManager and real (network-resolving) checker registrations are skipped.
+     * The checker is the production (Provider) constructor with an anonymous subclass
+     * overriding {@code resolveRedirects} to delegate to a {@link RecordingRedirectResolver}
+     * that records every probe call and never touches the network. The direct
+     * (same-thread) ExecutorService registered first wins the same way, so commands
+     * complete synchronously inside .test().
      */
     private static class WorkManagerOverrideProviderModule implements ProviderModule {
         private final Application mApplication;
@@ -352,11 +353,12 @@ public class NewRssChannelCmdTest {
             providerRegistry.register(ExecutorService.class, DirectExecutorService::new);
             providerRegistry.registerLazy(WorkManager.class, () -> mWorkManager);
             providerRegistry.registerLazy(RedirectDuplicateChecker.class, () ->
-                    new RedirectDuplicateChecker(mApplication,
-                            provider.get(RssDao.class),
-                            new UrlNormalizer(),
-                            new NoOpLogger(),
-                            mRecordingResolver));
+                    new RedirectDuplicateChecker(provider) {
+                        @Override
+                        protected String resolveRedirects(String url) throws IOException {
+                            return mRecordingResolver.apply(url);
+                        }
+                    });
             providerRegistry.setSkipSameType(true);
             providerRegistry.registerModule(new IntegrationTestAppProviderModule(
                     mApplication, mDbName));

@@ -17,7 +17,7 @@ public class DbMigration {
         return new Migration[]{MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4,
                 MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
                 MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13,
-                MIGRATION_13_14, MIGRATION_14_15};
+                MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16};
     }
 
     public static final Migration MIGRATION_1_2 = new Migration(1, 2) {
@@ -204,6 +204,38 @@ public class DbMigration {
         @Override
         public void migrate(SupportSQLiteDatabase database) {
             database.execSQL("ALTER TABLE `rss_item` ADD COLUMN `media_audio` TEXT");
+        }
+    };
+
+    /**
+     * Adds the per-feed sync-health columns to rss_channel (issue #50),
+     * backing the sync backoff skip window and the future feed-health dashboard
+     * (issue #42). Defaults and nullability follow this file's per-migration
+     * convention: the failure counter is NOT NULL DEFAULT 0 so every migrated
+     * channel starts healthy (same shape as MIGRATION_9_10's is_paused), while
+     * the observability columns (last HTTP status, last attempt time, last
+     * error) are nullable with no default - rows migrated before this migration
+     * simply have no recorded attempt yet, and their next real sync stamps
+     * them; there is deliberately NO backfill (same rationale as
+     * MIGRATION_10_11's categories).
+     * <p>
+     * Room 2.7.2 does not wrap {@link Migration#migrate(SupportSQLiteDatabase)}
+     * in a transaction, so the transaction is created explicitly to keep the
+     * four column additions atomic (same pattern as MIGRATION_8_9).
+     */
+    public static final Migration MIGRATION_15_16 = new Migration(15, 16) {
+        @Override
+        public void migrate(SupportSQLiteDatabase db) {
+            db.beginTransaction();
+            try {
+                db.execSQL("ALTER TABLE `rss_channel` ADD COLUMN `consecutive_failures` INTEGER NOT NULL DEFAULT 0");
+                db.execSQL("ALTER TABLE `rss_channel` ADD COLUMN `last_http_status` INTEGER");
+                db.execSQL("ALTER TABLE `rss_channel` ADD COLUMN `last_sync_attempt_date_time` INTEGER");
+                db.execSQL("ALTER TABLE `rss_channel` ADD COLUMN `last_error` TEXT");
+                db.setTransactionSuccessful();
+            } finally {
+                db.endTransaction();
+            }
         }
     };
 

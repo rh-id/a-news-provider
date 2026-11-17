@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 import m.co.rh.id.a_news_provider.R;
 import m.co.rh.id.a_news_provider.app.provider.component.notifier.RssChangeNotifier;
+import m.co.rh.id.a_news_provider.app.provider.component.repository.PermanentRedirectGuard;
 import m.co.rh.id.a_news_provider.app.provider.component.repository.RssRepository;
 import m.co.rh.id.a_news_provider.base.BaseApplication;
 import m.co.rh.id.a_news_provider.base.model.RssModel;
@@ -48,6 +49,15 @@ public class NewRssWorker extends Worker {
         requestQueue.add(rssRequest);
         try {
             RssModel rssModel = requestFuture.get(15, TimeUnit.SECONDS);
+            // permanent-redirect duplicate guard (issue #50), BEFORE
+            // persist: the add path has no existing row yet, so ANY channel
+            // already owning the final url is a collision and the outcome is
+            // cleared - the feed keeps its original url. This covers the two
+            // holes the add-time redirect probe cannot: the probe fails OPEN
+            // on transient errors, and OPML bulk import can enqueue both the
+            // redirector and its target. A guard failure (DAO error) fails
+            // closed through the catch below like any other fetch failure.
+            provider.get(PermanentRedirectGuard.class).applyGuard(null, rssModel);
             RssModel persisted = rssRepository.persist(rssModel);
             rssChangeNotifier.liveNewRssModel(persisted);
 

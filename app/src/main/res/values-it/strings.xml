@@ -48,7 +48,6 @@
     <string name="log_file">File di registro</string>
     <string name="share_log_file">Condividi file di registro</string>
     <string name="error_sharing_log_file">Errore nella condivisione del file di registro</string>
-    <string name="error_failed_to_sync_some_rss">Sincronizzazione di alcuni feed RSS non riuscita</string>
     <string name="version">Versione:</string>
     <string name="filter_by">Filtra per:</string>
     <string name="error_failed_to_open_file">Apertura del file non riuscita</string>
@@ -157,6 +156,11 @@
         <item quantity="many">Anche in %d feed</item>
         <item quantity="other">Anche in %d feed</item>
     </plurals>
+    <plurals name="feed_sync_failed_count">
+        <item quantity="one">Sincronizzazione di %1$d feed su %2$d non riuscita</item>
+        <item quantity="many">Sincronizzazione di %1$d feed su %2$d non riuscita</item>
+        <item quantity="other">Sincronizzazione di %1$d feed su %2$d non riuscita</item>
+    </plurals>
     <string name="menu_search">Cerca</string>
     <string name="search_hint">Cerca articoli…</string>
 
@@ -227,4 +231,6 @@
     <string name="audio_playback_failed">Riproduzione audio non riuscita</string>
     <string name="mini_player_close">Chiudi mini player</string>
     <string name="video_playback_failed">Riproduzione video non riuscita</string>
+    <string name="sync_on_app_open">Sincronizza all\'apertura dell\'app</string>
+    <string name="sync_on_app_open_description">Recupera i feed automaticamente all\'apertura dell\'app, al massimo ogni 15 minuti</string>
 </resources>

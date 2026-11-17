@@ -48,7 +48,6 @@
     <string name="log_file">Protokolldatei</string>
     <string name="share_log_file">Protokolldatei teilen</string>
     <string name="error_sharing_log_file">Fehler beim Teilen der Protokolldatei</string>
-    <string name="error_failed_to_sync_some_rss">Einige RSS-Feeds konnten nicht synchronisiert werden</string>
     <string name="version">Version:</string>
     <string name="filter_by">Filtern nach:</string>
     <string name="error_failed_to_open_file">Datei konnte nicht geöffnet werden</string>
@@ -152,6 +151,10 @@
         <item quantity="one">Auch in %d Feed</item>
         <item quantity="other">Auch in %d Feeds</item>
     </plurals>
+    <plurals name="feed_sync_failed_count">
+        <item quantity="one">%1$d von %2$d Feed konnte nicht synchronisiert werden</item>
+        <item quantity="other">%1$d von %2$d Feeds konnten nicht synchronisiert werden</item>
+    </plurals>
     <string name="menu_search">Suchen</string>
     <string name="search_hint">Artikel suchen…</string>
 
@@ -222,4 +225,6 @@
     <string name="audio_playback_failed">Audio-Wiedergabe fehlgeschlagen</string>
     <string name="mini_player_close">Mini-Player schließen</string>
     <string name="video_playback_failed">Video-Wiedergabe fehlgeschlagen</string>
+    <string name="sync_on_app_open">Synchronisieren beim Öffnen der App</string>
+    <string name="sync_on_app_open_description">Feeds automatisch beim Öffnen der App laden, höchstens alle 15 Minuten</string>
 </resources>

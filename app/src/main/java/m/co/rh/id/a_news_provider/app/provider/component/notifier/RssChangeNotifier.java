@@ -10,15 +10,17 @@ import io.reactivex.rxjava3.subjects.PublishSubject;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.a_news_provider.base.model.RssModel;
+import m.co.rh.id.a_news_provider.base.model.SyncResult;
 
 /**
  * A hub for RSS change events. Emits events when RSS models are added, synced, or updated,
  * when RSS items are marked as read (user-initiated via
  * {@link #itemsMarkedRead(Long)} or auto-aged by the unread retention window via
  * {@link #itemsMarkedReadAuto(Long)}), when the read-item retention window prunes
- * the archive (auto, via {@link #itemsPrunedAuto(Long)}), and when an article's
+ * the archive (auto, via {@link #itemsPrunedAuto(Long)}), when an article's
  * full-text content was fetched and cached (issue #28, via
- * {@link #articleContentUpdated(String)}).
+ * {@link #articleContentUpdated(String)}), and when a sync run ends with a
+ * per-channel success/failure summary (issue #50, via {@link #syncSummary(SyncResult)}).
  */
 public class RssChangeNotifier {
     private final PublishSubject<Optional<RssModel>> mAddedRssModelPublishSubject;
@@ -30,6 +32,7 @@ public class RssChangeNotifier {
     private final PublishSubject<Optional<Long>> mItemsMarkedReadAutoSubject;
     private final PublishSubject<Optional<Long>> mItemsPrunedAutoSubject;
     private final PublishSubject<String> mArticleContentUpdatedSubject;
+    private final PublishSubject<SyncResult> mSyncSummarySubject;
 
     public RssChangeNotifier() {
         mAddedRssModelPublishSubject = PublishSubject.create();
@@ -41,6 +44,7 @@ public class RssChangeNotifier {
         mItemsMarkedReadAutoSubject = PublishSubject.create();
         mItemsPrunedAutoSubject = PublishSubject.create();
         mArticleContentUpdatedSubject = PublishSubject.create();
+        mSyncSummarySubject = PublishSubject.create();
     }
 
     /**
@@ -144,6 +148,21 @@ public class RssChangeNotifier {
     }
 
     /**
+     * Emits the per-channel success/failure summary of one finished sync run
+     * (issue #50). Raised directly by RssSyncWorker at the end of doWork()
+     * (worker-emits-directly, same precedent as the auto mark-read event the
+     * worker raises via {@code autoMarkOldItemsRead}) so UI consumers can show
+     * honest sync feedback - the old unconditional "Feed sync success" toast
+     * fired even when every channel failed. Nothing is emitted for an empty
+     * run (no channel attempted): the worker simply never calls this.
+     *
+     * @param syncResult the summary of the finished sync run
+     */
+    public void syncSummary(SyncResult syncResult) {
+        mSyncSummarySubject.onNext(syncResult);
+    }
+
+    /**
      * Provides a Flowable stream of new RSS model events.
      *
      * @return Flowable that emits optional RSS models
@@ -223,5 +242,15 @@ public class RssChangeNotifier {
      */
     public Flowable<String> getArticleContentUpdated() {
         return Flowable.fromObservable(mArticleContentUpdatedSubject, BackpressureStrategy.BUFFER);
+    }
+
+    /**
+     * Provides a Flowable stream of sync summary events (issue #50).
+     *
+     * @return Flowable that emits the {@link SyncResult} of each finished sync
+     * run that attempted at least one channel
+     */
+    public Flowable<SyncResult> liveSyncSummary() {
+        return Flowable.fromObservable(mSyncSummarySubject, BackpressureStrategy.BUFFER);
     }
 }

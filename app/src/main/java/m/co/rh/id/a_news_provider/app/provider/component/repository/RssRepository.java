@@ -59,6 +59,19 @@ public class RssRepository {
      * {@link RssDao#upsertRssItemsForChannel(RssChannel, List)} for the full retention semantics.
      * (The upsert is itself a nested @Transaction - Room transactions re-enter on the same
      * thread, the inner one joins the outer one.)
+     * <p>
+     * Permanent-redirect URL rewrite (issue #50): when the parsed model
+     * carries a redirect outcome (a different final url AND a permanent last
+     * hop, set by RssRequest from the recording stack), the url WRITTEN to the
+     * row is the normalized final url instead of the request url - while the
+     * row is still MATCHED by the request (original) url. Identity and write
+     * are therefore decoupled inside the single transaction: the stored row
+     * keeps its id/history and adopts the address the server permanently moved
+     * to, with no second UPDATE after persist. The worker owns the decision
+     * (it runs the duplicate guard against the final url and clears the
+     * outcome on a collision), so persist honors the model's fields verbatim;
+     * models without the outcome (all call sites, cache-served
+     * responses) behave exactly as before.
      * This method must be called on a background thread.
      *
      * @param parsed the parsed RSS feed model from the network response
@@ -69,10 +82,13 @@ public class RssRepository {
         RssChannel responseRssChannel = parsed.getRssChannel();
         String originalUrl = responseRssChannel.url;
         String normalizedUrl = mUrlNormalizer.normalizeUrl(originalUrl);
+        // The match key stays the ORIGINAL request url (identity of the stored
+        // row); the WRITE url below may adopt the permanently redirected target
+        String writeUrl = resolveWriteUrl(parsed, originalUrl, normalizedUrl);
         return mAppDatabase.runInTransaction(() -> {
             // Match both the raw and normalized URL variants so legacy un-normalized rows are found
             RssChannel rssChannel = mRssDao.findRssChannelByUrlVariants(originalUrl, normalizedUrl);
-            responseRssChannel.url = normalizedUrl;
+            responseRssChannel.url = writeUrl;
             if (rssChannel == null) {
                 // New channel - insert directly, with dedup keys assigned first so
                 // every inserted row is born carrying its cluster key
@@ -91,14 +107,49 @@ public class RssRepository {
     }
 
     /**
+     * Resolves the url persisted onto the parsed channel: the normalized
+     * request url, EXCEPT when the model carries a permanent-redirect outcome
+     * (issue #50) - then the normalized FINAL url, so the redirect
+     * lands in the same transaction as the ordinary sync write. The outcome is
+     * guarded upstream (RssSyncWorker clears it when the final url belongs to
+     * another channel), so no duplicate check happens here; without the
+     * outcome the original normalization applies unchanged.
+     */
+    private String resolveWriteUrl(RssModel parsed, String originalUrl, String normalizedUrl) {
+        String finalUrl = parsed.getFinalUrl();
+        if (finalUrl != null && parsed.isPermanentRedirect()) {
+            return mUrlNormalizer.normalizeUrl(finalUrl);
+        }
+        return normalizedUrl;
+    }
+
+    /**
      * Copies preserved fields from existing DB channel to parsed channel.
-     * Preserves: id, feedName, createdDateTime, updatedDateTime
+     * Preserves: id, feedName, createdDateTime, updatedDateTime, and the
+     * per-feed sync-health fields consecutiveFailures, lastHttpStatus,
+     * lastSyncAttemptDateTime, lastError (issue #50). The sync-health fields
+     * are part of the preserved set because the parsed response channel never
+     * carries meaningful values for them - the parser knows nothing about sync
+     * health - so a full-row upsert of the parsed channel would overwrite the
+     * stored failure state with fresh defaults on every successful sync. The
+     * net write order per sync run: the worker stamps the attempt, then on
+     * failure writes the failure state via
+     * {@link RssDao#markRssChannelSyncFailure(long, Integer, String, java.util.Date)};
+     * on success it runs persist() (this upsert, which now leaves the health
+     * columns untouched) and THEN explicitly resets the health state via
+     * {@link RssDao#markRssChannelSyncSuccess(long, java.util.Date)}. The worker's
+     * targeted writes - never this upsert - are the single source of truth
+     * for the sync-health columns.
      */
     private void copyPreservedFields(RssChannel fromDb, RssChannel toUpdate) {
         toUpdate.id = fromDb.id;
         toUpdate.feedName = fromDb.feedName;
         toUpdate.createdDateTime = fromDb.createdDateTime;
         toUpdate.updatedDateTime = fromDb.updatedDateTime;
+        toUpdate.consecutiveFailures = fromDb.consecutiveFailures;
+        toUpdate.lastHttpStatus = fromDb.lastHttpStatus;
+        toUpdate.lastSyncAttemptDateTime = fromDb.lastSyncAttemptDateTime;
+        toUpdate.lastError = fromDb.lastError;
     }
 
     /**

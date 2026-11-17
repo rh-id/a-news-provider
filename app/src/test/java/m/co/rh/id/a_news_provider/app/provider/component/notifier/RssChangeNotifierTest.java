@@ -6,6 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,7 @@ import m.co.rh.id.a_news_provider.app.provider.component.repository.RssRepositor
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.a_news_provider.base.model.RssModel;
+import m.co.rh.id.a_news_provider.base.model.SyncResult;
 import m.co.rh.id.a_news_provider.test.util.DirectExecutorService;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.aprovider.Provider;
@@ -317,6 +319,27 @@ public class RssChangeNotifierTest {
         assertEquals(Long.valueOf(1L), pruneSubscriber.values().get(0).orElse(null));
         autoMarkSubscriber.assertValueCount(0);
         userInitiatedSubscriber.assertValueCount(0);
+    }
+
+    @Test
+    public void testSyncSummaryEmitsValue() {
+        RssChangeNotifier notifier = new RssChangeNotifier();
+
+        TestSubscriber<SyncResult> testSubscriber = notifier.liveSyncSummary().test();
+
+        SyncResult.FailedChannel failedChannel = new SyncResult.FailedChannel(
+                1L, "Test Channel", "https://example.com/feed",
+                429, "HTTP 429 Too Many Requests", "30");
+        SyncResult syncResult = new SyncResult(2, 1, 1, 0,
+                1700000000000L, Collections.singletonList(failedChannel));
+
+        notifier.syncSummary(syncResult);
+
+        testSubscriber.assertValueCount(1);
+        assertEquals(syncResult, testSubscriber.values().get(0));
+        assertEquals(1, testSubscriber.values().get(0).getFailed());
+        assertEquals(429, testSubscriber.values().get(0)
+                .getFailedChannels().get(0).getHttpStatus().intValue());
     }
 
     // ==================================================================================

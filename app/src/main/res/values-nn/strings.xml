@@ -48,7 +48,6 @@
     <string name="log_file">Loggfil</string>
     <string name="share_log_file">Del loggfil</string>
     <string name="error_sharing_log_file">Feil ved deling av loggfil</string>
-    <string name="error_failed_to_sync_some_rss">Klarte ikkje å synkronisera nokre RSS-straumar</string>
     <string name="version">Versjon:</string>
     <string name="filter_by">Filtrer etter:</string>
     <string name="error_failed_to_open_file">Klarte ikkje å opna fil</string>
@@ -152,6 +151,10 @@
         <item quantity="one">Også i %d strøm</item>
         <item quantity="other">Også i %d strøymer</item>
     </plurals>
+    <plurals name="feed_sync_failed_count">
+        <item quantity="one">Klarte ikkje å synkronisera %1$d av %2$d straum</item>
+        <item quantity="other">Klarte ikkje å synkronisera %1$d av %2$d straumar</item>
+    </plurals>
     <string name="menu_search">Søk</string>
     <string name="search_hint">Søk etter artiklar…</string>
 
@@ -222,4 +225,6 @@
     <string name="audio_playback_failed">Klarte ikkje å spela av lyd</string>
     <string name="mini_player_close">Lukk minispelaren</string>
     <string name="video_playback_failed">Klarte ikkje å spela av video</string>
+    <string name="sync_on_app_open">Synkroniser når appen blir opna</string>
+    <string name="sync_on_app_open_description">Hentar straumar automatisk når appen blir opna, høgst kvart 15. minutt</string>
 </resources>

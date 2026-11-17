@@ -50,11 +50,13 @@ import m.co.rh.id.a_news_provider.app.ui.component.rss.NewRssChannelSVDialog;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.RssChannelListSV;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.RssItemListSV;
 import m.co.rh.id.a_news_provider.app.util.NotificationPermissionPolicy;
+import m.co.rh.id.a_news_provider.app.util.SyncOnOpenPolicy;
 import m.co.rh.id.a_news_provider.app.util.UiUtils;
 import m.co.rh.id.a_news_provider.base.provider.component.AppSharedPreferences;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
 import m.co.rh.id.a_news_provider.base.model.RssModel;
+import m.co.rh.id.a_news_provider.base.model.SyncResult;
 import m.co.rh.id.a_news_provider.base.provider.component.notifier.DeviceStatusNotifier;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.NavRoute;
@@ -200,15 +202,53 @@ public class HomePage extends StatefulView<Activity> implements RequireComponent
                 mSyncRssCmd.syncedRss()
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(rssModels -> {
+                                    // the only feedback for THIS emission is the
+                                    // TalkBack announcement; success/failure
+                                    // feedback is driven by the sync summary
+                                    // event (rssChangeNotifier.syncSummary)
+                                    // which knows the per-channel outcomes
                                     int newItemsCount = countNewSyncedItems(rssModels);
-                                    if (!rssModels.isEmpty()) {
-                                        Toast.makeText(context,
-                                                feedSyncSuccess
-                                                , Toast.LENGTH_LONG).show();
-                                    }
                                     if (newItemsCount > 0) {
                                         announceNewItems(newItemsCount);
                                     }
+                                },
+                                throwable ->
+                                        mLogger
+                                                .e(TAG, feedSyncError, throwable)
+                        )
+        );
+
+        mRxDisposer.add("rssChangeNotifier.syncSummary",
+                mRssChangeNotifier.liveSyncSummary()
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(syncResult -> {
+                                    // same window-focus guard as
+                                    // announceNewItems(...): the periodic
+                                    // background sync emits here too and must
+                                    // never pop UI into a detached window
+                                    if (!container.isAttachedToWindow()
+                                            || !container.hasWindowFocus()) {
+                                        return;
+                                    }
+                                    if (syncResult.getFailed() > 0) {
+                                        int failed = syncResult.getFailed();
+                                        String message = context.getResources()
+                                                .getQuantityString(
+                                                        R.plurals.feed_sync_failed_count,
+                                                        failed, failed, syncResult.getTotal());
+                                        Snackbar.make(container, message, Snackbar.LENGTH_LONG)
+                                                .setBackgroundTint(Color.RED)
+                                                .setTextColor(Color.WHITE)
+                                                .show();
+                                    } else if (syncResult.getOk() > 0) {
+                                        // light full-success feedback: failures
+                                        // take the prominent red Snackbar above
+                                        Toast.makeText(context,
+                                                feedSyncSuccess, Toast.LENGTH_SHORT).show();
+                                    }
+                                    // skipped is counted by the worker's backoff
+                                    // but intentionally not surfaced in
+                                    // this UI yet
                                 },
                                 throwable ->
                                         mLogger
@@ -558,6 +598,18 @@ public class HomePage extends StatefulView<Activity> implements RequireComponent
         if (!isTopRoute()) {
             return;
         }
+        promptNotificationPermissionIfNeeded();
+        maybeSyncOnAppOpen();
+    }
+
+    /**
+     * The passive POST_NOTIFICATIONS prompt, extracted verbatim from
+     * onNavActivityResumed when the sync-on-open trigger (issue #50)
+     * joined this hook: the prompt's session/in-flight/budget guards early-return
+     * their own block only, so the sync trigger below still runs on resumes the
+     * prompt skips (the overwhelming majority once the budget is consumed).
+     */
+    private void promptNotificationPermissionIfNeeded() {
         // ask at most once per app session, and never while a dialog is still in flight
         if (mNotificationPermissionPromptedThisSession || mNotificationPermissionInFlight) {
             return;
@@ -592,6 +644,34 @@ public class HomePage extends StatefulView<Activity> implements RequireComponent
                                 decideNotificationPermission(false);
                             }
                         }));
+    }
+
+    /**
+     * "Sync when app opens" trigger (issue #50): on a resume of the home
+     * page, enqueue the manual sync when the setting is on AND the last sync
+     * request is at least {@link SyncOnOpenPolicy#SYNC_ON_OPEN_DEBOUNCE_MILLIS}
+     * old (the pure debounce gate lives in SyncOnOpenPolicy, unit-tested
+     * separately). Consequences that are intentional:
+     * <ul>
+     * <li>the KEEP enqueue policy dedupes double-fires - a resume while the same
+     * unique sync work is pending/running adds nothing;</li>
+     * <li>the background periodic sync is unaffected - this never arms a wakeup,
+     * it only (sometimes) enqueues on an actual app open;</li>
+     * <li>the auto-trigger goes through the same SyncRssCmd.execute() path as the
+     * manual menu entry, so its failure Snackbar / success toast show - protected
+     * for detached windows by the window-focus guard on the
+     * syncSummary subscription;</li>
+     * <li>every resume within the debounce window is a cheap pref read only.</li>
+     * </ul>
+     */
+    private void maybeSyncOnAppOpen() {
+        boolean shouldSync = SyncOnOpenPolicy.shouldSyncOnOpen(
+                mAppSharedPreferences.isSyncOnAppOpen(),
+                mAppSharedPreferences.getLastSyncRequestMillis(),
+                System.currentTimeMillis());
+        if (shouldSync) {
+            mSyncRssCmd.execute();
+        }
     }
 
     @SuppressWarnings("rawtypes")

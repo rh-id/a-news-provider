@@ -552,6 +552,82 @@ public class DbMigrationTest {
     }
 
     // ==================================================================================
+    // MIGRATION_15_16: rss_channel per-feed sync-health columns for the sync
+    // backoff and the feed-health dashboard (issue #50)
+    // ==================================================================================
+
+    @Test
+    public void migrate15to16_addsSyncHealthColumnsDefaultedAndNullable() throws IOException {
+        // createDatabase builds the EXACT version-15 schema from the exported
+        // 15.json (no sync-health columns yet)
+        SupportSQLiteDatabase db = helper.createDatabase(TEST_DB, 15);
+        insertRssChannel(db, 1, "Flaky Feed", "https://flaky.com/feed");
+        insertRssChannel(db, 2, "Healthy Feed", "https://healthy.com/feed");
+        insertRssItem(db, 11, 1, "https://flaky.com/post-1", false, false);
+        db.close();
+
+        SupportSQLiteDatabase migrated = helper.runMigrationsAndValidate(TEST_DB, 16,
+                true, DbMigration.MIGRATION_15_16);
+
+        try {
+            // every migrated channel starts healthy: the failure counter is
+            // defaulted to 0, the observability columns have never seen an
+            // attempt (NULL - no backfill by convention)
+            assertEquals(0, readLong(migrated,
+                    "SELECT consecutive_failures FROM rss_channel WHERE id = 1"));
+            assertNull(readString(migrated,
+                    "SELECT last_http_status FROM rss_channel WHERE id = 1"));
+            assertNull(readString(migrated,
+                    "SELECT last_sync_attempt_date_time FROM rss_channel WHERE id = 1"));
+            assertNull(readString(migrated,
+                    "SELECT last_error FROM rss_channel WHERE id = 1"));
+            // old data survived the migration untouched
+            assertEquals("Flaky Feed", readString(migrated,
+                    "SELECT feed_name FROM rss_channel WHERE id = 1"));
+            assertEquals("https://flaky.com/feed", readString(migrated,
+                    "SELECT url FROM rss_channel WHERE id = 1"));
+            assertEquals(0, readLong(migrated,
+                    "SELECT is_paused FROM rss_channel WHERE id = 1"));
+            assertEquals(1, readLong(migrated, "SELECT COUNT(id) FROM rss_item"));
+            assertEquals(0, readLong(migrated,
+                    "SELECT is_read FROM rss_item WHERE id = 11"));
+            // the new columns are writable: a failure record round-trips,
+            // including a non-null HTTP status and the attempt stamp
+            migrated.execSQL("UPDATE rss_channel SET consecutive_failures = 3, " +
+                    "last_http_status = 503, last_error = ?, " +
+                    "last_sync_attempt_date_time = ? WHERE id = 1",
+                    new Object[]{"HTTP 503: service unavailable", BASE_TIME});
+            assertEquals(3, readLong(migrated,
+                    "SELECT consecutive_failures FROM rss_channel WHERE id = 1"));
+            assertEquals(503, readLong(migrated,
+                    "SELECT last_http_status FROM rss_channel WHERE id = 1"));
+            assertEquals("HTTP 503: service unavailable", readString(migrated,
+                    "SELECT last_error FROM rss_channel WHERE id = 1"));
+            assertEquals(BASE_TIME, readLong(migrated,
+                    "SELECT last_sync_attempt_date_time FROM rss_channel WHERE id = 1"));
+            // a failure without an HTTP status (timeout/network/parse error)
+            // stores a null status fine
+            migrated.execSQL("UPDATE rss_channel SET last_http_status = NULL, " +
+                    "last_error = ? WHERE id = 2", new Object[]{"timeout"});
+            assertNull(readString(migrated,
+                    "SELECT last_http_status FROM rss_channel WHERE id = 2"));
+            assertEquals("timeout", readString(migrated,
+                    "SELECT last_error FROM rss_channel WHERE id = 2"));
+            // reset on success: the failure state clears back to the defaults
+            migrated.execSQL("UPDATE rss_channel SET consecutive_failures = 0, " +
+                    "last_http_status = NULL, last_error = NULL WHERE id = 1");
+            assertEquals(0, readLong(migrated,
+                    "SELECT consecutive_failures FROM rss_channel WHERE id = 1"));
+            assertNull(readString(migrated,
+                    "SELECT last_http_status FROM rss_channel WHERE id = 1"));
+            assertNull(readString(migrated,
+                    "SELECT last_error FROM rss_channel WHERE id = 1"));
+        } finally {
+            migrated.close();
+        }
+    }
+
+    // ==================================================================================
     // helpers: seed rows using the exact version-8 schema, read values after migration
     // ==================================================================================
 

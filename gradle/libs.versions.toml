@@ -19,6 +19,11 @@ recyclerview = "1.4.0"
 swiperefreshlayout = "1.2.0"
 leakcanary = "2.14"
 volley = "1.2.1"
+# JVM unit tests only: Volley's BaseHttpStack declares org.apache.http types in
+# its method signatures, so constructing any HurlStack on the JVM needs these
+# classes on the test classpath (device/ART resolves them lazily and never
+# needs them)
+httpcore = "4.4.16"
 jsoup = "1.24.1"
 photoview = "2.3.0"
 kxml2 = "2.3.0"
@@ -56,6 +61,7 @@ androidx-recyclerview = { group = "androidx.recyclerview", name = "recyclerview"
 androidx-swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefreshlayout" }
 leakcanary-plumber = { group = "com.squareup.leakcanary", name = "plumber-android", version.ref = "leakcanary" }
 volley = { group = "com.android.volley", name = "volley", version.ref = "volley" }
+httpcore = { group = "org.apache.httpcomponents", name = "httpcore", version.ref = "httpcore" }
 jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
 photoView = { group = "com.github.chrisbanes", name = "PhotoView", version.ref = "photoview" }
 kxml2 = { group = "net.sf.kxml", name = "kxml2", version.ref = "kxml2" }

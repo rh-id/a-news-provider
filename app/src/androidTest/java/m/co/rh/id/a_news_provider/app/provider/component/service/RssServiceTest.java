@@ -12,6 +12,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -19,10 +20,8 @@ import m.co.rh.id.a_news_provider.app.provider.command.RedirectDuplicateChecker;
 import m.co.rh.id.a_news_provider.app.workmanager.ConstantsKey;
 import m.co.rh.id.a_news_provider.base.provider.component.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
-import m.co.rh.id.a_news_provider.base.util.UrlNormalizer;
 import m.co.rh.id.a_news_provider.provider.IntegrationTestAppProviderModule;
 import m.co.rh.id.a_news_provider.test.FakeWorkManager;
-import m.co.rh.id.a_news_provider.test.NoOpLogger;
 import m.co.rh.id.a_news_provider.test.TestApplication;
 import m.co.rh.id.a_news_provider.test.util.ProviderDbRule;
 import m.co.rh.id.a_news_provider.test.util.RecordingRedirectResolver;
@@ -43,7 +42,8 @@ import static org.junit.Assert.assertTrue;
  * direct calls without any awaiting.
  * <p>
  * Module pattern from NewRssChannelCmdTest: a {@link FakeWorkManager} and a
- * fake-resolver {@link RedirectDuplicateChecker} (never touches the network) are
+ * network-free {@link RedirectDuplicateChecker} override (the production Provider
+ * constructor with a recording-resolver {@code resolveRedirects} override) are
  * registered BEFORE the wrapped test module, so with setSkipSameType(true) the
  * doubles win over the wrapped module's real (network-resolving) registrations.
  * The DAO-error fail-closed behavior is simulated by giving that test's provider
@@ -359,11 +359,13 @@ public class RssServiceTest {
 
     /**
      * Wraps {@link IntegrationTestAppProviderModule} and registers the WorkManager
-     * double plus a fake-resolver {@link RedirectDuplicateChecker} FIRST: DefaultProvider
-     * throws on duplicate registrations, and with setSkipSameType(true) it keeps the
-     * FIRST registration - so the doubles win and the wrapped module's real WorkManager
-     * and real (network-resolving) checker registrations are skipped. The fake resolver
-     * records every probe call and never touches the network.
+     * double plus a network-free {@link RedirectDuplicateChecker} override FIRST:
+     * DefaultProvider throws on duplicate registrations, and with setSkipSameType(true)
+     * it keeps the FIRST registration - so the doubles win and the wrapped module's
+     * real WorkManager and real (network-resolving) checker registrations are skipped.
+     * The checker is the production (Provider) constructor with an anonymous subclass
+     * overriding {@code resolveRedirects} to delegate to a {@link RecordingRedirectResolver}
+     * that records every probe call and never touches the network.
      */
     private static class ServiceOverrideProviderModule implements ProviderModule {
         private final Application mApplication;
@@ -384,11 +386,12 @@ public class RssServiceTest {
         public void provides(ProviderRegistry providerRegistry, Provider provider) {
             providerRegistry.registerLazy(WorkManager.class, () -> mWorkManager);
             providerRegistry.registerLazy(RedirectDuplicateChecker.class, () ->
-                    new RedirectDuplicateChecker(mApplication,
-                            provider.get(RssDao.class),
-                            new UrlNormalizer(),
-                            new NoOpLogger(),
-                            mRecordingResolver));
+                    new RedirectDuplicateChecker(provider) {
+                        @Override
+                        protected String resolveRedirects(String url) throws IOException {
+                            return mRecordingResolver.apply(url);
+                        }
+                    });
             providerRegistry.setSkipSameType(true);
             providerRegistry.registerModule(new IntegrationTestAppProviderModule(
                     mApplication, mDbName));

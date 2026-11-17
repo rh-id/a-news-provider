@@ -48,7 +48,6 @@
     <string name="log_file">Annálaskrá</string>
     <string name="share_log_file">Deila annálaskrá</string>
     <string name="error_sharing_log_file">Villa við að deila annálaskrá</string>
-    <string name="error_failed_to_sync_some_rss">Tókst ekki að samstilla suma RSS-strauma</string>
     <string name="version">Útgáfa:</string>
     <string name="filter_by">Sía eftir:</string>
     <string name="error_failed_to_open_file">Tókst ekki að opna skrá</string>
@@ -152,6 +151,10 @@
         <item quantity="one">Einnig í %d streymi</item>
         <item quantity="other">Einnig í %d streymum</item>
     </plurals>
+    <plurals name="feed_sync_failed_count">
+        <item quantity="one">Mistókst að samstilla %1$d af %2$d straum</item>
+        <item quantity="other">Mistókst að samstilla %1$d af %2$d straumum</item>
+    </plurals>
     <string name="menu_search">Leita</string>
     <string name="search_hint">Leita að greinum…</string>
 
@@ -222,4 +225,6 @@
     <string name="audio_playback_failed">Tókst ekki að spila hljóð</string>
     <string name="mini_player_close">Loka smáspilaranum</string>
     <string name="video_playback_failed">Tókst ekki að spila myndband</string>
+    <string name="sync_on_app_open">Samstilla þegar forrit opnast</string>
+    <string name="sync_on_app_open_description">Sækja strauma sjálfkrafa þegar forritið opnast, mest á 15 mínútna fresti</string>
 </resources>

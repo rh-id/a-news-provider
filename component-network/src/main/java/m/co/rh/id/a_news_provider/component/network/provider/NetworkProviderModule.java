@@ -6,7 +6,6 @@ import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.BaseHttpStack;
 import com.android.volley.toolbox.BasicNetwork;
 import com.android.volley.toolbox.DiskBasedCache;
-import com.android.volley.toolbox.HurlStack;
 import com.android.volley.toolbox.ImageLoader;
 
 import java.io.File;
@@ -16,6 +15,7 @@ import m.co.rh.id.a_news_provider.component.network.RssRequestFactory;
 import m.co.rh.id.a_news_provider.component.network.parser.RssFeedParser;
 import m.co.rh.id.a_news_provider.component.network.provider.cache.DiskLruBitmapCache;
 import m.co.rh.id.a_news_provider.component.network.provider.volley.DisposableRequestQueue;
+import m.co.rh.id.a_news_provider.component.network.provider.volley.RedirectRecordingHurlStack;
 import m.co.rh.id.a_news_provider.component.network.ssl.ExtendedTrustManager;
 import m.co.rh.id.aprovider.Provider;
 import m.co.rh.id.aprovider.ProviderModule;
@@ -23,12 +23,22 @@ import m.co.rh.id.aprovider.ProviderRegistry;
 
 /**
  * Provider module for network configuration
+ * <p>
+ * The base HTTP stack is a {@link RedirectRecordingHurlStack} instead of the
+ * stock HurlStack (issue #50): it follows redirects manually and
+ * records the final url / permanent-redirect decision of every attempt so
+ * RssRequest can transport the redirect outcome to the sync worker (which
+ * rewrites permanently moved feed urls, guarded against duplicates).
+ * ArticleHtmlRequest now also gets the manual-follow semantics - it receives
+ * the FINAL hop's content exactly as before (status/headers/body all come
+ * from the last hop), so its parsing behavior is unchanged.
  */
 public class NetworkProviderModule implements ProviderModule {
 
     @Override
     public void provides(ProviderRegistry providerRegistry, Provider provider) {
-        providerRegistry.registerLazy(BaseHttpStack.class, () -> new HurlStack(null, ExtendedTrustManager.createSslSocketFactory(provider.getContext())));
+        providerRegistry.registerLazy(BaseHttpStack.class, () ->
+                new RedirectRecordingHurlStack(ExtendedTrustManager.createSslSocketFactory(provider.getContext())));
         providerRegistry.registerLazy(Network.class, () -> new BasicNetwork(provider.get(BaseHttpStack.class)));
         providerRegistry.registerLazy(Cache.class, () -> new DiskBasedCache(new File(provider.getContext().getCacheDir(), "volley"),
                 1024 * 20480));
