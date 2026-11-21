@@ -222,4 +222,16 @@
     <string name="video_playback_failed">Pemutaran video gagal</string>
     <string name="sync_on_app_open">Sinkron saat aplikasi dibuka</string>
     <string name="sync_on_app_open_description">Ambil feed secara otomatis saat aplikasi dibuka, paling sering setiap 15 menit</string>
+    <string name="feed_health">Kesehatan feed</string>
+    <string name="status_ok">OK</string>
+    <string name="status_error">Eror</string>
+    <string name="feed_health_last_attempt">Percobaan terakhir: %s</string>
+    <string name="feed_health_last_success">Berhasil terakhir: %s</string>
+    <string name="feed_health_never_synced">Belum pernah tersinkron</string>
+    <string name="feed_health_counts">%1$d belum dibaca / %2$d total</string>
+    <string name="feed_health_backoff_until">Mencoba lagi setelah %s (jeda server)</string>
+    <string name="feed_health_http_status">HTTP %d</string>
+    <string name="sync_now">Sinkronkan sekarang</string>
+    <string name="feed_health_delete_confirm_title">Hapus feed?</string>
+    <string name="feed_health_delete_confirm_message">Hapus feed ini beserta semua artikel yang sudah diunduh? Tindakan ini tidak dapat dibatalkan.</string>
 </resources>

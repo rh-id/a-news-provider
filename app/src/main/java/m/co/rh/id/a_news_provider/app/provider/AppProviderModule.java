@@ -26,6 +26,7 @@ import m.co.rh.id.a_news_provider.app.provider.component.repository.PermanentRed
 import m.co.rh.id.a_news_provider.app.provider.component.repository.RssRepository;
 import m.co.rh.id.a_news_provider.app.provider.component.service.RssService;
 import m.co.rh.id.a_news_provider.app.ui.page.DonationsPage;
+import m.co.rh.id.a_news_provider.app.ui.page.FeedHealthPage;
 import m.co.rh.id.a_news_provider.app.ui.page.HomePage;
 import m.co.rh.id.a_news_provider.app.ui.page.RssItemDetailPage;
 import m.co.rh.id.a_news_provider.app.ui.page.SearchRssPage;
@@ -110,6 +111,7 @@ public class AppProviderModule implements ProviderModule {
         navMap.put(Routes.DONATIONS_PAGE, (args, activity) -> new DonationsPage());
         navMap.put(Routes.RSS_ITEM_DETAIL_PAGE, (args, activity) -> new RssItemDetailPage());
         navMap.put(Routes.SEARCH_RSS_PAGE, (args, activity) -> new SearchRssPage(args));
+        navMap.put(Routes.FEED_HEALTH_PAGE, (args, activity) -> new FeedHealthPage());
         // library extension dialogs (confirm/message/pickers/progress) from a-navigator-extension-dialog
         navMap.putAll(provider.get(NavExtDialogConfig.class).getNavMap());
         NavConfiguration.Builder navBuilder =

@@ -23,6 +23,7 @@ import m.co.rh.id.a_news_provider.base.provider.component.dao.RssDao;
 import m.co.rh.id.a_news_provider.base.entity.ArticleContent;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
+import m.co.rh.id.a_news_provider.base.model.ChannelItemCount;
 import m.co.rh.id.a_news_provider.base.model.KeyCount;
 import m.co.rh.id.a_news_provider.base.model.LinkCount;
 
@@ -76,6 +77,12 @@ import static org.junit.Assert.fail;
  * and {@code deleteOrphanArticleContent} deletes exactly the rows whose link no
  * longer exists on any rss_item row - shared links keep their cached content
  * while at least one item row still carries the link.
+ * <p>
+ * 8. Per-channel item counts (issue #42 feed-health dashboard):
+ * {@code countRssItemsByChannel} returns one row per channel with items, with
+ * the TOTAL count and the unread subset computed in one grouped pass - and a
+ * channel without any rss_item row is OMITTED (expected GROUP BY behavior; the
+ * FeedHealthCmd consumer zero-fills those channels so empty feeds stay visible).
  */
 @RunWith(AndroidJUnit4.class)
 public class RssDaoTest {
@@ -1528,6 +1535,70 @@ public class RssDaoTest {
 
         assertEquals(0, deleted);
         assertNotNull(mArticleContentDao.findArticleContentByLink("http://test.com/1"));
+    }
+
+    // ==================================================================================
+    // Section 8: per-channel item counts (issue #42 feed-health dashboard)
+    // ==================================================================================
+
+    @Test
+    public void countRssItemsByChannel_countsTotalAndUnreadPerChannel() {
+        RssChannel channel1 = createRssChannel("http://test.com/feed1", "Feed 1");
+        RssChannel channel2 = createRssChannel("http://test.com/feed2", "Feed 2");
+        // channel 1: 2 items (1 read, 1 unread); channel 2: 3 items (2 read, 1 unread)
+        RssItem channel1Read = createRssItem("channel1 read", null,
+                "http://test.com/c1-read", createDate(2026, 1, 1));
+        RssItem channel1Unread = createRssItem("channel1 unread", null,
+                "http://test.com/c1-unread", createDate(2026, 1, 2));
+        RssItem channel2Read1 = createRssItem("channel2 read 1", null,
+                "http://test.com/c2-r1", createDate(2026, 1, 3));
+        RssItem channel2Read2 = createRssItem("channel2 read 2", null,
+                "http://test.com/c2-r2", createDate(2026, 1, 4));
+        RssItem channel2Unread = createRssItem("channel2 unread", null,
+                "http://test.com/c2-u1", createDate(2026, 1, 5));
+        mRssDao.insertRssChannel(channel1, channel1Read, channel1Unread);
+        mRssDao.insertRssChannel(channel2, channel2Read1, channel2Read2, channel2Unread);
+        channel1Read.isRead = true;
+        mRssDao.updateRssItem(channel1Read);
+        channel2Read1.isRead = true;
+        mRssDao.updateRssItem(channel2Read1);
+        channel2Read2.isRead = true;
+        mRssDao.updateRssItem(channel2Read2);
+
+        List<ChannelItemCount> counts = mRssDao.countRssItemsByChannel();
+
+        assertEquals("one row per channel that has items", 2, counts.size());
+        for (ChannelItemCount channelItemCount : counts) {
+            if (channel1.id.equals(channelItemCount.channel_id)) {
+                assertEquals("channel 1 total", 2, channelItemCount.cnt);
+                assertEquals("channel 1 unread subset", 1, channelItemCount.unread);
+            } else if (channel2.id.equals(channelItemCount.channel_id)) {
+                assertEquals("channel 2 total", 3, channelItemCount.cnt);
+                assertEquals("channel 2 unread subset", 1, channelItemCount.unread);
+            } else {
+                fail("unexpected channel: " + channelItemCount.channel_id);
+            }
+        }
+    }
+
+    @Test
+    public void countRssItemsByChannel_omitsChannelWithoutItemRows() {
+        // the GROUP BY cannot produce a row for an item-less channel - the
+        // FeedHealthCmd consumer zero-fills it so empty feeds stay visible on
+        // the dashboard (issue #42); the DAO contract is the omission itself
+        RssChannel channelWithItems = createRssChannel("http://test.com/feed1", "Feed 1");
+        RssChannel emptyChannel = createRssChannel("http://test.com/feed2", "Feed 2");
+        RssItem rssItem = createRssItem("only item", null,
+                "http://test.com/1", createDate(2026, 1, 1));
+        mRssDao.insertRssChannel(channelWithItems, rssItem);
+        mRssDao.insertRssChannel(emptyChannel);
+
+        List<ChannelItemCount> counts = mRssDao.countRssItemsByChannel();
+
+        assertEquals(1, counts.size());
+        assertEquals(channelWithItems.id, counts.get(0).channel_id);
+        assertEquals(1, counts.get(0).cnt);
+        assertEquals(1, counts.get(0).unread);
     }
 
     private RssChannel createRssChannel(String url, String feedName) {

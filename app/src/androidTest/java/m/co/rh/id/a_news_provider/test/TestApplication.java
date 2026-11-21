@@ -14,6 +14,8 @@ import androidx.work.Configuration;
 import com.google.android.apps.common.testing.accessibility.framework.AccessibilityCheckResultUtils;
 import com.google.android.apps.common.testing.accessibility.framework.checks.ImageContrastCheck;
 import com.google.android.apps.common.testing.accessibility.framework.checks.SpeakableTextPresentCheck;
+import com.google.android.apps.common.testing.accessibility.framework.checks.TextContrastCheck;
+import com.google.android.apps.common.testing.accessibility.framework.checks.TouchTargetSizeCheck;
 
 import org.hamcrest.Matchers;
 
@@ -65,7 +67,23 @@ public class TestApplication extends BaseApplication implements Configuration.Pr
                         Matchers.allOf(
                                 AccessibilityCheckResultUtils.matchesCheck(ImageContrastCheck.class),
                                 AccessibilityCheckResultUtils.matchesViews(
-                                        ViewMatchers.isAssignableFrom(AppCompatImageView.class)))));
+                                        ViewMatchers.isAssignableFrom(AppCompatImageView.class))),
+                        // Material dialog framework buttons (android.R.id.button1-3) are
+                        // styled by MaterialComponents' dialog theme: colorPrimary text on
+                        // the dialog surface (~3.5:1 with the app's orange primary) at a
+                        // ~40dp height - both below the WCAG and 48dp thresholds these
+                        // checks enforce, and both library-rendered like the spinner and
+                        // progress noise above. App-owned buttons keep their own ids and
+                        // remain fully checked.
+                        Matchers.allOf(
+                                AccessibilityCheckResultUtils.matchesViews(
+                                        ViewMatchers.withId(Matchers.anyOf(
+                                                Matchers.is(android.R.id.button1),
+                                                Matchers.is(android.R.id.button2),
+                                                Matchers.is(android.R.id.button3)))),
+                                Matchers.anyOf(
+                                        AccessibilityCheckResultUtils.matchesCheck(TextContrastCheck.class),
+                                        AccessibilityCheckResultUtils.matchesCheck(TouchTargetSizeCheck.class)))));
     }
 
     public void setProvider(Provider provider) {

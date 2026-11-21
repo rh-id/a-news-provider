@@ -222,4 +222,16 @@
     <string name="video_playback_failed">视频播放失败</string>
     <string name="sync_on_app_open">打开应用时同步</string>
     <string name="sync_on_app_open_description">打开应用时自动抓取订阅源，最多每 15 分钟一次</string>
+    <string name="feed_health">订阅源状态</string>
+    <string name="status_ok">正常</string>
+    <string name="status_error">错误</string>
+    <string name="feed_health_last_attempt">上次尝试：%s</string>
+    <string name="feed_health_last_success">上次成功：%s</string>
+    <string name="feed_health_never_synced">从未同步</string>
+    <string name="feed_health_counts">未读 %1$d / 共 %2$d 条</string>
+    <string name="feed_health_backoff_until">将于 %s 后重试（服务器限流）</string>
+    <string name="feed_health_http_status">HTTP %d</string>
+    <string name="sync_now">立即同步</string>
+    <string name="feed_health_delete_confirm_title">删除订阅源？</string>
+    <string name="feed_health_delete_confirm_message">删除此订阅源及已下载的全部文章？此操作无法撤销。</string>
 </resources>

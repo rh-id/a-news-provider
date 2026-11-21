@@ -234,4 +234,16 @@
     <string name="video_playback_failed">Échec de la lecture vidéo</string>
     <string name="sync_on_app_open">Synchroniser à l\'ouverture de l\'application</string>
     <string name="sync_on_app_open_description">Récupérer automatiquement les flux à l\'ouverture de l\'application, au maximum toutes les 15 minutes</string>
+    <string name="feed_health">Santé des flux</string>
+    <string name="status_ok">OK</string>
+    <string name="status_error">Erreur</string>
+    <string name="feed_health_last_attempt">Dernière tentative : %s</string>
+    <string name="feed_health_last_success">Dernier succès : %s</string>
+    <string name="feed_health_never_synced">Jamais synchronisé</string>
+    <string name="feed_health_counts">%1$d non lus / %2$d au total</string>
+    <string name="feed_health_backoff_until">Nouvelle tentative après %s (pause serveur)</string>
+    <string name="feed_health_http_status">HTTP %d</string>
+    <string name="sync_now">Synchroniser maintenant</string>
+    <string name="feed_health_delete_confirm_title">Supprimer le flux ?</string>
+    <string name="feed_health_delete_confirm_message">Supprimer ce flux et tous les articles téléchargés ? Cette action est irréversible.</string>
 </resources>

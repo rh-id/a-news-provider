@@ -7,6 +7,7 @@ public class Routes {
     public static final String DONATIONS_PAGE = "/donations";
     public static final String RSS_ITEM_DETAIL_PAGE = "/rss/item/detail";
     public static final String SEARCH_RSS_PAGE = "/rss/search";
+    public static final String FEED_HEALTH_PAGE = "/rss/feed/health";
 
     private Routes() {
     }

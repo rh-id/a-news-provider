@@ -166,6 +166,8 @@ public class HomePage extends StatefulView<Activity> implements RequireComponent
         menuSettings.setOnClickListener(this);
         View menuDonation = view.findViewById(R.id.menu_donation);
         menuDonation.setOnClickListener(this);
+        View menuFeedHealth = view.findViewById(R.id.menu_feed_health);
+        menuFeedHealth.setOnClickListener(this);
         mDrawerLayout = view.findViewById(R.id.drawer);
         mDrawerLayout.addDrawerListener(this);
         if (mOnNavigationClicked == null) {
@@ -546,6 +548,8 @@ public class HomePage extends StatefulView<Activity> implements RequireComponent
                     new NewRssChannelSVDialog());
         } else if (id == R.id.menu_settings) {
             mNavigator.push(Routes.SETTINGS_PAGE);
+        } else if (id == R.id.menu_feed_health) {
+            mNavigator.push(Routes.FEED_HEALTH_PAGE);
         } else if (id == R.id.menu_donation) {
             mNavigator.push(Routes.DONATIONS_PAGE);
         }

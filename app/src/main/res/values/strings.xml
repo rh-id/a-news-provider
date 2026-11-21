@@ -227,4 +227,16 @@
     <string name="video_playback_failed">Video playback failed</string>
     <string name="sync_on_app_open">Sync when app opens</string>
     <string name="sync_on_app_open_description">Fetch feeds automatically when the app opens, at most every 15 minutes</string>
+    <string name="feed_health">Feed health</string>
+    <string name="status_ok">OK</string>
+    <string name="status_error">Error</string>
+    <string name="feed_health_last_attempt">Last attempt: %s</string>
+    <string name="feed_health_last_success">Last success: %s</string>
+    <string name="feed_health_never_synced">Never synced</string>
+    <string name="feed_health_counts">%1$d unread / %2$d total</string>
+    <string name="feed_health_backoff_until">Retries after %s (server backoff)</string>
+    <string name="feed_health_http_status">HTTP %d</string>
+    <string name="sync_now">Sync now</string>
+    <string name="feed_health_delete_confirm_title">Delete feed?</string>
+    <string name="feed_health_delete_confirm_message">Delete this feed and all its downloaded articles? This cannot be undone.</string>
 </resources>

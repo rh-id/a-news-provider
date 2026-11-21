@@ -228,4 +228,16 @@
     <string name="video_playback_failed">Video-Wiedergabe fehlgeschlagen</string>
     <string name="sync_on_app_open">Synchronisieren beim Öffnen der App</string>
     <string name="sync_on_app_open_description">Feeds automatisch beim Öffnen der App laden, höchstens alle 15 Minuten</string>
+    <string name="feed_health">Feed-Gesundheit</string>
+    <string name="status_ok">OK</string>
+    <string name="status_error">Fehler</string>
+    <string name="feed_health_last_attempt">Letzter Versuch: %s</string>
+    <string name="feed_health_last_success">Letzter Erfolg: %s</string>
+    <string name="feed_health_never_synced">Nie synchronisiert</string>
+    <string name="feed_health_counts">%1$d ungelesen / %2$d gesamt</string>
+    <string name="feed_health_backoff_until">Neuer Versuch nach %s (Server-Pause)</string>
+    <string name="feed_health_http_status">HTTP %d</string>
+    <string name="sync_now">Jetzt synchronisieren</string>
+    <string name="feed_health_delete_confirm_title">Feed löschen?</string>
+    <string name="feed_health_delete_confirm_message">Diesen Feed und alle heruntergeladenen Artikel löschen? Das kann nicht rückgängig gemacht werden.</string>
 </resources>

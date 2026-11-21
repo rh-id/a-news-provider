@@ -106,6 +106,14 @@
                         android:text="@string/settings"
                         app:icon="@drawable/ic_settings_black" />
 
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/menu_feed_health"
+                        style="@style/Theme.Anewsprovider.BorderlessMenuButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/feed_health"
+                        app:icon="@drawable/ic_feed_health_black" />
+
                     <com.google.android.material.textview.MaterialTextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"

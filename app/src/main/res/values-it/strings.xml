@@ -234,4 +234,16 @@
     <string name="video_playback_failed">Riproduzione video non riuscita</string>
     <string name="sync_on_app_open">Sincronizza all\'apertura dell\'app</string>
     <string name="sync_on_app_open_description">Recupera i feed automaticamente all\'apertura dell\'app, al massimo ogni 15 minuti</string>
+    <string name="feed_health">Salute dei feed</string>
+    <string name="status_ok">OK</string>
+    <string name="status_error">Errore</string>
+    <string name="feed_health_last_attempt">Ultimo tentativo: %s</string>
+    <string name="feed_health_last_success">Ultima riuscita: %s</string>
+    <string name="feed_health_never_synced">Mai sincronizzato</string>
+    <string name="feed_health_counts">%1$d non letti / %2$d totali</string>
+    <string name="feed_health_backoff_until">Nuovo tentativo dopo %s (pausa del server)</string>
+    <string name="feed_health_http_status">HTTP %d</string>
+    <string name="sync_now">Sincronizza ora</string>
+    <string name="feed_health_delete_confirm_title">Eliminare il feed?</string>
+    <string name="feed_health_delete_confirm_message">Eliminare questo feed e tutti gli articoli scaricati? L\'operazione non è annullabile.</string>
 </resources>

@@ -228,4 +228,16 @@
     <string name="video_playback_failed">Video esitamine ebaõnnestus</string>
     <string name="sync_on_app_open">Sünkrooni rakenduse avamisel</string>
     <string name="sync_on_app_open_description">Vood laaditakse automaatselt rakenduse avamisel, mitte sagedamini kui iga 15 minuti järel</string>
+    <string name="feed_health">Voo seisund</string>
+    <string name="status_ok">OK</string>
+    <string name="status_error">Viga</string>
+    <string name="feed_health_last_attempt">Viimane katse: %s</string>
+    <string name="feed_health_last_success">Viimane õnnestumine: %s</string>
+    <string name="feed_health_never_synced">Pole kunagi sünkroonitud</string>
+    <string name="feed_health_counts">%1$d lugemata / %2$d kokku</string>
+    <string name="feed_health_backoff_until">Proovib uuesti pärast %s (serveri paus)</string>
+    <string name="feed_health_http_status">HTTP %d</string>
+    <string name="sync_now">Sünkrooni kohe</string>
+    <string name="feed_health_delete_confirm_title">Kustutada voog?</string>
+    <string name="feed_health_delete_confirm_message">Kustutada see voog ja kõik alla laaditud artiklid? Seda ei saa tagasi võtta.</string>
 </resources>

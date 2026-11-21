@@ -228,4 +228,16 @@
     <string name="video_playback_failed">Kunne ikke spille av video</string>
     <string name="sync_on_app_open">Synkroniser når appen åpnes</string>
     <string name="sync_on_app_open_description">Henter strømmer automatisk når appen åpnes, maksimalt hvert 15. minutt</string>
+    <string name="feed_health">Feedtilstand</string>
+    <string name="status_ok">OK</string>
+    <string name="status_error">Feil</string>
+    <string name="feed_health_last_attempt">Siste forsøk: %s</string>
+    <string name="feed_health_last_success">Siste vellykkede: %s</string>
+    <string name="feed_health_never_synced">Aldri synkronisert</string>
+    <string name="feed_health_counts">%1$d ulest / %2$d totalt</string>
+    <string name="feed_health_backoff_until">Prøver igjen etter %s (pause fra tjeneren)</string>
+    <string name="feed_health_http_status">HTTP %d</string>
+    <string name="sync_now">Synkroniser nå</string>
+    <string name="feed_health_delete_confirm_title">Slette strømmen?</string>
+    <string name="feed_health_delete_confirm_message">Slette denne strømmen og alle nedlastede artikler? Dette kan ikke angres.</string>
 </resources>

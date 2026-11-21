@@ -228,4 +228,16 @@
     <string name="video_playback_failed">Betg reussì da reproducir il video</string>
     <string name="sync_on_app_open">Sincronisar cun avrir l\'app</string>
     <string name="sync_on_app_open_description">Chargiar ils feeds automaticamain cun avrir l\'app, al max mintga 15 minutos</string>
+    <string name="feed_health">Stadi dal feed</string>
+    <string name="status_ok">OK</string>
+    <string name="status_error">Errur</string>
+    <string name="feed_health_last_attempt">Ultim emprova: %s</string>
+    <string name="feed_health_last_success">Ultimen success: %s</string>
+    <string name="feed_health_never_synced">Mai sincronisà</string>
+    <string name="feed_health_counts">%1$d nun legì / %2$d en tut</string>
+    <string name="feed_health_backoff_until">Nov emprova suenter %s (pausa dal server)</string>
+    <string name="feed_health_http_status">HTTP %d</string>
+    <string name="sync_now">Sincronisar ussa</string>
+    <string name="feed_health_delete_confirm_title">Stizzar il feed?</string>
+    <string name="feed_health_delete_confirm_message">Stizzar quest feed e tut ils artitgs telechargiads? Quai na po betg vegnir revocà.</string>
 </resources>

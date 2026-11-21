@@ -1,9 +1,12 @@
 package m.co.rh.id.a_news_provider.app.provider.command;
 
+import androidx.work.WorkManager;
+
 import java.util.concurrent.ExecutorService;
 
 import m.co.rh.id.a_news_provider.app.provider.component.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.provider.component.repository.RssRepository;
+import m.co.rh.id.a_news_provider.app.workmanager.ConstantsWork;
 import m.co.rh.id.a_news_provider.base.provider.component.dao.ArticleContentDao;
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.alogger.ILogger;
@@ -17,6 +20,7 @@ import m.co.rh.id.aprovider.Provider;
 public class DeleteRssChannelCmd {
     private static final String TAG = DeleteRssChannelCmd.class.getName();
     private final ExecutorService mExecutorService;
+    private final WorkManager mWorkManager;
     private final RssRepository mRssRepository;
     private final ArticleContentDao mArticleContentDao;
     private final RssChangeNotifier mRssChangeNotifier;
@@ -24,6 +28,7 @@ public class DeleteRssChannelCmd {
 
     public DeleteRssChannelCmd(Provider provider) {
         mExecutorService = provider.get(ExecutorService.class);
+        mWorkManager = provider.get(WorkManager.class);
         mRssRepository = provider.get(RssRepository.class);
         mArticleContentDao = provider.get(ArticleContentDao.class);
         mRssChangeNotifier = provider.get(RssChangeNotifier.class);
@@ -32,6 +37,15 @@ public class DeleteRssChannelCmd {
 
     /**
      * Deletes an RSS channel.
+     * BEFORE the DB delete, the channel's pending per-channel sync work (issue
+     * #42, SyncChannelCmd's unique work) is cancelled: an in-flight fetch of
+     * this feed would otherwise complete AFTER the delete and
+     * RssRepository.persist (which matches by URL) would silently RE-INSERT the
+     * deleted channel - the zombie-feed window this cancel closes. The cancel
+     * runs in its OWN catch-all so a WorkManager hiccup can never skip the
+     * deletion itself; a missed cancel at worst reproduces the old re-insert
+     * behavior, which the user can simply repeat.
+     * <p>
      * After the channel's item rows are gone, the article-content cache (link-keyed,
      * issue #28) is swept for rows whose link no longer exists on ANY rss_item -
      * links still carried by another channel keep their cached content. The sweep
@@ -43,6 +57,12 @@ public class DeleteRssChannelCmd {
      */
     public void execute(RssChannel rssChannel) {
         mExecutorService.execute(() -> {
+            try {
+                mWorkManager.cancelUniqueWork(
+                        ConstantsWork.UNIQUE_RSS_SYNC_CHANNEL_PREFIX + rssChannel.id);
+            } catch (Throwable t) {
+                mLogger.e(TAG, t.getMessage(), t);
+            }
             try {
                 mRssRepository.deleteRssChannel(rssChannel);
             } catch (Throwable t) {

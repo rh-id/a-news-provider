@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root_layout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="@dimen/text_margin">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/text_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            tools:text="News 1" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/text_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/text_margin"
+            android:background="@color/daynight_gray_300_gray_600"
+            android:padding="4dp"
+            android:textSize="11sp"
+            tools:text="OK" />
+    </LinearLayout>
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/text_last_attempt"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="12sp"
+        tools:text="Last attempt: Sun, 1 Jan 2026" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/text_last_success"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="12sp"
+        tools:text="Last success: Sun, 1 Jan 2026" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/text_counts"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="12sp"
+        tools:text="5 unread / 20 total" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/text_error"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="?attr/colorError"
+        android:textSize="12sp"
+        android:visibility="gone"
+        tools:text="HTTP 503"
+        tools:visibility="visible" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/text_backoff"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="12sp"
+        android:textStyle="italic"
+        android:visibility="gone"
+        tools:text="Retries after 12:00 (server backoff)"
+        tools:visibility="visible" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal">
+
+        <!-- 48dp min height: the Espresso accessibility gate (TouchTargetSizeCheck,
+             ERROR-level) runs on every instrumented interaction with these rows -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_sync_now"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minHeight="48dp"
+            android:text="@string/sync_now"
+            android:textColor="@color/white"
+            android:textSize="11sp"
+            app:backgroundTint="@color/gray_700" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_pause"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_marginLeft="10dp"
+            android:layout_weight="1"
+            android:minHeight="48dp"
+            android:text="@string/pause"
+            android:textColor="@color/white"
+            android:textSize="11sp"
+            app:backgroundTint="@color/gray_700" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_delete"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_marginLeft="10dp"
+            android:layout_weight="1"
+            android:minHeight="48dp"
+            android:text="@string/delete"
+            android:textColor="?attr/colorOnError"
+            android:textSize="11sp"
+            app:backgroundTint="?attr/colorError" />
+    </LinearLayout>
+</LinearLayout>

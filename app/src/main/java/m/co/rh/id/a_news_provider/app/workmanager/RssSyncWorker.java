@@ -61,6 +61,17 @@ import m.co.rh.id.aprovider.Provider;
  * channels flow into {@link SyncResult#getSkipped()} so the summary shows the
  * real attempt denominator.
  * <p>
+ * Targeted per-channel run (issue #42 feed-health dashboard): when the input
+ * carries {@link ConstantsKey#KEY_LONG_CHANNEL_ID} (set by SyncChannelCmd for
+ * the dashboard's "Sync now" button), the loaded channel list is filtered to
+ * that one id and the backoff skip is BYPASSED for the run - an explicit user
+ * retry is one deliberate request (re-anchoring the quiet window via the
+ * attempt stamp below), not the sync schedule hammering a struggling server.
+ * Paused channels stay skipped even on a targeted run: the user silenced that
+ * feed and a dashboard button must not override the choice. Everything
+ * downstream (await loop, per-channel bookkeeping, Retry-After encoding,
+ * summary emission, output data) is unchanged.
+ * <p>
  * Cancellation is deliberately not failure: when the await loop is interrupted
  * or the worker is stopped, no failure state is written for the current or
  * remaining channels (WorkManager tore the run down - writing failures would
@@ -101,6 +112,20 @@ public class RssSyncWorker extends Worker {
         RequestQueue requestQueue = provider.get(RequestQueue.class);
         PermanentRedirectGuard permanentRedirectGuard = provider.get(PermanentRedirectGuard.class);
         List<RssChannel> rssChannelList = rssDao.loadAllRssChannel();
+        // targeted per-channel run (issue #42): SyncChannelCmd puts the tapped
+        // feed's id in the input; filter the loaded list to that ONE channel
+        // (default 0 = app-wide run, list unchanged). A targeted run reuses the
+        // whole machinery below - same bookkeeping, same summary, same output.
+        long targetChannelId = getInputData().getLong(ConstantsKey.KEY_LONG_CHANNEL_ID, 0);
+        if (targetChannelId > 0) {
+            List<RssChannel> targetedList = new ArrayList<>(1);
+            for (RssChannel rssChannel : rssChannelList) {
+                if (rssChannel.id != null && rssChannel.id == targetChannelId) {
+                    targetedList.add(rssChannel);
+                }
+            }
+            rssChannelList = targetedList;
+        }
         // channel + future are PAIRED so the await loop can attribute each
         // result (and each failure) back to its channel - the bare future list
         // of the pre-#50 code made per-channel failure bookkeeping impossible
@@ -117,7 +142,14 @@ public class RssSyncWorker extends Worker {
             // forever and a failing feed would never become due again. The
             // decision is pure (SyncBackoffPolicy) over the state loaded at
             // sync start; nothing here writes to the channel row.
-            if (SyncBackoffPolicy.shouldSkip(rssChannel, syncStartMillis)) {
+            // BYPASSED on a targeted run (issue #42): the request came from an
+            // explicit user tap on the feed-health dashboard ("Sync now"), not
+            // from the schedule - one deliberate retry is exactly what the
+            // backoff exists to allow, and the attempt stamp below re-anchors
+            // the quiet window from this very request. Paused channels above
+            // are still skipped: silence is a user decision, not a backoff.
+            if (targetChannelId <= 0
+                    && SyncBackoffPolicy.shouldSkip(rssChannel, syncStartMillis)) {
                 skippedCount++;
                 continue;
             }

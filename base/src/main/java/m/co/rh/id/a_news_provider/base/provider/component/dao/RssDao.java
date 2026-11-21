@@ -18,6 +18,7 @@ import java.util.List;
 
 import m.co.rh.id.a_news_provider.base.entity.RssChannel;
 import m.co.rh.id.a_news_provider.base.entity.RssItem;
+import m.co.rh.id.a_news_provider.base.model.ChannelItemCount;
 import m.co.rh.id.a_news_provider.base.model.ChannelUnreadCount;
 import m.co.rh.id.a_news_provider.base.model.KeyCount;
 import m.co.rh.id.a_news_provider.base.model.LinkCount;
@@ -398,6 +399,22 @@ public abstract class RssDao {
 
     @Query("SELECT channel_id, COUNT(id) as cnt FROM rss_item WHERE is_read = 0 GROUP BY channel_id")
     public abstract List<ChannelUnreadCount> countUnReadRssItemsByChannel();
+
+    /**
+     * Counts the rss items of every channel in one grouped pass, splitting
+     * each channel's total into read and unread (issue #42 feed-health
+     * dashboard): {@code cnt} is the TOTAL row count of the channel and
+     * {@code unread} the unread subset, both computed SQL-side so the
+     * dashboard never walks the item table per channel. Being a GROUP BY
+     * result, a channel without any rss_item row is OMITTED from the output -
+     * the consumer (FeedHealthCmd) merges this list channel-driven with a
+     * zero-fill so empty feeds still appear on the dashboard.
+     * This method must be called on a background thread.
+     *
+     * @return one row per channel that has at least one rss_item
+     */
+    @Query("SELECT channel_id, COUNT(id) as cnt, SUM(CASE WHEN is_read = 0 THEN 1 ELSE 0 END) as unread FROM rss_item GROUP BY channel_id")
+    public abstract List<ChannelItemCount> countRssItemsByChannel();
 
     /**
      * Loads one keyset-pagination page of rss items filtered by optional channel,
