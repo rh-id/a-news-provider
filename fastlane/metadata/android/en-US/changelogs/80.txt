@@ -1,0 +1,12 @@
+Release 2.5.0+80
+
+Features:
+* Feed health dashboard: spot failing or stale feeds at a glance
+* Alternative list layouts: compact, standard, and card/magazine
+* More robust sync: automatic retries with backoff, honors Retry-After, handles redirects, clearer sync errors
+* Feeds sync automatically when the app is opened
+* Progress dialog while exporting OPML
+
+Fixes:
+* Cleaner debug logs and a localized share-ignored message
+* Sort-order icon tint now matches the other row controls

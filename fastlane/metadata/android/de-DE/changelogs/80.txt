@@ -1,0 +1,12 @@
+Release 2.5.0+80
+
+Funktionen:
+* Feed-Gesundheitsübersicht: fehlerhafte oder veraltete Feeds auf einen Blick
+* Alternative Listenlayouts: Kompakt, Standard und Karten-/Magazin-Ansicht
+* Robustere Synchronisierung: automatische Wiederholungen mit Backoff, Beachtung von Retry-After, Umgang mit Weiterleitungen, klarere Fehlermeldungen
+* Feeds werden beim Öffnen der App automatisch synchronisiert
+* Fortschrittsdialog beim OPML-Export
+
+Fehlerbehebungen:
+* Aufgeräumte Debug-Logs und lokalisierte Meldung beim ignorierten Teilen
+* Farbabstimmung des Sortier-Symbols entspricht nun den anderen Steuerelementen

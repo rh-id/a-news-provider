@@ -1,0 +1,12 @@
+Ediziun 2.5.0+80
+
+Funcziuns:
+* Panel da la sanedad dals feeds: vesair a l'egl feeds malsauns u vegls
+* Autras furmas da la glista: compacta, standard e carta/revista
+* Sincronisaziun pli robusta: repetiziuns automaticas cun pausa, suonda Retry-After, manschafta redirecziuns, messadis d'errur pli clers
+* Feeds vegnan sincronisads automaticamain cun avrir l'app
+* Dialog da progress tar l'export d'OPML
+
+Corecziuns:
+* Logs da debug pli secs e messadi localisà tar sparter ignorà
+* Il colur da l'icona d'ordinar correspunda ussa als auters elements da la lingia

@@ -1,0 +1,12 @@
+Rilis 2.5.0+80
+
+Fitur:
+* Dasbor kesehatan feed: lihat feed yang gagal atau jarang diperbarui sekilas
+* Pilihan tata letak daftar: ringkas, standar, dan kartu/majalah
+* Sinkronisasi lebih tangguh: coba ulang otomatis dengan backoff, hormati Retry-After, tangani pengalihan, pesan kesalahan lebih jelas
+* Feed disinkronkan otomatis saat aplikasi dibuka
+* Dialog progres saat mengekspor OPML
+
+Perbaikan:
+* Log debug lebih bersih dan pesan berbagi-abaikan kini dilokalkan
+* Warna ikon urutan kini sejajar dengan kontrol baris lainnya

@@ -1,0 +1,12 @@
+Versioon 2.5.0+80
+
+Funktsioonid:
+* Voogude tervisepaneel: vigased või ammu uuendamata vood nähtavad ühe pilguga
+* Alternatiivsed loendipaigutused: kompaktne, standard ja kaardiajakirja stiilis
+* Püsivam sünkroonimine: automaatsed katsed viivitustega, Retry-After järgimine, ümbersuunamiste käsitlemine, selgemad veateated
+* Vood sünkroonitakse automaatselt rakenduse avamisel
+* Edenemisdialoog OPML-i eksportimisel
+
+Parandused:
+* Puhtamad silumislogid ja tõlgitud teade jagamise vahele jätmisel
+* Sortimisikooni värv sobib nüüd teiste rea juhtelementidega

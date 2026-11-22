@@ -1,0 +1,12 @@
+Rilascio 2.5.0+80
+
+Funzionalità:
+* Dashboard di salute dei feed: individuare a colpo d'occhio i feed in errore o datati
+* Layout di elenco alternativi: compatto, standard e scheda/rivista
+* Sincronizzazione più robusta: tentativi automatici con backoff, rispetto di Retry-After, gestione dei reindirizzamenti, errori più chiari
+* Sincronizzazione automatica dei feed all'apertura dell'app
+* Finestra di avanzamento durante l'esportazione OPML
+
+Correzioni:
+* Log di debug più puliti e messaggio di condivisione ignorata tradotto
+* Il colore dell'icona di ordinamento ora si accorda con gli altri controlli di riga

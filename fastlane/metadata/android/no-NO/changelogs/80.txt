@@ -1,0 +1,12 @@
+Utgivelse 2.5.0+80
+
+Funksjoner:
+* Feedhelsedashboard: se feilende eller utdaterte feeds på et øyeblikk
+* Alternative listeoppsett: kompakt, standard og kort/magasin
+* Mer robust synkronisering: automatiske forsøk med backoff, følger Retry-After, håndterer omdirigeringer, tydeligere feilmeldinger
+* Feeds synkroniseres automatisk når appen åpnes
+* Fremdriftsdialog ved OPML-eksport
+
+Feilrettinger:
+* Ryddigere feilsøkingslogger og oversatt melding ved ignorert deling
+* Ikonet for sorteringsrekkefølge samsvarer nå i farge med de andre radkontrollene

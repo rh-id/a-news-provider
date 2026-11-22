@@ -1,0 +1,12 @@
+Útgáfa 2.5.0+80
+
+Eiginleikar:
+* Heilsuyfirlit streyma: gallað eða stöðnað streymi sést af augabragði
+* Aðrar útlitsgerðir lista: þétt, hefðbundin og spjald- eða tímaritsstíll
+* Stöðugri samstilling: sjálfvirk endurtekning með bið, fylgni við Retry-After, meðhöndlun á tilvísunum og skýrari villuboð
+* Streymi samstillast sjálfkrafa við opnun appsins
+* Framvindugluggi við OPML-útflutning
+
+Villuleiðréttingar:
+* Hreinna skráninga við villuleit og staðfærð skilaboð þegar deilingu er sleppt
+* Litur röðunartákn er nú í samræmi við önnur stýritákn í röðinni

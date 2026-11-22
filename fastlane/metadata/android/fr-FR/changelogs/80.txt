@@ -1,0 +1,12 @@
+Version 2.5.0+80
+
+Fonctionnalités :
+* Tableau de bord de santé des flux : repérez d'un coup d'œil les flux défaillants ou obsolètes
+* Dispositions de liste alternatives : compacte, standard et carte/magazine
+* Synchronisation plus robuste : nouvelles tentatives automatiques avec backoff, respect de Retry-After, gestion des redirections, messages d'erreur plus clairs
+* Synchronisation automatique des flux à l'ouverture de l'application
+* Boîte de dialogue de progression lors de l'export OPML
+
+Corrections :
+* Journaux de débogage plus propres et message de partage ignoré traduit
+* La teinte de l'icône de tri s'harmonise avec les autres contrôles de ligne
