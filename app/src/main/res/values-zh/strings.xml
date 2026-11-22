@@ -234,4 +234,11 @@
     <string name="sync_now">立即同步</string>
     <string name="feed_health_delete_confirm_title">删除订阅源？</string>
     <string name="feed_health_delete_confirm_message">删除此订阅源及已下载的全部文章？此操作无法撤销。</string>
+    <string name="title_list_layout">列表布局</string>
+    <string name="menu_subtitle_list_layout">选择文章在列表中的显示方式</string>
+    <string name="list_layout_standard">标准</string>
+    <string name="list_layout_compact">紧凑</string>
+    <string name="list_layout_card">卡片</string>
+    <string name="rss_item_unread_dot">未读标记</string>
+    <string name="rss_item_thumbnail">文章图片</string>
 </resources>

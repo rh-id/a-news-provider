@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Settings entry for the "List layout" preference (issue #58), same structure
+     as menu_theme.xml: titled radio group over the three row variants. The
+     checked change is persisted straight into the listLayout preference; the
+     item list adapters pick it up live via its flow. -->
+<androidx.appcompat.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="@dimen/text_margin">
+
+    <com.google.android.material.textview.MaterialTextView
+        style="@style/Theme.Anewsprovider.MenuTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="0dp"
+        android:text="@string/title_list_layout" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/text_subtitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/menu_subtitle_list_layout" />
+
+    <RadioGroup
+        android:id="@+id/radioGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/text_margin">
+
+        <com.google.android.material.radiobutton.MaterialRadioButton
+            android:id="@+id/radio_standard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/text_margin"
+            android:layout_marginEnd="@dimen/text_margin"
+            android:text="@string/list_layout_standard" />
+
+        <com.google.android.material.radiobutton.MaterialRadioButton
+            android:id="@+id/radio_compact"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/text_margin"
+            android:layout_marginEnd="@dimen/text_margin"
+            android:text="@string/list_layout_compact" />
+
+        <com.google.android.material.radiobutton.MaterialRadioButton
+            android:id="@+id/radio_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/text_margin"
+            android:layout_marginEnd="@dimen/text_margin"
+            android:text="@string/list_layout_card" />
+    </RadioGroup>
+</androidx.appcompat.widget.LinearLayoutCompat>

@@ -240,4 +240,11 @@
     <string name="sync_now">Synkroniser nå</string>
     <string name="feed_health_delete_confirm_title">Slette strømmen?</string>
     <string name="feed_health_delete_confirm_message">Slette denne strømmen og alle nedlastede artikler? Dette kan ikke angres.</string>
+    <string name="title_list_layout">Listeoppsett</string>
+    <string name="menu_subtitle_list_layout">Velg hvordan artikler vises i listen</string>
+    <string name="list_layout_standard">Standard</string>
+    <string name="list_layout_compact">Kompakt</string>
+    <string name="list_layout_card">Kort</string>
+    <string name="rss_item_unread_dot">Indikator for ulest</string>
+    <string name="rss_item_thumbnail">Artikkelbilde</string>
 </resources>

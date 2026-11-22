@@ -7,4 +7,8 @@
          must exceed the system back-gesture zone (measured ~25dp on the API 36
          gesture-nav device) so the strip never competes with system back -->
     <dimen name="swipe_region_inset">32dp</dimen>
+    <!-- Edge gutter of the compact/card rss item rows (issue #58): edge-to-edge
+         in portrait by design; values-land overrides it to 8dp so the staggered
+         2-column landscape grid gets a gutter between the two columns -->
+    <dimen name="row_edge_gutter">0dp</dimen>
 </resources>

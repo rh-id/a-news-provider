@@ -240,4 +240,11 @@
     <string name="sync_now">Samstilla núna</string>
     <string name="feed_health_delete_confirm_title">Eyða streymi?</string>
     <string name="feed_health_delete_confirm_message">Eyða þessum streymi og öllum sóttum greinum? Þessi aðgerð er óafturkræf.</string>
+    <string name="title_list_layout">Útlit listans</string>
+    <string name="menu_subtitle_list_layout">Veldu hvernig greinar birtast í listanum</string>
+    <string name="list_layout_standard">Staðlað</string>
+    <string name="list_layout_compact">Þétt</string>
+    <string name="list_layout_card">Spjöld</string>
+    <string name="rss_item_unread_dot">Vísir um ólesið</string>
+    <string name="rss_item_thumbnail">Greinarmynd</string>
 </resources>

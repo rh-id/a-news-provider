@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Compact list row variant (issue #58): single-line, ellipsized title with a
+     leading unread dot and the duplicate-story badge kept inline. No date, no
+     category chips, no description - see RssItemCompactSV.
+     The root id MUST stay root_layout (the shared row base gates its
+     click/long-click handlers on it), and the shared ids container_duplicates /
+     chip_duplicates / container_copies / button_favorite are required by the
+     base's duplicate-badge and TalkBack semantics. The row is full-bleed in
+     portrait (the approved look); in landscape the row_edge_gutter dimen
+     (values-land) insets the row's start/end by the standard rows' 8dp margin
+     so the 2-column staggered grid gets a column gutter - the swipe rect is
+     drawn at the itemView bounds, which already exclude layout margins, so
+     inset rows swipe exactly like the standard rows always have. Deliberately
+     NO vertical margins: compact rows stack hairline-to-hairline and vertical
+     gaps would double up with the 1dp separator. The trailing 1dp hairline is
+     the row separator, and a shape-free child View keeps the divider working
+     on API 21 (layer-list item gravity needs API 23). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root_layout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="@dimen/row_edge_gutter"
+    android:layout_marginEnd="@dimen/row_edge_gutter"
+    android:background="@color/daynight_white_gray_900"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:minHeight="48dp"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/text_margin"
+        android:paddingTop="8dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="8dp">
+
+        <View
+            android:id="@+id/view_unread_dot"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            android:background="@drawable/dot_unread_indicator"
+            android:contentDescription="@string/rss_item_unread_dot"
+            android:visibility="gone" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/text_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            tools:text="Article title" />
+
+        <!-- duplicate-story badge (issue #45): GONE for rows without known
+             duplicates; tapping the chip opens the shared copies expansion
+             (feed name + date per other copy) handled by the row base -->
+        <LinearLayout
+            android:id="@+id/container_duplicates"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_duplicates"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:focusable="true"
+                app:chipEndPadding="8dp"
+                app:chipStartPadding="8dp"
+                app:ensureMinTouchTargetSize="true"
+                tools:text="×3" />
+
+            <LinearLayout
+                android:id="@+id/container_copies"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/button_favorite"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/menu_toggle_favorite"
+            app:srcCompat="@drawable/ic_star_outline_gray" />
+
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/daynight_gray_300_gray_600" />
+</LinearLayout>

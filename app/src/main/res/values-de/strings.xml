@@ -240,4 +240,11 @@
     <string name="sync_now">Jetzt synchronisieren</string>
     <string name="feed_health_delete_confirm_title">Feed löschen?</string>
     <string name="feed_health_delete_confirm_message">Diesen Feed und alle heruntergeladenen Artikel löschen? Das kann nicht rückgängig gemacht werden.</string>
+    <string name="title_list_layout">Listenlayout</string>
+    <string name="menu_subtitle_list_layout">Wählen Sie, wie Artikel in der Liste angezeigt werden</string>
+    <string name="list_layout_standard">Standard</string>
+    <string name="list_layout_compact">Kompakt</string>
+    <string name="list_layout_card">Karten</string>
+    <string name="rss_item_unread_dot">Ungelesen-Hinweis</string>
+    <string name="rss_item_thumbnail">Artikelbild</string>
 </resources>

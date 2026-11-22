@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Daynight-aware placeholder of the card layout's article thumbnail (issue
+     #58), used as the NetworkImageView's defaultImage AND errorImage: while
+     loading / on a failed load the thumbnail area shows this subtle ghost fill
+     instead of a broken-image icon, because a blown-up error icon inside a
+     180dp-tall list thumbnail would visually scream.
+     Deliberately a plain shape WITHOUT an intrinsic size: the view's
+     scaleType (centerCrop) scales whatever drawable it is given, and a
+     fixed-size icon vector would be stretched over the full thumbnail height;
+     a size-less shape simply stretches to the view bounds on every API level.
+     Daynight handled through the shared color pair
+     (light: faint white on the white card, dark: faint black on the gray card). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/daynight_transparent_white_black" />
+</shape>

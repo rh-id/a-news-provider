@@ -42,7 +42,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import m.co.rh.id.a_news_provider.app.MainActivity;
+import m.co.rh.id.a_news_provider.app.ui.component.rss.BaseRssItemSV;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.RssChannelItemSV;
+import m.co.rh.id.a_news_provider.app.ui.component.rss.RssItemCardSV;
+import m.co.rh.id.a_news_provider.app.ui.component.rss.RssItemCompactSV;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.RssItemListSV;
 import m.co.rh.id.a_news_provider.app.ui.component.rss.RssItemSV;
 import m.co.rh.id.a_news_provider.base.provider.component.dao.RssDao;
@@ -75,7 +78,10 @@ import m.co.rh.id.aprovider.ProviderRegistry;
  * labels, that performing the custom actions flips the state in memory and in
  * the database, the duplicate-story badge (plural content description over the
  * other copies, 48dp touch target, hidden on singleton rows), the drawer channel
- * row actions and the 48dp touch target sizes.
+ * row actions and the 48dp touch target sizes. The same row semantics are
+ * asserted for the compact and card list layout variants (issue #58) - every
+ * layout must expose identical state descriptions and custom actions, they only
+ * differ visually.
  */
 @RunWith(AndroidJUnit4.class)
 public class AccessibilityAuditTest {
@@ -337,6 +343,70 @@ public class AccessibilityAuditTest {
     }
 
     // ========================================================================
+    // Compact + card layout variant row semantics (issue #58)
+    //
+    // Every row layout variant must expose the identical TalkBack semantics the
+    // standard rows already pass: same state description (with its pre-R
+    // content-description fallback), same state-correct custom read/favorite
+    // actions, same checkable favorite star. Only the visuals differ.
+    // ========================================================================
+
+    @Test
+    public void testRssItemCompactRow_exposesIdenticalStateActionsAndFavoriteToggle() {
+        RssItem readItem = createRssItem("read item", true, false);
+        RssItem readFavoriteItem = createRssItem("read favorite item", true, true);
+        RssItem unreadItem = createRssItem("unread item", false, false);
+        RssItem unreadFavoriteItem = createRssItem("unread favorite item", false, true);
+        RssItem[] items = new RssItem[]{readItem, readFavoriteItem, unreadItem, unreadFavoriteItem};
+        TestSvPage page = launchBoundRows(RssItemCompactSV::new, items);
+        assertEquals("All seeded compact rows must be built", items.length,
+                page.getChildViews().size());
+
+        for (int i = 0; i < items.length; i++) {
+            View rowView = page.getChildViews().get(i);
+            RssItem rssItem = items[i];
+            assertRowTalkBackSemantics(rowView, rssItem, i);
+            // the compact layout's own unread affordance must mirror isRead
+            View unreadDot = rowView.findViewById(R.id.view_unread_dot);
+            assertNotNull("Unread dot missing on compact row " + i, unreadDot);
+            assertEquals("Unread dot visibility must mirror isRead on compact row " + i,
+                    rssItem.isRead ? View.GONE : View.VISIBLE, unreadDot.getVisibility());
+        }
+    }
+
+    @Test
+    public void testRssItemCardRow_exposesIdenticalStateActionsAndFavoriteToggle() {
+        RssItem readItem = createRssItem("read item", true, false);
+        RssItem readFavoriteItem = createRssItem("read favorite item", true, true);
+        RssItem unreadItem = createRssItem("unread item", false, false);
+        RssItem unreadFavoriteItem = createRssItem("unread favorite item", false, true);
+        RssItem[] items = new RssItem[]{readItem, readFavoriteItem, unreadItem, unreadFavoriteItem};
+        TestSvPage page = launchBoundRows(RssItemCardSV::new, items);
+        assertEquals("All seeded card rows must be built", items.length,
+                page.getChildViews().size());
+
+        for (int i = 0; i < items.length; i++) {
+            View rowView = page.getChildViews().get(i);
+            RssItem rssItem = items[i];
+            assertRowTalkBackSemantics(rowView, rssItem, i);
+            // the seeded items carry no mediaImage: the thumbnail must stay
+            // collapsed (never show a stale recycled image)
+            View thumbnail = rowView.findViewById(R.id.network_image_view_thumbnail);
+            assertNotNull("Thumbnail view missing on card row " + i, thumbnail);
+            assertEquals("Thumbnail must stay hidden without a mediaImage on card row " + i,
+                    View.GONE, thumbnail.getVisibility());
+        }
+        // the card's feed line renders the mapped channel display name of the
+        // seeded channel (resolved on the background mapping pass)
+        TextView channelName = page.getChildViews().get(0)
+                .findViewById(R.id.text_channel_name);
+        assertNotNull(channelName);
+        awaitOnMain("Card row never rendered the feed name", () ->
+                channelName.getText().toString()
+                        .equals(createRssChannel().feedName));
+    }
+
+    // ========================================================================
     // RssChannelItemSV drawer row semantics
     // ========================================================================
 
@@ -457,17 +527,29 @@ public class AccessibilityAuditTest {
     // ========================================================================
 
     /**
-     * Seeds one channel with the given items, builds a real {@link RssItemSV} row
-     * per item inside the test page and binds the rows. Returns once every row
-     * has registered its state-correct custom accessibility actions.
+     * Seeds one channel with the given items, builds a real standard
+     * {@link RssItemSV} row per item inside the test page and binds the rows.
+     * Returns once every row has registered its state-correct custom
+     * accessibility actions.
      */
     private TestSvPage launchBoundRows(RssItem... rssItems) {
+        return launchBoundRows(RssItemSV::new, rssItems);
+    }
+
+    /**
+     * Same as {@link #launchBoundRows(RssItem...)} but hosting the given row
+     * variant (issue #58: compact / card rows must pass the identical semantics
+     * audit), built and injected through the same shared row base the RecyclerView
+     * adapters use.
+     */
+    private TestSvPage launchBoundRows(Supplier<? extends BaseRssItemSV> rowSvFactory,
+                                       RssItem... rssItems) {
         RssChannel rssChannel = createRssChannel();
         mTestProvider.get(RssDao.class).insertRssChannel(rssChannel, rssItems);
-        List<RssItemSV> rowSvs = new ArrayList<>();
+        List<BaseRssItemSV> rowSvs = new ArrayList<>();
         List<StatefulView<Activity>> testSvs = new ArrayList<>();
         for (RssItem ignored : rssItems) {
-            RssItemSV rowSv = new RssItemSV();
+            BaseRssItemSV rowSv = rowSvFactory.get();
             rowSvs.add(rowSv);
             testSvs.add(rowSv);
         }
@@ -494,6 +576,54 @@ public class AccessibilityAuditTest {
             return findActionByLabel(actions, expectedReadLabel) != null
                     && findActionByLabel(actions, expectedFavoriteLabel) != null;
         });
+    }
+
+    /**
+     * Asserts the row semantics EVERY list row layout variant must share (issue
+     * #58): the favorite star exposed as a toggle matching isFavorite, the row
+     * state description (stateDescription on API 30+, content description
+     * fallback below) matching isRead, and the state-correct read/favorite
+     * custom accessibility actions without the inverse labels.
+     */
+    private void assertRowTalkBackSemantics(View rowView, RssItem rssItem, int index) {
+        String expectedStateText = mTargetContext.getString(rssItem.isRead ?
+                R.string.state_read : R.string.state_unread);
+        String expectedReadLabel = mTargetContext.getString(rssItem.isRead ?
+                R.string.mark_as_unread : R.string.mark_as_read);
+        String expectedFavoriteLabel = mTargetContext.getString(rssItem.isFavorite ?
+                R.string.favorite_remove : R.string.favorite_add);
+        String inverseReadLabel = mTargetContext.getString(rssItem.isRead ?
+                R.string.mark_as_read : R.string.mark_as_unread);
+        String inverseFavoriteLabel = mTargetContext.getString(rssItem.isFavorite ?
+                R.string.favorite_add : R.string.favorite_remove);
+
+        ImageButton buttonFavorite = rowView.findViewById(R.id.button_favorite);
+        assertNotNull("Star button missing on row " + index, buttonFavorite);
+        AccessibilityNodeInfoCompat starNode = onMain(() -> obtainNodeInfo(buttonFavorite));
+        assertTrue("Star must be exposed as a toggle (checkable) on row " + index,
+                starNode.isCheckable());
+        assertEquals("Star checked state must match isFavorite on row " + index,
+                rssItem.isFavorite, starNode.isChecked());
+
+        AccessibilityNodeInfoCompat rowNode = onMain(() -> obtainNodeInfo(rowView));
+        String stateText = readStateDescription(rowNode);
+        assertNotNull("Row " + index + " must expose a state description or a content "
+                + "description fallback", stateText);
+        assertTrue("Row " + index + " state description must contain '" + expectedStateText
+                + "' but was: " + stateText, stateText.contains(expectedStateText));
+
+        List<AccessibilityActionCompat> actions =
+                onMain(() -> obtainNodeInfo(rowView).getActionList());
+        assertNotNull("Row " + index + " must expose the state-correct read action '"
+                + expectedReadLabel + "'", findActionByLabel(actions, expectedReadLabel));
+        assertNotNull("Row " + index + " must expose the state-correct favorite action '"
+                + expectedFavoriteLabel + "'", findActionByLabel(actions, expectedFavoriteLabel));
+        assertNull("Row " + index + " must not expose the inverse read action '"
+                + inverseReadLabel + "' (labels must be re-registered per state)",
+                findActionByLabel(actions, inverseReadLabel));
+        assertNull("Row " + index + " must not expose the inverse favorite action '"
+                + inverseFavoriteLabel + "' (labels must be re-registered per state)",
+                findActionByLabel(actions, inverseFavoriteLabel));
     }
 
     /**

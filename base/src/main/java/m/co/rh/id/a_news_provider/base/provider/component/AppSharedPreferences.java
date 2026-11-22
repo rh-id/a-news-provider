@@ -27,6 +27,28 @@ public class AppSharedPreferences {
      */
     public static final int MODE_CUSTOM_TABS = 1;
 
+    /**
+     * "List layout" choice (issue #58): the standard multi-line rows every list
+     * showed before the layout variants existed - date, bold title, favorite star
+     * and the category chip strip. This is the default so existing users keep the
+     * exact rows they always had.
+     */
+    public static final int LIST_LAYOUT_STANDARD = 0;
+    /**
+     * "List layout" choice (issue #58): compact single-line rows - ellipsized
+     * title with a leading unread dot, no date/chips/description. The densest
+     * layout for scanning many headlines.
+     */
+    public static final int LIST_LAYOUT_COMPACT = 1;
+    /**
+     * "List layout" choice (issue #58): card (magazine) rows - article thumbnail
+     * from {@code RssItem.mediaImage}, feed icon/name, two-line title, date and
+     * favorite star. The thumbnail is deliberately independent of the
+     * {@code downloadImage} preference (that gates the article detail page's
+     * media, issue #36).
+     */
+    public static final int LIST_LAYOUT_CARD = 2;
+
     private ExecutorService mExecutorService;
     private SharedPreferences mSharedPreferences;
 
@@ -47,6 +69,9 @@ public class AppSharedPreferences {
 
     private SerialBehaviorSubject<Integer> mSelectedTheme;
     private String mSelectedThemeKey;
+
+    private SerialBehaviorSubject<Integer> mListLayout;
+    private String mListLayoutKey;
 
     private SerialBehaviorSubject<Boolean> mOneHandMode;
     private String mOneHandModeKey;
@@ -124,6 +149,7 @@ public class AppSharedPreferences {
         mAutoMarkReadDays = new SerialBehaviorSubject<>();
         mKeepReadItemsDays = new SerialBehaviorSubject<>();
         mSelectedTheme = new SerialBehaviorSubject<>();
+        mListLayout = new SerialBehaviorSubject<>();
         mOneHandMode = new SerialBehaviorSubject<>();
         mDynamicColorsEnabled = new SerialBehaviorSubject<>();
         mMarkReadOnScroll = new SerialBehaviorSubject<>();
@@ -155,6 +181,8 @@ public class AppSharedPreferences {
                 + ".keepReadItemsDays";
         mSelectedThemeKey = SHARED_PREFERENCES_NAME
                 + ".selectedTheme";
+        mListLayoutKey = SHARED_PREFERENCES_NAME
+                + ".listLayout";
         mOneHandModeKey = SHARED_PREFERENCES_NAME
                 + ".oneHandMode";
         mDynamicColorsEnabledKey = SHARED_PREFERENCES_NAME
@@ -216,6 +244,13 @@ public class AppSharedPreferences {
                 mSelectedThemeKey,
                 -1);
         setSelectedTheme(selectedTheme);
+        // list layout defaults to the standard rows (issue #58): existing users
+        // keep the exact list they always had; the facade adapter observes the
+        // flow below and switches all row view types live on change
+        int listLayout = mSharedPreferences.getInt(
+                mListLayoutKey,
+                LIST_LAYOUT_STANDARD);
+        listLayout(listLayout);
         boolean oneHandMode = mSharedPreferences.getBoolean(mOneHandModeKey, false);
         oneHandMode(oneHandMode);
         boolean dynamicColorsEnabled = mSharedPreferences.getBoolean(mDynamicColorsEnabledKey, true);
@@ -480,6 +515,36 @@ public class AppSharedPreferences {
 
     public Flowable<Integer> getSelectedThemeFlow() {
         return Flowable.fromObservable(mSelectedTheme.getSubject(), BackpressureStrategy.BUFFER);
+    }
+
+    /**
+     * "List layout" preference (issue #58): an index into the row variants of the
+     * rss item lists ({@link #LIST_LAYOUT_STANDARD}, {@link #LIST_LAYOUT_COMPACT},
+     * {@link #LIST_LAYOUT_CARD}). Default {@link #LIST_LAYOUT_STANDARD} so existing
+     * users see no change. Read once by the item list adapters at construction and
+     * observed live through {@link #getListLayoutFlow()} - a change switches every
+     * row's view type via {@code notifyDataSetChanged} (the ConcatAdapter forwards
+     * child notifies, and the swipe directions are re-queried per drag, so no
+     * further wiring is needed).
+     */
+    private void listLayout(int layout) {
+        mListLayout.onNext(layout);
+        mExecutorService.execute(() ->
+                mSharedPreferences.edit().putInt(mListLayoutKey, layout)
+                        .commit());
+    }
+
+    public int getListLayout() {
+        Integer value = mListLayout.getValue();
+        return value == null ? LIST_LAYOUT_STANDARD : value;
+    }
+
+    public void setListLayout(int layout) {
+        listLayout(layout);
+    }
+
+    public Flowable<Integer> getListLayoutFlow() {
+        return Flowable.fromObservable(mListLayout.getSubject(), BackpressureStrategy.BUFFER);
     }
 
     private void oneHandMode(boolean oneHandMode) {

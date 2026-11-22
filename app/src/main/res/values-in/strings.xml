@@ -234,4 +234,11 @@
     <string name="sync_now">Sinkronkan sekarang</string>
     <string name="feed_health_delete_confirm_title">Hapus feed?</string>
     <string name="feed_health_delete_confirm_message">Hapus feed ini beserta semua artikel yang sudah diunduh? Tindakan ini tidak dapat dibatalkan.</string>
+    <string name="title_list_layout">Tata letak daftar</string>
+    <string name="menu_subtitle_list_layout">Pilih bagaimana artikel ditampilkan di dalam daftar</string>
+    <string name="list_layout_standard">Standar</string>
+    <string name="list_layout_compact">Ringkas</string>
+    <string name="list_layout_card">Kartu</string>
+    <string name="rss_item_unread_dot">Indikator belum dibaca</string>
+    <string name="rss_item_thumbnail">Gambar artikel</string>
 </resources>

@@ -17,4 +17,23 @@ public class RssItemModel {
      * duplicates" and hide the badge.
      */
     public int duplicateCount;
+    /**
+     * The item's feed-provided thumbnail url (issue #58), straight from
+     * {@code RssItem.mediaImage} - rendered by the card layout's NetworkImageView.
+     * Null/empty hides the whole thumbnail. Not used by the standard/compact rows.
+     */
+    public String mediaImage;
+    /**
+     * Display name of the item's feeding channel (issue #58), resolved on the
+     * background mapping pass in the shared row SV with a per-pass memoized
+     * channel lookup. Fallback chain feed name -&gt; channel title -&gt; "" (same
+     * semantics as the copies expansion' resolver), so a deleted channel never
+     * breaks the row render. Empty for the layouts that don't render it.
+     */
+    public String channelName;
+    /**
+     * The feeding channel's image url (issue #58) for the card layout's small
+     * source icon; null when the channel has no image or is unknown.
+     */
+    public String channelIconUrl;
 }

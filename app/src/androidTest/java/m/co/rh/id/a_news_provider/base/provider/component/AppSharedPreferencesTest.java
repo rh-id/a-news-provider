@@ -28,8 +28,9 @@ import static org.junit.Assert.assertTrue;
  * (issue #51), the auto mark-read retention window (issue #47), the keep-read-items
  * retention window (issue #37), the four reading-typography preferences (issue #29),
  * the open-links mode preference (issue #35), the duplicate-story collapsing
- * preference (issue #45), the volume-key navigation preference (issue #60) and
- * the sync-on-open preference plus its last-sync-request stamp (issue #50):
+ * preference (issue #45), the volume-key navigation preference (issue #60),
+ * the sync-on-open preference plus its last-sync-request stamp (issue #50) and
+ * the list layout preference (issue #58):
  * asserts the fresh-install defaults, the set/get round-trip
  * of each new field, that every Flowable replays its current value and emits on
  * change, and that state persists through a fresh provider instance (re-read from
@@ -548,6 +549,61 @@ public class AppSharedPreferencesTest {
         mProvider = Provider.createProvider(mContext, new PrefsTestProviderModule());
         AppSharedPreferences reloaded = mProvider.get(AppSharedPreferences.class);
         assertEquals(1_700_000_000_000L, reloaded.getLastSyncRequestMillis());
+    }
+
+    // ========================================================================
+    // list layout (issue #58)
+    //
+    // The rss item row variant index (LIST_LAYOUT_STANDARD / COMPACT / CARD on
+    // AppSharedPreferences itself, referenced directly here). Default STANDARD:
+    // existing users keep the exact rows they always had.
+    // ========================================================================
+
+    @Test
+    public void testListLayoutFreshInstallDefault() {
+        assertEquals("List layout must default to the standard rows",
+                AppSharedPreferences.LIST_LAYOUT_STANDARD,
+                mAppSharedPreferences.getListLayout());
+    }
+
+    @Test
+    public void testListLayoutRoundTripAcrossEveryValue() {
+        for (int layout = 0; layout < 3; layout++) {
+            mAppSharedPreferences.setListLayout(layout);
+            assertEquals("layout " + layout + " must survive the round-trip",
+                    layout, mAppSharedPreferences.getListLayout());
+        }
+        mAppSharedPreferences.setListLayout(AppSharedPreferences.LIST_LAYOUT_STANDARD);
+        assertEquals("switching back must restore the standard rows",
+                AppSharedPreferences.LIST_LAYOUT_STANDARD,
+                mAppSharedPreferences.getListLayout());
+    }
+
+    @Test
+    public void testListLayoutFlowEmitsUpdates() {
+        TestSubscriber<Integer> testSubscriber =
+                mAppSharedPreferences.getListLayoutFlow().test();
+
+        // SerialBehaviorSubject replays the current value on subscribe
+        assertEquals(Integer.valueOf(AppSharedPreferences.LIST_LAYOUT_STANDARD),
+                testSubscriber.values().get(0));
+
+        mAppSharedPreferences.setListLayout(AppSharedPreferences.LIST_LAYOUT_CARD);
+
+        testSubscriber.assertValueCount(2);
+        assertEquals(Integer.valueOf(AppSharedPreferences.LIST_LAYOUT_CARD),
+                testSubscriber.values().get(1));
+    }
+
+    @Test
+    public void testListLayoutSurvivesNewProviderInstance() {
+        mAppSharedPreferences.setListLayout(AppSharedPreferences.LIST_LAYOUT_COMPACT);
+        // the setter persists synchronously via the direct executor, so the write
+        // has landed before dispose() runs
+        mProvider.dispose();
+        mProvider = Provider.createProvider(mContext, new PrefsTestProviderModule());
+        AppSharedPreferences reloaded = mProvider.get(AppSharedPreferences.class);
+        assertEquals(AppSharedPreferences.LIST_LAYOUT_COMPACT, reloaded.getListLayout());
     }
 
     private static class PrefsTestProviderModule implements ProviderModule {

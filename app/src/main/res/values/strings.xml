@@ -239,4 +239,11 @@
     <string name="sync_now">Sync now</string>
     <string name="feed_health_delete_confirm_title">Delete feed?</string>
     <string name="feed_health_delete_confirm_message">Delete this feed and all its downloaded articles? This cannot be undone.</string>
+    <string name="title_list_layout">List layout</string>
+    <string name="menu_subtitle_list_layout">Choose how articles are displayed in the list</string>
+    <string name="list_layout_standard">Standard</string>
+    <string name="list_layout_compact">Compact</string>
+    <string name="list_layout_card">Card</string>
+    <string name="rss_item_unread_dot">Unread indicator</string>
+    <string name="rss_item_thumbnail">Article image</string>
 </resources>

@@ -93,7 +93,8 @@ public class RssItemListSV extends StatefulView<Activity> implements RequireComp
         mUpdateRssItemIsFavoriteCmd = mSvProvider.get(UpdateRssItemIsFavoriteCmd.class);
         mHandler = mSvProvider.get(Handler.class);
         mRxDisposer = mSvProvider.get(RxDisposer.class);
-        mRssItemRecyclerViewAdapter = new RssItemRecyclerViewAdapter(mNavigator, this);
+        mRssItemRecyclerViewAdapter = new RssItemRecyclerViewAdapter(mNavigator, this,
+                mAppSharedPreferences);
         if (mOnScrollListener == null) {
             mOnScrollListener = new RecyclerView.OnScrollListener() {
                 @Override

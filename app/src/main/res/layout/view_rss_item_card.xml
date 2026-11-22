@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Card (magazine) list row variant (issue #58): article thumbnail from
+     RssItem.mediaImage on top, feed icon + name, two-line title, date and
+     favorite star - see RssItemCardSV.
+     The background is a plain square surface WITHOUT rounded corners on
+     purpose: RssItemSwipeHelperCallback.onChildDraw paints a full-bounds
+     square swipe rect under the row, which would peek around rounded card
+     corners while the row slides. The row is full-bleed in portrait (the
+     approved look); in landscape the row_edge_gutter dimen (values-land) adds
+     the standard rows' 8dp margin so the 2-column staggered grid gets a
+     column gutter - the swipe rect is drawn at the itemView bounds, which
+     already exclude layout margins, so inset rows swipe exactly like the
+     standard rows always have. The shared ids root_layout /
+     container_duplicates / chip_duplicates / container_copies /
+     button_favorite are required by the row base (click gating,
+     duplicate-badge and TalkBack semantics). The trailing 1dp hairline is the
+     row separator (cards sit hairline-to-hairline in portrait; in landscape
+     the gutter adds the breathing room), and a child View keeps the divider
+     working on API 21 (layer-list item gravity needs API 23). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root_layout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/row_edge_gutter"
+    android:background="@color/daynight_white_gray_900"
+    android:orientation="vertical">
+
+    <!-- Thumbnail: hidden entirely when the item has no mediaImage (bound by
+         RssItemCardSV); while loading / on error the NetworkImageView shows the
+         size-less daynight placeholder shape set from code (this Volley version
+         has no defaultImage/errorImage XML attrs - same code path as the detail
+         page's setErrorImageResId), which survives the centerCrop scaleType on
+         every API level (a fixed-size icon vector would be blown up to the full
+         thumbnail height) -->
+    <com.android.volley.toolbox.NetworkImageView
+        android:id="@+id/network_image_view_thumbnail"
+        android:layout_width="match_parent"
+        android:layout_height="180dp"
+        android:contentDescription="@string/rss_item_thumbnail"
+        android:scaleType="centerCrop"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/text_margin"
+        android:paddingTop="12dp"
+        android:paddingEnd="@dimen/text_margin">
+
+        <com.android.volley.toolbox.NetworkImageView
+            android:id="@+id/network_image_view_channel_icon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:importantForAccessibility="no"
+            android:scaleType="centerCrop" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/text_channel_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textSize="12sp"
+            tools:text="Feed name" />
+
+    </LinearLayout>
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/text_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:paddingStart="@dimen/text_margin"
+        android:paddingTop="4dp"
+        android:paddingEnd="@dimen/text_margin"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        tools:text="BREAKING NEWS" />
+
+    <!-- duplicate-story badge (issue #45): GONE for rows without known
+         duplicates; tapping the chip opens the shared copies expansion
+         (feed name + date per other copy) handled by the row base -->
+    <LinearLayout
+        android:id="@+id/container_duplicates"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="@dimen/text_margin"
+        android:paddingEnd="@dimen/text_margin"
+        android:visibility="gone">
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_duplicates"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:clickable="true"
+            android:focusable="true"
+            app:chipEndPadding="8dp"
+            app:chipStartPadding="8dp"
+            app:ensureMinTouchTargetSize="true"
+            tools:text="×3" />
+
+        <LinearLayout
+            android:id="@+id/container_copies"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/text_margin"
+        android:paddingTop="4dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="8dp">
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/text_date"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="12sp"
+            tools:text="Mon, 3 Nov 2025" />
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/button_favorite"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/menu_toggle_favorite"
+            app:srcCompat="@drawable/ic_star_outline_gray" />
+
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/daynight_gray_300_gray_600" />
+</LinearLayout>

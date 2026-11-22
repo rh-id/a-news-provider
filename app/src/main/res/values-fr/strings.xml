@@ -246,4 +246,11 @@
     <string name="sync_now">Synchroniser maintenant</string>
     <string name="feed_health_delete_confirm_title">Supprimer le flux ?</string>
     <string name="feed_health_delete_confirm_message">Supprimer ce flux et tous les articles téléchargés ? Cette action est irréversible.</string>
+    <string name="title_list_layout">Disposition de la liste</string>
+    <string name="menu_subtitle_list_layout">Choisissez comment les articles sont affichés dans la liste</string>
+    <string name="list_layout_standard">Standard</string>
+    <string name="list_layout_compact">Compact</string>
+    <string name="list_layout_card">Cartes</string>
+    <string name="rss_item_unread_dot">Indicateur non lu</string>
+    <string name="rss_item_thumbnail">Image de l\'article</string>
 </resources>

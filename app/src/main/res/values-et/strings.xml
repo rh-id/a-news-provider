@@ -240,4 +240,11 @@
     <string name="sync_now">Sünkrooni kohe</string>
     <string name="feed_health_delete_confirm_title">Kustutada voog?</string>
     <string name="feed_health_delete_confirm_message">Kustutada see voog ja kõik alla laaditud artiklid? Seda ei saa tagasi võtta.</string>
+    <string name="title_list_layout">Loendi paigutus</string>
+    <string name="menu_subtitle_list_layout">Vali, kuidas artiklid loendis kuvatakse</string>
+    <string name="list_layout_standard">Standard</string>
+    <string name="list_layout_compact">Kompaktne</string>
+    <string name="list_layout_card">Kaardid</string>
+    <string name="rss_item_unread_dot">Lugemata-indikaator</string>
+    <string name="rss_item_thumbnail">Artikli pilt</string>
 </resources>

@@ -240,4 +240,11 @@
     <string name="sync_now">Sincronisar ussa</string>
     <string name="feed_health_delete_confirm_title">Stizzar il feed?</string>
     <string name="feed_health_delete_confirm_message">Stizzar quest feed e tut ils artitgs telechargiads? Quai na po betg vegnir revocà.</string>
+    <string name="title_list_layout">Layout da la glista</string>
+    <string name="menu_subtitle_list_layout">Tschierna co ils artitgels vegnan mussads en la glista</string>
+    <string name="list_layout_standard">Standard</string>
+    <string name="list_layout_compact">Compact</string>
+    <string name="list_layout_card">Chartas</string>
+    <string name="rss_item_unread_dot">Indicatur per nun legì</string>
+    <string name="rss_item_thumbnail">Maletg da l\'artitgel</string>
 </resources>

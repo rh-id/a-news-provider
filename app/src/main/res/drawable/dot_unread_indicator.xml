@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Unread dot of the compact list row variant (issue #58): a small accent dot
+     shown while the item is unread (visibility is bound by RssItemCompactSV).
+     The app's brand accent orange doubles as the attention color here; it is a
+     theme-constant brand color, so no daynight pair is needed (same as the
+     favorite star's filled orange). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <size
+        android:width="8dp"
+        android:height="8dp" />
+    <solid android:color="@color/orange_600" />
+</shape>

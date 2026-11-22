@@ -246,4 +246,11 @@
     <string name="sync_now">Sincronizza ora</string>
     <string name="feed_health_delete_confirm_title">Eliminare il feed?</string>
     <string name="feed_health_delete_confirm_message">Eliminare questo feed e tutti gli articoli scaricati? L\'operazione non è annullabile.</string>
+    <string name="title_list_layout">Layout elenco</string>
+    <string name="menu_subtitle_list_layout">Scegli come gli articoli vengono mostrati nell\'elenco</string>
+    <string name="list_layout_standard">Standard</string>
+    <string name="list_layout_compact">Compatto</string>
+    <string name="list_layout_card">Schede</string>
+    <string name="rss_item_unread_dot">Indicatore non letto</string>
+    <string name="rss_item_thumbnail">Immagine dell\'articolo</string>
 </resources>

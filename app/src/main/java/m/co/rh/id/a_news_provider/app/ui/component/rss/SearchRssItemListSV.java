@@ -28,6 +28,7 @@ import m.co.rh.id.a_news_provider.app.provider.command.BaseRssItemsCmd;
 import m.co.rh.id.a_news_provider.app.provider.command.SearchRssItemsCmd;
 import m.co.rh.id.a_news_provider.app.provider.component.notifier.RssChangeNotifier;
 import m.co.rh.id.a_news_provider.app.provider.component.rx.RxDisposer;
+import m.co.rh.id.a_news_provider.base.provider.component.AppSharedPreferences;
 import m.co.rh.id.alogger.ILogger;
 import m.co.rh.id.anavigator.StatefulView;
 import m.co.rh.id.anavigator.annotation.NavInject;
@@ -93,7 +94,8 @@ public class SearchRssItemListSV extends StatefulView<Activity> implements Requi
             mSearchRssItemsCmd.setQuery(query);
         }
         mRxDisposer = mSvProvider.get(RxDisposer.class);
-        mRssItemRecyclerViewAdapter = new RssItemRecyclerViewAdapter(mNavigator, this);
+        mRssItemRecyclerViewAdapter = new RssItemRecyclerViewAdapter(mNavigator, this,
+                mSvProvider.get(AppSharedPreferences.class));
         if (mOnScrollListener == null) {
             mOnScrollListener = new RecyclerView.OnScrollListener() {
                 @Override

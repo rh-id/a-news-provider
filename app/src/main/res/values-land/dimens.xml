@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Landscape override of the compact/card row edge gutter (issue #58): the
+     2-column StaggeredGrid meets the columns in the middle with a 0dp gutter
+     in portrait's full-bleed look, so in landscape the rows take the standard
+     rows' 8dp margin - two columns get a 16dp center gutter and 8dp screen
+     insets, identical to the standard CardView rows. -->
+<resources>
+    <dimen name="row_edge_gutter">8dp</dimen>
+</resources>

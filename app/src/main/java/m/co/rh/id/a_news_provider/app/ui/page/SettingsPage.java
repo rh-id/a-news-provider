@@ -25,6 +25,7 @@ import m.co.rh.id.a_news_provider.app.ui.component.settings.CollapseDuplicateSto
 import m.co.rh.id.a_news_provider.app.ui.component.settings.DownloadImageMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.FetchFullTextAutomaticallyMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.LicensesMenuSV;
+import m.co.rh.id.a_news_provider.app.ui.component.settings.ListLayoutMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.LogMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.MarkReadOnScrollMenuSV;
 import m.co.rh.id.a_news_provider.app.ui.component.settings.OneHandModeMenuSV;
@@ -110,6 +111,10 @@ public class SettingsPage extends StatefulView<Activity> implements RssSyncMenuS
         FetchFullTextAutomaticallyMenuSV fetchFullTextAutomaticallyMenuSV =
                 new FetchFullTextAutomaticallyMenuSV();
         mStatefulViews.add(fetchFullTextAutomaticallyMenuSV);
+        // list layout picker sits right before the one-hand mode entry (issue #58):
+        // both reshape how the list itself is presented
+        ListLayoutMenuSV listLayoutMenuSV = new ListLayoutMenuSV();
+        mStatefulViews.add(listLayoutMenuSV);
         OneHandModeMenuSV oneHandModeMenuSV = new OneHandModeMenuSV();
         mStatefulViews.add(oneHandModeMenuSV);
         DownloadImageMenuSV downloadImageMenuSV = new DownloadImageMenuSV();
